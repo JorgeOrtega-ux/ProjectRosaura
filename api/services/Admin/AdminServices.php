@@ -15,6 +15,8 @@ use App\Core\Interfaces\RateLimiterInterface;
 use App\Core\Interfaces\RoleRepositoryInterface;
 use App\Core\Interfaces\ProfileLogRepositoryInterface;
 use App\Core\Interfaces\TelemetryRepositoryInterface;
+use App\Core\Interfaces\MonetizationRepositoryInterface;
+use App\Core\Repositories\MonetizationRepository;
 use App\Config\Database\DatabaseManager;
 use App\Config\Database\CassandraManager;
 use App\Core\System\DatabaseConstants as DB; 
@@ -37,6 +39,7 @@ class AdminServices {
     private $roleRepository;
     private $profileLogRepository;
     private $telemetryRepository;
+    private $monetizationRepository;
     private $dbManager;
     private $cassandraManager;
 
@@ -52,7 +55,8 @@ class AdminServices {
         ProfileLogRepositoryInterface $profileLogRepository,
         TelemetryRepositoryInterface $telemetryRepository,
         DatabaseManager $dbManager,
-        CassandraManager $cassandraManager
+        CassandraManager $cassandraManager,
+        ?MonetizationRepositoryInterface $monetizationRepository = null
     ) {
         $this->userRepository = $userRepository;
         $this->moderationRepository = $moderationRepository;
@@ -67,6 +71,7 @@ class AdminServices {
         $this->telemetryRepository = $telemetryRepository;
         $this->dbManager = $dbManager;
         $this->cassandraManager = $cassandraManager;
+        $this->monetizationRepository = $monetizationRepository ?? new MonetizationRepository($dbManager);
     }
 
     private function hasPermission($permission) {
@@ -2389,5 +2394,163 @@ class AdminServices {
             Logger::error("Failed to sync stripe: " . $e->getMessage());
             return ['success' => false, 'message' => __('err_internal_server_error')];
         }
+    }
+
+    public function getMonetizationConfig() {
+        if (!$this->hasPermission(PermissionsConstants::MANAGE_MONETIZATION) && !$this->hasPermission(PermissionsConstants::ACCESS_ADMIN_PANEL)) {
+            return ['success' => false, 'message' => __('error.unauthorized')];
+        }
+
+        try {
+            $config = $this->monetizationRepository->getConfig();
+            return [
+                'success' => true,
+                'config' => $config
+            ];
+        } catch (\Throwable $e) {
+            Logger::error('Error getting monetization config: ' . $e->getMessage());
+            return ['success' => false, 'message' => __('err_internal_server_error')];
+        }
+    }
+
+    public function updateMonetizationConfig($data) {
+        if (!$this->hasPermission(PermissionsConstants::MANAGE_MONETIZATION) && !$this->hasPermission(PermissionsConstants::ACCESS_ADMIN_PANEL)) {
+            return ['success' => false, 'message' => __('error.unauthorized')];
+        }
+
+        $configData = $data['config'] ?? null;
+        if (!is_array($configData)) {
+            return ['success' => false, 'message' => __('validation.invalid_data')];
+        }
+
+        try {
+            $sanitized = [];
+            $intFields = [
+                'enabled', 'test_mode', 'adblock_notice_enabled', 'adsense_auto_ads',
+                'feed_ads_enabled', 'feed_ad_interval',
+                'modal_ads_enabled', 'modal_ad_cooldown_seconds', 'modal_ad_duration_seconds', 'modal_ad_pod_size', 'modal_ad_muted_default',
+                'drawer_ads_enabled', 'drawer_ad_palette_enabled', 'drawer_ad_templates_enabled'
+            ];
+            $strFields = [
+                'default_provider', 'adsense_client_id', 'custom_header_scripts', 'exempt_roles', 'exempt_tiers',
+                'feed_ad_provider', 'feed_adsense_slot', 'feed_adsense_layout_key', 'feed_mock_title', 'feed_mock_desc', 'feed_mock_badge', 'feed_mock_cta_text', 'feed_mock_cta_url', 'feed_mock_image_url', 'feed_custom_html',
+                'modal_ad_provider', 'modal_adsense_slot', 'modal_mock_sponsor_title', 'modal_mock_sponsor_tagline', 'modal_mock_sponsor_url', 'modal_mock_sponsor_avatar', 'modal_custom_html',
+                'drawer_ad_provider', 'drawer_adsense_slot', 'drawer_mock_title', 'drawer_mock_tagline', 'drawer_mock_cta_url', 'drawer_mock_cta_text', 'drawer_mock_badge', 'drawer_custom_html'
+            ];
+
+            foreach ($intFields as $f) {
+                if (isset($configData[$f])) {
+                    $sanitized[$f] = (int)$configData[$f];
+                }
+            }
+
+            foreach ($strFields as $f) {
+                if (isset($configData[$f])) {
+                    $sanitized[$f] = (string)$configData[$f];
+                }
+            }
+
+            $success = $this->monetizationRepository->updateConfig($sanitized);
+            if ($success) {
+                return [
+                    'success' => true,
+                    'message' => __('admin_monetization_saved_success'),
+                    'config' => $this->monetizationRepository->getConfig()
+                ];
+            }
+
+            return ['success' => false, 'message' => __('admin_monetization_saved_error')];
+        } catch (\Throwable $e) {
+            Logger::error('Error updating monetization config: ' . $e->getMessage());
+            return ['success' => false, 'message' => __('err_internal_server_error')];
+        }
+    }
+
+    public function resetMonetizationConfig() {
+        if (!$this->hasPermission(PermissionsConstants::MANAGE_MONETIZATION) && !$this->hasPermission(PermissionsConstants::ACCESS_ADMIN_PANEL)) {
+            return ['success' => false, 'message' => __('error.unauthorized')];
+        }
+
+        try {
+            $success = $this->monetizationRepository->resetConfig();
+            if ($success) {
+                return [
+                    'success' => true,
+                    'message' => __('admin_monetization_reset_success'),
+                    'config' => $this->monetizationRepository->getConfig()
+                ];
+            }
+        } catch (\Throwable $e) {
+            Logger::error('Error resetting monetization config: ' . $e->getMessage());
+            return ['success' => false, 'message' => __('err_internal_server_error')];
+        }
+    }
+
+    public function getCampaignDetails($data) {
+        if (!$this->hasPermission(PermissionsConstants::MANAGE_MONETIZATION) && !$this->hasPermission(PermissionsConstants::ACCESS_ADMIN_PANEL)) {
+            return ['success' => false, 'message' => __('error.unauthorized')];
+        }
+
+        $uuid = $data['uuid'] ?? null;
+        if (!$uuid) return ['success' => false, 'message' => __('validation.invalid_data')];
+
+        $campaign = $this->monetizationRepository->getCampaignByUuid($uuid);
+        if (!$campaign) return ['success' => false, 'message' => __('err_campaign_not_found')];
+
+        return ['success' => true, 'campaign' => $campaign];
+    }
+
+    public function saveCampaign($data) {
+        if (!$this->hasPermission(PermissionsConstants::MANAGE_MONETIZATION) && !$this->hasPermission(PermissionsConstants::ACCESS_ADMIN_PANEL)) {
+            return ['success' => false, 'message' => __('error.unauthorized')];
+        }
+
+        $name = trim((string)($data['name'] ?? ''));
+        if (empty($name)) {
+            return ['success' => false, 'message' => __('validation.required_fields')];
+        }
+
+        $res = $this->monetizationRepository->saveCampaign($data);
+        if ($res['success']) {
+            return [
+                'success' => true,
+                'message' => __('admin_campaign_saved_success'),
+                'uuid' => $res['uuid']
+            ];
+        }
+
+        return ['success' => false, 'message' => $res['message'] ?? __('admin_monetization_saved_error')];
+    }
+
+    public function toggleCampaignActive($data) {
+        if (!$this->hasPermission(PermissionsConstants::MANAGE_MONETIZATION) && !$this->hasPermission(PermissionsConstants::ACCESS_ADMIN_PANEL)) {
+            return ['success' => false, 'message' => __('error.unauthorized')];
+        }
+
+        $uuid = $data['uuid'] ?? null;
+        if (!$uuid) return ['success' => false, 'message' => __('validation.invalid_data')];
+
+        $success = $this->monetizationRepository->toggleCampaignActive($uuid);
+        if ($success) {
+            return ['success' => true, 'message' => __('admin_campaign_status_updated')];
+        }
+
+        return ['success' => false, 'message' => __('admin_monetization_saved_error')];
+    }
+
+    public function deleteCampaign($data) {
+        if (!$this->hasPermission(PermissionsConstants::MANAGE_MONETIZATION) && !$this->hasPermission(PermissionsConstants::ACCESS_ADMIN_PANEL)) {
+            return ['success' => false, 'message' => __('error.unauthorized')];
+        }
+
+        $uuid = $data['uuid'] ?? null;
+        if (!$uuid) return ['success' => false, 'message' => __('validation.invalid_data')];
+
+        $success = $this->monetizationRepository->deleteCampaign($uuid);
+        if ($success) {
+            return ['success' => true, 'message' => __('admin_campaign_deleted_success')];
+        }
+
+        return ['success' => false, 'message' => __('admin_monetization_saved_error')];
     }
 }

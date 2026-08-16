@@ -30,6 +30,9 @@ extract($dashboardData);
                 <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageRoles ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/roles" data-tooltip="<?php echo __('btn_manage_roles'); ?><?php echo !$canManageRoles ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canManageRoles ? 'disabled' : ''; ?>>
                     <span class="material-symbols-rounded">admin_panel_settings</span>
                 </button>
+                <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageMonetization ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/monetization" data-tooltip="<?php echo __('menu_admin_monetization'); ?><?php echo !$canManageMonetization ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canManageMonetization ? 'disabled' : ''; ?>>
+                    <span class="material-symbols-rounded">monetization_on</span>
+                </button>
                 <button class="component-button component-button--icon component-button--h40 <?php echo !$canViewLogs ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/logs" data-tooltip="<?php echo __('btn_view_logs'); ?><?php echo !$canViewLogs ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canViewLogs ? 'disabled' : ''; ?>>
                     <span class="material-symbols-rounded">receipt_long</span>
                 </button>

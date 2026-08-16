@@ -208,6 +208,7 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
                 $hasUsersPerm = count(array_intersect(['view_users', 'edit_users', 'moderate_users', 'delete_users', 'assign_roles'], $userPermissions)) > 0;
                 $hasBackupsPerm = count(array_intersect(['create_backups', 'restore_backups', 'delete_backups'], $userPermissions)) > 0;
                 $hasServerConfigPerm = in_array('manage_server_config', $userPermissions);
+                $hasMonetizationPerm = in_array('manage_monetization', $userPermissions) || in_array('access_admin_panel', $userPermissions);
                 ?>
                 <div class="component-menu-link nav-item" data-nav="/admin/dashboard">
                     <div class="component-menu-link-icon">
@@ -231,6 +232,24 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
 
         <div class="component-menu-bottom">
             <div class="component-menu-list">
+                <div class="component-menu-link nav-item <?php echo !$hasMonetizationPerm ? 'disabled-interaction' : ''; ?>" data-nav="/admin/monetization">
+                    <div class="component-menu-link-icon">
+                        <span class="material-symbols-rounded">monetization_on</span>
+                    </div>
+                    <div class="component-menu-link-text">
+                        <span><?php echo __('menu_admin_monetization'); ?></span>
+                    </div>
+                </div>
+
+                <div class="component-menu-link nav-item <?php echo !$hasMonetizationPerm ? 'disabled-interaction' : ''; ?>" data-nav="/admin/monetization-campaigns">
+                    <div class="component-menu-link-icon">
+                        <span class="material-symbols-rounded">campaign</span>
+                    </div>
+                    <div class="component-menu-link-text">
+                        <span><?php echo __('admin_campaigns_title'); ?></span>
+                    </div>
+                </div>
+
                 <div class="component-menu-link nav-item <?php echo !$hasBackupsPerm ? 'disabled-interaction' : ''; ?>" data-nav="/admin/backups">
                     <div class="component-menu-link-icon">
                         <span class="material-symbols-rounded">backup</span>

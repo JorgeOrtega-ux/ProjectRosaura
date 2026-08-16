@@ -78,6 +78,7 @@ class AdminViewService {
         $canManageSubscriptions = in_array(PermissionsConstants::MANAGE_SUBSCRIPTIONS, $userPermissions);
         $canManageStorePackages = in_array(PermissionsConstants::MANAGE_STORE_PACKAGES, $userPermissions);
         $canManageStorePerks = in_array(PermissionsConstants::MANAGE_STORE_PERKS, $userPermissions);
+        $canManageMonetization = in_array(PermissionsConstants::MANAGE_MONETIZATION, $userPermissions) || in_array(PermissionsConstants::ACCESS_ADMIN_PANEL, $userPermissions);
 
         $appUrl = defined('APP_URL') ? APP_URL : '';
 
@@ -89,13 +90,38 @@ class AdminViewService {
             'canManageSubscriptions' => $canManageSubscriptions,
             'canManageStorePackages' => $canManageStorePackages,
             'canManageStorePerks' => $canManageStorePerks,
+            'canManageMonetization' => $canManageMonetization,
             'appUrl' => $appUrl
         ];
     }
 
-    /**
+    public function getMonetizationData(): array {
+        if (session_status() === PHP_SESSION_NONE) session_start();
 
-     */
+        $monetizationRepo = new \App\Core\Repositories\MonetizationRepository($this->dbManager);
+        $config = $monetizationRepo->getConfig();
+
+        return [
+            'config' => $config,
+            'appUrl' => defined('APP_URL') ? APP_URL : ''
+        ];
+    }
+
+    public function getManageCampaignsData(?string $searchQuery = null, ?string $placementFilter = null, int $page = 1): array {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        $monetizationRepo = new \App\Core\Repositories\MonetizationRepository($this->dbManager);
+        $res = $monetizationRepo->getCampaigns($searchQuery, $placementFilter, $page, 20);
+
+        return [
+            'campaigns' => $res['campaigns'] ?? [],
+            'total' => $res['total'] ?? 0,
+            'page' => $res['page'] ?? 1,
+            'totalPages' => $res['totalPages'] ?? 1,
+            'appUrl' => defined('APP_URL') ? APP_URL : ''
+        ];
+    }
+
     public function getServerConfigData(): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
 

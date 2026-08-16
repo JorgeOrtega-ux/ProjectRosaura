@@ -76,6 +76,8 @@ export const RouteModulesMap = {
     '/admin/user-purchases/:uuid': { path: './modules/admin/users/AdminUserPurchasesController.js', className: 'AdminUserPurchasesController', requiresAdminLang: true, skeletonType: 'layout-table' },
 
     '/admin/system-settings': { path: './modules/admin/server/AdminServerConfigController.js', className: 'AdminServerConfigController', requiresAdminLang: true, skeletonType: 'layout-basic' },
+    '/admin/monetization': { path: './modules/admin/monetization/AdminMonetizationController.js', className: 'AdminMonetizationController', requiresAdminLang: true, skeletonType: 'layout-basic' },
+    '/admin/monetization-campaigns': { path: './modules/admin/monetization/AdminCampaignsController.js', className: 'AdminCampaignsController', requiresAdminLang: true, skeletonType: 'layout-table' },
 
     '/admin/backups': { path: './modules/admin/backups/AdminBackupsController.js', className: 'AdminBackupsController', requiresAdminLang: true, skeletonType: 'layout-table' },
     '/admin/backup-schedule': { path: './modules/admin/backups/AdminBackupsAutomationController.js', className: 'AdminBackupsAutomationController', requiresAdminLang: true, skeletonType: 'layout-basic' },

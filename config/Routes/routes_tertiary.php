@@ -1086,4 +1086,116 @@ return [
         'action' => 'consume_perk',
         'middleware' => [],
     ],
+    'admin.get_monetization_config' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'get_monetization_config',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_monetization_read',
+                'max' => 60,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.update_monetization_config' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'update_monetization_config',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_monetization_update',
+                'max' => 30,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.reset_monetization_config' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'reset_monetization_config',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_monetization_reset',
+                'max' => 10,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.get_campaign_details' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'get_campaign_details',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_campaign_read',
+                'max' => 60,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.save_campaign' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'save_campaign',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_campaign_write',
+                'max' => 30,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.toggle_campaign_active' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'toggle_campaign_active',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_campaign_toggle',
+                'max' => 30,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'admin.delete_campaign' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'delete_campaign',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_campaign_delete',
+                'max' => 20,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
 ];

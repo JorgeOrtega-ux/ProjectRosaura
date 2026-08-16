@@ -89,6 +89,8 @@ return [
     '/admin/backup-create' => ['view' => 'admin/backups/backups-create.php', 'auth' => true, 'permissions' => [PC::CREATE_BACKUPS], 'requires_2fa' => false],
     '/admin/backup-restore/:uuid' => ['view' => 'admin/backups/backups-restore.php', 'auth' => true, 'permissions' => [PC::RESTORE_BACKUPS], 'requires_2fa' => false],
     '/admin/system-settings' => ['view' => 'admin/system/server-config.php', 'auth' => true, 'permissions' => [PC::MANAGE_SERVER_CONFIG], 'requires_2fa' => false],
+    '/admin/monetization' => ['view' => 'admin/monetization/monetization.php', 'auth' => true, 'permissions' => [PC::MANAGE_MONETIZATION, PC::ACCESS_ADMIN_PANEL], 'requires_2fa' => false],
+    '/admin/monetization-campaigns' => ['view' => 'admin/monetization/manage-campaigns.php', 'auth' => true, 'permissions' => [PC::MANAGE_MONETIZATION, PC::ACCESS_ADMIN_PANEL], 'requires_2fa' => false],
     '/admin/logs' => ['view' => 'admin/logs/logs.php', 'auth' => true, 'permissions' => [PC::VIEW_LOGS], 'requires_2fa' => false],
     '/admin/logs/viewer' => ['view' => 'admin/logs/logs-viewer.php', 'auth' => true, 'permissions' => [PC::VIEW_LOGS], 'requires_2fa' => false]
 ];

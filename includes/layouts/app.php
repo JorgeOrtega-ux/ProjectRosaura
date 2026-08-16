@@ -60,6 +60,8 @@ $routeTitles = [
     '/admin/backups' => __('route_admin_backups'),
     '/admin/backup-schedule' => __('route_admin_backups_automation'),
     '/admin/system-settings' => __('route_admin_server'),
+    '/admin/monetization' => __('route_admin_monetization'),
+    '/admin/monetization-campaigns' => __('route_admin_monetization_campaigns'),
     '/admin/protocols' => __('route_admin_protocols'),
     '/admin/logs' => __('route_admin_logs'),
     '/admin/logs/viewer' => __('route_admin_logs_viewer'),
@@ -311,6 +313,26 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
         window.APP_LIMITS = <?php echo json_encode($planLimits); ?>;
         window.APP_PRICES = <?php echo json_encode(\App\Core\System\SubscriptionPlanConstants::getTierPrices()); ?>;
         window.APP_TIERS = <?php echo json_encode(\App\Core\System\SubscriptionPlanConstants::getAllTiers()); ?>;
+        window.APP_MONETIZATION_CONFIG = <?php 
+            try {
+                $monetizationRepo = new \App\Core\Repositories\MonetizationRepository(new \App\Config\Database\DatabaseManager());
+                echo json_encode($monetizationRepo->getConfig());
+            } catch (\Throwable $e) {
+                echo '{}';
+            }
+        ?>;
+        window.APP_ACTIVE_CAMPAIGNS = <?php 
+            try {
+                if (isset($monetizationRepo)) {
+                    echo json_encode($monetizationRepo->getActiveCampaigns());
+                } else {
+                    $monetizationRepo = new \App\Core\Repositories\MonetizationRepository(new \App\Config\Database\DatabaseManager());
+                    echo json_encode($monetizationRepo->getActiveCampaigns());
+                }
+            } catch (\Throwable $e) {
+                echo '{}';
+            }
+        ?>;
 
 
         window.APP_CONFIG = {

@@ -2056,8 +2056,11 @@ export const ModalTemplates = {
             const totalAds = data.totalAds || 1;
             const initialDuration = data.duration || 5;
             const isAdSense = data.mode === 'adsense';
+            const isCustom = data.mode === 'custom';
             const sponsorTitle = data.sponsorTitle || __('ad_mock_sponsor_title');
             const sponsorTagline = data.sponsorTagline || __('ad_mock_sponsor_tagline');
+            const sponsorAvatar = data.sponsorAvatar || 'cloud_done';
+            const sponsorUrl = data.sponsorUrl || 'https://rosaura.io';
             const counterText = totalAds > 1 
                 ? __('ad_pod_counter').replace('{current}', currentAd).replace('{total}', totalAds) 
                 : __('ad_badge_label');
@@ -2078,9 +2081,19 @@ export const ModalTemplates = {
                                  data-ad-format="auto"
                                  data-full-width-responsive="true"></ins>
                         </div>
+                    ` : (isCustom ? `
+                        <div class="component-ad-custom-wrapper" data-ref="ad-custom-wrapper">
+                            ${data.customHtml || ''}
+                        </div>
                     ` : `
                         <div class="component-ad-mock-player" data-ref="ad-mock-player">
-                            <div class="component-ad-mock-media">
+                            <div class="component-ad-mock-media" data-action="visitAdSponsor">
+                                ${data.videoUrl ? `
+                                    <video class="component-ad-video-element" src="${data.videoUrl}" poster="${data.imageUrl || ''}" autoplay playsinline loop muted data-ref="ad-video-element"></video>
+                                ` : `
+                                    ${data.imageUrl ? `<img class="component-ad-mock-backdrop" src="${data.imageUrl}" alt="${sponsorTitle}" data-ref="ad-backdrop-img">` : ''}
+                                    <canvas class="component-ad-motion-canvas" data-ref="ad-motion-canvas"></canvas>
+                                `}
                                 <div class="component-ad-mock-ambient"></div>
                                 
                                 <div class="component-ad-overlay-top">
@@ -2095,7 +2108,7 @@ export const ModalTemplates = {
 
                                 <div class="component-ad-mock-media-content">
                                     <div class="component-card__icon-container component-card__icon-container--bordered component-ad-mock-icon">
-                                        <span class="material-symbols-rounded">cloud_done</span>
+                                        <span class="material-symbols-rounded">${sponsorAvatar}</span>
                                     </div>
                                     <h2 class="component-ad-mock-brand-title">${sponsorTitle}</h2>
                                     <p class="component-ad-mock-brand-tagline">${sponsorTagline}</p>
@@ -2103,13 +2116,13 @@ export const ModalTemplates = {
 
                                 <div class="component-ad-overlay-bottom">
                                     <div class="component-ad-overlay-bottom-bar">
-                                        <div class="component-ad-sponsor-details">
+                                        <div class="component-ad-sponsor-details" data-action="visitAdSponsor">
                                             <div class="component-ad-sponsor-avatar">
-                                                <span class="material-symbols-rounded">token</span>
+                                                <span class="material-symbols-rounded">${sponsorAvatar}</span>
                                             </div>
                                             <div class="component-ad-sponsor-text-group">
                                                 <span class="component-ad-sponsor-brand">${sponsorTitle}</span>
-                                                <span class="component-ad-sponsor-sub">rosaura.io/cloud</span>
+                                                <span class="component-ad-sponsor-sub">${sponsorUrl}</span>
                                             </div>
                                             <button class="component-ad-video-icon-btn" data-action="visitAdSponsor">
                                                 <span class="material-symbols-rounded">open_in_new</span>
@@ -2133,7 +2146,215 @@ export const ModalTemplates = {
                                 </div>
                             </div>
                         </div>
-                    `}
+                    `)}
+                </div>
+            `;
+        }
+    },
+    campaignBuilderModal: {
+        template: (data = {}) => {
+            const isEdit = !!data.uuid;
+            const title = isEdit ? __('modal_edit_campaign_title') : __('modal_create_campaign_title');
+            const desc = isEdit ? __('modal_edit_campaign_desc') : __('modal_create_campaign_desc');
+            const camp = data.campaign || {};
+            const placement = camp.placement || 'feed';
+            const isActive = camp.is_active !== undefined ? (Number(camp.is_active) === 1) : true;
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h3 class="component-modal-title">${title}</h3>
+                    <p class="component-modal-desc">${desc}</p>
+                </div>
+
+                <div class="component-modal-body">
+                    <form class="component-form" data-ref="campaignForm">
+                        <input type="hidden" name="uuid" value="${escapeHTML(camp.uuid || '')}">
+
+                        <div class="component-form-group">
+                            <label class="component-form-label">${__('lbl_campaign_name')}</label>
+                            <div class="component-search component-search--full component-search--h36">
+                                <div class="component-search-icon"><span class="material-symbols-rounded">business</span></div>
+                                <div class="component-search-input">
+                                    <input class="component-search-field" name="name" type="text" placeholder="Ej: Hostinger Black Friday" value="${escapeHTML(camp.name || '')}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="component-form-group">
+                            <label class="component-form-label">${__('lbl_campaign_placement')}</label>
+                            <div class="component-dropdown-wrapper">
+                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleModalCampaignPlacement">
+                                    <span class="material-symbols-rounded">category</span>
+                                    <span class="component-dropdown-text" data-ref="text_campaign_placement">${
+                                        placement === 'modal' ? __('filter_modal') :
+                                        (placement === 'drawer_palette' ? __('filter_drawer_palette') :
+                                        (placement === 'drawer_templates' ? __('filter_drawer_templates') : __('filter_feed')))
+                                    }</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <input type="hidden" name="placement" data-ref="val_campaign_placement" value="${escapeHTML(placement)}">
+                                <div class="component-module component-module--dropdown disabled" data-module="moduleModalCampaignPlacement">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list">
+                                            <div class="component-menu-link ${placement === 'feed' ? 'active' : ''}" data-action="selectModalCampaignPlacement" data-value="feed">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">view_agenda</span></div>
+                                                <div class="component-menu-link-text"><span>${__('filter_feed')}</span></div>
+                                            </div>
+                                            <div class="component-menu-link ${placement === 'modal' ? 'active' : ''}" data-action="selectModalCampaignPlacement" data-value="modal">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">smart_display</span></div>
+                                                <div class="component-menu-link-text"><span>${__('filter_modal')}</span></div>
+                                            </div>
+                                            <div class="component-menu-link ${placement === 'drawer_palette' ? 'active' : ''}" data-action="selectModalCampaignPlacement" data-value="drawer_palette">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">palette</span></div>
+                                                <div class="component-menu-link-text"><span>${__('filter_drawer_palette')}</span></div>
+                                            </div>
+                                            <div class="component-menu-link ${placement === 'drawer_templates' ? 'active' : ''}" data-action="selectModalCampaignPlacement" data-value="drawer_templates">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">design_services</span></div>
+                                                <div class="component-menu-link-text"><span>${__('filter_drawer_templates')}</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="component-form-group">
+                            <label class="component-form-label">${__('lbl_campaign_title')}</label>
+                            <div class="component-search component-search--full component-search--h36">
+                                <div class="component-search-icon"><span class="material-symbols-rounded">title</span></div>
+                                <div class="component-search-input">
+                                    <input class="component-search-field" name="title" type="text" placeholder="Ej: Hostinger Web Hosting" value="${escapeHTML(camp.title || '')}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="component-form-group">
+                            <label class="component-form-label">${__('lbl_campaign_description')}</label>
+                            <div class="component-search component-search--full component-search--h36">
+                                <div class="component-search-icon"><span class="material-symbols-rounded">description</span></div>
+                                <div class="component-search-input">
+                                    <input class="component-search-field" name="description" type="text" placeholder="Ej: 75% de descuento en planes de hosting + dominio gratis" value="${escapeHTML(camp.description || '')}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="component-form-group">
+                            <label class="component-form-label">${__('lbl_campaign_media_url')}</label>
+                            <div class="component-search component-search--full component-search--h36">
+                                <div class="component-search-icon"><span class="material-symbols-rounded">image</span></div>
+                                <div class="component-search-input">
+                                    <input class="component-search-field" name="media_url" type="text" placeholder="https://ejemplo.com/banner.png" value="${escapeHTML(camp.media_url || '')}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="component-form-group">
+                            <label class="component-form-label">${__('lbl_campaign_target_url')}</label>
+                            <div class="component-search component-search--full component-search--h36">
+                                <div class="component-search-icon"><span class="material-symbols-rounded">link</span></div>
+                                <div class="component-search-input">
+                                    <input class="component-search-field" name="target_url" type="text" placeholder="https://hostinger.com/?ref=rosaura" value="${escapeHTML(camp.target_url || '')}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="component-form-group">
+                            <label class="component-form-label">${__('lbl_campaign_badge')}</label>
+                            <div class="component-search component-search--full component-search--h36">
+                                <div class="component-search-icon"><span class="material-symbols-rounded">label</span></div>
+                                <div class="component-search-input">
+                                    <input class="component-search-field" name="badge_text" type="text" placeholder="Patrocinado" value="${escapeHTML(camp.badge_text || 'Patrocinado')}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="component-form-group">
+                            <label class="component-form-label">${__('lbl_campaign_cta_text')}</label>
+                            <div class="component-search component-search--full component-search--h36">
+                                <div class="component-search-icon"><span class="material-symbols-rounded">smart_button</span></div>
+                                <div class="component-search-input">
+                                    <input class="component-search-field" name="cta_text" list="ad-predefined-ctas" type="text" placeholder="${__('ad_cta_view_plans')}" value="${escapeHTML(camp.cta_text || 'ad_cta_view_plans')}">
+                                    <datalist id="ad-predefined-ctas">
+                                        <option value="ad_cta_view_plans">${__('ad_cta_view_plans')}</option>
+                                        <option value="ad_cta_get_offer">${__('ad_cta_get_offer')}</option>
+                                        <option value="ad_cta_discover">${__('ad_cta_discover')}</option>
+                                        <option value="ad_cta_try_free">${__('ad_cta_try_free')}</option>
+                                        <option value="ad_cta_learn_more">${__('ad_cta_learn_more')}</option>
+                                        <option value="ad_cta_explore">${__('ad_cta_explore')}</option>
+                                        <option value="ad_cta_shop_now">${__('ad_cta_shop_now')}</option>
+                                        <option value="ad_cta_start_now">${__('ad_cta_start_now')}</option>
+                                    </datalist>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="component-form-group">
+                            <label class="component-form-label">${__('lbl_campaign_priority')}</label>
+                            <div class="component-search component-search--full component-search--h36">
+                                <div class="component-search-icon"><span class="material-symbols-rounded">low_priority</span></div>
+                                <div class="component-search-input">
+                                    <input class="component-search-field" name="priority" type="number" min="1" max="100" value="${escapeHTML(camp.priority || '1')}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="component-form-group">
+                            <label class="component-form-label">${__('lbl_campaign_html_content')}</label>
+                            <textarea class="component-input-field" name="html_content" rows="3" placeholder="<script>...</script> o <iframe>...</iframe>">${escapeHTML(camp.html_content || '')}</textarea>
+                        </div>
+
+                        <div class="component-group-item">
+                            <div class="component-card__content">
+                                <div class="component-card__text">
+                                    <h2 class="component-card__title">${__('lbl_campaign_active')}</h2>
+                                </div>
+                            </div>
+                            <div class="component-card__actions component-card__actions--end">
+                                <label class="component-toggle-switch">
+                                    <input class="component-toggle-input" name="is_active" type="checkbox" value="1" ${isActive ? 'checked' : ''}>
+                                    <span class="component-toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="component-modal-footer">
+                    <button type="button" class="component-button component-button--h40" data-action="closeModal">
+                        <span>${__('btn_cancel')}</span>
+                    </button>
+                    <button type="button" class="component-button component-button--h40 component-button--primary" data-action="submitCampaignForm">
+                        <span>${__('btn_save')}</span>
+                    </button>
+                </div>
+            `;
+        }
+    },
+    confirmDeleteCampaign: {
+        template: (data = {}) => {
+            const uuid = data.uuid || '';
+            const name = data.name || '';
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h3 class="component-modal-title">${__('modal_delete_campaign_title')}</h3>
+                    <p class="component-modal-desc">${__('modal_delete_campaign_desc')}</p>
+                </div>
+                <div class="component-modal-body">
+                    <div class="component-badge component-badge--sm">
+                        <span class="material-symbols-rounded">campaign</span>
+                        <span>${escapeHTML(name)}</span>
+                    </div>
+                </div>
+                <div class="component-modal-footer">
+                    <button type="button" class="component-button component-button--h40" data-action="closeModal">
+                        <span>${__('btn_cancel')}</span>
+                    </button>
+                    <button type="button" class="component-button component-button--h40 component-button--danger" data-action="confirmDeleteCampaignBtn" data-uuid="${escapeHTML(uuid)}">
+                        <span>${__('btn_delete')}</span>
+                    </button>
                 </div>
             `;
         }

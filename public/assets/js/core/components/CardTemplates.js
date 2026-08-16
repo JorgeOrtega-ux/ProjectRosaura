@@ -107,18 +107,34 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
     },
 
     nativeAdCard: (adData = {}, config = {}) => {
+        if (adData.provider === 'custom' && adData.customHtml) {
+            return `
+                <div class="component-gallery-card component-gallery-card--custom-ad" data-ad-card="true" data-privacy="ad">
+                    <div class="component-custom-ad-container">
+                        ${adData.customHtml}
+                    </div>
+                </div>
+            `;
+        }
+
         const basePath = config.basePath || '';
         const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
-        const sponsoredText = __('sponsored') || 'Patrocinado';
-        const promoBtn = __('ad_card_promo_btn') || 'Ver Planes';
+        const brandOrBadge = escapeHTML(adData.name || adData.title || adData.badge || __('sponsored'));
+        const rawCta = adData.ctaText || adData.cta_text || 'ad_card_promo_btn';
+        const promoBtn = (typeof __(rawCta) === 'string' && __(rawCta) !== rawCta) ? __(rawCta) : escapeHTML(rawCta);
+        const rawTargetUrl = adData.ctaUrl || adData.target_url || `${basePath}/upgrade`;
+        const fullTargetUrl = (rawTargetUrl.startsWith('http://') || rawTargetUrl.startsWith('https://'))
+            ? rawTargetUrl
+            : `${window.location.origin}${rawTargetUrl.startsWith('/') ? '' : '/'}${rawTargetUrl}`;
+        const targetUrl = escapeHTML(fullTargetUrl);
 
         const fallbackImg = basePath + '/assets/img/fallbacks/canvas-default.png';
-        const srcUrl = adData.thumbnail_url ? escapeHTML(adData.thumbnail_url) : fallbackImg;
+        const srcUrl = adData.thumbnail_url ? escapeHTML(adData.thumbnail_url) : (adData.imageUrl ? escapeHTML(adData.imageUrl) : fallbackImg);
 
         const imgHtml = `
-            <img src="${srcUrl}" 
-                 alt="${sponsoredText}" 
-                 class="component-gallery-card__image image-lazy-fade" 
+            <img class="component-gallery-card__image image-lazy-fade" 
+                 src="${srcUrl}" 
+                 alt="${brandOrBadge}" 
                  loading="lazy" 
                  decoding="async" 
                  onload="this.classList.add('image-loaded')"
@@ -127,18 +143,18 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         const badgeHtml = `
             <div class="component-badge component-badge--glass component-badge--absolute-tr">
                 <span class="material-symbols-rounded">campaign</span>
-                <span>${sponsoredText}</span>
+                <span>${brandOrBadge}</span>
             </div>
         `;
 
-        const navAction = `data-nav="${basePath}/upgrade"`;
+        const clickAction = `onclick="window.open('${targetUrl}', '_blank', 'noopener,noreferrer')"`;
 
         return `
-            <div class="component-gallery-card" data-ad-card="true" data-privacy="ad">
+            <div class="component-gallery-card component-gallery-card--ad" data-ad-card="true" data-privacy="ad" ${clickAction}>
                 ${imgHtml}
                 ${badgeHtml}
 
-                <div ${navAction} class="component-gallery-link">
+                <div class="component-gallery-link" ${clickAction}>
                     <span class="component-badge component-badge--glass">
                         <span>${promoBtn}</span>
                         <span class="material-symbols-rounded">arrow_forward</span>
