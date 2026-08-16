@@ -195,7 +195,9 @@ export const ApiRoutes = {
         CreateSetupSession: 'stripe.create_setup_session',
         GetPaymentMethods: 'stripe.get_payment_methods',
         DeletePaymentMethod: 'stripe.delete_payment_method',
-        ToggleAutoRenewal: 'stripe.toggle_auto_renewal'
+        CancelSubscription: 'stripe.cancel_or_reactivate_subscription',
+        CancelOrReactivateSubscription: 'stripe.cancel_or_reactivate_subscription',
+        ToggleAutoRenewal: 'stripe.cancel_or_reactivate_subscription'
     },
     Store: {
         GetBalance: 'store.get_balance',

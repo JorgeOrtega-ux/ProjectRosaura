@@ -189,7 +189,6 @@ export class SearchController {
         if (!grid) return;
 
         if (window.app && typeof window.app.initModules === 'function') window.app.initModules(grid);
-        else if (window.uiUtils && typeof window.uiUtils.initDropdowns === 'function') window.uiUtils.initDropdowns(grid);
     }
 
     bindEvents() {

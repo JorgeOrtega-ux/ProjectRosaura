@@ -9,6 +9,7 @@ export class BillingController {
         this.abortController = null;
         this.subscriptionArea = null;
         this.paymentMethodsArea = null;
+        this.currentSubscription = null;
 
         this.handleClickBound = this.handleClick.bind(this);
     }
@@ -54,8 +55,8 @@ export class BillingController {
         const action = btn.dataset.action;
         if (action === 'addNewCard') {
             this.handleAddNewCard(btn);
-        } else if (action === 'toggleAutoRenew') {
-            this.handleToggleAutoRenew(btn);
+        } else if (action === 'cancelOrReactivateSubscription' || action === 'toggleAutoRenew') {
+            this.handleCancelOrReactivateSubscription(btn);
         } else if (action === 'deletePaymentMethod') {
             this.handleDeletePaymentMethod(btn);
         }
@@ -87,6 +88,7 @@ export class BillingController {
 
     updateSubscriptionData(data) {
         if (!this.subscriptionArea) return;
+        this.currentSubscription = data;
 
         let tierName = data.tier_name || '';
         if (!tierName && window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
@@ -134,7 +136,7 @@ export class BillingController {
 
                 const renewalBtn = renewalContainer.querySelector('[data-ref="sub-renewal-btn"]');
                 if (renewalBtn) {
-                    const actionText = cancelAtEnd ? (window.__('btn_reactivate_sub')) : (window.__('btn_cancel_renew'));
+                    const actionText = cancelAtEnd ? (window.__('btn_reactivate_sub')) : (window.__('btn_cancel_sub') || window.__('btn_cancel_renew'));
                     renewalBtn.textContent = actionText;
                     renewalBtn.dataset.cancelState = !cancelAtEnd;
                     if (cancelAtEnd) {
@@ -285,23 +287,63 @@ export class BillingController {
         }
     }
 
-    async handleToggleAutoRenew(btn) {
-        setButtonLoading(btn);
+    async handleCancelOrReactivateSubscription(btn) {
         const cancelStateStr = btn.dataset.cancelState;
         const cancelAtPeriodEnd = cancelStateStr === 'true';
 
+        let dateVal = '';
+        if (this.currentSubscription && this.currentSubscription.current_period_end) {
+            let dateObj;
+            if (typeof this.currentSubscription.current_period_end === 'string' && isNaN(Number(this.currentSubscription.current_period_end))) {
+                dateObj = new Date(this.currentSubscription.current_period_end.replace(' ', 'T'));
+            } else {
+                dateObj = new Date(Number(this.currentSubscription.current_period_end) * 1000);
+            }
+            if (!isNaN(dateObj.getTime())) {
+                dateVal = dateObj.toLocaleDateString();
+            }
+        }
+
+        let tierName = (this.currentSubscription && this.currentSubscription.tier_name) || '';
+        if (!tierName && window.APP_TIERS && Array.isArray(window.APP_TIERS) && this.currentSubscription) {
+            const found = window.APP_TIERS.find(t => parseInt(t.tier_level, 10) === parseInt(this.currentSubscription.tier, 10));
+            if (found && found.name) tierName = found.name;
+        }
+
+        if (cancelAtPeriodEnd) {
+            if (!window.modalSystem) return;
+
+            const descHtml = dateVal
+                ? `Si cancelas tu suscripción, mantendrás todos los beneficios${tierName ? ` del Plan <strong>${tierName}</strong>` : ''} hasta el <strong>${dateVal}</strong>. A partir de esa fecha, no se te cobrará nada más y tu cuenta volverá al plan gratuito.`
+                : (window.__('desc_cancel_subscription') || 'Si cancelas tu suscripción, mantendrás tus beneficios hasta el fin del periodo y ya no se te cobrará.');
+
+            const confirm = await window.modalSystem.show('confirmAction', {
+                titleKey: 'title_cancel_subscription',
+                descHtml: descHtml,
+                confirmClass: 'component-button--danger',
+                confirmKey: 'btn_confirm_cancel_subscription'
+            });
+
+            if (!confirm || !confirm.confirmed) {
+                return;
+            }
+        }
+
+        setButtonLoading(btn);
+
         try {
-            const response = await this.api.post(ApiRoutes.Stripe.ToggleAutoRenewal, {
+            const route = ApiRoutes.Stripe.CancelOrReactivateSubscription || ApiRoutes.Stripe.CancelSubscription || ApiRoutes.Stripe.ToggleAutoRenewal;
+            const response = await this.api.post(route, {
                 cancel_at_period_end: cancelAtPeriodEnd
             }, this.abortController.signal);
 
             if (response.success) {
-                const msgKey = cancelAtPeriodEnd ? 'renewal_cancelled_success' : 'renewal_reactivated_success';
-                showMessage(window.__(msgKey), 'success');
+                const msgKey = cancelAtPeriodEnd ? 'subscription_cancelled_success' : 'subscription_reactivated_success';
+                showMessage(window.__(msgKey) || (cancelAtPeriodEnd ? 'Suscripción cancelada con éxito.' : 'Suscripción reactivada con éxito.'), 'success');
 
                 this.loadSubscriptionStatus();
             } else {
-                showMessage(response.message || window.__('err_toggle_auto_renew'), 'error');
+                showMessage(response.message || window.__('err_cancel_subscription') || window.__('err_toggle_auto_renew'), 'error');
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
@@ -312,6 +354,10 @@ export class BillingController {
                 restoreButton(btn);
             }
         }
+    }
+
+    async handleToggleAutoRenew(btn) {
+        return this.handleCancelOrReactivateSubscription(btn);
     }
 
     async handleAddNewCard(btn) {

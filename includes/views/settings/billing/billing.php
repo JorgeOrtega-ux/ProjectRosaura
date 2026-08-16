@@ -58,7 +58,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                 </div>
                             </div>
 
-                            <!-- Renovación Automática -->
+                            <!-- Estado de Suscripción / Cancelación -->
                             <div data-ref="sub-renewal-container" class="disabled">
                                 <hr class="component-divider">
                                 <div class="component-group-item">
@@ -67,13 +67,13 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                             <span class="material-symbols-rounded">event_repeat</span>
                                         </div>
                                         <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('auto_renewal'); ?></h2>
+                                            <h2 class="component-card__title"><?php echo __('subscription_status_title'); ?></h2>
                                             <p class="component-card__description" data-ref="sub-renewal-desc"><?php echo __('lbl_loading'); ?></p>
                                         </div>
                                     </div>
                                     <div class="component-card__actions component-card__actions--end">
-                                        <button type="button" class="component-button component-button--h36" data-action="toggleAutoRenew" data-ref="sub-renewal-btn">
-                                            <?php echo __('btn_cancel_renew'); ?>
+                                        <button type="button" class="component-button component-button--h36" data-action="cancelOrReactivateSubscription" data-ref="sub-renewal-btn">
+                                            <?php echo __('btn_cancel_sub'); ?>
                                         </button>
                                     </div>
                                 </div>

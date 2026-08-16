@@ -66,8 +66,18 @@ class StripeController extends BaseController {
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
+    public function cancel_or_reactivate_subscription($input) {
+        try { return $this->respond($this->stripeServices->cancelOrReactivateSubscription($input)); }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function cancel_subscription($input) {
+        try { return $this->respond($this->stripeServices->cancelOrReactivateSubscription($input)); }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
     public function toggle_auto_renewal($input) {
-        try { return $this->respond($this->stripeServices->toggleAutoRenewal($input)); }
+        try { return $this->respond($this->stripeServices->cancelOrReactivateSubscription($input)); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 

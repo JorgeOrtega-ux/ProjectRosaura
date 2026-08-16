@@ -1536,7 +1536,7 @@ class CanvasViewService {
             'canvasUuid' => $canvasUuid,
             'canvasOwnerId' => $canvasOwnerId,
             'ownerTier' => $ownerTier,
-            'isAdmin' => $isAdmin,
+            'isOwner' => ($canvasOwnerId === (int)$userId),
             'roleId' => $roleId,
             'roleData' => $roleData,
             'rolePermissions' => $rolePermissions,
@@ -1655,12 +1655,16 @@ class CanvasViewService {
             return ['unauthorized' => true, 'redirect' => (defined('APP_URL') ? APP_URL : '') . '/canvases/manage'];
         }
 
-        $userId = $_SESSION['active_account'] ?? $_SESSION['user_id'] ?? null;
+        $userId = $_SESSION['active_account_id'] ?? $_SESSION['active_account'] ?? $_SESSION['user_id'] ?? null;
         $db = new DatabaseManager();
         $pdoCanvases = $db->getConnection(defined('\App\Core\System\DatabaseConstants::CONN_CANVASES') ? \App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases');
 
-        $stmt = $pdoCanvases->prepare("SELECT id, uuid, owner_id as user_id, is_subscription_locked FROM canvases WHERE uuid = :uuid OR id = :uuid_alt LIMIT 1");
-        $stmt->execute(['uuid' => $canvasUuid, 'uuid_alt' => $canvasUuid]);
+        $isNumeric = is_numeric($canvasUuid);
+        $query = $isNumeric 
+            ? "SELECT id, uuid, owner_id, is_subscription_locked FROM canvases WHERE id = :id LIMIT 1"
+            : "SELECT id, uuid, owner_id, is_subscription_locked FROM canvases WHERE uuid = :uuid LIMIT 1";
+        $stmt = $pdoCanvases->prepare($query);
+        $stmt->execute($isNumeric ? ['id' => (int)$canvasUuid] : ['uuid' => $canvasUuid]);
         $canvas = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         if (!$canvas || !empty($canvas['is_subscription_locked'])) {
@@ -1668,6 +1672,8 @@ class CanvasViewService {
         }
 
         $canvasId = (int)$canvas['id'];
+        $canvasOwnerId = (int)($canvas['owner_id'] ?? 0);
+        $isOwner = ($userId !== null && (int)$userId === $canvasOwnerId);
         $canManageSanctions = $isOwner || $this->hasCanvasPermission($pdoCanvases, $canvasId, (int)$userId, CanvasPermissionsConstants::MANAGE_SANCTIONS);
         if (!$canManageSanctions) {
             return ['unauthorized' => true, 'redirect' => (defined('APP_URL') ? APP_URL : '') . '/canvases/manage'];

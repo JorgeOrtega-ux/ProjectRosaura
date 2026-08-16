@@ -1,5 +1,9 @@
 import { SkeletonTemplates } from '../components/SkeletonTemplates.js';
 
+/* ==========================================================================
+   1. UI FEEDBACK & LOADING STATES
+   ========================================================================== */
+
 function showMessage(message, type = 'success') {
     if (window.appInstance && typeof window.appInstance.showToast === 'function') {
         window.appInstance.showToast(message, type);
@@ -7,10 +11,7 @@ function showMessage(message, type = 'success') {
 }
 
 function setButtonLoading(btn, loadingText = '') {
-    if (!btn) return;
-    
-    // Avoid setting loading multiple times if already loading
-    if (btn.classList.contains('disabled-interaction')) return;
+    if (!btn || btn.classList.contains('disabled-interaction')) return;
     
     btn.classList.add('disabled-interaction');
     
@@ -63,6 +64,27 @@ function formatNumber(num) {
     return Number(num).toLocaleString('en-US');
 }
 
+/* ==========================================================================
+   2. TIERS & FEATURE ACCESS
+   ========================================================================== */
+
+function tierHasFeature(tierObj, featureKey) {
+    if (!tierObj) return false;
+    if (tierObj.is_active !== undefined && (parseInt(tierObj.is_active, 10) === 0 || tierObj.is_active === false)) {
+        return false;
+    }
+    return tierObj[featureKey] === 1 || 
+           tierObj['feat_' + featureKey] === 1 || 
+           tierObj[featureKey] === true || 
+           tierObj['feat_' + featureKey] === true;
+}
+
+function findTierForFeature(featureKey) {
+    if (!window.APP_TIERS || !Array.isArray(window.APP_TIERS)) return null;
+    const sorted = [...window.APP_TIERS].sort((a, b) => parseInt(a.tier_level, 10) - parseInt(b.tier_level, 10));
+    return sorted.find(tier => tierHasFeature(tier, featureKey)) || null;
+}
+
 function getDynamicTierName(tierLevel) {
     const level = parseInt(tierLevel, 10);
     if (window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
@@ -73,12 +95,7 @@ function getDynamicTierName(tierLevel) {
 }
 
 function getLowestTierForFeature(featureKey) {
-    if (!window.APP_TIERS || !Array.isArray(window.APP_TIERS)) return '';
-    const sorted = [...window.APP_TIERS].sort((a, b) => parseInt(a.tier_level, 10) - parseInt(b.tier_level, 10));
-    const match = sorted.find(t => {
-        if (t.is_active !== undefined && (parseInt(t.is_active, 10) === 0 || t.is_active === false)) return false;
-        return t[featureKey] === 1 || t['feat_' + featureKey] === 1 || t[featureKey] === true || t['feat_' + featureKey] === true;
-    });
+    const match = findTierForFeature(featureKey);
     return match ? match.name : '';
 }
 
@@ -89,8 +106,7 @@ function getLockDetails(featureKey, elementType = 'button') {
     if (window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
         const userTierObj = window.APP_TIERS.find(t => parseInt(t.tier_level, 10) === userTier);
         if (userTierObj) {
-            hasFeature = userTierObj[featureKey] === 1 || userTierObj['feat_' + featureKey] === 1 || 
-                         userTierObj[featureKey] === true || userTierObj['feat_' + featureKey] === true;
+            hasFeature = tierHasFeature(userTierObj, featureKey);
         }
     }
 
@@ -103,19 +119,9 @@ function getLockDetails(featureKey, elementType = 'button') {
         };
     }
 
-    let requiredTierLevel = 1;
-    let requiredTierName = 'Pro';
-    if (window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
-        const sorted = [...window.APP_TIERS].sort((a, b) => parseInt(a.tier_level, 10) - parseInt(b.tier_level, 10));
-        const match = sorted.find(t => {
-            if (t.is_active !== undefined && (parseInt(t.is_active, 10) === 0 || t.is_active === false)) return false;
-            return t[featureKey] === 1 || t['feat_' + featureKey] === 1 || t[featureKey] === true || t['feat_' + featureKey] === true;
-        });
-        if (match) {
-            requiredTierLevel = parseInt(match.tier_level, 10);
-            requiredTierName = match.name;
-        }
-    }
+    const matchedTier = findTierForFeature(featureKey);
+    const requiredTierLevel = matchedTier ? parseInt(matchedTier.tier_level, 10) : 1;
+    const requiredTierName = matchedTier ? matchedTier.name : 'Pro';
 
     let classStr = 'premium-locked';
     if (elementType === 'button') {
@@ -136,6 +142,10 @@ function getLockDetails(featureKey, elementType = 'button') {
         badgeHtml
     };
 }
+
+/* ==========================================================================
+   3. COLOR & COORDINATE CONVERSION
+   ========================================================================== */
 
 function hexToHsv(hex) {
     hex = hex.replace(/^#/, '');
@@ -246,14 +256,74 @@ function localInputFormatToUtcString(localString) {
 }
 
 function isDarkMode() {
-    const html = document.documentElement;
-    const body = document.body;
-    return html.classList.contains('dark-theme') || 
-           html.classList.contains('dark') || 
-           html.getAttribute('data-theme') === 'dark' ||
-           body.classList.contains('dark-theme') || 
-           body.classList.contains('dark') || 
-           body.getAttribute('data-theme') === 'dark';
+    const root = document.documentElement;
+    return root.classList.contains('dark-theme') || 
+           root.classList.contains('dark') || 
+           root.getAttribute('data-theme') === 'dark' ||
+           (document.body && (document.body.classList.contains('dark-theme') || document.body.getAttribute('data-theme') === 'dark'));
+}
+
+/* ==========================================================================
+   4. CAROUSEL & SCROLL COORDINATION
+   ========================================================================== */
+
+function updateNavButtons(carousel, leftBtn, rightBtn) {
+    if (!carousel) return;
+    if (leftBtn) {
+        leftBtn.classList.toggle('disabled', carousel.scrollLeft <= 5);
+    }
+    if (rightBtn) {
+        const canScrollRight = carousel.scrollWidth > carousel.clientWidth && 
+                               Math.ceil(carousel.scrollLeft + carousel.clientWidth) < carousel.scrollWidth - 5;
+        rightBtn.classList.toggle('disabled', !canScrollRight);
+    }
+}
+
+function bindDragToScroll(carousel) {
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+    let isDragging = false;
+
+    carousel.addEventListener('mousedown', (e) => {
+        if (e.target.closest('button, a, input, select, .component-tab-close')) return;
+        isDown = true;
+        isDragging = false;
+        startX = e.pageX - carousel.offsetLeft;
+        scrollLeft = carousel.scrollLeft;
+    });
+
+    carousel.addEventListener('mouseleave', () => {
+        isDown = false;
+        carousel.classList.remove('is-dragging');
+    });
+
+    carousel.addEventListener('mouseup', () => {
+        isDown = false;
+        carousel.classList.remove('is-dragging');
+        setTimeout(() => { isDragging = false; }, 50);
+    });
+
+    carousel.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - carousel.offsetLeft;
+        const walk = (x - startX) * 2;
+        if (Math.abs(walk) > 5) {
+            isDragging = true;
+            carousel.classList.add('is-dragging');
+        }
+        if (isDragging) {
+            carousel.scrollLeft = scrollLeft - walk;
+        }
+    });
+
+    carousel.addEventListener('click', (e) => {
+        if (isDragging) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }, { capture: true });
 }
 
 function initCarouselScroll(wrapper) {
@@ -265,19 +335,7 @@ function initCarouselScroll(wrapper) {
 
     if (!carousel) return null;
 
-    const updateButtons = () => {
-        if (leftBtn) {
-            if (carousel.scrollLeft > 5) leftBtn.classList.remove('disabled');
-            else leftBtn.classList.add('disabled');
-        }
-        if (rightBtn) {
-            if (carousel.scrollWidth > carousel.clientWidth && Math.ceil(carousel.scrollLeft + carousel.clientWidth) < carousel.scrollWidth - 5) {
-                rightBtn.classList.remove('disabled');
-            } else {
-                rightBtn.classList.add('disabled');
-            }
-        }
-    };
+    const updateButtons = () => updateNavButtons(carousel, leftBtn, rightBtn);
 
     if (leftBtn && !leftBtn.hasAttribute('data-carousel-bound')) {
         leftBtn.setAttribute('data-carousel-bound', 'true');
@@ -301,57 +359,17 @@ function initCarouselScroll(wrapper) {
         carousel.setAttribute('data-carousel-bound', 'true');
         carousel.addEventListener('scroll', updateButtons);
         window.addEventListener('resize', updateButtons);
-
-        let isDown = false;
-        let startX;
-        let scrollLeft;
-        let isDragging = false;
-
-        carousel.addEventListener('mousedown', (e) => {
-            if (e.target.closest('button, a, input, select, .component-tab-close')) return;
-            isDown = true;
-            isDragging = false;
-            startX = e.pageX - carousel.offsetLeft;
-            scrollLeft = carousel.scrollLeft;
-        });
-
-        carousel.addEventListener('mouseleave', () => {
-            isDown = false;
-            carousel.classList.remove('is-dragging');
-        });
-
-        carousel.addEventListener('mouseup', () => {
-            isDown = false;
-            carousel.classList.remove('is-dragging');
-            setTimeout(() => { isDragging = false; }, 50);
-        });
-
-        carousel.addEventListener('mousemove', (e) => {
-            if (!isDown) return;
-            e.preventDefault();
-            const x = e.pageX - carousel.offsetLeft;
-            const walk = (x - startX) * 2;
-            if (Math.abs(walk) > 5) {
-                isDragging = true;
-                carousel.classList.add('is-dragging');
-            }
-            if (isDragging) {
-                carousel.scrollLeft = scrollLeft - walk;
-            }
-        });
-
-        carousel.addEventListener('click', (e) => {
-            if (isDragging) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-        }, { capture: true });
+        bindDragToScroll(carousel);
     }
 
     setTimeout(updateButtons, 100);
 
     return { updateButtons };
 }
+
+/* ==========================================================================
+   5. SKELETONS & VIRTUAL GRID
+   ========================================================================== */
 
 function appendInfiniteScrollSkeletons(container, count = 4, gridSelector = '.component-grid') {
     if (!container) return;
@@ -424,6 +442,16 @@ function setupGridInfiniteScroll({ container, hasMore, currentObserver = null, o
     return observer;
 }
 
+/* ==========================================================================
+   6. DROPDOWN & MODULE VISIBILITY
+   ========================================================================== */
+
+function setModuleActiveState(moduleEl, isActive) {
+    if (!moduleEl) return;
+    moduleEl.classList.toggle('active', isActive);
+    moduleEl.classList.toggle('disabled', !isActive);
+}
+
 function toggleDropdown(target, triggerEl = null) {
     if (!target && triggerEl) {
         target = triggerEl.getAttribute('data-target');
@@ -437,15 +465,12 @@ function toggleDropdown(target, triggerEl = null) {
         if (!moduleEl) return;
         const isCurrentlyActive = !moduleEl.classList.contains('disabled');
         if (isCurrentlyActive) {
-            moduleEl.classList.remove('active');
-            moduleEl.classList.add('disabled');
+            setModuleActiveState(moduleEl, false);
         } else {
             document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
-                el.classList.remove('active');
-                el.classList.add('disabled');
+                setModuleActiveState(el, false);
             });
-            moduleEl.classList.remove('disabled');
-            moduleEl.classList.add('active');
+            setModuleActiveState(moduleEl, true);
         }
     }
 }
@@ -459,8 +484,7 @@ function closeDropdown(target) {
             ? document.querySelector(`[data-module="${target}"]`) 
             : target;
         if (moduleEl) {
-            moduleEl.classList.remove('active');
-            moduleEl.classList.add('disabled');
+            setModuleActiveState(moduleEl, false);
         }
     }
 }
@@ -471,11 +495,14 @@ function closeAllDropdowns(except = null) {
     } else {
         document.querySelectorAll('.component-module--dropdown:not(.disabled)').forEach(el => {
             if (except && el === except) return;
-            el.classList.remove('active');
-            el.classList.add('disabled');
+            setModuleActiveState(el, false);
         });
     }
 }
+
+/* ==========================================================================
+   7. INPUT & TOOLBAR HELPERS
+   ========================================================================== */
 
 async function copyToClipboard(text, successMsg = null, errorMsg = null) {
     if (!text && text !== '') return false;
@@ -523,20 +550,14 @@ function toggleSearchToolbar(toolbarSelector = '[data-ref="search-toolbar"]', in
         if (window.appInstance && typeof window.appInstance.closeModule === 'function') {
             window.appInstance.closeModule(filtersModule);
         } else {
-            filtersModule.classList.add('disabled');
-            filtersModule.classList.remove('active');
+            setModuleActiveState(filtersModule, false);
         }
     }
 
-    if (searchToolbar.classList.contains('disabled')) {
-        searchToolbar.classList.remove('disabled');
-        searchToolbar.classList.add('active');
-        if (searchInput) {
-            setTimeout(() => searchInput.focus(), 50);
-        }
-    } else {
-        searchToolbar.classList.remove('active');
-        searchToolbar.classList.add('disabled');
+    const isClosed = searchToolbar.classList.contains('disabled');
+    setModuleActiveState(searchToolbar, isClosed);
+    if (isClosed && searchInput) {
+        setTimeout(() => searchInput.focus(), 50);
     }
 }
 
@@ -548,8 +569,7 @@ function handleOutsideSearchToolbarClick(e, searchBtn = null, toolbarSelector = 
     const isSearchBtn = searchBtn && (e.target === searchBtn || e.target.closest('[data-action$="Search"], [data-ref="btn-toggle-search"]'));
 
     if (!isInsideToolbar && !isSearchBtn) {
-        searchToolbar.classList.remove('active');
-        searchToolbar.classList.add('disabled');
+        setModuleActiveState(searchToolbar, false);
     }
 }
 
@@ -559,10 +579,8 @@ function openFilterSubMenu(btn, mainRef = 'menuMainFilters') {
     const targetMenu = document.querySelector(`[data-ref="${targetId}"]`);
     const mainFilters = document.querySelector(`[data-ref="${mainRef}"]`);
     if (targetMenu && mainFilters) {
-        mainFilters.classList.add('disabled');
-        mainFilters.classList.remove('active');
-        targetMenu.classList.remove('disabled');
-        targetMenu.classList.add('active');
+        setModuleActiveState(mainFilters, false);
+        setModuleActiveState(targetMenu, true);
     }
 }
 
@@ -574,14 +592,14 @@ function backToMainFilters(mainRef = 'menuMainFilters', moduleRef = null) {
             : `.component-menu:not([data-ref="${mainRef}"])`
     );
     if (mainFilters) {
-        subMenus.forEach(menu => {
-            menu.classList.add('disabled');
-            menu.classList.remove('active');
-        });
-        mainFilters.classList.remove('disabled');
-        mainFilters.classList.add('active');
+        subMenus.forEach(menu => setModuleActiveState(menu, false));
+        setModuleActiveState(mainFilters, true);
     }
 }
+
+/* ==========================================================================
+   8. CLIENT-SIDE SEARCH & FILTERING
+   ========================================================================== */
 
 function applyLocalTableSearch({
     inputRef = 'search-input',
@@ -728,6 +746,8 @@ export {
     renderSkeleton, 
     escapeHTML, 
     formatNumber, 
+    tierHasFeature,
+    findTierForFeature,
     getDynamicTierName, 
     getLowestTierForFeature,
     getLockDetails,

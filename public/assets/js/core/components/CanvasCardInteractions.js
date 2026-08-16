@@ -555,8 +555,6 @@ export class CanvasCardInteractions {
         
         if (window.app && typeof window.app.initModules === 'function') {
             window.app.initModules(wrapper);
-        } else if (window.uiUtils && typeof window.uiUtils.initDropdowns === 'function') {
-            window.uiUtils.initDropdowns(wrapper);
         }
         
         if (window.router && typeof window.router.bindLinks === 'function') {

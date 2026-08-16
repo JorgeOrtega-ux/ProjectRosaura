@@ -921,16 +921,48 @@ return [
             ],
         ],
     ],
-    'stripe.toggle_auto_renewal' => [
+    'stripe.cancel_or_reactivate_subscription' => [
         'controller' => 'App\\Api\\Controllers\\Stripe\\StripeController',
-        'action' => 'toggle_auto_renewal',
+        'action' => 'cancel_or_reactivate_subscription',
         'middleware' => [
             [
                 'type' => 'Telemetry',
             ],
             [
                 'type' => 'RateLimit',
-                'key' => 'stripe_toggle_renewal',
+                'key' => 'stripe_cancel_reactivate_subscription',
+                'max' => 5,
+                'time' => 5,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'stripe.cancel_subscription' => [
+        'controller' => 'App\\Api\\Controllers\\Stripe\\StripeController',
+        'action' => 'cancel_or_reactivate_subscription',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'stripe_cancel_reactivate_subscription',
+                'max' => 5,
+                'time' => 5,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'stripe.toggle_auto_renewal' => [
+        'controller' => 'App\\Api\\Controllers\\Stripe\\StripeController',
+        'action' => 'cancel_or_reactivate_subscription',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'stripe_cancel_reactivate_subscription',
                 'max' => 5,
                 'time' => 5,
                 'identifier' => 'user_id',

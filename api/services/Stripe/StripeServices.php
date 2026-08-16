@@ -1324,7 +1324,7 @@ class StripeServices {
         ];
     }
 
-    public function toggleAutoRenewal(array $input): array {
+    public function cancelOrReactivateSubscription(array $input): array {
         if (!$this->sessionManager->isLoggedIn()) {
             http_response_code(401);
             return ['success' => false, 'message_key' => 'error.unauthorized'];
@@ -1334,12 +1334,12 @@ class StripeServices {
         $cancelAtPeriodEnd = isset($input['cancel_at_period_end']) ? filter_var($input['cancel_at_period_end'], FILTER_VALIDATE_BOOLEAN) : false;
 
         if (!$cancelAtPeriodEnd) {
-            // User is trying to RE-ENABLE auto-renewal. Check if they have a valid payment method attached.
+            // User is trying to REACTIVATE subscription. Check if they have a valid payment method attached.
             $pms = $this->getPaymentMethods([]);
             if ($pms['success'] && empty($pms['data'])) {
                 return [
                     'success' => false,
-                    'message' => 'Debes agregar una tarjeta de pago antes de activar la renovación automática.'
+                    'message' => __('err_reactivate_missing_card') ?? 'Debes agregar una tarjeta de pago antes de reactivar tu suscripción.'
                 ];
             }
         }
@@ -1356,7 +1356,8 @@ class StripeServices {
                 'cancel_at_period_end' => $cancelAtPeriodEnd
             ]);
 
-            Logger::info("Stripe Subscription auto-renewal toggled", [
+            $actionName = $cancelAtPeriodEnd ? 'canceled' : 'reactivated';
+            Logger::info("Stripe Subscription {$actionName}", [
                 'user_id' => $userId,
                 'subscription_id' => $updatedSub->id,
                 'cancel_at_period_end' => $cancelAtPeriodEnd
@@ -1367,12 +1368,16 @@ class StripeServices {
                 'cancel_at_period_end' => $updatedSub->cancel_at_period_end
             ];
         } catch (\Exception $e) {
-            Logger::error("Stripe API Error toggling auto-renewal", [
+            Logger::error("Stripe API Error updating subscription cancellation state", [
                 'user_id' => $userId,
                 'error' => $e->getMessage()
             ]);
             return ['success' => false, 'message_key' => 'stripe.api_error', 'message' => __('err_stripe_api')];
         }
+    }
+
+    public function toggleAutoRenewal(array $input): array {
+        return $this->cancelOrReactivateSubscription($input);
     }
 
     public function deletePaymentMethod(array $input): array {

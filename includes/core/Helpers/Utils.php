@@ -7,6 +7,57 @@ class Utils {
     private static $canvasSizes = null;
     private static $sanctionReasons = null;
 
+    /**
+     * Centralized check to determine if an IP address belongs to a trusted proxy or local/private network.
+     */
+    public static function isTrustedProxy(?string $ip = null): bool {
+        $targetIp = $ip ?? ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
+        $trustedProxies = ['127.0.0.1', '::1']; 
+        
+        $envProxies = EnvLoader::get('TRUSTED_PROXIES', '');
+        if (!empty($envProxies)) {
+            $trustedProxies = array_merge($trustedProxies, array_map('trim', explode(',', $envProxies)));
+        }
+
+        return in_array($targetIp, $trustedProxies, true) 
+            || filter_var($targetIp, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
+    }
+
+    /**
+     * Centralized normalization of storage paths (removing /public/storage/ prefixes and duplicate slashes).
+     */
+    public static function normalizeStoragePath(string $path): string {
+        $clean = preg_replace('#^/?public/storage/#', '', ltrim($path, '/'));
+        return preg_replace('#/+#', '/', ltrim($clean, '/'));
+    }
+
+    /**
+     * Parses remember token cookies and returns a clean map of [userId => selector].
+     */
+    public static function parseRememberTokensCookie(?string $targetUserId = null): array {
+        $selectors = [];
+        if (isset($_COOKIE['remember_tokens'])) {
+            $tokensMap = json_decode($_COOKIE['remember_tokens'], true) ?: [];
+            if (is_array($tokensMap)) {
+                foreach ($tokensMap as $userId => $cookieVal) {
+                    if (!is_string($cookieVal)) continue;
+                    if ($targetUserId !== null && (string)$userId !== (string)$targetUserId) continue;
+
+                    $parts = explode(':', $cookieVal);
+                    if (!empty($parts[0])) {
+                        $selectors[(string)$userId] = $parts[0];
+                    }
+                }
+            }
+        } elseif (isset($_COOKIE['remember_token']) && is_string($_COOKIE['remember_token'])) {
+            $parts = explode(':', $_COOKIE['remember_token']);
+            if (!empty($parts[0])) {
+                $selectors['default'] = $parts[0];
+            }
+        }
+        return $selectors;
+    }
+
     public static function enforceIpRateLimit(string $actionKey, int $maxRequests = 60, int $windowSeconds = 60, bool $isJsonError = false): void {
         try {
             if (class_exists('\App\Config\Database\RedisCache')) {
@@ -14,7 +65,7 @@ class Utils {
                 $redis = $redisObj->getClient();
                 if ($redis) {
                     $ip = self::getIpAddress();
-                    $safeIp = md5(trim(explode(',', $ip)[0]));
+                    $safeIp = md5($ip);
                     $rlKey = "rate_limit:{$actionKey}:{$safeIp}";
                     
                     $currentCount = $redis->incr($rlKey);
@@ -169,12 +220,12 @@ class Utils {
             return self::generateProfilePicture('U');
         }
         
-        $path = preg_replace('#^/?public/storage/#', '', ltrim($path, '/'));
+        $cleanPath = self::normalizeStoragePath($path);
         
         $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
         $publicUrl = rtrim(EnvLoader::get('AWS_PUBLIC_URL', 'http://localhost:9000'), '/');
         
-        return $publicUrl . '/' . $bucket . '/' . ltrim($path, '/');
+        return $publicUrl . '/' . $bucket . '/' . $cleanPath;
     }
 
     public static function generateUUID() {
@@ -196,6 +247,7 @@ class Utils {
         $token = rtrim(strtr(base64_encode("RosauraUser:" . $payload), '+/', '-_'), '=');
         return '/avatar/' . $token;
     }
+
     public static function generateCSRFToken(SessionManagerInterface $sessionManager) {
         return $sessionManager->getCsrfToken();
     }
@@ -236,16 +288,8 @@ class Utils {
 
     public static function getIpAddress() {
         $realIp = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-        $trustedProxies = ['127.0.0.1', '::1']; 
-        
-        $envProxies = \App\Core\Helpers\EnvLoader::get('TRUSTED_PROXIES', '');
-        if (!empty($envProxies)) {
-            $trustedProxies = array_merge($trustedProxies, array_map('trim', explode(',', $envProxies)));
-        }
 
-        $isTrusted = in_array($realIp, $trustedProxies) || filter_var($realIp, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
-
-        if ($isTrusted) {
+        if (self::isTrustedProxy($realIp)) {
             if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
                 $ip = $_SERVER['HTTP_CF_CONNECTING_IP'];
             } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
@@ -377,7 +421,6 @@ class Utils {
         return true;
     }
 
-
     private static $fallbacks = [
         'avatar' => 'public/assets/img/fallbacks/avatar-default.png',
         'canvas' => 'public/assets/img/fallbacks/canvas-default.png',
@@ -442,74 +485,28 @@ class Utils {
         $mime = finfo_file($finfo, $file['tmp_name']);
         finfo_close($finfo);
 
-        if ($mime !== 'image/png' && $mime !== 'image/jpeg' && $mime !== 'image/webp') {
+        $allowedMimes = [
+            'image/png'  => '.png',
+            'image/jpeg' => '.jpg',
+            'image/webp' => '.webp'
+        ];
+
+        if (!isset($allowedMimes[$mime])) {
             return ['success' => false, 'message_key' => 'upload.invalid_format'];
         }
 
-        $extension = '.jpg';
-        if ($mime === 'image/png') $extension = '.png';
-        elseif ($mime === 'image/webp') $extension = '.webp';
-
+        $extension = $allowedMimes[$mime];
         $fileName = self::generateUUID() . $extension;
-        $imageRecreated = false;
-        $imageContent = null;
+        $imageContent = self::renderSanitizedImageContent($file['tmp_name'], $mime);
 
-        if ($mime === 'image/png') {
-            try {
-                $sourceImage = imagecreatefrompng($file['tmp_name']);
-                if ($sourceImage !== false) {
-                    imagealphablending($sourceImage, false);
-                    imagesavealpha($sourceImage, true);
-                    ob_start();
-                    imagepng($sourceImage);
-                    $imageContent = ob_get_clean();
-                    imagedestroy($sourceImage);
-                    $imageRecreated = true;
-                }
-            } catch (\Throwable $e) {
-                \App\Core\System\Logger::error('Image processing failed', ['format' => 'png', 'exception' => $e->getMessage()]);
-            }
-        } elseif ($mime === 'image/jpeg') {
-            try {
-                $sourceImage = imagecreatefromjpeg($file['tmp_name']);
-                if ($sourceImage !== false) {
-                    ob_start();
-                    imagejpeg($sourceImage, null, 90);
-                    $imageContent = ob_get_clean();
-                    imagedestroy($sourceImage);
-                    $imageRecreated = true;
-                }
-            } catch (\Throwable $e) {
-                \App\Core\System\Logger::error('Image processing failed', ['format' => 'jpeg', 'exception' => $e->getMessage()]);
-            }
-        } elseif ($mime === 'image/webp' && function_exists('imagecreatefromwebp')) {
-            try {
-                $sourceImage = imagecreatefromwebp($file['tmp_name']);
-                if ($sourceImage !== false) {
-                    imagealphablending($sourceImage, false);
-                    imagesavealpha($sourceImage, true);
-                    ob_start();
-                    if (function_exists('imagewebp')) {
-                        imagewebp($sourceImage, null, 90);
-                    }
-                    $imageContent = ob_get_clean();
-                    imagedestroy($sourceImage);
-                    $imageRecreated = true;
-                }
-            } catch (\Throwable $e) {
-                \App\Core\System\Logger::error('Image processing failed', ['format' => 'webp', 'exception' => $e->getMessage()]);
-            }
-        }
-
-        if ($imageRecreated && $imageContent !== null) {
+        if ($imageContent !== null) {
             $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
             $s3Client = self::getS3Client();
-            $s3Key = trim($uploadDir, '/') . '/' . $fileName;
-            $s3Key = preg_replace('#/+#', '/', ltrim($s3Key, '/'));
+            $s3Key = self::normalizeStoragePath($uploadDir . '/' . $fileName);
             try {
                 $s3Client->putObject([
                     'Bucket' => $bucket,
-                    'Key'    => ltrim($s3Key, '/'),
+                    'Key'    => $s3Key,
                     'Body'   => $imageContent,
                     'ContentType' => $mime
                 ]);
@@ -521,20 +518,63 @@ class Utils {
 
         return ['success' => false, 'message_key' => 'error.internal_server_error'];
     }
+
+    private static function renderSanitizedImageContent(string $tmpPath, string $mime): ?string {
+        try {
+            $sourceImage = false;
+            $hasAlpha = false;
+
+            if ($mime === 'image/png') {
+                $sourceImage = imagecreatefrompng($tmpPath);
+                $hasAlpha = true;
+            } elseif ($mime === 'image/jpeg') {
+                $sourceImage = imagecreatefromjpeg($tmpPath);
+            } elseif ($mime === 'image/webp' && function_exists('imagecreatefromwebp')) {
+                $sourceImage = imagecreatefromwebp($tmpPath);
+                $hasAlpha = true;
+            }
+
+            if ($sourceImage === false || $sourceImage === null) {
+                return null;
+            }
+
+            if ($hasAlpha) {
+                imagealphablending($sourceImage, false);
+                imagesavealpha($sourceImage, true);
+            }
+
+            ob_start();
+            if ($mime === 'image/png') {
+                imagepng($sourceImage);
+            } elseif ($mime === 'image/jpeg') {
+                imagejpeg($sourceImage, null, 90);
+            } elseif ($mime === 'image/webp' && function_exists('imagewebp')) {
+                imagewebp($sourceImage, null, 90);
+            }
+            $imageContent = ob_get_clean();
+            imagedestroy($sourceImage);
+
+            return $imageContent ?: null;
+        } catch (\Throwable $e) {
+            \App\Core\System\Logger::error('Image processing failed', ['format' => $mime, 'exception' => $e->getMessage()]);
+            return null;
+        }
+    }
+
     public static function deleteOldAvatar($oldPicPath) {
         if (!empty($oldPicPath)) {
             if (strpos($oldPicPath, 'fallbacks/avatar-default.png') !== false || strpos($oldPicPath, 'api/avatar.php') !== false) {
                 return false;
             }
             if (strpos($oldPicPath, 'uploaded/') !== false || strpos($oldPicPath, 'default/') !== false) {
-                $s3Key = preg_replace('#^/?public/storage/#', '', ltrim($oldPicPath, '/'));
+                $s3Key = self::normalizeStoragePath($oldPicPath);
                 
                 $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
                 $s3Client = self::getS3Client();
                 try {
                     $s3Client->deleteObject([
                         'Bucket' => $bucket,
-                        'Key'    => ltrim($s3Key, '/')
+                        'Key'    => $s3Key
                     ]);
                     return true;
                 } catch (\Throwable $e) {
@@ -544,6 +584,7 @@ class Utils {
         }
         return false;
     }
+
     public static function invalidateUserSessions(SessionManagerInterface $sessionManager, $userId, $flushAll = false, $selector = null) {
         if ($flushAll && method_exists($sessionManager, 'flushAllSessionsForUser')) {
             $sessionManager->flushAllSessionsForUser($userId);
@@ -560,17 +601,7 @@ class Utils {
         }
 
         if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
-            $realIp = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-            $trustedProxies = ['127.0.0.1', '::1']; 
-            
-            $envProxies = \App\Core\Helpers\EnvLoader::get('TRUSTED_PROXIES', '');
-            if (!empty($envProxies)) {
-                $trustedProxies = array_merge($trustedProxies, array_map('trim', explode(',', $envProxies)));
-            }
-
-            $isTrusted = in_array($realIp, $trustedProxies) || filter_var($realIp, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
-
-            if ($isTrusted) {
+            if (self::isTrustedProxy()) {
                 return true;
             }
         }
@@ -583,52 +614,15 @@ class Utils {
     }
 
     public static function getCurrentDeviceSelector($userId = null) {
-        if ($userId !== null && isset($_COOKIE['remember_tokens'])) {
-            $tokensMap = json_decode($_COOKIE['remember_tokens'], true) ?: [];
-            if (isset($tokensMap[$userId]) && is_string($tokensMap[$userId])) {
-                return explode(':', $tokensMap[$userId])[0];
-            }
-        } elseif (isset($_COOKIE['remember_tokens'])) {
-            $tokensMap = json_decode($_COOKIE['remember_tokens'], true) ?: [];
-            if (!empty($tokensMap)) {
-                $firstValue = reset($tokensMap);
-                if (is_string($firstValue)) {
-                    return explode(':', $firstValue)[0];
-                }
-            }
+        $tokens = self::parseRememberTokensCookie($userId);
+        if ($userId !== null && isset($tokens[(string)$userId])) {
+            return $tokens[(string)$userId];
         }
-
-        if (isset($_COOKIE['remember_token']) && is_string($_COOKIE['remember_token'])) {
-            return explode(':', $_COOKIE['remember_token'])[0];
-        }
-
-        return '';
+        return !empty($tokens) ? reset($tokens) : '';
     }
 
     public static function getAllDeviceSelectors($userId = null) {
-        $selectors = [];
-        
-        if (isset($_COOKIE['remember_tokens'])) {
-            $tokensMap = json_decode($_COOKIE['remember_tokens'], true) ?: [];
-            if (is_array($tokensMap)) {
-                foreach ($tokensMap as $k => $cookieVal) {
-                    if (!is_string($cookieVal)) continue;
-                    if ($userId !== null && $k != $userId) continue;
-                    
-                    $parts = explode(':', $cookieVal);
-                    if (count($parts) === 2) {
-                        $selectors[] = $parts[0];
-                    }
-                }
-            }
-        } elseif (isset($_COOKIE['remember_token']) && is_string($_COOKIE['remember_token'])) {
-            $parts = explode(':', $_COOKIE['remember_token']);
-            if (count($parts) === 2) {
-                $selectors[] = $parts[0];
-            }
-        }
-        
-        return $selectors;
+        return array_values(self::parseRememberTokensCookie($userId));
     }
 
     public static function sanitizeText($text) {

@@ -248,7 +248,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
             statusText = window.__('will_cancel_soon');
         }
 
-        const actionText = cancelAtEnd ? window.__('btn_reactivate_sub') : window.__('btn_cancel_renew');
+        const actionText = cancelAtEnd ? window.__('btn_reactivate_sub') : (window.__('btn_cancel_sub') || window.__('btn_cancel_renew'));
         const btnClass = cancelAtEnd ? 'component-button--brand' : 'component-button--dark';
         const changePlanText = window.__('btn_change_plan');
         
@@ -276,12 +276,12 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                             <span class="material-symbols-rounded">event_repeat</span>
                         </div>
                         <div class="component-card__text">
-                            <h2 class="component-card__title">${window.__('auto_renewal')}</h2>
+                            <h2 class="component-card__title">${window.__('subscription_status_title') || window.__('auto_renewal')}</h2>
                             <p class="component-card__description">${renewText} (${dateLabel} ${dateVal})</p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
-                        <button type="button" class="component-button component-button--h36 ${btnClass}" data-action="toggleAutoRenew" data-cancel-state="${!cancelAtEnd}">
+                        <button type="button" class="component-button component-button--h36 ${btnClass}" data-action="cancelOrReactivateSubscription" data-cancel-state="${!cancelAtEnd}">
                             ${actionText}
                         </button>
                     </div>
