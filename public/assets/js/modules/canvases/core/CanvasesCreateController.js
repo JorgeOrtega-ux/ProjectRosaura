@@ -1,7 +1,7 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
-import { showMessage, setButtonLoading, restoreButton, getDynamicTierName, getAllPalettes, closeDropdown } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, getDynamicTierName, getAllPalettes, closeDropdown, filterMenuList } from '../../../core/utils/uiUtils.js';
 
 
 class CanvasesCreateController {
@@ -190,32 +190,7 @@ class CanvasesCreateController {
 
     handleInput(e) {
         if (e.target.matches('[data-ref$="-search"]')) {
-            const query = e.target.value.toLowerCase();
-            const menuList = e.target.closest('.component-menu').querySelector('.component-menu-list');
-            if (menuList) {
-                let hasVisible = false;
-                menuList.querySelectorAll('.component-menu-link:not(.component-menu-empty .component-menu-link)').forEach(link => {
-                    const textEl = link.querySelector('.component-menu-link-text span');
-                    if (textEl) {
-                        const text = textEl.textContent.toLowerCase();
-                        if (text.includes(query)) {
-                            link.classList.remove('disabled');
-                            hasVisible = true;
-                        } else {
-                            link.classList.add('disabled');
-                        }
-                    }
-                });
-                
-                let emptyEl = menuList.querySelector('.component-menu-empty');
-                if (!emptyEl) {
-                    emptyEl = document.createElement('div');
-                    emptyEl.className = 'component-menu-empty';
-                    emptyEl.innerHTML = `<div class="component-menu-link disabled-interaction"><div class="component-menu-link-icon"><span class="material-symbols-rounded">search_off</span></div><div class="component-menu-link-text"><span >${window.__ ? window.__('no_results_found') : 'No results found'}</span></div></div>`;
-                    menuList.appendChild(emptyEl);
-                }
-                emptyEl.hidden = hasVisible;
-            }
+            filterMenuList(e.target);
         }
     }
 

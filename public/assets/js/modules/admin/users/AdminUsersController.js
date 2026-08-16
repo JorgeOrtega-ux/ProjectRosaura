@@ -1,6 +1,18 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton, debounce, catchPaginationClick, toggleDropdown } from '../../../core/utils/uiUtils.js';
+import { 
+    showMessage, 
+    setButtonLoading, 
+    restoreButton, 
+    debounce, 
+    catchPaginationClick, 
+    toggleDropdown,
+    toggleSearchToolbar,
+    handleOutsideSearchToolbarClick,
+    openFilterSubMenu,
+    backToMainFilters,
+    updateFilterIndicator
+} from '../../../core/utils/uiUtils.js';
 import { AdminModalTemplates } from '../AdminModalTemplates.js';
 class AdminUsersController {
     constructor() {
@@ -75,12 +87,12 @@ class AdminUsersController {
         const viewHistoryBtn = e.target.closest('[data-action="viewUserHistory"]');
         const viewPurchasesBtn = e.target.closest('[data-action="viewUserPurchases"]');
         const deleteUsersBtn = e.target.closest('[data-action="deleteSelectedUsers"]');
-        if (searchBtn) this.toggleSearchToolbar();
+        if (searchBtn) toggleSearchToolbar();
         if (toggleFiltersBtn) this.toggleFiltersModule();
-        if (openSubMenuBtn) this.openFilterSubMenu(openSubMenuBtn);
+        if (openSubMenuBtn) openFilterSubMenu(openSubMenuBtn);
         if (backToMainFiltersBtn) {
             e.preventDefault();
-            this.backToMainFilters();
+            backToMainFilters('menuMainFilters', 'moduleUserFilters');
         }
         if (selectTargetRow && !e.target.closest('button') && !e.target.closest('.component-dropdown-wrapper')) {
             this.handleUserSelection(selectTargetRow);
@@ -97,13 +109,7 @@ class AdminUsersController {
             e.preventDefault();
             this.submitRoleUpdate(submitMultipleRolesUpdateBtn);
         }
-        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
-            if (!e.target.closest('[data-ref="search-toolbar"]') && !searchBtn) {
-                searchToolbar.classList.remove('active');
-                searchToolbar.classList.add('disabled');
-            }
-        }
+        handleOutsideSearchToolbarClick(e, searchBtn);
     }
     handleGlobalInput(e) {
         if (e.target && e.target.getAttribute('data-ref') === 'user-search-input') {
@@ -289,34 +295,11 @@ class AdminUsersController {
             resultDialog.failure(window.__('err_connection'));
         }
     }
-    openFilterSubMenu(btn) {
-        const targetId = btn.getAttribute('data-target');
-        const targetMenu = document.querySelector(`[data-ref="${targetId}"]`);
-        const mainFilters = document.querySelector('[data-ref="menuMainFilters"]');
-        if (targetMenu && mainFilters) {
-            mainFilters.classList.add('disabled');
-            mainFilters.classList.remove('active');
-            targetMenu.classList.remove('disabled');
-            targetMenu.classList.add('active');
-        }
-    }
-    backToMainFilters() {
-        const mainFilters = document.querySelector('[data-ref="menuMainFilters"]');
-        const subMenus = document.querySelectorAll('[data-module="moduleUserFilters"] .component-menu:not([data-ref="menuMainFilters"])');
-        if (mainFilters) {
-            subMenus.forEach(menu => {
-                menu.classList.add('disabled');
-                menu.classList.remove('active');
-            });
-            mainFilters.classList.remove('disabled');
-            mainFilters.classList.add('active');
-        }
-    }
     toggleFiltersModule() {
         toggleDropdown('moduleUserFilters');
         const filtersModule = document.querySelector('[data-module="moduleUserFilters"]');
         if (filtersModule && !filtersModule.classList.contains('disabled')) {
-            this.backToMainFilters(); 
+            backToMainFilters('menuMainFilters', 'moduleUserFilters');
         }
     }
     handleUserSelection(rowElement) {
@@ -366,26 +349,6 @@ class AdminUsersController {
             if (defaultMode) defaultMode.classList.replace('disabled', 'active');
         }
     }
-    toggleSearchToolbar() {
-        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        const searchInput = document.querySelector('[data-ref="user-search-input"]');
-        const filtersModule = document.querySelector('[data-module="moduleUserFilters"]');
-        if (filtersModule && !filtersModule.classList.contains('disabled')) {
-            if (window.appInstance) window.appInstance.closeModule(filtersModule);
-        }
-        if (searchToolbar) {
-            if (searchToolbar.classList.contains('disabled')) {
-                searchToolbar.classList.remove('disabled');
-                searchToolbar.classList.add('active');
-                if (searchInput) {
-                    setTimeout(() => searchInput.focus(), 50);
-                }
-            } else {
-                searchToolbar.classList.remove('active');
-                searchToolbar.classList.add('disabled');
-            }
-        }
-    }
     updateFilterButtonsState() {
         const queryInput = document.querySelector('[data-ref="user-search-input"]');
         const query = (queryInput ? queryInput.value : '').toLowerCase().trim();
@@ -396,21 +359,12 @@ class AdminUsersController {
         const checkedStatuses = statusCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
         
         const searchBtn = document.querySelector('[data-ref="btn-toggle-search"]');
-        if (searchBtn) {
-            if (query.length > 0) searchBtn.classList.add('has-active-filter');
-            else searchBtn.classList.remove('has-active-filter');
-        }
+        updateFilterIndicator(searchBtn, query.length > 0);
         
         const filtersBtn = document.querySelector('[data-ref="btn-toggle-filters"]');
-        if (filtersBtn) {
-            const hasRoleFilter = checkedRoles.length < roleCheckboxes.length;
-            const hasStatusFilter = checkedStatuses.length < statusCheckboxes.length;
-            if (hasRoleFilter || hasStatusFilter) {
-                filtersBtn.classList.add('has-active-filter');
-            } else {
-                filtersBtn.classList.remove('has-active-filter');
-            }
-        }
+        const hasRoleFilter = checkedRoles.length < roleCheckboxes.length;
+        const hasStatusFilter = checkedStatuses.length < statusCheckboxes.length;
+        updateFilterIndicator(filtersBtn, hasRoleFilter || hasStatusFilter);
     }
 
 

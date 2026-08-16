@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, handleNumberAdjustment } from '../../../core/utils/uiUtils.js';
 class AdminBackupsAutomationController {
     constructor() {
         this.api = new ApiService();
@@ -221,14 +221,8 @@ class AdminBackupsAutomationController {
     }
     handleAdjustment(btn) {
         const targetField = btn.getAttribute('data-field');
-        const step = parseInt(btn.getAttribute('data-step')) || 1;
-        const min = parseInt(btn.getAttribute('data-min')) || 0;
-        const max = parseInt(btn.getAttribute('data-max')) || 999999;
         if (this.state[targetField] !== undefined) {
-            let newVal = parseInt(this.state[targetField]) + step;
-            if (newVal < min) newVal = min;
-            if (newVal > max) newVal = max;
-            this.state[targetField] = newVal;
+            this.state[targetField] = handleNumberAdjustment(btn, this.state[targetField]);
             this.renderValues();
             this.checkForChanges();
         }

@@ -1,6 +1,15 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton, catchPaginationClick, closeAllDropdowns } from '../../../core/utils/uiUtils.js';
+import { 
+    showMessage, 
+    setButtonLoading, 
+    restoreButton, 
+    catchPaginationClick, 
+    closeAllDropdowns,
+    toggleSearchToolbar,
+    handleOutsideSearchToolbarClick,
+    applyLocalTableSearch
+} from '../../../core/utils/uiUtils.js';
 
 class CanvasesManageController {
     constructor() {
@@ -60,7 +69,7 @@ class CanvasesManageController {
         const createSnapshotBtn = e.target.closest('[data-action="createSnapshotSelected"]');
         const downgradeBtn = e.target.closest('[data-action="downgradeSelectedCanvas"]');
         
-        if (searchBtn) this.toggleSearchToolbar();
+        if (searchBtn) toggleSearchToolbar('[data-ref="search-toolbar"]', '[data-ref="canvas-search-input"]');
 
         if (selectTargetRow && !e.target.closest('button')) {
             this.handleCanvasSelection(selectTargetRow);
@@ -78,13 +87,7 @@ class CanvasesManageController {
             this.downgradeSelectedCanvas(downgradeBtn);
         }
 
-        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
-            if (!e.target.closest('[data-ref="search-toolbar"]') && !searchBtn) {
-                searchToolbar.classList.remove('active');
-                searchToolbar.classList.add('disabled');
-            }
-        }
+        handleOutsideSearchToolbarClick(e, searchBtn);
     }
 
     async createCanvas(btn) {
@@ -493,64 +496,12 @@ class CanvasesManageController {
         }
     }
 
-    toggleSearchToolbar() {
-        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        const searchInput = document.querySelector('[data-ref="canvas-search-input"]');
-
-        if (searchToolbar) {
-            if (searchToolbar.classList.contains('disabled')) {
-                searchToolbar.classList.remove('disabled');
-                searchToolbar.classList.add('active');
-                if (searchInput) {
-                    setTimeout(() => searchInput.focus(), 50);
-                }
-            } else {
-                searchToolbar.classList.remove('active');
-                searchToolbar.classList.add('disabled');
-            }
-        }
-    }
-
     applyLocalSearch() {
-        const queryInput = document.querySelector('[data-ref="canvas-search-input"]');
-        const query = (queryInput ? queryInput.value : '').toLowerCase().trim();
-        
-        const searchBtn = document.querySelector('[data-ref="btn-toggle-search"]');
-        if (searchBtn) {
-            if (query.length > 0) searchBtn.classList.add('has-active-filter');
-            else searchBtn.classList.remove('has-active-filter');
-        }
-
-        const container = document.querySelector(`[data-ref="view-table"]`);
-        if (!container) return;
-
-        let visibleCount = 0;
-        let lastVisibleItem = null;
-        const items = container.querySelectorAll('[data-action="selectCanvas"]');
-        
-        items.forEach(item => {
-            item.classList.remove('last-visible-row');
-            
-            const textContent = Array.from(item.querySelectorAll('.search-target'))
-                .map(el => el.textContent.toLowerCase())
-                .join(' ');
-            
-            if (textContent.includes(query)) {
-                item.classList.remove('disabled');
-                visibleCount++;
-                lastVisibleItem = item;
-            } else {
-                item.classList.add('disabled');
-            }
+        applyLocalTableSearch({
+            inputRef: 'canvas-search-input',
+            containerRef: 'view-table',
+            rowSelector: '[data-action="selectCanvas"]'
         });
-
-        if (lastVisibleItem) lastVisibleItem.classList.add('last-visible-row');
-
-        const emptyElement = document.querySelector(`[data-ref="empty-search-table"]`);
-        if (emptyElement) {
-            if (visibleCount === 0 && items.length > 0) emptyElement.classList.remove('disabled');
-            else emptyElement.classList.add('disabled');
-        }
     }
 
     async downgradeSelectedCanvas(btn) {

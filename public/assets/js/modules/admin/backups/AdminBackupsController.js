@@ -1,5 +1,14 @@
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { catchPaginationClick, debounce, toggleDropdown } from '../../../core/utils/uiUtils.js';
+import { 
+    catchPaginationClick, 
+    debounce, 
+    toggleDropdown,
+    toggleSearchToolbar,
+    handleOutsideSearchToolbarClick,
+    openFilterSubMenu,
+    backToMainFilters,
+    updateFilterIndicator
+} from '../../../core/utils/uiUtils.js';
 
 class AdminBackupsController {
     constructor() {
@@ -69,12 +78,12 @@ class AdminBackupsController {
         const backToMainFiltersBtn = e.target.closest('[data-action="backToMainFilters"]');
         const prepareRestoreBtn = e.target.closest('[data-action="prepareRestore"]');
 
-        if (searchBtn) this.toggleSearchToolbar();
+        if (searchBtn) toggleSearchToolbar('[data-ref="search-toolbar"]', '[data-ref="backup-search-input"]');
         if (toggleFiltersBtn) this.toggleFiltersModule();
-        if (openSubMenuBtn) this.openFilterSubMenu(openSubMenuBtn);
+        if (openSubMenuBtn) openFilterSubMenu(openSubMenuBtn);
         if (backToMainFiltersBtn) {
             e.preventDefault();
-            this.backToMainFilters();
+            backToMainFilters('menuMainFilters', 'moduleBackupFilters');
         }
         if (selectTarget && !e.target.closest('button') && !e.target.closest('.component-dropdown-wrapper')) {
             this.handleBackupSelection(selectTarget);
@@ -82,13 +91,7 @@ class AdminBackupsController {
         if (deselectBtn) this.deselectBackup();
         if (prepareRestoreBtn) this.prepareRestore(prepareRestoreBtn);
 
-        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
-            if (!e.target.closest('[data-ref="search-toolbar"]') && !searchBtn) {
-                searchToolbar.classList.remove('active');
-                searchToolbar.classList.add('disabled');
-            }
-        }
+        handleOutsideSearchToolbarClick(e, searchBtn);
     }
 
     handleInput(e) {
@@ -194,36 +197,11 @@ class AdminBackupsController {
         this.deselectBackup();
     }
 
-    openFilterSubMenu(btn) {
-        const targetId = btn.getAttribute('data-target');
-        const targetMenu = document.querySelector(`[data-ref="${targetId}"]`);
-        const mainFilters = document.querySelector('[data-ref="menuMainFilters"]');
-        if (targetMenu && mainFilters) {
-            mainFilters.classList.add('disabled');
-            mainFilters.classList.remove('active');
-            targetMenu.classList.remove('disabled');
-            targetMenu.classList.add('active');
-        }
-    }
-
-    backToMainFilters() {
-        const mainFilters = document.querySelector('[data-ref="menuMainFilters"]');
-        const subMenus = document.querySelectorAll('[data-module="moduleBackupFilters"] .component-menu:not([data-ref="menuMainFilters"])');
-        if (mainFilters) {
-            subMenus.forEach(menu => {
-                menu.classList.add('disabled');
-                menu.classList.remove('active');
-            });
-            mainFilters.classList.remove('disabled');
-            mainFilters.classList.add('active');
-        }
-    }
-
     toggleFiltersModule() {
         toggleDropdown('moduleBackupFilters');
         const filtersModule = document.querySelector('[data-module="moduleBackupFilters"]');
         if (filtersModule && !filtersModule.classList.contains('disabled')) {
-            this.backToMainFilters(); 
+            backToMainFilters('menuMainFilters', 'moduleBackupFilters');
         }
     }
 
@@ -259,27 +237,6 @@ class AdminBackupsController {
         }
     }
 
-    toggleSearchToolbar() {
-        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        const searchInput = document.querySelector('[data-ref="backup-search-input"]');
-        const filtersModule = document.querySelector('[data-module="moduleBackupFilters"]');
-        if (filtersModule && !filtersModule.classList.contains('disabled')) {
-            if (window.appInstance) window.appInstance.closeModule(filtersModule);
-        }
-        if (searchToolbar) {
-            if (searchToolbar.classList.contains('disabled')) {
-                searchToolbar.classList.remove('disabled');
-                searchToolbar.classList.add('active');
-                if (searchInput) {
-                    setTimeout(() => searchInput.focus(), 50);
-                }
-            } else {
-                searchToolbar.classList.remove('active');
-                searchToolbar.classList.add('disabled');
-            }
-        }
-    }
-
     updateFilterButtonsState() {
         const queryInput = document.querySelector('[data-ref="backup-search-input"]');
         const query = (queryInput ? queryInput.value : '').toLowerCase().trim();
@@ -290,18 +247,12 @@ class AdminBackupsController {
         const checkedStatuses = statusCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
         
         const searchBtn = document.querySelector('[data-ref="btn-toggle-search"]');
-        if (searchBtn) {
-            if (query.length > 0) searchBtn.classList.add('has-active-filter');
-            else searchBtn.classList.remove('has-active-filter');
-        }
+        updateFilterIndicator(searchBtn, query.length > 0);
         
         const filtersBtn = document.querySelector('[data-ref="btn-toggle-filters"]');
-        if (filtersBtn) {
-            const hasTypeFilter = checkedTypes.length < typeCheckboxes.length;
-            const hasStatusFilter = checkedStatuses.length < statusCheckboxes.length;
-            if (hasTypeFilter || hasStatusFilter) filtersBtn.classList.add('has-active-filter');
-            else filtersBtn.classList.remove('has-active-filter');
-        }
+        const hasTypeFilter = checkedTypes.length < typeCheckboxes.length;
+        const hasStatusFilter = checkedStatuses.length < statusCheckboxes.length;
+        updateFilterIndicator(filtersBtn, hasTypeFilter || hasStatusFilter);
     }
 
     executeServerFilters() {

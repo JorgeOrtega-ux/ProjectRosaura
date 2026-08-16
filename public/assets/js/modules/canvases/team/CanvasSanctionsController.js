@@ -1,6 +1,14 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { 
+    showMessage, 
+    setButtonLoading, 
+    restoreButton,
+    catchPaginationClick,
+    toggleSearchToolbar,
+    handleOutsideSearchToolbarClick,
+    applyLocalTableSearch
+} from '../../../core/utils/uiUtils.js';
 
 export class CanvasSanctionsController {
     constructor() {
@@ -47,18 +55,7 @@ export class CanvasSanctionsController {
     }
 
     handlePaginationClick(e) {
-        const target = e.target.closest('a[href], button[data-nav]');
-        if (!target) return;
-
-        const url = target.getAttribute('href') || target.getAttribute('data-nav') || '';
-        const isPaginationLink = url.includes('page=') || target.closest('[data-ref="pagination-container"]');
-
-        if (isPaginationLink && url !== '#' && !url.includes('javascript:')) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            this.handlePagination(url);
-        }
+        catchPaginationClick(e, url => this.handlePagination(url));
     }
 
     handleGlobalClick(e) {
@@ -67,7 +64,7 @@ export class CanvasSanctionsController {
         const editBtn = e.target.closest('[data-action="editSanction"]');
         const liftBtn = e.target.closest('[data-action="liftSanction"]');
 
-        if (searchBtn) this.toggleSearchToolbar();
+        if (searchBtn) toggleSearchToolbar('[data-ref="search-toolbar"]', '[data-ref="sanction-search-input"]');
 
         if (selectRow && !e.target.closest('button')) {
             this.handleRowSelection(selectRow);
@@ -81,13 +78,7 @@ export class CanvasSanctionsController {
             this.liftSanction();
         }
 
-        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
-            if (!e.target.closest('[data-ref="search-toolbar"]') && !searchBtn) {
-                searchToolbar.classList.remove('active');
-                searchToolbar.classList.add('disabled');
-            }
-        }
+        handleOutsideSearchToolbarClick(e, searchBtn);
     }
 
     handleGlobalInput(e) {
@@ -122,53 +113,12 @@ export class CanvasSanctionsController {
         this.deselectSanctionRow();
     }
 
-    toggleSearchToolbar() {
-        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        const searchInput = document.querySelector('[data-ref="sanction-search-input"]');
-        if (!searchToolbar) return;
-
-        if (searchToolbar.classList.contains('disabled')) {
-            searchToolbar.classList.remove('disabled');
-            searchToolbar.classList.add('active');
-            if (searchInput) searchInput.focus();
-        } else {
-            searchToolbar.classList.remove('active');
-            searchToolbar.classList.add('disabled');
-        }
-    }
-
     applyLocalSearch() {
-        const searchInput = document.querySelector('[data-ref="sanction-search-input"]');
-        const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-        const searchBtn = document.querySelector('[data-ref="btn-toggle-search"]');
-
-        if (searchBtn) {
-            if (query.length > 0) searchBtn.classList.add('has-active-filter');
-            else searchBtn.classList.remove('has-active-filter');
-        }
-
-        const rows = document.querySelectorAll('.component-table-row');
-        let visibleCount = 0;
-
-        rows.forEach(row => {
-            const targets = row.querySelectorAll('.search-target');
-            let text = '';
-            targets.forEach(t => { text += t.textContent + ' '; });
-            text = text.toLowerCase();
-
-            if (!query || text.includes(query)) {
-                row.classList.remove('disabled');
-                visibleCount++;
-            } else {
-                row.classList.add('disabled');
-            }
+        applyLocalTableSearch({
+            inputRef: 'sanction-search-input',
+            containerRef: 'view-table',
+            rowSelector: '.component-table-row'
         });
-
-        const emptySearchRow = document.querySelector('[data-ref="empty-search-table"]');
-        if (emptySearchRow) {
-            if (visibleCount === 0 && rows.length > 0) emptySearchRow.classList.remove('disabled');
-            else emptySearchRow.classList.add('disabled');
-        }
     }
 
     handleRowSelection(row) {

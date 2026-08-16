@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, handleInlineNumberAdjustment } from '../../../core/utils/uiUtils.js';
 import { AdminModalTemplates } from '../AdminModalTemplates.js';
 
 class AdminUserEditController {
@@ -154,22 +154,7 @@ class AdminUserEditController {
     }
 
     handleAdjustCoins(btn) {
-        const field = btn.getAttribute('data-field');
-        const step = parseInt(btn.getAttribute('data-step') || '0', 10);
-        const min = btn.getAttribute('data-min') !== null ? parseInt(btn.getAttribute('data-min'), 10) : -999999;
-        const max = btn.getAttribute('data-max') !== null ? parseInt(btn.getAttribute('data-max'), 10) : 999999;
-
-        const center = document.querySelector(`[data-ref="val_${field}"]`);
-        if (!center) return;
-
-        let currentVal = parseInt(center.getAttribute('data-value') || '0', 10);
-        let newVal = currentVal + step;
-
-        if (newVal < min) newVal = min;
-        if (newVal > max) newVal = max;
-
-        center.setAttribute('data-value', newVal);
-        center.textContent = (newVal > 0 ? '+' : '') + newVal;
+        handleInlineNumberAdjustment(btn);
     }
 
     handleSelectCoinsReason(item) {

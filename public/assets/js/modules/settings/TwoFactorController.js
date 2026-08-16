@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, copyToClipboard } from '../../core/utils/uiUtils.js';
 
 const __ = (key, params, defaultText) => {
     if (typeof window.__ === 'function') {
@@ -201,13 +201,14 @@ class TwoFactorController {
         }
     }
 
-    copyRecoveryCodes(btn) {
+    async copyRecoveryCodes(btn) {
         if (!this.currentRecoveryCodes) return;
-        navigator.clipboard.writeText(this.currentRecoveryCodes).then(() => {
+        const success = await copyToClipboard(this.currentRecoveryCodes);
+        if (success) {
             const originalText = btn.textContent;
             btn.textContent = __('btn_copied');
             setTimeout(() => btn.textContent = originalText, 2000);
-        });
+        }
     }
 
     async regenerateRecoveryCodes(btn) {
@@ -256,13 +257,14 @@ class TwoFactorController {
         }
     }
 
-    copyNewRecoveryCodes(btn) {
+    async copyNewRecoveryCodes(btn) {
         if (!this.newRecoveryCodes) return;
-        navigator.clipboard.writeText(this.newRecoveryCodes).then(() => {
+        const success = await copyToClipboard(this.newRecoveryCodes);
+        if (success) {
             const originalText = btn.textContent;
             btn.textContent = __('btn_copied');
             setTimeout(() => btn.textContent = originalText, 2000);
-        });
+        }
     }
 }
 

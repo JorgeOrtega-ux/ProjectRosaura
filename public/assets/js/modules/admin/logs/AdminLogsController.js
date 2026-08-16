@@ -1,6 +1,19 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton, debounce, catchPaginationClick, toggleDropdown } from '../../../core/utils/uiUtils.js';
+import { 
+    showMessage, 
+    setButtonLoading, 
+    restoreButton, 
+    debounce, 
+    catchPaginationClick, 
+    toggleDropdown,
+    toggleSearchToolbar,
+    handleOutsideSearchToolbarClick,
+    openFilterSubMenu,
+    backToMainFilters,
+    togglePasswordVisibility,
+    updateFilterIndicator
+} from '../../../core/utils/uiUtils.js';
 class AdminLogsController {
     constructor() {
         this.selectedLogs = new Set();
@@ -102,39 +115,22 @@ class AdminLogsController {
         const backToMainFiltersBtn = e.target.closest('[data-action="backToMainFilters"]');
         const viewLogsBtn = e.target.closest('[data-action="viewSelectedLogs"]');
         const togglePassBtn = e.target.closest('[data-action="togglePassword"]');
-        if (searchBtn) this.toggleSearchToolbar();
+        if (searchBtn) toggleSearchToolbar('[data-ref="search-toolbar"]', '[data-ref="log-search-input"]');
         if (toggleFiltersBtn) this.toggleFiltersModule();
         if (viewBtn) this.toggleViewMode(viewBtn);
-        if (openSubMenuBtn) this.openFilterSubMenu(openSubMenuBtn);
+        if (openSubMenuBtn) openFilterSubMenu(openSubMenuBtn);
         if (backToMainFiltersBtn) {
             e.preventDefault();
-            this.backToMainFilters();
+            backToMainFilters('menuMainFilters', 'moduleLogFilters');
         }
         if (selectTarget && !e.target.closest('button') && !e.target.closest('.component-dropdown-wrapper')) {
             this.handleLogSelection(selectTarget);
         }
         if (deselectBtn) this.deselectLogs();
         if (viewLogsBtn) this.viewSelectedLogs();
-        if (togglePassBtn) {
-            const inputField = togglePassBtn.parentElement.querySelector('.component-input-field');
-            if (inputField && inputField.getAttribute('data-ref') === 'log_action_password') {
-                if (inputField.type === 'password') {
-                    inputField.type = 'text';
-                    togglePassBtn.textContent = 'visibility';
-                } else {
-                    inputField.type = 'password';
-                    togglePassBtn.textContent = 'visibility_off';
-                }
-            }
-        }
+        if (togglePassBtn) togglePasswordVisibility(togglePassBtn);
 
-        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
-            if (!e.target.closest('[data-ref="search-toolbar"]') && !searchBtn) {
-                searchToolbar.classList.remove('active');
-                searchToolbar.classList.add('disabled');
-            }
-        }
+        handleOutsideSearchToolbarClick(e, searchBtn);
     }
     handleInput(e) {
         if (e.target && e.target.getAttribute('data-ref') === 'log-search-input') {
@@ -174,34 +170,11 @@ class AdminLogsController {
         this.updateFilterButtonsState();
         this.deselectLogs();
     }
-    openFilterSubMenu(btn) {
-        const targetId = btn.getAttribute('data-target');
-        const targetMenu = document.querySelector(`[data-ref="${targetId}"]`);
-        const mainFilters = document.querySelector('[data-ref="menuMainFilters"]');
-        if (targetMenu && mainFilters) {
-            mainFilters.classList.add('disabled');
-            mainFilters.classList.remove('active');
-            targetMenu.classList.remove('disabled');
-            targetMenu.classList.add('active');
-        }
-    }
-    backToMainFilters() {
-        const mainFilters = document.querySelector('[data-ref="menuMainFilters"]');
-        const subMenus = document.querySelectorAll('[data-module="moduleLogFilters"] .component-menu:not([data-ref="menuMainFilters"])');
-        if (mainFilters) {
-            subMenus.forEach(menu => {
-                menu.classList.add('disabled');
-                menu.classList.remove('active');
-            });
-            mainFilters.classList.remove('disabled');
-            mainFilters.classList.add('active');
-        }
-    }
     toggleFiltersModule() {
         toggleDropdown('moduleLogFilters');
         const filtersModule = document.querySelector('[data-module="moduleLogFilters"]');
         if (filtersModule && !filtersModule.classList.contains('disabled')) {
-            this.backToMainFilters(); 
+            backToMainFilters('menuMainFilters', 'moduleLogFilters');
         }
     }
     handleLogSelection(target) {
@@ -241,27 +214,6 @@ class AdminLogsController {
             }
             if (passInput) passInput.value = '';
         }
-    }
-    toggleSearchToolbar() {
-        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        const searchInput = document.querySelector('[data-ref="log-search-input"]');
-        const filtersModule = document.querySelector('[data-module="moduleLogFilters"]');
-        if (filtersModule && !filtersModule.classList.contains('disabled')) {
-            if (window.appInstance) window.appInstance.closeModule(filtersModule);
-        }
-        if (searchToolbar) {
-            if (searchToolbar.classList.contains('disabled')) {
-                searchToolbar.classList.remove('disabled');
-                searchToolbar.classList.add('active');
-                if (searchInput) {
-                    setTimeout(() => searchInput.focus(), 50);
-                }
-            } else {
-                searchToolbar.classList.remove('active');
-                searchToolbar.classList.add('disabled');
-            }
-        }
-    }
     toggleViewMode(btn) {
         const wrapper = document.querySelector('[data-ref="manage-logs-wrapper"]');
         const header = document.querySelector('[data-ref="manage-logs-header"]');
@@ -273,14 +225,14 @@ class AdminLogsController {
         if (viewCards.classList.contains('active')) {
             viewCards.classList.replace('active', 'disabled');
             viewTable.classList.replace('disabled', 'active');
-            if(header) header.classList.add('disabled');
+            if (header) header.classList.add('disabled');
             wrapper.classList.add('component-wrapper--full');
             if (dynamicTitle) dynamicTitle.classList.remove('disabled');
             if (iconElement) iconElement.textContent = 'grid_view';
         } else {
             viewTable.classList.replace('active', 'disabled');
             viewCards.classList.replace('disabled', 'active');
-            if(header) header.classList.remove('disabled');
+            if (header) header.classList.remove('disabled');
             wrapper.classList.remove('component-wrapper--full');
             if (dynamicTitle) dynamicTitle.classList.add('disabled');
             if (iconElement) iconElement.textContent = 'table_rows';
@@ -293,15 +245,11 @@ class AdminLogsController {
         const checkedCats = catCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
         
         const searchBtn = document.querySelector('[data-ref="btn-toggle-search"]');
-        if (searchBtn) {
-            if (query.length > 0) searchBtn.classList.add('has-active-filter');
-            else searchBtn.classList.remove('has-active-filter');
-        }
+        updateFilterIndicator(searchBtn, query.length > 0);
+        
         const filtersBtn = document.querySelector('[data-ref="btn-toggle-filters"]');
-        if (filtersBtn) {
-            if (checkedCats.length < catCheckboxes.length) filtersBtn.classList.add('has-active-filter');
-            else filtersBtn.classList.remove('has-active-filter');
-        }
+        const hasCatFilter = checkedCats.length < catCheckboxes.length;
+        updateFilterIndicator(filtersBtn, hasCatFilter);
     }
 
 

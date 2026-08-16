@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, togglePasswordVisibility } from '../../core/utils/uiUtils.js';
 
 class AuthController {
     constructor() {
@@ -114,7 +114,7 @@ class AuthController {
         const cancelDeletionBtn = e.target.closest('[data-action="cancelAccountDeletion"]');
         const continueDeletionBtn = e.target.closest('[data-action="continueAccountDeletion"]');
 
-        if (toggleBtn) this.togglePasswordVisibility(toggleBtn);
+        if (toggleBtn) togglePasswordVisibility(toggleBtn);
         if (generateUserBtn) { e.preventDefault(); this.generateRandomUsername(generateUserBtn); }
         if (loginBtn) { e.preventDefault(); this.handleLogin(loginBtn); }
         if (login2FABtn) { e.preventDefault(); this.handleLogin2FA(login2FABtn); }
@@ -173,21 +173,7 @@ class AuthController {
         }, 1000);
     }
 
-    togglePasswordVisibility(toggleBtn) {
-        const inputGroup = toggleBtn.closest('.component-input-group');
-        if (!inputGroup) return;
 
-        const inputField = inputGroup.querySelector('.component-input-field');
-        if (!inputField) return;
-
-        if (inputField.type === 'password') {
-            inputField.type = 'text';
-            toggleBtn.textContent = 'visibility';
-        } else {
-            inputField.type = 'password';
-            toggleBtn.textContent = 'visibility_off';
-        }
-    }
 
     generateRandomUsername(btn) {
         const usernameInput = document.querySelector('[data-ref="username"]');

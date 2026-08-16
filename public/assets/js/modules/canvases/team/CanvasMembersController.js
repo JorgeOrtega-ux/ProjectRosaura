@@ -1,6 +1,14 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton, catchPaginationClick } from '../../../core/utils/uiUtils.js';
+import { 
+    showMessage, 
+    setButtonLoading, 
+    restoreButton, 
+    catchPaginationClick,
+    toggleSearchToolbar,
+    handleOutsideSearchToolbarClick,
+    applyLocalTableSearch
+} from '../../../core/utils/uiUtils.js';
 
 class CanvasMembersController {
     constructor() {
@@ -61,7 +69,7 @@ class CanvasMembersController {
         const manageChatRestrictionBtn = e.target.closest('[data-action="manageChatRestriction"]');
         const removeMemberBtn = e.target.closest('[data-action="removeMember"]');
 
-        if (searchBtn) this.toggleSearchToolbar();
+        if (searchBtn) toggleSearchToolbar('[data-ref="search-toolbar"]', '[data-ref="member-search-input"]');
 
         if (selectTargetRow && !e.target.closest('button')) {
             this.handleMemberSelection(selectTargetRow);
@@ -78,13 +86,7 @@ class CanvasMembersController {
             this.submitCanvasMemberRoleUpdate(saveCanvasMemberRoleSubmitBtn);
         }
 
-        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
-            if (!e.target.closest('[data-ref="search-toolbar"]') && !searchBtn) {
-                searchToolbar.classList.remove('active');
-                searchToolbar.classList.add('disabled');
-            }
-        }
+        handleOutsideSearchToolbarClick(e, searchBtn);
     }
 
     handleGlobalInput(e) {
@@ -294,64 +296,12 @@ class CanvasMembersController {
         }
     }
 
-    toggleSearchToolbar() {
-        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        const searchInput = document.querySelector('[data-ref="member-search-input"]');
-
-        if (searchToolbar) {
-            if (searchToolbar.classList.contains('disabled')) {
-                searchToolbar.classList.remove('disabled');
-                searchToolbar.classList.add('active');
-                if (searchInput) {
-                    setTimeout(() => searchInput.focus(), 50);
-                }
-            } else {
-                searchToolbar.classList.remove('active');
-                searchToolbar.classList.add('disabled');
-            }
-        }
-    }
-
     applyLocalSearch() {
-        const queryInput = document.querySelector('[data-ref="member-search-input"]');
-        const query = (queryInput ? queryInput.value : '').toLowerCase().trim();
-        
-        const searchBtn = document.querySelector('[data-ref="btn-toggle-search"]');
-        if (searchBtn) {
-            if (query.length > 0) searchBtn.classList.add('has-active-filter');
-            else searchBtn.classList.remove('has-active-filter');
-        }
-
-        const container = document.querySelector(`[data-ref="view-table"]`);
-        if (!container) return;
-
-        let visibleCount = 0;
-        let lastVisibleItem = null;
-        const items = container.querySelectorAll('[data-action="selectMember"]');
-        
-        items.forEach(item => {
-            item.classList.remove('last-visible-row');
-            
-            const textContent = Array.from(item.querySelectorAll('.search-target'))
-                .map(el => el.textContent.toLowerCase())
-                .join(' ');
-            
-            if (textContent.includes(query)) {
-                item.classList.remove('disabled');
-                visibleCount++;
-                lastVisibleItem = item;
-            } else {
-                item.classList.add('disabled');
-            }
+        applyLocalTableSearch({
+            inputRef: 'member-search-input',
+            containerRef: 'view-table',
+            rowSelector: '[data-action="selectMember"]'
         });
-
-        if (lastVisibleItem) lastVisibleItem.classList.add('last-visible-row');
-
-        const emptyElement = document.querySelector(`[data-ref="empty-search-table"]`);
-        if (emptyElement) {
-            if (visibleCount === 0 && items.length > 0) emptyElement.classList.remove('disabled');
-            else emptyElement.classList.add('disabled');
-        }
     }
     handleGlobalChange(e) {
         if (e.target && e.target.classList.contains('admin-role-checkbox') && document.querySelector('[data-ref="change-role-wrapper"]')) {

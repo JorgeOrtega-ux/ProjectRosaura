@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, catchPaginationClick } from '../../../core/utils/uiUtils.js';
+import { showMessage, catchPaginationClick, copyToClipboard } from '../../../core/utils/uiUtils.js';
 
 class CanvasInvitesController {
     constructor() {
@@ -189,7 +189,7 @@ class CanvasInvitesController {
         }
     }
 
-    copySelectedInvite() {
+    async copySelectedInvite() {
         if (this.selectedInviteIds.size !== 1) return;
         
         const targetInviteId = Array.from(this.selectedInviteIds)[0];
@@ -198,11 +198,7 @@ class CanvasInvitesController {
         if (selectedRow) {
             const code = selectedRow.getAttribute('data-invite-code');
             if (code) {
-                navigator.clipboard.writeText(code).then(() => {
-                    showMessage(__('msg_code_copied'), 'success');
-                }).catch(err => {
-                    showMessage(__('err_copy_code'), 'error');
-                });
+                await copyToClipboard(code, __('msg_code_copied'), __('err_copy_code'));
             }
         }
     }

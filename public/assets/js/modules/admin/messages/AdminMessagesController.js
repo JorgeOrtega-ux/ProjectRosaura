@@ -1,6 +1,17 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton, debounce, catchPaginationClick } from '../../../core/utils/uiUtils.js';
+import { 
+    showMessage, 
+    setButtonLoading, 
+    restoreButton, 
+    debounce, 
+    catchPaginationClick,
+    toggleSearchToolbar,
+    handleOutsideSearchToolbarClick,
+    openFilterSubMenu,
+    backToMainFilters,
+    updateFilterIndicator
+} from '../../../core/utils/uiUtils.js';
 
 class AdminMessagesController {
     constructor() {
@@ -63,11 +74,11 @@ class AdminMessagesController {
 
         const changeVisBtn = e.target.closest('[data-action="changeMessageVisibility"]');
 
-        if (searchBtn) this.toggleSearchToolbar();
-        if (openSubMenuBtn) this.openFilterSubMenu(openSubMenuBtn);
+        if (searchBtn) toggleSearchToolbar('[data-ref="search-toolbar"]', '[data-ref="message-search-input"]');
+        if (openSubMenuBtn) openFilterSubMenu(openSubMenuBtn);
         if (backToMainFiltersBtn) {
             e.preventDefault();
-            this.backToMainFilters();
+            backToMainFilters('menuMainFilters', 'moduleMessageFilters');
         }
 
         if (changeVisBtn) {
@@ -82,13 +93,7 @@ class AdminMessagesController {
         if (deselectBtn) this.deselectMessage();
         if (viewReportsBtn && !viewReportsBtn.classList.contains('disabled-interaction')) this.viewMessageReports();
 
-        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
-            if (!e.target.closest('[data-ref="search-toolbar"]') && !searchBtn) {
-                searchToolbar.classList.remove('active');
-                searchToolbar.classList.add('disabled');
-            }
-        }
+        handleOutsideSearchToolbarClick(e, searchBtn);
     }
 
     handleGlobalInput(e) {
@@ -123,61 +128,11 @@ class AdminMessagesController {
         this.deselectMessage();
     }
 
-    openFilterSubMenu(btn) {
-        const targetId = btn.getAttribute('data-target');
-        const targetMenu = document.querySelector(`[data-ref="${targetId}"]`);
-        const mainFilters = document.querySelector('[data-ref="menuMainFilters"]');
-        if (targetMenu && mainFilters) {
-            mainFilters.classList.add('disabled');
-            mainFilters.classList.remove('active');
-            targetMenu.classList.remove('disabled');
-            targetMenu.classList.add('active');
-        }
-    }
-
-    backToMainFilters() {
-        const mainFilters = document.querySelector('[data-ref="menuMainFilters"]');
-        const subMenus = document.querySelectorAll('[data-module="moduleMessageFilters"] .component-menu:not([data-ref="menuMainFilters"])');
-        if (mainFilters) {
-            subMenus.forEach(menu => {
-                menu.classList.add('disabled');
-                menu.classList.remove('active');
-            });
-            mainFilters.classList.remove('disabled');
-            mainFilters.classList.add('active');
-        }
-    }
-
-    toggleSearchToolbar() {
-        const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
-        const searchInput = document.querySelector('[data-ref="message-search-input"]');
-        const filtersModule = document.querySelector('[data-module="moduleMessageFilters"]');
-        if (filtersModule && !filtersModule.classList.contains('disabled')) {
-            if (window.appInstance) window.appInstance.closeModule(filtersModule);
-        }
-        if (searchToolbar) {
-            if (searchToolbar.classList.contains('disabled')) {
-                searchToolbar.classList.remove('disabled');
-                searchToolbar.classList.add('active');
-                if (searchInput) {
-                    setTimeout(() => searchInput.focus(), 50);
-                }
-            } else {
-                searchToolbar.classList.remove('active');
-                searchToolbar.classList.add('disabled');
-            }
-        }
-    }
-
     updateFilterButtonsState() {
         const queryInput = document.querySelector('[data-ref="message-search-input"]');
         const query = (queryInput ? queryInput.value : '').toLowerCase().trim();
-
         const searchBtn = document.querySelector('[data-ref="btn-toggle-search"]');
-        if (searchBtn) {
-            if (query.length > 0) searchBtn.classList.add('has-active-filter');
-            else searchBtn.classList.remove('has-active-filter');
-        }
+        updateFilterIndicator(searchBtn, query.length > 0);
     }
 
     async handlePagination(url) {

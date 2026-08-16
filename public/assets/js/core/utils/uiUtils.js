@@ -477,6 +477,250 @@ function closeAllDropdowns(except = null) {
     }
 }
 
+async function copyToClipboard(text, successMsg = null, errorMsg = null) {
+    if (!text && text !== '') return false;
+    try {
+        await navigator.clipboard.writeText(text);
+        if (successMsg) {
+            showMessage(successMsg, 'success');
+        }
+        return true;
+    } catch (err) {
+        if (errorMsg) {
+            showMessage(errorMsg, 'error');
+        }
+        return false;
+    }
+}
+
+function togglePasswordVisibility(toggleBtn) {
+    if (!toggleBtn) return;
+    const inputGroup = toggleBtn.closest('.component-input-group') || toggleBtn.parentElement;
+    if (!inputGroup) return;
+
+    const inputField = inputGroup.querySelector('.component-input-field, input[type="password"], input[type="text"]');
+    if (!inputField) return;
+
+    const iconSpan = toggleBtn.querySelector('.material-symbols-rounded') || toggleBtn;
+
+    if (inputField.type === 'password') {
+        inputField.type = 'text';
+        if (iconSpan) iconSpan.textContent = 'visibility';
+    } else {
+        inputField.type = 'password';
+        if (iconSpan) iconSpan.textContent = 'visibility_off';
+    }
+}
+
+function toggleSearchToolbar(toolbarSelector = '[data-ref="search-toolbar"]', inputSelector = '[data-ref$="-search-input"]') {
+    const searchToolbar = typeof toolbarSelector === 'string' ? document.querySelector(toolbarSelector) : toolbarSelector;
+    if (!searchToolbar) return;
+
+    const searchInput = typeof inputSelector === 'string' ? document.querySelector(inputSelector) : inputSelector;
+    
+    const filtersModule = document.querySelector('[data-module$="Filters"]');
+    if (filtersModule && !filtersModule.classList.contains('disabled')) {
+        if (window.appInstance && typeof window.appInstance.closeModule === 'function') {
+            window.appInstance.closeModule(filtersModule);
+        } else {
+            filtersModule.classList.add('disabled');
+            filtersModule.classList.remove('active');
+        }
+    }
+
+    if (searchToolbar.classList.contains('disabled')) {
+        searchToolbar.classList.remove('disabled');
+        searchToolbar.classList.add('active');
+        if (searchInput) {
+            setTimeout(() => searchInput.focus(), 50);
+        }
+    } else {
+        searchToolbar.classList.remove('active');
+        searchToolbar.classList.add('disabled');
+    }
+}
+
+function handleOutsideSearchToolbarClick(e, searchBtn = null, toolbarSelector = '[data-ref="search-toolbar"]') {
+    const searchToolbar = typeof toolbarSelector === 'string' ? document.querySelector(toolbarSelector) : toolbarSelector;
+    if (!searchToolbar || searchToolbar.classList.contains('disabled')) return;
+
+    const isInsideToolbar = e.target.closest(typeof toolbarSelector === 'string' ? toolbarSelector : '[data-ref="search-toolbar"]');
+    const isSearchBtn = searchBtn && (e.target === searchBtn || e.target.closest('[data-action$="Search"], [data-ref="btn-toggle-search"]'));
+
+    if (!isInsideToolbar && !isSearchBtn) {
+        searchToolbar.classList.remove('active');
+        searchToolbar.classList.add('disabled');
+    }
+}
+
+function openFilterSubMenu(btn, mainRef = 'menuMainFilters') {
+    if (!btn) return;
+    const targetId = btn.getAttribute('data-target');
+    const targetMenu = document.querySelector(`[data-ref="${targetId}"]`);
+    const mainFilters = document.querySelector(`[data-ref="${mainRef}"]`);
+    if (targetMenu && mainFilters) {
+        mainFilters.classList.add('disabled');
+        mainFilters.classList.remove('active');
+        targetMenu.classList.remove('disabled');
+        targetMenu.classList.add('active');
+    }
+}
+
+function backToMainFilters(mainRef = 'menuMainFilters', moduleRef = null) {
+    const mainFilters = document.querySelector(`[data-ref="${mainRef}"]`);
+    const subMenus = document.querySelectorAll(
+        moduleRef 
+            ? `[data-module="${moduleRef}"] .component-menu:not([data-ref="${mainRef}"])` 
+            : `.component-menu:not([data-ref="${mainRef}"])`
+    );
+    if (mainFilters) {
+        subMenus.forEach(menu => {
+            menu.classList.add('disabled');
+            menu.classList.remove('active');
+        });
+        mainFilters.classList.remove('disabled');
+        mainFilters.classList.add('active');
+    }
+}
+
+function applyLocalTableSearch({
+    inputRef = 'search-input',
+    containerRef = 'view-table',
+    rowSelector = '.component-table-row',
+    targetSelector = '.search-target',
+    emptyRef = 'empty-search-table',
+    searchBtnRef = 'btn-toggle-search'
+} = {}) {
+    const queryInput = typeof inputRef === 'string' 
+        ? document.querySelector(`[data-ref="${inputRef}"]`) || document.querySelector(inputRef)
+        : inputRef;
+    const query = (queryInput ? queryInput.value : '').toLowerCase().trim();
+
+    const searchBtn = typeof searchBtnRef === 'string'
+        ? document.querySelector(`[data-ref="${searchBtnRef}"]`) || document.querySelector(searchBtnRef)
+        : searchBtnRef;
+    if (searchBtn) {
+        searchBtn.classList.toggle('has-active-filter', query.length > 0);
+    }
+
+    const container = typeof containerRef === 'string'
+        ? document.querySelector(`[data-ref="${containerRef}"]`) || document.querySelector(containerRef)
+        : containerRef;
+    if (!container) return { visibleCount: 0, query };
+
+    let visibleCount = 0;
+    let lastVisibleItem = null;
+    const items = container.querySelectorAll(rowSelector);
+
+    items.forEach(item => {
+        item.classList.remove('last-visible-row');
+        
+        let textContent = '';
+        const targets = item.querySelectorAll(targetSelector);
+        if (targets.length > 0) {
+            textContent = Array.from(targets).map(el => el.textContent.toLowerCase()).join(' ');
+        } else {
+            textContent = item.textContent.toLowerCase();
+        }
+
+        if (!query || textContent.includes(query)) {
+            item.classList.remove('disabled');
+            visibleCount++;
+            lastVisibleItem = item;
+        } else {
+            item.classList.add('disabled');
+        }
+    });
+
+    if (lastVisibleItem) {
+        lastVisibleItem.classList.add('last-visible-row');
+    }
+
+    const emptyElement = typeof emptyRef === 'string'
+        ? document.querySelector(`[data-ref="${emptyRef}"]`) || document.querySelector(emptyRef)
+        : emptyRef;
+    if (emptyElement) {
+        emptyElement.classList.toggle('disabled', visibleCount > 0);
+    }
+
+    return { visibleCount, query };
+}
+
+function filterMenuList(searchInput, menuList = null, emptyClass = 'component-menu-empty') {
+    if (!searchInput) return;
+    const query = (searchInput.value || '').toLowerCase().trim();
+    const list = menuList || (searchInput.closest('.component-menu') ? searchInput.closest('.component-menu').querySelector('.component-menu-list') : null);
+    if (!list) return;
+
+    let hasVisible = false;
+    list.querySelectorAll(`.component-menu-link:not(.${emptyClass} .component-menu-link)`).forEach(link => {
+        const textEl = link.querySelector('.component-menu-link-text') || link;
+        const text = textEl ? textEl.textContent.toLowerCase() : '';
+        if (!query || text.includes(query)) {
+            link.classList.remove('disabled');
+            link.style.display = '';
+            hasVisible = true;
+        } else {
+            link.classList.add('disabled');
+            link.style.display = 'none';
+        }
+    });
+
+    let emptyEl = list.querySelector(`.${emptyClass}`);
+    if (!emptyEl && !hasVisible) {
+        emptyEl = document.createElement('div');
+        emptyEl.className = emptyClass;
+        const notFoundText = window.__ ? window.__('no_results_found') : 'No results found';
+        emptyEl.innerHTML = `<div class="component-menu-link disabled-interaction"><div class="component-menu-link-icon"><span class="material-symbols-rounded">search_off</span></div><div class="component-menu-link-text"><span>${notFoundText}</span></div></div>`;
+        list.appendChild(emptyEl);
+    }
+    if (emptyEl) {
+        emptyEl.hidden = hasVisible;
+        emptyEl.style.display = hasVisible ? 'none' : '';
+    }
+}
+
+function handleNumberAdjustment(btn, currentValue, onChange = null) {
+    if (!btn) return currentValue;
+    const step = parseFloat(btn.getAttribute('data-step') || '1');
+    const min = btn.getAttribute('data-min') !== null ? parseFloat(btn.getAttribute('data-min')) : -Infinity;
+    const max = btn.getAttribute('data-max') !== null ? parseFloat(btn.getAttribute('data-max')) : Infinity;
+
+    let newVal = parseFloat(currentValue || 0) + step;
+    if (newVal < min) newVal = min;
+    if (newVal > max) newVal = max;
+
+    if (Number.isInteger(step)) {
+        newVal = Math.round(newVal);
+    } else {
+        newVal = parseFloat(newVal.toFixed(2));
+    }
+
+    if (typeof onChange === 'function') onChange(newVal);
+    return newVal;
+}
+
+function handleInlineNumberAdjustment(btn, onChange = null) {
+    if (!btn) return null;
+    const field = btn.getAttribute('data-field');
+    const center = document.querySelector(`[data-ref="val_${field}"]`);
+    if (!center) return null;
+
+    const currentVal = parseFloat(center.getAttribute('data-value') || '0');
+    const newVal = handleNumberAdjustment(btn, currentVal, (val) => {
+        center.setAttribute('data-value', val);
+        const showPlus = btn.hasAttribute('data-show-plus') || center.hasAttribute('data-show-plus');
+        center.textContent = (val > 0 && showPlus ? '+' : '') + val;
+        if (typeof onChange === 'function') onChange(val, field);
+    });
+    return newVal;
+}
+
+function updateFilterIndicator(buttonEl, isActive) {
+    if (!buttonEl) return;
+    buttonEl.classList.toggle('has-active-filter', !!isActive);
+}
+
 export { 
     showMessage, 
     setButtonLoading, 
@@ -504,5 +748,16 @@ export {
     closeDropdown,
     closeAllDropdowns,
     toggleDropdown as toggleModule,
-    closeDropdown as closeModule
+    closeDropdown as closeModule,
+    copyToClipboard,
+    togglePasswordVisibility,
+    toggleSearchToolbar,
+    handleOutsideSearchToolbarClick,
+    openFilterSubMenu,
+    backToMainFilters,
+    applyLocalTableSearch,
+    filterMenuList,
+    handleNumberAdjustment,
+    handleInlineNumberAdjustment,
+    updateFilterIndicator
 };

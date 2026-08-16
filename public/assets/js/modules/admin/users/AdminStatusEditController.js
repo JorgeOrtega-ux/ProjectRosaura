@@ -1,7 +1,7 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { CalendarSystem } from '../../../core/components/CalendarSystem.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, filterMenuList } from '../../../core/utils/uiUtils.js';
 class AdminStatusEditController {
     constructor() {
         this.api = new ApiService();
@@ -136,26 +136,8 @@ class AdminStatusEditController {
         const ref = e.target.getAttribute('data-ref');
         if (!ref) return;
         if (ref === 'suspension-reason-search') {
-            const query = e.target.value.toLowerCase().trim();
             const list = document.querySelector('[data-ref="suspension-reason-list"]');
-            const emptyState = document.querySelector('[data-ref="suspension-reason-empty"]');
-            if (list) {
-                let hasVisibleItems = false;
-                const items = list.querySelectorAll('.component-menu-link:not(.disabled-interaction)');
-                items.forEach(item => {
-                    const textNode = item.querySelector('.component-menu-link-text');
-                    const text = textNode ? textNode.textContent.toLowerCase() : item.textContent.toLowerCase();
-                    if (text.includes(query)) {
-                        item.classList.remove('disabled'); item.classList.add('active');
-                        hasVisibleItems = true;
-                    } else {
-                        item.classList.remove('active'); item.classList.add('disabled');
-                    }
-                });
-                if (emptyState) {
-                    emptyState.hidden = hasVisibleItems;
-                }
-            }
+            filterMenuList(e.target, list, 'suspension-reason-empty');
         }
     }
     handleChange(e) {
