@@ -3,10 +3,12 @@ import { ApiService } from '../../../core/api/ApiServices.js';
 import { renderSkeleton, restoreButton, setButtonLoading, showMessage } from '../../../core/utils/uiUtils.js';
 import { AdminModalTemplates } from '../AdminModalTemplates.js';
 import { ImageViewerSystem } from '../../../core/components/ImageViewerSystem.js';
+import { AiImprover } from './ai/AiImprover.js';
 
 export class AdminSupportLiveController {
     constructor() {
         this.api = new ApiService();
+        this.aiImprover = null;
         this.container = null;
         this.abortController = null;
         this.activeTab = 'l1';
@@ -40,6 +42,7 @@ export class AdminSupportLiveController {
     async init() {
         this.container = document.querySelector('[data-ref="admin-support-live-wrapper"]');
         this.abortController = new AbortController();
+        this.aiImprover = new AiImprover(this.api);
         this.isIntentionalDisconnect = false;
         this.activeTab = this.container?.getAttribute('data-initial-tab') || 'l1';
 
@@ -64,6 +67,11 @@ export class AdminSupportLiveController {
         this._requestNotificationPermission();
         this._loadCannedResponses();
         this._connectWebSocket();
+
+        const chatInput = document.querySelector('[data-ref="admin-support-chat-input"]');
+        if (chatInput && this.aiImprover) {
+            this.aiImprover.attachButton(chatInput, this.currentSession?.language || 'es-419', 'chat');
+        }
     }
 
     bindEvents() {
@@ -95,6 +103,12 @@ export class AdminSupportLiveController {
         if (this.abortController) {
             this.abortController.abort();
             this.abortController = null;
+        }
+
+        const chatInput = document.querySelector('[data-ref="admin-support-chat-input"]');
+        if (chatInput && this.aiImprover) {
+            this.aiImprover.detachButton(chatInput);
+            this.aiImprover = null;
         }
 
         document.body.removeEventListener('click', this._boundClick);
@@ -1093,6 +1107,13 @@ export class AdminSupportLiveController {
                     } else {
                         footer.classList.remove('disabled');
                         footer.classList.add('active');
+
+                        const lang = res.session.language || 'es-419';
+                        const chatInput = document.querySelector('[data-ref="admin-support-chat-input"]');
+                        if (chatInput && this.aiImprover) {
+                            this.aiImprover.attachButton(chatInput, lang, 'chat');
+                            this.aiImprover.setVisibility(chatInput, !this.isInternalNoteMode);
+                        }
                     }
                 }
                 if (actions) {
@@ -1538,6 +1559,10 @@ export class AdminSupportLiveController {
             } else {
                 input.placeholder = window.__('placeholder_agent_chat_input');
             }
+
+            if (this.aiImprover) {
+                this.aiImprover.setVisibility(input, !this.isInternalNoteMode);
+            }
         }
     }
 
@@ -1811,7 +1836,12 @@ export class AdminSupportLiveController {
         const typingIndicator = document.querySelector('[data-ref="admin-support-typing-indicator"]');
 
         if (header) header.classList.add('disabled');
-        if (chatInput) chatInput.value = '';
+        if (chatInput) {
+            chatInput.value = '';
+            if (this.aiImprover) {
+                this.aiImprover.detachButton(chatInput);
+            }
+        }
         if (typingIndicator) typingIndicator.classList.add('disabled');
         if (nameEl) nameEl.textContent = window.__('lbl_select_chat_to_attend');
         if (subjectEl) subjectEl.textContent = window.__('lbl_no_active_chat_selected');

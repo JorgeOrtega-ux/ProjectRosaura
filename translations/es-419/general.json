@@ -2105,6 +2105,9 @@
     "lbl_status_resolved": "Resuelto",
     "lbl_status_closed": "Cerrado",
     "title_ticket_detail": "Detalle del Ticket de Soporte",
-    "btn_back_to_tickets": "Volver a tickets"
+    "btn_back_to_tickets": "Volver a tickets",
+    "btn_ai_improve": "✨ Mejorar",
+    "lbl_ai_processing": "Procesando...",
+    "err_ai_unavailable": "⚠ IA no disponible"
 }
 

@@ -2,10 +2,12 @@ import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { restoreButton, setButtonLoading, showMessage } from '../../../core/utils/uiUtils.js';
 import { AdminModalTemplates } from '../AdminModalTemplates.js';
+import { AiImprover } from './ai/AiImprover.js';
 
 export class AdminSupportCannedController {
     constructor() {
         this.api = new ApiService();
+        this.aiImprover = null;
         this.container = null;
         this.basePath = window.AppBasePath || '';
         this.abortController = null;
@@ -18,6 +20,7 @@ export class AdminSupportCannedController {
     init() {
         this.container = document.querySelector('[data-ref="admin-support-canned-wrapper"]');
         this.abortController = new AbortController();
+        this.aiImprover = new AiImprover(this.api);
         if (window.modalSystem) {
             window.modalSystem.registerTemplates(AdminModalTemplates);
         }
@@ -35,6 +38,12 @@ export class AdminSupportCannedController {
         if (this.abortController) {
             this.abortController.abort();
             this.abortController = null;
+        }
+
+        const textarea = document.querySelector('[data-ref="canned-content-input"]');
+        if (textarea && this.aiImprover) {
+            this.aiImprover.detachButton(textarea);
+            this.aiImprover = null;
         }
 
         if (this.container) {
@@ -195,6 +204,11 @@ export class AdminSupportCannedController {
         window.modalSystem.show('cannedResponseModal', {
             item: item || {}
         });
+
+        const textarea = document.querySelector('[data-ref="canned-content-input"]');
+        if (textarea && this.aiImprover) {
+            this.aiImprover.attachButton(textarea, 'es-419', 'canned');
+        }
     }
 
     _handleSelectLevel(item) {

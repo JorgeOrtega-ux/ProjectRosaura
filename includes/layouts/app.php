@@ -318,6 +318,11 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
             permissions: <?php echo json_encode($userPermissions ?? []); ?>
         };
 
+        window.AI_CONFIG = {
+            enabled: <?php echo (\App\Core\Helpers\EnvLoader::get('AI_ENABLED', 'true') === 'false' || \App\Core\Helpers\EnvLoader::get('AI_ENABLED', 'true') === false || \App\Core\Helpers\EnvLoader::get('AI_ENABLED', 'true') === '0') ? 'false' : 'true'; ?>,
+            provider: "<?php echo (\App\Core\Helpers\EnvLoader::get('AI_ENABLED', 'true') === 'false' || \App\Core\Helpers\EnvLoader::get('AI_ENABLED', 'true') === false || \App\Core\Helpers\EnvLoader::get('AI_ENABLED', 'true') === '0') ? 'null' : 'api'; ?>"
+        };
+
         
         function __(key, params = {}) { 
             let text = (window.AppTranslations && window.AppTranslations[key] !== undefined) ? window.AppTranslations[key] : key; 

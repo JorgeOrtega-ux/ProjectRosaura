@@ -9054,4 +9054,97 @@ html.dark-theme .component-skeleton-design-bottom {
     font-weight: 700;
     line-height: 18px;
     border-radius: 9px;
-}
+}
+
+/* ==========================================
+   MEJORA DE MENSAJES CON IA (SOPORTE)
+   ========================================== */
+.component-ai-improve-wrapper {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    z-index: 5;
+    pointer-events: auto;
+}
+
+.component-ai-improve-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 28px;
+    padding: 0 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.component-ai-improve-btn:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+    border-color: var(--border-color-hover);
+}
+
+.component-ai-improve-btn.is-empty {
+    opacity: 0.6;
+}
+
+.component-ai-improve-btn.is-empty:hover {
+    opacity: 1;
+}
+
+.component-ai-improve-btn.disabled {
+    display: none !important;
+}
+
+.component-ai-improve-btn .material-symbols-rounded {
+    font-size: 1rem;
+}
+
+.component-ai-improve-btn--loading {
+    cursor: wait !important;
+    opacity: 0.85;
+}
+
+.component-ai-improve-btn--loading .component-spinner {
+    width: 12px;
+    height: 12px;
+    border-width: 2px;
+}
+
+.component-ai-improve-btn--error {
+    background: rgba(239, 68, 68, 0.1) !important;
+    border-color: rgba(239, 68, 68, 0.4) !important;
+    color: #ef4444 !important;
+}
+
+.component-ai-improve-btn--error .material-symbols-rounded {
+    color: #ef4444;
+}
+
+/* Flash de éxito al actualizar texto */
+.ai-improve-flash-success {
+    animation: aiFlashSuccess 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes aiFlashSuccess {
+    0% {
+        border-color: #22c55e !important;
+        box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2) !important;
+    }
+    100% {
+        border-color: var(--border-color);
+        box-shadow: none;
+    }
+}
+

@@ -726,5 +726,8 @@
     "lbl_problem_subject": "Asunto",
     "lbl_claim_chat_desc": "Atiende esta conversación para comenzar a responder los mensajes del usuario.",
     "lbl_pending_chat": "Chat pendiente de atención",
-    "lbl_no_description": "Sin descripción proporcionada"
+    "lbl_no_description": "Sin descripción proporcionada",
+    "btn_ai_improve": "✨ Mejorar",
+    "lbl_ai_processing": "Procesando...",
+    "err_ai_unavailable": "⚠ IA no disponible"
 }

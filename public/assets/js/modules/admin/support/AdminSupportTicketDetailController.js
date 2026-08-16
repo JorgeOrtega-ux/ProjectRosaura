@@ -1,10 +1,12 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { restoreButton, setButtonLoading, showMessage } from '../../../core/utils/uiUtils.js';
+import { AiImprover } from './ai/AiImprover.js';
 
 export class AdminSupportTicketDetailController {
     constructor() {
         this.api = new ApiService();
+        this.aiImprover = null;
         this.container = null;
         this.abortController = null;
         this.ticketUuid = null;
@@ -17,10 +19,16 @@ export class AdminSupportTicketDetailController {
     init() {
         this.container = document.querySelector('[data-ref="admin-ticket-detail-wrapper"]');
         this.abortController = new AbortController();
+        this.aiImprover = new AiImprover(this.api);
 
         const match = window.location.pathname.match(/\/admin\/support\/ticket\/([a-zA-Z0-9_-]+)/);
         if (match) {
             this.ticketUuid = match[1];
+        }
+
+        const textarea = document.querySelector('[data-ref="ticket-reply-text"]');
+        if (textarea && this.aiImprover) {
+            this.aiImprover.attachButton(textarea, 'es-419', 'ticket');
         }
 
         this.bindEvents();
@@ -34,6 +42,12 @@ export class AdminSupportTicketDetailController {
         if (this.abortController) {
             this.abortController.abort();
             this.abortController = null;
+        }
+
+        const textarea = document.querySelector('[data-ref="ticket-reply-text"]');
+        if (textarea && this.aiImprover) {
+            this.aiImprover.detachButton(textarea);
+            this.aiImprover = null;
         }
 
         document.body.removeEventListener('click', this._boundClick);

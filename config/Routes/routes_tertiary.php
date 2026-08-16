@@ -987,6 +987,22 @@ return [
             ],
         ],
     ],
+    'admin.support.ai_improve' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminSupportController',
+        'action' => 'aiImprove',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'admin_support_ai_improve',
+                'max' => 30,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
     'admin.send_password_reset' => [
         'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
         'action' => 'send_password_reset',

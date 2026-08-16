@@ -3,10 +3,12 @@ import { ApiService } from '../../../core/api/ApiServices.js';
 import { restoreButton, setButtonLoading, showMessage } from '../../../core/utils/uiUtils.js';
 import { AdminModalTemplates } from '../AdminModalTemplates.js';
 import { ImageViewerSystem } from '../../../core/components/ImageViewerSystem.js';
+import { AiImprover } from './ai/AiImprover.js';
 
 export class AdminSupportFloatingController {
     constructor() {
         this.api = new ApiService();
+        this.aiImprover = null;
         this.activeSession = null;
         this.activeSessionUuid = null;
         this.myActiveSessions = [];
@@ -33,6 +35,7 @@ export class AdminSupportFloatingController {
     }
 
     init() {
+        this.aiImprover = new AiImprover(this.api);
         this.bindEvents();
         if (window.modalSystem) {
             window.modalSystem.registerTemplates(AdminModalTemplates);
@@ -51,6 +54,13 @@ export class AdminSupportFloatingController {
 
     destroy() {
         this._disconnectWs();
+
+        const input = document.querySelector('[data-ref="admin-support-floating-chat-input"]');
+        if (input && this.aiImprover) {
+            this.aiImprover.detachButton(input);
+            this.aiImprover = null;
+        }
+
         document.body.removeEventListener('click', this._boundClick);
         document.body.removeEventListener('keydown', this._boundKeydown);
         document.body.removeEventListener('input', this._boundInput);
@@ -112,6 +122,13 @@ export class AdminSupportFloatingController {
             this._updateUnreadBadge();
         }
 
+        const lang = sessionData.language || 'es-419';
+        const input = document.querySelector('[data-ref="admin-support-floating-chat-input"]');
+        if (input && this.aiImprover) {
+            this.aiImprover.attachButton(input, lang, 'chat');
+            this.aiImprover.setVisibility(input, !this.isInternalNoteMode);
+        }
+
         this._connectWebSocket();
     }
 
@@ -124,6 +141,11 @@ export class AdminSupportFloatingController {
         localStorage.removeItem('pr_active_agent_support_session');
         this._disconnectWs();
         this.closeModule();
+
+        const input = document.querySelector('[data-ref="admin-support-floating-chat-input"]');
+        if (input && this.aiImprover) {
+            this.aiImprover.detachButton(input);
+        }
 
         const fab = document.querySelector('[data-ref="floating-admin-support-btn"]');
         if (fab) fab.classList.add('disabled');
@@ -677,6 +699,10 @@ export class AdminSupportFloatingController {
             input.placeholder = this.isInternalNoteMode
                 ? window.__('placeholder_internal_note', [], 'Escribe una nota interna para otros agentes...')
                 : window.__('placeholder_agent_chat_input', [], 'Escribe una respuesta para el usuario...');
+
+            if (this.aiImprover) {
+                this.aiImprover.setVisibility(input, !this.isInternalNoteMode);
+            }
         }
     }
 

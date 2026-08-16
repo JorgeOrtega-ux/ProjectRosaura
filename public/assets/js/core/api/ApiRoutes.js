@@ -146,7 +146,8 @@ export const ApiRoutes = {
         UpdateTicketStatus: 'admin.support.update_ticket_status',
         ReplyTicket: 'admin.support.reply_ticket',
         GetMetrics: 'admin.support.get_metrics',
-        GetClientProfile: 'admin.support.get_client_profile'
+        GetClientProfile: 'admin.support.get_client_profile',
+        AiImprove: 'admin.support.ai_improve'
     },
     Canvases: {
         GetHomeFeed: 'canvases.get_home_feed',

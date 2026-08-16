@@ -923,4 +923,40 @@ class AdminSupportService {
             'recent_sessions' => $recentSessions
         ];
     }
+
+    /**
+     * Mejora el texto de un agente de soporte usando el servicio de IA configurado.
+     *
+     * @param array $input [text, target_language, context]
+     * @return array
+     */
+    public function aiImprove(array $input): array {
+        $agentId = $this->getCurrentAgentId();
+        $hasAnySupportPermission = $this->hasPermission(PC::ACCESS_SUPPORT_PANEL)
+            || $this->hasPermission(PC::SUPPORT_TICKETS_MANAGE)
+            || $this->hasPermission(PC::SUPPORT_MANAGE_CANNED)
+            || $this->hasPermission(PC::SUPPORT_VIEW_METRICS)
+            || $this->hasPermission(PC::MANAGE_SUPPORT_ROLES);
+
+        if (!$agentId || !$hasAnySupportPermission) {
+            return ['success' => false, 'message' => __('err_unauthorized')];
+        }
+
+        $text = isset($input['text']) ? trim((string)$input['text']) : '';
+        if ($text === '') {
+            return ['success' => false, 'message' => __('validation.required_field')];
+        }
+
+        $targetLanguage = isset($input['target_language']) && is_string($input['target_language'])
+            ? trim($input['target_language'])
+            : 'es-419';
+
+        $context = isset($input['context']) && is_string($input['context'])
+            ? trim($input['context'])
+            : 'chat';
+
+        $improver = new \App\Core\AI\AiTextImprover();
+        return $improver->improve($text, $targetLanguage, $context);
+    }
 }
+
