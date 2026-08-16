@@ -524,10 +524,10 @@ export class CanvasCardInteractions {
 
                             ${isOwner ? `
                             <div class="component-menu-divider"></div>
-                            <button type="button" class="component-menu-link" data-action="menuGoToPage" data-target-page="manage">
+                            <button type="button" class="component-menu-link${isLocked ? ' disabled-interaction' : ''}" ${isLocked ? '' : 'data-action="menuGoToPage" data-target-page="manage"'}>
                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">settings</span></div>
                                 <div class="component-menu-link-text"><span>Gestionar lienzo</span></div>
-                                <div class="component-menu-link-arrow"><span class="material-symbols-rounded">chevron_right</span></div>
+                                ${isLocked ? '' : '<div class="component-menu-link-arrow"><span class="material-symbols-rounded">chevron_right</span></div>'}
                             </button>
                             ` : ''}
 

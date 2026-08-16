@@ -734,6 +734,10 @@ class CanvasCoreService {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
 
+            if (!empty($canvas['is_subscription_locked'])) {
+                return ['success' => false, 'message' => __('err_canvas_locked')];
+            }
+
             if (empty(trim($data['name']))) {
                 return ['success' => false, 'message' => __('err_canvas_name_required')];
             }

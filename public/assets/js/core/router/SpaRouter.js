@@ -112,6 +112,10 @@ export class SpaRouter {
     handleBodyClick(e) {
         const navTarget = e.target.closest('[data-nav]');
         if (navTarget) {
+            const url = navTarget.dataset.nav;
+            if (!url || !url.trim() || navTarget.classList.contains('disabled-interaction') || navTarget.disabled) {
+                return;
+            }
             e.preventDefault();
 
             const module = navTarget.closest('.component-module');
@@ -124,7 +128,6 @@ export class SpaRouter {
                 });
             }
 
-            const url = navTarget.dataset.nav;
             this.navigate(url);
             return;
         }
@@ -146,6 +149,7 @@ export class SpaRouter {
     }
 
     navigate(url) {
+        if (!url || typeof url !== 'string' || !url.trim()) return;
         let targetPath = url;
         try {
             if (url.startsWith('http')) {

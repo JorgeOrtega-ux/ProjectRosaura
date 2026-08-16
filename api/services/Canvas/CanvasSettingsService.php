@@ -32,6 +32,10 @@ class CanvasSettingsService {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
             }
 
+            if (!empty($canvas['is_subscription_locked'])) {
+                return ['success' => false, 'message' => __('err_canvas_locked')];
+            }
+
             $isOwner = ($canvas['owner_id'] === $userId);
             $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
             if (!isset($allSizes[$newSize])) {
@@ -124,6 +128,10 @@ class CanvasSettingsService {
 
             if (!$canvas || !$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
+            if (!empty($canvas['is_subscription_locked'])) {
+                return ['success' => false, 'message' => __('err_canvas_locked')];
             }
 
             $isActive = filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
@@ -249,6 +257,10 @@ class CanvasSettingsService {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
 
+            if (!empty($canvas['is_subscription_locked'])) {
+                return ['success' => false, 'message' => __('err_canvas_locked')];
+            }
+
 
 
             $isActive = filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
@@ -333,6 +345,10 @@ class CanvasSettingsService {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
             }
 
+            if (!empty($canvas['is_subscription_locked'])) {
+                return ['success' => false, 'message' => __('err_canvas_locked')];
+            }
+
 
 
             $role = null;
@@ -381,6 +397,10 @@ class CanvasSettingsService {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
+            }
+
+            if (!empty($canvas['is_subscription_locked'])) {
+                return ['success' => false, 'message' => __('err_canvas_locked')];
             }
 
             $isOwner = ($canvas['owner_id'] !== null && (int)$canvas['owner_id'] === (int)$userId);
@@ -505,6 +525,10 @@ class CanvasSettingsService {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
 
+            if (!empty($canvas['is_subscription_locked'])) {
+                return ['success' => false, 'message' => __('err_canvas_locked')];
+            }
+
             $isOwner = ($canvas['owner_id'] === $userId);
             if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
@@ -542,6 +566,10 @@ class CanvasSettingsService {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
+
+            if (!empty($canvas['is_subscription_locked'])) {
+                return ['success' => false, 'message' => __('err_canvas_locked')];
+            }
 
             $isOwner = ($canvas['owner_id'] === $userId);
             if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {
@@ -583,6 +611,10 @@ class CanvasSettingsService {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
 
+            if (!empty($canvas['is_subscription_locked'])) {
+                return ['success' => false, 'message' => __('err_canvas_locked')];
+            }
+
             $isOwner = ($canvas['owner_id'] === $userId);
             if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
@@ -615,6 +647,10 @@ class CanvasSettingsService {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
+
+            if (!empty($canvas['is_subscription_locked'])) {
+                return ['success' => false, 'message' => __('err_canvas_locked')];
+            }
 
             $isOwner = ($canvas['owner_id'] === $userId);
             if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $userId, 'manage_roles')) {

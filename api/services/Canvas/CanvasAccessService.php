@@ -57,6 +57,10 @@ class CanvasAccessService {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
             
+            if (!empty($canvas['is_subscription_locked'])) {
+                return ['success' => false, 'message' => __('err_canvas_locked')];
+            }
+            
             $isOwner = ($canvas['owner_id'] === $requesterId);
             if (!$isOwner && !$this->canvasRepository->hasCanvasPermission($canvasId, $requesterId, 'manage_roles')) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
@@ -112,6 +116,10 @@ class CanvasAccessService {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
 
+            if (!empty($canvas['is_subscription_locked'])) {
+                return ['success' => false, 'message' => __('err_canvas_locked')];
+            }
+
             $isOwner = ($canvas['owner_id'] === $requesterId);
             $isAdmin = $isOwner || $this->canvasRepository->hasCanvasPermission($canvasId, $requesterId, CanvasPermissionsConstants::MANAGE_ROLES) || $this->canvasRepository->hasCanvasPermission($canvasId, $requesterId, CanvasPermissionsConstants::MANAGE_SETTINGS);
 
@@ -137,6 +145,10 @@ class CanvasAccessService {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
+
+            if (!empty($canvas['is_subscription_locked'])) {
+                return ['success' => false, 'message' => __('err_canvas_locked')];
+            }
 
             // Check if user is banned from the canvas
             $db = new DatabaseManager();
@@ -199,6 +211,10 @@ class CanvasAccessService {
             $canvas = $this->canvasRepository->getById($request['canvas_id']);
             $isOwner = ($canvas['owner_id'] === $ownerId);
             if (!$canvas || !$isOwner) return ['success' => false, 'message' => __('err_unauthorized')];
+
+            if (!empty($canvas['is_subscription_locked'])) {
+                return ['success' => false, 'message' => __('err_canvas_locked')];
+            }
 
             if ($canvas['owner_id'] !== null) {
                 $owner = $this->userRepository->findById($canvas['owner_id']);
@@ -401,6 +417,10 @@ class CanvasAccessService {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
 
+            if (!empty($canvas['is_subscription_locked'])) {
+                return ['success' => false, 'message' => __('err_canvas_locked')];
+            }
+
             $isOwner = ($canvas['owner_id'] === $userId);
             $canManageInvites = $isOwner || $this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\CanvasPermissionsConstants::MANAGE_INVITES);
             if (!$canManageInvites) {
@@ -468,6 +488,10 @@ class CanvasAccessService {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
 
+            if (!empty($canvas['is_subscription_locked'])) {
+                return ['success' => false, 'message' => __('err_canvas_locked')];
+            }
+
             $isOwner = ($canvas['owner_id'] === $userId);
             $canManageInvites = $isOwner || $this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\CanvasPermissionsConstants::MANAGE_INVITES);
             if (!$canManageInvites) {
@@ -504,6 +528,10 @@ class CanvasAccessService {
             $canvasId = $invite['canvas_id'];
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_deleted')];
+
+            if (!empty($canvas['is_subscription_locked'])) {
+                return ['success' => false, 'message' => __('err_canvas_locked')];
+            }
 
             // Check if user is banned from the canvas
             $db = new DatabaseManager();

@@ -103,7 +103,7 @@ class CanvasViewService {
                          LEFT JOIN canvas_user_roles cur ON c.id = cur.canvas_id AND cur.user_id = :uid1
                          LEFT JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id AND crp.permission_id IN (2, 3, 4, 5, 6, 7)
                          WHERE c.owner_id = :uid2 OR crp.permission_id IS NOT NULL";
-        $sqlSelect = "SELECT DISTINCT c.id, c.uuid, c.name, c.privacy, c.size, c.max_participants, c.created_at, c.favorites_count, c.owner_id 
+        $sqlSelect = "SELECT DISTINCT c.id, c.uuid, c.name, c.privacy, c.size, c.max_participants, c.created_at, c.favorites_count, c.owner_id, c.is_subscription_locked, c.locked_reasons 
                       FROM {$tblCanvases} c 
                       LEFT JOIN canvas_user_roles cur ON c.id = cur.canvas_id AND cur.user_id = :uid1
                       LEFT JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id AND crp.permission_id IN (2, 3, 4, 5, 6, 7)
@@ -358,10 +358,24 @@ class CanvasViewService {
         if ($canvasUuid) {
             try {
                 $pdoCanvases = $db->getConnection($connNameCanvases);
-                $stmt = $pdoCanvases->prepare("SELECT id, owner_id FROM canvases WHERE uuid = :uuid LIMIT 1");
+                $stmt = $pdoCanvases->prepare("SELECT id, owner_id, is_subscription_locked FROM canvases WHERE uuid = :uuid LIMIT 1");
                 $stmt->execute(['uuid' => $canvasUuid]);
                 $canvasData = $stmt->fetch(\PDO::FETCH_ASSOC);
                 if ($canvasData) {
+                    if (!empty($canvasData['is_subscription_locked'])) {
+                        return [
+                            'unauthorized' => true,
+                            'is_locked' => true,
+                            'userId' => $userId,
+                            'canvasUuid' => $canvasUuid,
+                            'canvasId' => null,
+                            'canvasOwnerId' => null,
+                            'members' => [],
+                            'totalPages' => 1,
+                            'page' => 1,
+                            'totalMembers' => 0
+                        ];
+                    }
                     $canvasId = (int)$canvasData['id'];
                     $canvasOwnerId = (int)$canvasData['owner_id'];
                 }
@@ -607,6 +621,9 @@ class CanvasViewService {
                 $canvasData = $stmt->fetch(\PDO::FETCH_ASSOC);
 
                 if ($canvasData) {
+                    if (!empty($canvasData['is_subscription_locked'])) {
+                        return ['unauthorized' => true, 'is_locked' => true, 'canvasId' => null];
+                    }
                     $isOwner = ((int)$canvasData['owner_id'] === (int)$userId);
                     
                     $hasPerm = false;
@@ -681,11 +698,26 @@ class CanvasViewService {
                 $pdo = $db->getConnection(defined('\App\Core\System\DatabaseConstants::CONN_CANVASES') ? \App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases');
 
                 $tblCanvases = defined('\App\Core\System\DatabaseConstants::TBL_CANVASES') ? \App\Core\System\DatabaseConstants::TBL_CANVASES : 'canvases';
-                $stmt = $pdo->prepare('SELECT id, owner_id FROM ' . $tblCanvases . ' WHERE uuid = :uuid LIMIT 1');
+                $stmt = $pdo->prepare('SELECT id, owner_id, is_subscription_locked FROM ' . $tblCanvases . ' WHERE uuid = :uuid LIMIT 1');
                 $stmt->execute(['uuid' => $canvasUuid]);
                 $canvas = $stmt->fetch(\PDO::FETCH_ASSOC);
 
                 if ($canvas) {
+                    if (!empty($canvas['is_subscription_locked'])) {
+                        return [
+                            'unauthorized' => true,
+                            'is_locked' => true,
+                            'canvasId' => null,
+                            'canvasUuid' => $canvasUuid,
+                            'resetSettings' => $resetSettings,
+                            'maxSnapshots' => $maxSnapshots,
+                            'currentSnapshots' => $currentSnapshots,
+                            'canTakeSnapshot' => false,
+                            'monthShort' => $monthShort,
+                            'resetDateLocal' => '',
+                            'resetDateDisplay' => ''
+                        ];
+                    }
                     $isOwner = ((int)$canvas['owner_id'] === (int)$userId);
                     $canManageResets = $isOwner || $this->hasCanvasPermission($pdo, (int)$canvas['id'], (int)$userId, CanvasPermissionsConstants::MANAGE_RESETS);
 
@@ -780,12 +812,16 @@ class CanvasViewService {
         $pdo = $db->getConnection(defined('\App\Core\System\DatabaseConstants::CONN_CANVASES') ? \App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases');
         $tblCanvases = defined('\App\Core\System\DatabaseConstants::TBL_CANVASES') ? \App\Core\System\DatabaseConstants::TBL_CANVASES : 'canvases';
 
-        $stmt = $pdo->prepare('SELECT id, uuid, name, size, owner_id FROM ' . $tblCanvases . ' WHERE uuid = :uuid LIMIT 1');
+        $stmt = $pdo->prepare('SELECT id, uuid, name, size, owner_id, is_subscription_locked FROM ' . $tblCanvases . ' WHERE uuid = :uuid LIMIT 1');
         $stmt->execute(['uuid' => $canvasUuid]);
         $canvas = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         if (!$canvas) {
             return ['error' => __('err_canvas_not_found')];
+        }
+
+        if (!empty($canvas['is_subscription_locked'])) {
+            return ['unauthorized' => true, 'is_locked' => true, 'error' => __('err_canvas_locked')];
         }
 
         $isOwner = ((int)$canvas['owner_id'] === (int)$userId);
@@ -925,10 +961,13 @@ class CanvasViewService {
         $canvasId = null;
         $canvasOwnerId = null;
         try {
-            $stmt = $pdoCanvases->prepare("SELECT id, owner_id FROM canvases WHERE uuid = :uuid LIMIT 1");
+            $stmt = $pdoCanvases->prepare("SELECT id, owner_id, is_subscription_locked FROM canvases WHERE uuid = :uuid LIMIT 1");
             $stmt->execute(['uuid' => $canvasUuid]);
             $canvasData = $stmt->fetch(\PDO::FETCH_ASSOC);
             if ($canvasData) {
+                if (!empty($canvasData['is_subscription_locked'])) {
+                    return ['unauthorized' => true, 'is_locked' => true, 'error' => __('err_canvas_locked')];
+                }
                 $canvasId = (int)$canvasData['id'];
                 $canvasOwnerId = (int)$canvasData['owner_id'];
             }
@@ -1059,11 +1098,14 @@ class CanvasViewService {
 
         try {
             $pdoCanvases = $db->getConnection($connNameCanvases);
-            $stmt = $pdoCanvases->prepare("SELECT id, owner_id FROM canvases WHERE uuid = :uuid LIMIT 1");
+            $stmt = $pdoCanvases->prepare("SELECT id, owner_id, is_subscription_locked FROM canvases WHERE uuid = :uuid LIMIT 1");
             $stmt->execute(['uuid' => $canvasUuid]);
             $canvasData = $stmt->fetch(\PDO::FETCH_ASSOC);
 
             if ($canvasData) {
+                if (!empty($canvasData['is_subscription_locked'])) {
+                    return ['unauthorized' => true, 'is_locked' => true, 'error' => __('err_canvas_locked')];
+                }
                 $canvasId = (int)$canvasData['id'];
                 $canvasOwnerId = (int)$canvasData['owner_id'];
 
@@ -1179,10 +1221,13 @@ class CanvasViewService {
         if ($canvasUuid) {
             try {
                 $pdoCanvases = $db->getConnection($connNameCanvases);
-                $stmt = $pdoCanvases->prepare("SELECT id, owner_id FROM canvases WHERE uuid = :uuid LIMIT 1");
+                $stmt = $pdoCanvases->prepare("SELECT id, owner_id, is_subscription_locked FROM canvases WHERE uuid = :uuid LIMIT 1");
                 $stmt->execute(['uuid' => $canvasUuid]);
                 $canvasData = $stmt->fetch(\PDO::FETCH_ASSOC);
                 if ($canvasData) {
+                    if (!empty($canvasData['is_subscription_locked'])) {
+                        return ['unauthorized' => true, 'is_locked' => true, 'error' => __('err_canvas_locked')];
+                    }
                     $canvasId = (int)$canvasData['id'];
                     $canvasOwnerId = isset($canvasData['owner_id']) ? (int)$canvasData['owner_id'] : null;
                 }
@@ -1246,11 +1291,15 @@ class CanvasViewService {
                 $db = new DatabaseManager();
                 $pdo = $db->getConnection(defined('\App\Core\System\DatabaseConstants::CONN_CANVASES') ? \App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases');
 
-                $stmt = $pdo->prepare("SELECT id FROM canvases WHERE uuid = :uuid LIMIT 1");
+                $stmt = $pdo->prepare("SELECT id, is_subscription_locked FROM canvases WHERE uuid = :uuid LIMIT 1");
                 $stmt->execute(['uuid' => $canvasUuid]);
-                $canvasId = (int)$stmt->fetchColumn();
+                $canvasRow = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-                if ($canvasId) {
+                if ($canvasRow) {
+                    if (!empty($canvasRow['is_subscription_locked'])) {
+                        return ['unauthorized' => true, 'is_locked' => true, 'error' => __('err_canvas_locked')];
+                    }
+                    $canvasId = (int)$canvasRow['id'];
                     $stmtReq = $pdo->prepare("SELECT id, user_id, status, created_at FROM canvas_access_requests WHERE canvas_id = :cid AND status = 'pending' ORDER BY created_at ASC");
                     $stmtReq->execute(['cid' => $canvasId]);
                     $pendingRequests = $stmtReq->fetchAll(\PDO::FETCH_ASSOC);
@@ -1292,10 +1341,13 @@ class CanvasViewService {
         $canvasOwnerId = null;
 
         try {
-            $stmt = $pdoCanvases->prepare("SELECT id, owner_id FROM canvases WHERE uuid = :uuid LIMIT 1");
+            $stmt = $pdoCanvases->prepare("SELECT id, owner_id, is_subscription_locked FROM canvases WHERE uuid = :uuid LIMIT 1");
             $stmt->execute(['uuid' => $canvasUuid]);
             $canvasData = $stmt->fetch(\PDO::FETCH_ASSOC);
             if ($canvasData) {
+                if (!empty($canvasData['is_subscription_locked'])) {
+                    return ['unauthorized' => true, 'is_locked' => true, 'error' => __('err_canvas_locked')];
+                }
                 $canvasId = (int)$canvasData['id'];
                 $canvasOwnerId = (int)$canvasData['owner_id'];
             }
@@ -1397,10 +1449,13 @@ class CanvasViewService {
         $canvasId = null;
         $canvasOwnerId = null;
         try {
-            $stmt = $pdoCanvases->prepare("SELECT id, owner_id FROM canvases WHERE uuid = :uuid LIMIT 1");
+            $stmt = $pdoCanvases->prepare("SELECT id, owner_id, is_subscription_locked FROM canvases WHERE uuid = :uuid LIMIT 1");
             $stmt->execute(['uuid' => $canvasUuid]);
             $canvasData = $stmt->fetch(\PDO::FETCH_ASSOC);
             if ($canvasData) {
+                if (!empty($canvasData['is_subscription_locked'])) {
+                    return ['unauthorized' => true, 'is_locked' => true, 'error' => __('err_canvas_locked')];
+                }
                 $canvasId = (int)$canvasData['id'];
                 $canvasOwnerId = (int)$canvasData['owner_id'];
             }
@@ -1604,12 +1659,12 @@ class CanvasViewService {
         $db = new DatabaseManager();
         $pdoCanvases = $db->getConnection(defined('\App\Core\System\DatabaseConstants::CONN_CANVASES') ? \App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases');
 
-        $stmt = $pdoCanvases->prepare("SELECT id, uuid, owner_id as user_id FROM canvases WHERE uuid = :uuid OR id = :uuid_alt LIMIT 1");
+        $stmt = $pdoCanvases->prepare("SELECT id, uuid, owner_id as user_id, is_subscription_locked FROM canvases WHERE uuid = :uuid OR id = :uuid_alt LIMIT 1");
         $stmt->execute(['uuid' => $canvasUuid, 'uuid_alt' => $canvasUuid]);
         $canvas = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        if (!$canvas) {
-            return ['unauthorized' => true, 'redirect' => (defined('APP_URL') ? APP_URL : '') . '/canvases/manage'];
+        if (!$canvas || !empty($canvas['is_subscription_locked'])) {
+            return ['unauthorized' => true, 'is_locked' => true, 'redirect' => (defined('APP_URL') ? APP_URL : '') . '/canvases/manage'];
         }
 
         $canvasId = (int)$canvas['id'];

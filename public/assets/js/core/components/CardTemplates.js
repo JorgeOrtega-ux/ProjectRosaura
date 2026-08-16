@@ -34,26 +34,11 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
             </div>
         `;
         
-        let warningOverlay = '';
-        
-        if (canvas.locked_requires_downgrade) {
-            warningOverlay = `
-                <div class="component-gallery-warning-overlay" data-nav="${basePath}/design/${uuid}">
-                    <div class="component-gallery-warning-content">
-                        <span class="material-symbols-rounded">warning</span>
-                        <div class="component-gallery-warning-title">${window.__('plan_expired') || window.__('premium_plan_expired')}</div>
-                        <div class="component-gallery-warning-desc">${window.__('canvas_exceeds_limits')}</div>
-                    </div>
-                </div>
-            `;
-        }
-
         const navAction = `data-nav="${basePath}/design/${uuid}"`;
         const linkClass = '';
 
         return `
             <div class="component-gallery-card" data-card-id="${canvas.id}" data-privacy="${canvas.privacy || 'public'}">
-                ${warningOverlay}
                 ${imgHtml}
                 ${badgeHtml}
 

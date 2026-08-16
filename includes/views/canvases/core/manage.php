@@ -36,7 +36,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                 
                 <div class="component-actions disabled" data-ref="header-selection-actions">
                     
-                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-edit" data-nav="" data-tooltip="<?php echo __('tooltip_edit_canvas'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h40" data-ref="btn-nav-edit" data-tooltip="<?php echo __('tooltip_edit_canvas'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">edit</span>
                     </button>
 
@@ -53,17 +53,17 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                             <div class="component-menu component-menu--w265">
                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-menu-list">
-                                    <button type="button" class="component-menu-link" data-ref="btn-nav-resize" data-nav="">
+                                    <button type="button" class="component-menu-link" data-ref="btn-nav-resize">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">expand</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('tooltip_resize_canvas'); ?></span></div>
                                     </button>
 
-                                    <button type="button" class="component-menu-link" data-ref="btn-nav-resets" data-nav="">
+                                    <button type="button" class="component-menu-link" data-ref="btn-nav-resets">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">update</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('tooltip_manage_resets'); ?></span></div>
                                     </button>
 
-                                    <button type="button" class="component-menu-link disabled-interaction" data-ref="btn-nav-snapshots" data-nav="">
+                                    <button type="button" class="component-menu-link disabled-interaction" data-ref="btn-nav-snapshots">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">collections</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('tooltip_view_capturas'); ?></span></div>
                                     </button>
@@ -73,12 +73,12 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                         <div class="component-menu-link-text"><span><?php echo __('btn_create_captura'); ?></span></div>
                                     </button>
 
-                                    <button type="button" class="component-menu-link" data-ref="btn-nav-members" data-nav="">
+                                    <button type="button" class="component-menu-link" data-ref="btn-nav-members">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">group</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('tooltip_manage_members'); ?></span></div>
                                     </button>
 
-                                    <button type="button" class="component-menu-link" data-ref="btn-nav-sanctions" data-nav="">
+                                    <button type="button" class="component-menu-link" data-ref="btn-nav-sanctions">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">gavel</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('tooltip_manage_sanctions'); ?></span></div>
                                     </button>
@@ -86,14 +86,20 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                     <?php
                                         $rolesLock = \App\Core\System\SubscriptionFeatureConfig::getLockDetails($manageData['userTier'] ?? 0, 'feat_advanced_roles', 'link');
                                     ?>
-                                    <button type="button" class="component-menu-link <?php echo $rolesLock['class']; ?>" data-ref="btn-nav-roles" data-nav="" <?php echo $rolesLock['attributes']; ?>>
+                                    <button type="button" class="component-menu-link <?php echo $rolesLock['class']; ?>" data-ref="btn-nav-roles" <?php echo $rolesLock['attributes']; ?>>
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">shield_person</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('tooltip_manage_roles'); ?></span><?php echo $rolesLock['badge_html']; ?></div>
                                     </button>
 
-                                    <button type="button" class="component-menu-link" data-ref="btn-nav-invites" data-nav="">
+                                    <button type="button" class="component-menu-link" data-ref="btn-nav-invites">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">link</span></div>
                                         <div class="component-menu-link-text"><span><?php echo __('tooltip_manage_invites'); ?></span></div>
+                                    </button>
+
+                                    <div class="component-menu-divider"></div>
+                                    <button type="button" class="component-menu-link component-text-notice--warning" data-action="downgradeSelectedCanvas" data-ref="btn-action-downgrade">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">build_circle</span></div>
+                                        <div class="component-menu-link-text"><span><?php echo __('convert_to_basic'); ?></span></div>
                                     </button>
                                 </div>
                             </div>
@@ -156,15 +162,22 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                             <?php foreach ($canvases as $canvas): ?>
                                 <?php
                                 $isOwner = isset($canvas['owner_id']) && $canvas['owner_id'] == $userId ? 1 : 0;
+                                $isLocked = !empty($canvas['is_subscription_locked']) ? 1 : 0;
                                 $userPerms = json_encode($canvas['user_permissions'] ?? []);
                                 ?>
-                                <tr class="component-table-row" data-action="selectCanvas" data-canvas-id="<?php echo htmlspecialchars($canvas['id']); ?>" data-uuid="<?php echo htmlspecialchars($canvas['uuid']); ?>" data-size="<?php echo htmlspecialchars($canvas['size']); ?>" data-is-owner="<?php echo $isOwner; ?>" data-user-permissions="<?php echo htmlspecialchars($userPerms); ?>">
+                                <tr class="component-table-row" data-action="selectCanvas" data-canvas-id="<?php echo htmlspecialchars($canvas['id']); ?>" data-uuid="<?php echo htmlspecialchars($canvas['uuid']); ?>" data-size="<?php echo htmlspecialchars($canvas['size']); ?>" data-is-owner="<?php echo $isOwner; ?>" data-is-locked="<?php echo $isLocked; ?>" data-user-permissions="<?php echo htmlspecialchars($userPerms); ?>">
                                     <td>
                                         <div class="td-user-info">
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded">palette</span>
                                                 <span class="search-target"><?php echo htmlspecialchars($canvas['name']); ?></span>
                                             </div>
+                                            <?php if ($isLocked): ?>
+                                                <div class="component-badge component-badge--sm component-badge--danger" data-tooltip="<?php echo htmlspecialchars(__('plan_expired')); ?>" data-position="bottom">
+                                                    <span class="material-symbols-rounded">lock_clock</span>
+                                                    <span><?php echo __('plan_expired'); ?></span>
+                                                </div>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                     <td>
