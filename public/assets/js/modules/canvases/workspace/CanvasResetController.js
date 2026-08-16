@@ -224,39 +224,61 @@ class CanvasResetController {
     }
 
     async executeResetNow(btn) {
-        const canvasId = this.wrapper.getAttribute('data-canvas-id');
-        const checkSnapshotNow = this.wrapper.querySelector('[data-ref="take_snapshot_now"]');
-        const takeSnapshot = checkSnapshotNow ? checkSnapshotNow.checked : false;
-        
-        setButtonLoading(btn);
+        const performReset = async () => {
+            const canvasId = this.wrapper.getAttribute('data-canvas-id');
+            const checkSnapshotNow = this.wrapper.querySelector('[data-ref="take_snapshot_now"]');
+            const takeSnapshot = checkSnapshotNow ? checkSnapshotNow.checked : false;
+            
+            setButtonLoading(btn);
 
-        const result = await this.api.post(ApiRoutes.Canvases.ResetNow, { id: canvasId, take_snapshot: takeSnapshot }, this.abortController.signal);
+            const result = await this.api.post(ApiRoutes.Canvases.ResetNow, { id: canvasId, take_snapshot: takeSnapshot }, this.abortController.signal);
 
-        if (result.aborted) return;
-        
-        restoreButton(btn);
+            if (result.aborted) return;
+            
+            restoreButton(btn);
 
-        if (result.success) {
-            showMessage(result.message, 'success');
+            if (result.success) {
+                showMessage(result.message, 'success');
+            } else {
+                showMessage(result.message, 'error');
+            }
+        };
+
+        if (window.adManager) {
+            await window.adManager.showInterstitial({
+                actionName: 'canvas_reset',
+                onComplete: performReset
+            });
         } else {
-            showMessage(result.message, 'error');
+            await performReset();
         }
     }
 
     async executeCreateSnapshot(btn) {
-        const canvasId = this.wrapper.getAttribute('data-canvas-id');
-        setButtonLoading(btn);
+        const performSnapshot = async () => {
+            const canvasId = this.wrapper.getAttribute('data-canvas-id');
+            setButtonLoading(btn);
 
-        const result = await this.api.post(ApiRoutes.Canvases.CreateSnapshot, { id: canvasId }, this.abortController.signal);
+            const result = await this.api.post(ApiRoutes.Canvases.CreateSnapshot, { id: canvasId }, this.abortController.signal);
 
-        if (result.aborted) return;
-        
-        restoreButton(btn);
+            if (result.aborted) return;
+            
+            restoreButton(btn);
 
-        if (result.success) {
-            showMessage(result.message, 'success');
+            if (result.success) {
+                showMessage(result.message, 'success');
+            } else {
+                showMessage(result.message, 'error');
+            }
+        };
+
+        if (window.adManager) {
+            await window.adManager.showInterstitial({
+                actionName: 'canvas_snapshot',
+                onComplete: performSnapshot
+            });
         } else {
-            showMessage(result.message, 'error');
+            await performSnapshot();
         }
     }
 }

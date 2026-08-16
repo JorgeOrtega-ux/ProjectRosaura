@@ -41,6 +41,9 @@ export class SearchController {
         this.cardInteractions = new CanvasCardInteractions(this.api, this.basePath, this.abortController);
 
         this.virtualObserver = new VirtualGridObserver((canvas) => {
+            if (canvas && canvas.is_ad) {
+                return CardTemplates.nativeAdCard(canvas, { basePath: this.basePath });
+            }
             return CardTemplates.canvasCard(canvas, { basePath: this.basePath });
         });
 
@@ -111,7 +114,7 @@ export class SearchController {
             removeInfiniteScrollSkeletons(this.contentArea);
 
             if (resData && resData.success) {
-                const newCanvases = resData.data || [];
+                let newCanvases = resData.data || [];
                 this.totalFound = typeof resData.total === 'number' ? resData.total : (this.allCanvases.length + newCanvases.length);
 
                 if (this.title) {
@@ -128,6 +131,12 @@ export class SearchController {
                     }
                     this.isLoadingMore = false;
                     return;
+                }
+
+                if (newCanvases.length > 0) {
+                    if (window.adManager && typeof window.adManager.injectFeedAds === 'function') {
+                        newCanvases = window.adManager.injectFeedAds(newCanvases, 8);
+                    }
                 }
 
                 renderVirtualGridItems(this.contentArea, newCanvases, this.virtualObserver, isLoadMore, 'home-all-canvases');

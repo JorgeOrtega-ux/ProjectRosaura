@@ -121,6 +121,48 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         `;
     },
 
+    nativeAdCard: (adData = {}, config = {}) => {
+        const basePath = config.basePath || '';
+        const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+        const sponsoredText = __('sponsored') || 'Patrocinado';
+        const promoBtn = __('ad_card_promo_btn') || 'Ver Planes';
+
+        const fallbackImg = basePath + '/assets/img/fallbacks/canvas-default.png';
+        const srcUrl = adData.thumbnail_url ? escapeHTML(adData.thumbnail_url) : fallbackImg;
+
+        const imgHtml = `
+            <img src="${srcUrl}" 
+                 alt="${sponsoredText}" 
+                 class="component-gallery-card__image image-lazy-fade" 
+                 loading="lazy" 
+                 decoding="async" 
+                 onload="this.classList.add('image-loaded')"
+                 onerror="this.onerror=null; this.src='${fallbackImg}'; this.classList.add('image-loaded');">`;
+
+        const badgeHtml = `
+            <div class="component-badge component-badge--glass component-badge--absolute-tr">
+                <span class="material-symbols-rounded">campaign</span>
+                <span>${sponsoredText}</span>
+            </div>
+        `;
+
+        const navAction = `data-nav="${basePath}/upgrade"`;
+
+        return `
+            <div class="component-gallery-card" data-ad-card="true" data-privacy="ad">
+                ${imgHtml}
+                ${badgeHtml}
+
+                <div ${navAction} class="component-gallery-link">
+                    <span class="component-badge component-badge--glass">
+                        <span>${promoBtn}</span>
+                        <span class="material-symbols-rounded">arrow_forward</span>
+                    </span>
+                </div>
+            </div>
+        `;
+    },
+
     emptyState: (message, icon = 'collections') => {
         return `
             <div class="component-empty-state" data-ref="empty-state-rendered">

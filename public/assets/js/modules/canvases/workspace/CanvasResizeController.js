@@ -241,22 +241,33 @@ class CanvasResizeController {
     async applyResizeNow(btn, newSize) {
         if (!this.canvasId || !newSize) return;
 
-        setButtonLoading(btn);
+        const performResize = async () => {
+            setButtonLoading(btn);
 
-        const result = await this.api.post(ApiRoutes.Canvases.Resize, { id: this.canvasId, size: newSize }, this.abortController.signal);
-        
-        if (result.aborted) return;
-        restoreButton(btn);
+            const result = await this.api.post(ApiRoutes.Canvases.Resize, { id: this.canvasId, size: newSize }, this.abortController.signal);
+            
+            if (result.aborted) return;
+            restoreButton(btn);
 
-        if (result.success) {
-            showMessage(result.message, 'success');
-            setTimeout(() => {
-                if (window.spaRouter) {
-                    window.spaRouter.navigate(`${this.basePath}/canvases/manage`, { forceReload: true });
-                }
-            }, 1000);
+            if (result.success) {
+                showMessage(result.message, 'success');
+                setTimeout(() => {
+                    if (window.spaRouter) {
+                        window.spaRouter.navigate(`${this.basePath}/canvases/manage`, { forceReload: true });
+                    }
+                }, 1000);
+            } else {
+                showMessage(result.message, 'error');
+            }
+        };
+
+        if (window.adManager) {
+            await window.adManager.showInterstitial({
+                actionName: 'canvas_resize',
+                onComplete: performResize
+            });
         } else {
-            showMessage(result.message, 'error');
+            await performResize();
         }
     }
 

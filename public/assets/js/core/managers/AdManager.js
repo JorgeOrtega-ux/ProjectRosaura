@@ -5,9 +5,12 @@ export class AdManager {
         this.cooldownMs = 180000;
         this.defaultDuration = 5;
         this.totalAdsInPod = 1;
+        this.feedAdInterval = 8;
         this.adSenseConfig = {
             client: 'ca-pub-0000000000000000',
-            slot: '0000000000'
+            slot: '0000000000',
+            inFeedSlot: '0000000000',
+            inFeedLayoutKey: '-fb+5w+4e-db+86'
         };
 
         this._storageKey = 'pr_last_ad_break_ts';
@@ -21,6 +24,30 @@ export class AdManager {
         this._activeResolve = null;
         this._activeBox = null;
         this._boundClickHandler = this._handleClick.bind(this);
+    }
+
+    injectFeedAds(items, interval = this.feedAdInterval) {
+        if (!Array.isArray(items) || items.length === 0) return items;
+        if (this.isExempt() || !this.enabled) return items;
+
+        const result = [];
+        let counter = 0;
+
+        for (let i = 0; i < items.length; i++) {
+            result.push(items[i]);
+            counter++;
+
+            if (counter >= interval && i < items.length - 1) {
+                result.push({
+                    is_ad: true,
+                    id: `ad_${Date.now()}_${i}`,
+                    uuid: `ad_${i}`,
+                    name: 'Patrocinado'
+                });
+                counter = 0;
+            }
+        }
+        return result;
     }
 
     isExempt() {

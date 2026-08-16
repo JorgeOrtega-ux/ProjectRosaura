@@ -138,44 +138,55 @@ class SnapshotViewerController {
         }
     }
 
-    downloadSnapshot() {
-        const btnDownload = document.getElementById('tl-btn-download');
-        if (btnDownload) setButtonLoading(btnDownload);
+    async downloadSnapshot() {
+        const executeDownload = () => {
+            const btnDownload = document.getElementById('tl-btn-download');
+            if (btnDownload) setButtonLoading(btnDownload);
 
-        if (!this.offscreenCanvas || this.boardWidth <= 0 || this.boardHeight <= 0) {
-            this.fallbackDownload(btnDownload);
-            return;
-        }
+            if (!this.offscreenCanvas || this.boardWidth <= 0 || this.boardHeight <= 0) {
+                this.fallbackDownload(btnDownload);
+                return;
+            }
 
-        try {
-            const exportCanvas = document.createElement('canvas');
-            exportCanvas.width = this.boardWidth;
-            exportCanvas.height = this.boardHeight;
-            const expCtx = exportCanvas.getContext('2d');
+            try {
+                const exportCanvas = document.createElement('canvas');
+                exportCanvas.width = this.boardWidth;
+                exportCanvas.height = this.boardHeight;
+                const expCtx = exportCanvas.getContext('2d');
 
-            expCtx.fillStyle = '#FFFFFF';
-            expCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-            expCtx.imageSmoothingEnabled = false;
-            expCtx.drawImage(this.offscreenCanvas, 0, 0);
+                expCtx.fillStyle = '#FFFFFF';
+                expCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+                expCtx.imageSmoothingEnabled = false;
+                expCtx.drawImage(this.offscreenCanvas, 0, 0);
 
-            exportCanvas.toBlob((blob) => {
+                exportCanvas.toBlob((blob) => {
+                    if (btnDownload) restoreButton(btnDownload);
+                    if (!blob) {
+                        this.fallbackDownload(btnDownload);
+                        return;
+                    }
+                    const blobUrl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = `snapshot_${this.snapshotId || 'rosaura'}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+                }, 'image/png');
+            } catch (e) {
                 if (btnDownload) restoreButton(btnDownload);
-                if (!blob) {
-                    this.fallbackDownload(btnDownload);
-                    return;
-                }
-                const blobUrl = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = blobUrl;
-                a.download = `snapshot_${this.snapshotId || 'rosaura'}.png`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-            }, 'image/png');
-        } catch (e) {
-            if (btnDownload) restoreButton(btnDownload);
-            this.fallbackDownload(btnDownload);
+                this.fallbackDownload(btnDownload);
+            }
+        };
+
+        if (window.adManager) {
+            await window.adManager.showInterstitial({
+                actionName: 'snapshot_download',
+                onComplete: executeDownload
+            });
+        } else {
+            executeDownload();
         }
     }
 
