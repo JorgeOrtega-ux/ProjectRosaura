@@ -41,9 +41,6 @@ export class SearchController {
         this.cardInteractions = new CanvasCardInteractions(this.api, this.basePath, this.abortController);
 
         this.virtualObserver = new VirtualGridObserver((canvas) => {
-            if (canvas && canvas.is_ad) {
-                return CardTemplates.nativeAdCard(canvas, { basePath: this.basePath });
-            }
             return CardTemplates.canvasCard(canvas, { basePath: this.basePath });
         });
 
