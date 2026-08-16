@@ -256,28 +256,39 @@ class CanvasesManageController {
     async createSnapshotSelected(btn) {
         if (this.selectedCanvasIds.size !== 1) return;
         const canvasId = Array.from(this.selectedCanvasIds)[0];
-        setButtonLoading(btn);
 
-        closeAllDropdowns();
+        const executeSnapshot = async () => {
+            setButtonLoading(btn);
+            closeAllDropdowns();
 
-        try {
-            const route = (ApiRoutes.Canvases && ApiRoutes.Canvases.CreateSnapshot) ? ApiRoutes.Canvases.CreateSnapshot : 'canvases.create_snapshot';
-            const result = await this.api.post(route, { id: parseInt(canvasId, 10) }, this.abortController.signal);
+            try {
+                const route = (ApiRoutes.Canvases && ApiRoutes.Canvases.CreateSnapshot) ? ApiRoutes.Canvases.CreateSnapshot : 'canvases.create_snapshot';
+                const result = await this.api.post(route, { id: parseInt(canvasId, 10) }, this.abortController.signal);
 
-            if (result.aborted) return;
+                if (result.aborted) return;
 
-            if (result.success) {
-                showMessage(result.message, 'success');
-                this.pollSnapshotStatus(canvasId);
-            } else {
-                showMessage(result.message, 'error');
+                if (result.success) {
+                    showMessage(result.message, 'success');
+                    this.pollSnapshotStatus(canvasId);
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    showMessage(window.__('general_save_network_error'), 'error');
+                }
+            } finally {
+                restoreButton(btn);
             }
-        } catch (error) {
-            if (error.name !== 'AbortError') {
-                showMessage(window.__('err_failed_to_process') || 'Error al procesar la solicitud', 'error');
-            }
-        } finally {
-            restoreButton(btn);
+        };
+
+        if (window.adManager) {
+            await window.adManager.showInterstitial({
+                actionName: 'canvas_snapshot',
+                onComplete: executeSnapshot
+            });
+        } else {
+            await executeSnapshot();
         }
     }
 

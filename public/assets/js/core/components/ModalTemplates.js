@@ -2050,5 +2050,96 @@ export const ModalTemplates = {
                 </div>
             `;
         }
+    },
+
+    adBreakModal: {
+        customClass: 'component-modal-box--ad',
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const currentAd = data.currentAd || 1;
+            const totalAds = data.totalAds || 1;
+            const initialDuration = data.duration || 5;
+            const isAdSense = data.mode === 'adsense';
+            const sponsorTitle = data.sponsorTitle || __('ad_mock_sponsor_title');
+            const sponsorTagline = data.sponsorTagline || __('ad_mock_sponsor_tagline');
+            const counterText = totalAds > 1 
+                ? __('ad_pod_counter').replace('{current}', currentAd).replace('{total}', totalAds) 
+                : __('ad_badge_label');
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h3 class="component-modal-title">${__('ad_break_title')}</h3>
+                    <p class="component-modal-desc">${__('ad_break_desc')}</p>
+                </div>
+
+                <div class="component-modal-body">
+                    ${isAdSense ? `
+                        <div class="component-ad-adsense-wrapper" data-ref="ad-adsense-wrapper">
+                            <ins class="adsbygoogle"
+                                 data-ad-client="${data.adClient || 'ca-pub-0000000000000000'}"
+                                 data-ad-slot="${data.adSlot || '0000000000'}"
+                                 data-ad-format="auto"
+                                 data-full-width-responsive="true"></ins>
+                        </div>
+                    ` : `
+                        <div class="component-ad-mock-player" data-ref="ad-mock-player">
+                            <div class="component-ad-mock-media">
+                                <div class="component-ad-mock-ambient"></div>
+                                
+                                <div class="component-ad-overlay-top">
+                                    <div class="component-badge component-badge--sm component-ad-video-badge" data-ref="ad-badge-indicator">
+                                        <span class="material-symbols-rounded">campaign</span>
+                                        <span data-ref="ad-pod-counter-text">${counterText}</span>
+                                    </div>
+                                    <button class="component-ad-video-icon-btn" data-action="toggleAdSound" data-ref="ad-sound-btn">
+                                        <span class="material-symbols-rounded" data-ref="ad-sound-icon">volume_off</span>
+                                    </button>
+                                </div>
+
+                                <div class="component-ad-mock-media-content">
+                                    <div class="component-card__icon-container component-card__icon-container--bordered component-ad-mock-icon">
+                                        <span class="material-symbols-rounded">cloud_done</span>
+                                    </div>
+                                    <h2 class="component-ad-mock-brand-title">${sponsorTitle}</h2>
+                                    <p class="component-ad-mock-brand-tagline">${sponsorTagline}</p>
+                                </div>
+
+                                <div class="component-ad-overlay-bottom">
+                                    <div class="component-ad-overlay-bottom-bar">
+                                        <div class="component-ad-sponsor-details">
+                                            <div class="component-ad-sponsor-avatar">
+                                                <span class="material-symbols-rounded">token</span>
+                                            </div>
+                                            <div class="component-ad-sponsor-text-group">
+                                                <span class="component-ad-sponsor-brand">${sponsorTitle}</span>
+                                                <span class="component-ad-sponsor-sub">rosaura.io/cloud</span>
+                                            </div>
+                                            <button class="component-ad-video-icon-btn" data-action="visitAdSponsor">
+                                                <span class="material-symbols-rounded">open_in_new</span>
+                                            </button>
+                                        </div>
+                                        <button class="component-button component-button--h36 component-ad-video-action-btn" data-action="skipAdBreak" data-ref="ad-skip-btn">
+                                            <div class="component-ad-btn-radial-indicator" data-ref="ad-timer-radial-box">
+                                                <svg class="component-ad-btn-timer-svg" viewBox="0 0 24 24">
+                                                    <circle class="component-ad-btn-timer-track" cx="12" cy="12" r="9"></circle>
+                                                    <circle class="component-ad-btn-timer-progress" data-ref="ad-timer-progress" cx="12" cy="12" r="9" stroke-dasharray="56.55" stroke-dashoffset="0"></circle>
+                                                </svg>
+                                                <span class="component-ad-btn-timer-num" data-ref="ad-timer-number">${initialDuration}</span>
+                                            </div>
+                                            <span class="material-symbols-rounded component-ad-btn-skip-icon disabled" data-ref="ad-skip-icon">skip_next</span>
+                                            <span data-ref="ad-skip-label">${__('ad_skip_button')}</span>
+                                        </button>
+                                    </div>
+                                    <div class="component-ad-progress-bar-track">
+                                        <div class="component-ad-progress-bar-fill" data-ref="ad-progress-bar-fill"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `}
+                </div>
+            `;
+        }
     }
 };

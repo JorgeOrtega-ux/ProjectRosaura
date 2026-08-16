@@ -1968,6 +1968,18 @@
     "title_confirm_action": "Confirmar Acción",
     "upgrade_show_all_features": "Mostrar todos los beneficios",
     "upgrade_hide_features": "Ocultar beneficios",
-    "lbl_collaborator": "Colaborador"
+    "lbl_collaborator": "Colaborador",
+    "ad_break_title": "Pausa publicitaria",
+    "ad_break_desc": "Gracias por ayudarnos a mantener los servidores y herramientas gratuitas.",
+    "ad_badge_label": "Anuncio",
+    "ad_pod_counter": "Anuncio {current} de {total}",
+    "ad_skip_button": "Saltar anuncio",
+    "ad_continue_button": "Continuar",
+    "ad_sponsor_visit": "Visitar sitio",
+    "ad_mock_sponsor_title": "Rosaura Cloud Storage",
+    "ad_mock_sponsor_tagline": "Guarda tus lienzos en alta resolución con almacenamiento ilimitado y copias automáticas.",
+    "ad_mock_sound_muted": "Silenciado",
+    "ad_mock_sound_unmuted": "Sonido activado",
+    "ad_remaining_time": "Segundos restantes"
 }
 

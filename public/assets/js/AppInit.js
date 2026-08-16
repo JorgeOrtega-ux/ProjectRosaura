@@ -1,15 +1,15 @@
+import { AdManager } from './core/managers/AdManager.js';
+import { ApiRoutes } from './core/api/ApiRoutes.js';
+import { ApiService } from './core/api/ApiServices.js';
+import { formatNumber } from './core/utils/uiUtils.js';
 import { MainController } from './MainController.js';
-import { SpaRouter } from './core/router/SpaRouter.js';
 import { ModalSystem } from './core/components/ModalSystem.js';
 import { NoticeSystem } from './core/components/NoticeSystem.js';
-import { TooltipSystem } from './core/components/TooltipSystem.js';
-import { TelemetryTracker } from './core/telemetry/TelemetryTracker.js';
-import { RouteModulesMap } from './core/router/RouteModulesMap.js';
-import { ApiService } from './core/api/ApiServices.js';
-import { ApiRoutes } from './core/api/ApiRoutes.js';
 import { OnboardingTourManager } from './core/managers/OnboardingTourManager.js';
-
-import { formatNumber } from './core/utils/uiUtils.js';
+import { RouteModulesMap } from './core/router/RouteModulesMap.js';
+import { SpaRouter } from './core/router/SpaRouter.js';
+import { TelemetryTracker } from './core/telemetry/TelemetryTracker.js';
+import { TooltipSystem } from './core/components/TooltipSystem.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     window.formatNumber = formatNumber;
@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.appInstance = app; 
 
     window.modalSystem = new ModalSystem();
+    window.adManager = new AdManager();
     window.onboardingTourManager = new OnboardingTourManager();
     window.noticeSystem = new NoticeSystem();
 
