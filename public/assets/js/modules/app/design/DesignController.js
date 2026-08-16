@@ -214,9 +214,6 @@ class DesignController {
 
         this.bindEvents();
         this.applyPremiumLocks(); 
-        if (window.adManager && typeof window.adManager.initDrawerAds === 'function') {
-            window.adManager.initDrawerAds();
-        } 
         
         if (this.isSnapshotMode) {
             this.loadCanvasConfigForSnapshot();

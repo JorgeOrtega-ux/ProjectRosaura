@@ -6,10 +6,6 @@ class DatabaseConstants {
     public const CONN_IDENTITY  = 'identity';
     public const CONN_TELEMETRY = 'telemetry'; 
     public const CONN_CANVASES  = 'canvases';
-    public const CONN_MONETIZATION = 'monetization';
-    public const TBL_AD_MONETIZATION_SETTINGS = 'ad_monetization_settings';
-    public const TBL_AD_CUSTOM_CAMPAIGNS = 'ad_custom_campaigns';
-    public const TBL_AD_IMPRESSIONS_DAILY = 'ad_impressions_daily';
     public const TBL_USERS               = 'users';
     public const TBL_ROLES               = 'roles';
     public const TBL_PERMISSIONS         = 'permissions';

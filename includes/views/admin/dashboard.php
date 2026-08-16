@@ -30,9 +30,6 @@ extract($dashboardData);
                 <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageRoles ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/roles" data-tooltip="<?php echo __('btn_manage_roles'); ?><?php echo !$canManageRoles ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canManageRoles ? 'disabled' : ''; ?>>
                     <span class="material-symbols-rounded">admin_panel_settings</span>
                 </button>
-                <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageMonetization ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/monetization" data-tooltip="<?php echo __('menu_admin_monetization'); ?><?php echo !$canManageMonetization ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canManageMonetization ? 'disabled' : ''; ?>>
-                    <span class="material-symbols-rounded">monetization_on</span>
-                </button>
                 <button class="component-button component-button--icon component-button--h40 <?php echo !$canViewLogs ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/logs" data-tooltip="<?php echo __('btn_view_logs'); ?><?php echo !$canViewLogs ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canViewLogs ? 'disabled' : ''; ?>>
                     <span class="material-symbols-rounded">receipt_long</span>
                 </button>
@@ -133,15 +130,7 @@ extract($dashboardData);
                     </div>
                 </div>
 
-                <div class="component-item-card component-stat-card">
-                    <div class="component-card__icon-container component-card__icon-container--bordered component-stat-card__icon">
-                        <span class="material-symbols-rounded">attach_money</span>
-                    </div>
-                    <div class="component-stat-card__content">
-                        <span class="component-stat-card__title"><?php echo __('admin_dashboard_ad_revenue'); ?></span>
-                        <span class="component-stat-card__value"><?php echo __('admin_dashboard_requires_api'); ?></span>
-                    </div>
-                </div>
+
 
                 <div class="component-item-card component-stat-card">
                     <div class="component-card__icon-container component-card__icon-container--bordered component-stat-card__icon">

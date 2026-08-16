@@ -180,14 +180,7 @@ class SnapshotViewerController {
             }
         };
 
-        if (window.adManager) {
-            await window.adManager.showInterstitial({
-                actionName: 'snapshot_download',
-                onComplete: executeDownload
-            });
-        } else {
-            executeDownload();
-        }
+        executeDownload();
     }
 
     async fallbackDownload(btnDownload = null) {

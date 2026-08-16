@@ -142,10 +142,11 @@ export class ModalSystem {
                 this.activeBox.classList.add('component-modal-box--no-padding');
             }
 
-            if (template.customClass) {
-                this.activeBox.classList.add(template.customClass);
+            const buildFn = typeof template.build === 'function' ? template.build : (typeof template.template === 'function' ? template.template : null);
+            if (!buildFn) {
+                throw new Error(`Modal template '${templateName}' does not provide a build or template function.`);
             }
-            this.activeBox.innerHTML = template.build(data);
+            this.activeBox.innerHTML = buildFn(data);
             
             this.activeWrapper.appendChild(this.activeBox);
 

@@ -1,4 +1,3 @@
-import { AdManager } from './core/managers/AdManager.js';
 import { ApiRoutes } from './core/api/ApiRoutes.js';
 import { ApiService } from './core/api/ApiServices.js';
 import { formatNumber } from './core/utils/uiUtils.js';
@@ -20,7 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.appInstance = app; 
 
     window.modalSystem = new ModalSystem();
-    window.adManager = new AdManager();
     window.onboardingTourManager = new OnboardingTourManager();
     window.noticeSystem = new NoticeSystem();
 

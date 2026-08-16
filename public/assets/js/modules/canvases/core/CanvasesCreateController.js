@@ -505,21 +505,10 @@ class CanvasesCreateController {
 
         if (res.success) {
             showMessage(window.__('msg_canvas_created'), 'success');
-            const navigateToCanvas = () => {
-                if (window.spaRouter) {
-                    window.spaRouter.navigate(`${this.basePath}/design/${res.data.uuid}`);
-                } else {
-                    window.location.href = `${this.basePath}/design/${res.data.uuid}`;
-                }
-            };
-
-            if (window.adManager) {
-                await window.adManager.showInterstitial({
-                    actionName: 'canvas_create',
-                    onComplete: navigateToCanvas
-                });
+            if (window.spaRouter) {
+                window.spaRouter.navigate(`${this.basePath}/design/${res.data.uuid}`);
             } else {
-                navigateToCanvas();
+                window.location.href = `${this.basePath}/design/${res.data.uuid}`;
             }
         } else {
             showMessage(res.message, 'error');

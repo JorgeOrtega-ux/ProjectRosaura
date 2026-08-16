@@ -257,12 +257,6 @@ class HomeController {
             }
         }
 
-        if (newCanvases.length > 0) {
-            if (window.adManager && typeof window.adManager.injectFeedAds === 'function') {
-                newCanvases = window.adManager.injectFeedAds(newCanvases, 8);
-            }
-        }
-
         removeInfiniteScrollSkeletons(this.contentArea);
 
         if (newCanvases.length > 0 || (this.allCanvases.length > 0 && isLoadMore)) {

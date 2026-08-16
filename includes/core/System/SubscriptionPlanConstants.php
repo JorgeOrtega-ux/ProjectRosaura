@@ -34,11 +34,6 @@ class SubscriptionPlanConstants {
             'name' => 'Transmisión de Plantillas',
             'desc' => 'Permite transmitir y sincronizar lienzos en vivo'
         ],
-        'feat_no_ads' => [
-            'key' => 'feat_no_ads',
-            'name' => 'Experiencia Sin Anuncios',
-            'desc' => 'Navegación y uso de herramientas sin interrupciones publicitarias'
-        ]
     ];
 
     private static $tierLimitsCache = [];
@@ -78,13 +73,11 @@ class SubscriptionPlanConstants {
                     'feat_unlimited_exports' => (bool)$row['feat_unlimited_exports'],
                     'feat_inject_templates' => (bool)($row['feat_inject_templates'] ?? false),
                     'feat_live_share' => (bool)($row['feat_live_share'] ?? false),
-                    'feat_no_ads' => (bool)($row['feat_no_ads'] ?? false),
                     'max_template_tokens' => (int)($row['max_template_tokens'] ?? 0),
                     'max_upload_mb' => (int)($row['max_upload_mb'] ?? 10),
                     'max_pixels_per_batch' => (int)($row['max_pixels_per_batch'] ?? 5),
                     'allow_live_chat' => (bool)$row['feat_chat_restriction'],
-                    'custom_palettes' => (bool)$row['feat_custom_palettes'],
-                    'no_ads' => (bool)($row['feat_no_ads'] ?? false)
+                    'custom_palettes' => (bool)$row['feat_custom_palettes']
                 ];
                 
                 self::$tierLimitsCache[$tier] = $limits;
@@ -106,12 +99,10 @@ class SubscriptionPlanConstants {
             'feat_unlimited_exports' => false,
             'feat_inject_templates' => false,
             'feat_live_share' => false,
-            'feat_no_ads' => false,
             'max_template_tokens' => 0,
             'max_pixels_per_batch' => 5,
             'allow_live_chat' => false,
-            'custom_palettes' => false,
-            'no_ads' => false
+            'custom_palettes' => false
         ];
         self::$tierLimitsCache[$tier] = $default;
         return $default;

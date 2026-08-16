@@ -151,14 +151,7 @@ export class CanvasCardInteractions {
             }
         };
 
-        if (window.adManager) {
-            await window.adManager.showInterstitial({
-                actionName: 'canvas_snapshot',
-                onComplete: executeSnapshot
-            });
-        } else {
-            await executeSnapshot();
-        }
+        await executeSnapshot();
     }
 
     async pollSnapshotStatus(canvasId) {

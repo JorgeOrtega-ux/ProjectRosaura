@@ -261,14 +261,7 @@ class CanvasResizeController {
             }
         };
 
-        if (window.adManager) {
-            await window.adManager.showInterstitial({
-                actionName: 'canvas_resize',
-                onComplete: performResize
-            });
-        } else {
-            await performResize();
-        }
+        await performResize();
     }
 
     async saveScheduledResize(btn) {

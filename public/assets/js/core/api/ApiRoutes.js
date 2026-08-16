@@ -117,16 +117,7 @@ export const ApiRoutes = {
         GetAuditLogs: 'admin.get_audit_logs',
         GetSecurityLogs: 'admin.get_security_logs',
         GetSystemLogs: 'admin.get_system_logs',
-        DeleteLogs: 'admin.delete_logs',
-
-        GetMonetizationConfig: 'admin.get_monetization_config',
-        UpdateMonetizationConfig: 'admin.update_monetization_config',
-        ResetMonetizationConfig: 'admin.reset_monetization_config',
-
-        GetCampaignDetails: 'admin.get_campaign_details',
-        SaveCampaign: 'admin.save_campaign',
-        ToggleCampaignActive: 'admin.toggle_campaign_active',
-        DeleteCampaign: 'admin.delete_campaign'
+        DeleteLogs: 'admin.delete_logs'
     },
     Canvases: {
         GetHomeFeed: 'canvases.get_home_feed',

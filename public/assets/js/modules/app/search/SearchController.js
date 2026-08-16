@@ -133,12 +133,6 @@ export class SearchController {
                     return;
                 }
 
-                if (newCanvases.length > 0) {
-                    if (window.adManager && typeof window.adManager.injectFeedAds === 'function') {
-                        newCanvases = window.adManager.injectFeedAds(newCanvases, 8);
-                    }
-                }
-
                 renderVirtualGridItems(this.contentArea, newCanvases, this.virtualObserver, isLoadMore, 'home-all-canvases');
 
                 this.allCanvases = this.allCanvases.concat(newCanvases);

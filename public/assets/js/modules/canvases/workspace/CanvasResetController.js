@@ -244,14 +244,7 @@ class CanvasResetController {
             }
         };
 
-        if (window.adManager) {
-            await window.adManager.showInterstitial({
-                actionName: 'canvas_reset',
-                onComplete: performReset
-            });
-        } else {
-            await performReset();
-        }
+        await performReset();
     }
 
     async executeCreateSnapshot(btn) {
@@ -272,14 +265,7 @@ class CanvasResetController {
             }
         };
 
-        if (window.adManager) {
-            await window.adManager.showInterstitial({
-                actionName: 'canvas_snapshot',
-                onComplete: performSnapshot
-            });
-        } else {
-            await performSnapshot();
-        }
+        await performSnapshot();
     }
 }
 

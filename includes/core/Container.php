@@ -39,8 +39,6 @@ use App\Core\Interfaces\StoreRepositoryInterface;
 use App\Core\Repositories\StoreRepository;
 use App\Core\Interfaces\PaletteRepositoryInterface;
 use App\Core\Repositories\PaletteRepository;
-use App\Core\Interfaces\MonetizationRepositoryInterface;
-use App\Core\Repositories\MonetizationRepository;
 
 class Container implements ContainerInterface {
     private $instances = [];
@@ -76,7 +74,6 @@ class Container implements ContainerInterface {
         $this->bindings[SubscriptionRepositoryInterface::class] = SubscriptionRepository::class;
         $this->bindings[StoreRepositoryInterface::class] = StoreRepository::class;
         $this->bindings[PaletteRepositoryInterface::class] = PaletteRepository::class;
-        $this->bindings[MonetizationRepositoryInterface::class] = MonetizationRepository::class;
     }
 
     public function get(string $id) {

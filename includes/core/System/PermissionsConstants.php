@@ -31,7 +31,6 @@ class PermissionsConstants {
     public const MANAGE_STORE_PACKAGES = 'manage_store_packages';
     public const MANAGE_STORE_PERKS = 'manage_store_perks';
     public const MANAGE_CONTENT = 'manage_content';
-    public const MANAGE_MONETIZATION = 'manage_monetization';
     
     public const MANAGE_SETTINGS = 'manage_settings';
     public const MANAGE_MEMBERS = 'manage_members';

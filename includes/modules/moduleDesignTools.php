@@ -1,9 +1,8 @@
-<?php
+﻿<?php
 
 use App\Core\System\SubscriptionPlanConstants;
 $userTier = (int) ($userTier ?? $_SESSION['subscription_tier'] ?? $_SESSION['tier'] ?? $_SESSION['user_tier'] ?? 0);
 $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates');
-$hasNoAds = SubscriptionPlanConstants::hasFeature($userTier, 'no_ads');
 ?>
 <div class="component-module component-module--sidebar component-module--sidebar-responsive disabled" data-module="moduleDesignTools">
     
@@ -17,7 +16,6 @@ $hasNoAds = SubscriptionPlanConstants::hasFeature($userTier, 'no_ads');
             </div>
         </div>
 
-        <!-- Section 3: Colores por Defecto -->
         <div class="component-menu-section-parent component-menu-section-parent--scrollable">
             <div class="component-menu-section-header">
                 <div class="component-menu-header-box">
@@ -41,12 +39,6 @@ $hasNoAds = SubscriptionPlanConstants::hasFeature($userTier, 'no_ads');
                 </div>
             </div>
         </div>
-
-        <?php if (!$hasNoAds): ?>
-        <div class="component-menu-footer component-menu-footer--ad" data-ref="palette-ad-footer">
-            <div class="component-drawer-ad-card" data-ad-card="palette"></div>
-        </div>
-        <?php endif; ?>
     </div>
 
     <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding disabled" data-ref="menu-templates">
@@ -87,12 +79,6 @@ $hasNoAds = SubscriptionPlanConstants::hasFeature($userTier, 'no_ads');
                 </div>
             </div>
         </div>
-
-        <?php if (!$hasNoAds): ?>
-        <div class="component-menu-footer component-menu-footer--ad" data-ref="templates-ad-footer">
-            <div class="component-drawer-ad-card" data-ad-card="templates"></div>
-        </div>
-        <?php endif; ?>
     </div>
 
 </div>
