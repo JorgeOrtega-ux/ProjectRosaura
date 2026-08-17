@@ -8,11 +8,36 @@ export const AdvertisementFormats = Object.freeze({
     MODULE_TEMPLATES: 'module_templates'
 });
 
+export const AdvertisementEvents = Object.freeze({
+    IMPRESSION: 'impression',
+    CLICK: 'click',
+    VIDEO_VIEW: 'video_view',
+    CONVERSION: 'conversion'
+});
+
+export const AdvertisementStatuses = Object.freeze({
+    ACTIVE: 'active',
+    INACTIVE: 'inactive',
+    PAUSED: 'paused',
+    EXPIRED: 'expired'
+});
+
+export const AdvertisementGeoModes = Object.freeze({
+    ALL: 'all',
+    ALLOW: 'allow',
+    BLOCK: 'block'
+});
+
+export const AdvertisementProviderTypes = Object.freeze({
+    DIRECT: 'direct',
+    NETWORK: 'network'
+});
+
 export const ADVERTISEMENT_FORMATS = Object.freeze([
     {
         id: AdvertisementFormats.FEED,
         labelKey: 'admin_ad_format_feed',
-        descKey: 'step_ad_format_desc',
+        descKey: 'admin_ad_format_feed_desc',
         defaultLabel: 'Feed: Home, Búsqueda y Capturas',
         icon: 'view_carousel',
         zone: 'feed'

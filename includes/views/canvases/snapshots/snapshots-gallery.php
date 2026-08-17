@@ -180,7 +180,7 @@ $promoCatalog = $galleryData['promoCatalog'] ?? [];
 
                                 <div class="component-badge component-badge--glass component-badge--absolute-tl">
                                     <span class="material-symbols-rounded component-icon--14">verified</span>
-                                    <span><?php echo __('sponsored', 'Patrocinado'); ?></span>
+                                    <span><?php echo __('sponsored'); ?></span>
                                 </div>
 
                                 <div class="component-badge component-badge--glass component-badge--absolute-tr">

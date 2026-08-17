@@ -630,9 +630,11 @@ class AdminController extends BaseController {
         try {
             $this->requirePermission(PermissionsConstants::MANAGE_ADVERTISEMENTS);
             $query = $input['q'] ?? ($input['search'] ?? null);
+            $typeFilter = $input['type'] ?? ($input['provider_type'] ?? null);
+            $statusFilter = $input['status'] ?? null;
             $page = isset($input['page']) ? (int)$input['page'] : 1;
             $perPage = isset($input['per_page']) ? (int)$input['per_page'] : 25;
-            return $this->respond($this->getAdsService()->getProvidersList($query, $page, $perPage));
+            return $this->respond($this->getAdsService()->getProvidersList($query, $typeFilter, $statusFilter, $page, $perPage));
         }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }

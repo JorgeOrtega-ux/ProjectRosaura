@@ -642,20 +642,17 @@ html.dark-theme .component-top.shadow {
     width: 100%;
 }
 
-.component-button--dark,
 .component-button--primary {
     background-color: var(--action-primary);
     color: var(--text-inverse);
     border-color: var(--action-primary);
 }
 
-.component-button--dark:hover,
 .component-button--primary:hover {
     background-color: var(--action-primary-hover);
     border-color: var(--action-primary-hover);
 }
 
-.component-button--dark .material-symbols-rounded,
 .component-button--primary .material-symbols-rounded {
     color: var(--text-inverse);
 }
@@ -3979,8 +3976,8 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     height: 14px;
 }
 
-/* Colores para elementos oscuros */
-.component-button--dark .component-spinner,
+/* Colores para elementos oscuros / primarios */
+.component-button--primary .component-spinner,
 .component-badge--dark .component-spinner {
     border-color: rgba(255, 255, 255, 0.3);
     border-top-color: var(--text-inverse, #ffffff);

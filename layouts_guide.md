@@ -120,7 +120,7 @@ A continuación se presentan las plantillas HTML (PHP) listas para copiar y pega
             </div>
             <div class="component-top-right">
                 <!-- Barra de búsqueda o filtro -->
-                <button class="component-button component-button--dark component-button--h40">Nuevo Elemento</button>
+                <button class="component-button component-button--h40">Nuevo Elemento</button>
             </div>
         </div>
         <div class="component-bottom">

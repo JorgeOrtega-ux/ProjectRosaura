@@ -196,19 +196,40 @@ class AdMetricsPdfService {
 
         // Section 2: KPI Metrics Cards
         $kpiY = 570;
-        $cardW = 122;
         $cardH = 62;
-        $gap = 9;
 
         $totImpressions = number_format((int)($summary['total_impressions'] ?? 0));
         $totClicks = number_format((int)($summary['total_clicks'] ?? 0));
+        $totVideoViews = (int)($summary['total_video_views'] ?? 0);
         $ctrVal = number_format((float)($summary['ctr'] ?? 0), 2) . '%';
         $uniqueUsers = number_format((int)($summary['unique_users'] ?? 0));
 
-        $this->drawKpiCard(40, $kpiY, $cardW, $cardH, 'Impresiones (Vistas)', $totImpressions, 'Impactos en periodo', [2, 132, 199]);
-        $this->drawKpiCard(40 + ($cardW + $gap), $kpiY, $cardW, $cardH, 'Clics Totales', $totClicks, 'Interaccion directa', [16, 185, 129]);
-        $this->drawKpiCard(40 + ($cardW + $gap) * 2, $kpiY, $cardW, $cardH, 'CTR Promedio', $ctrVal, 'Clics / Impresiones', [139, 92, 246]);
-        $this->drawKpiCard(40 + ($cardW + $gap) * 3, $kpiY, $cardW, $cardH, 'Usuarios Unicos', $uniqueUsers, 'Alcance estimado', [245, 158, 11]);
+        $hasVideoResource = false;
+        if (!empty($ad['resources']) && is_array($ad['resources'])) {
+            foreach ($ad['resources'] as $res) {
+                if (($res['resource_type'] ?? '') === 'video') {
+                    $hasVideoResource = true;
+                    break;
+                }
+            }
+        }
+
+        if ($totVideoViews > 0 || $hasVideoResource) {
+            $cardW = 97;
+            $gap = 7.5;
+            $this->drawKpiCard(40, $kpiY, $cardW, $cardH, 'Impresiones', $totImpressions, 'Impactos periodo', [2, 132, 199]);
+            $this->drawKpiCard(40 + ($cardW + $gap), $kpiY, $cardW, $cardH, 'Clics Totales', $totClicks, 'Interaccion', [16, 185, 129]);
+            $this->drawKpiCard(40 + ($cardW + $gap) * 2, $kpiY, $cardW, $cardH, 'CTR Promedio', $ctrVal, 'Efectividad', [139, 92, 246]);
+            $this->drawKpiCard(40 + ($cardW + $gap) * 3, $kpiY, $cardW, $cardH, 'Reproducciones', number_format($totVideoViews), 'Vistas de video', [239, 68, 68]);
+            $this->drawKpiCard(40 + ($cardW + $gap) * 4, $kpiY, $cardW, $cardH, 'Usuarios Unicos', $uniqueUsers, 'Alcance', [245, 158, 11]);
+        } else {
+            $cardW = 122;
+            $gap = 9;
+            $this->drawKpiCard(40, $kpiY, $cardW, $cardH, 'Impresiones (Vistas)', $totImpressions, 'Impactos en periodo', [2, 132, 199]);
+            $this->drawKpiCard(40 + ($cardW + $gap), $kpiY, $cardW, $cardH, 'Clics Totales', $totClicks, 'Interaccion directa', [16, 185, 129]);
+            $this->drawKpiCard(40 + ($cardW + $gap) * 2, $kpiY, $cardW, $cardH, 'CTR Promedio', $ctrVal, 'Clics / Impresiones', [139, 92, 246]);
+            $this->drawKpiCard(40 + ($cardW + $gap) * 3, $kpiY, $cardW, $cardH, 'Usuarios Unicos', $uniqueUsers, 'Alcance estimado', [245, 158, 11]);
+        }
 
         // Section 3: Performance Table (Dynamic Multi-Page)
         $tblY = 525;

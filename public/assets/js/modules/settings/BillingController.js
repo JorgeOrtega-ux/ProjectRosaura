@@ -140,11 +140,9 @@ export class BillingController {
                     renewalBtn.textContent = actionText;
                     renewalBtn.dataset.cancelState = !cancelAtEnd;
                     if (cancelAtEnd) {
-                        renewalBtn.classList.remove('component-button--dark');
                         renewalBtn.classList.add('component-button--brand');
                     } else {
                         renewalBtn.classList.remove('component-button--brand');
-                        renewalBtn.classList.add('component-button--dark');
                     }
                 }
             } else {

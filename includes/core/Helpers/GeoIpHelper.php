@@ -5,6 +5,7 @@ namespace App\Core\Helpers;
 use GeoIp2\Database\Reader;
 use App\Core\System\SecurityConstants;
 use App\Core\System\CountryConstants;
+use App\Core\System\AdvertisementConstants;
 use Exception;
 
 class GeoIpHelper {
@@ -223,15 +224,21 @@ class GeoIpHelper {
         }
 
         // 2. Geo targeting check
-        $geoMode = $settings['geo_mode'] ?? 'all';
+        $geoMode = $settings['geo_mode'] ?? AdvertisementConstants::GEO_MODE_ALL;
         $geoCountries = isset($settings['geo_countries']) && is_array($settings['geo_countries']) ? $settings['geo_countries'] : [];
 
-        if ($geoMode === 'allow' && !empty($geoCountries)) {
+        if ($geoMode === AdvertisementConstants::GEO_MODE_ALLOW) {
+            if (empty($geoCountries)) {
+                return false; // Modo permitir sin países seleccionados -> bloqueo seguro por defecto
+            }
             return self::isCountryAllowed($geoCountries, null, $ip);
         }
 
-        if ($geoMode === 'block' && !empty($geoCountries)) {
-            return self::isCountryAllowed(null, $geoCountries, $ip);
+        if ($geoMode === AdvertisementConstants::GEO_MODE_BLOCK) {
+            if (!empty($geoCountries)) {
+                return self::isCountryAllowed(null, $geoCountries, $ip);
+            }
+            return true;
         }
 
         return true;

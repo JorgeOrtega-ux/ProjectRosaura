@@ -786,8 +786,10 @@ class AdminAdvertisementsService {
                         FROM advertisements a
                         INNER JOIN ad_providers p ON a.provider_id = p.id
                         WHERE p.is_active = 1
+                          AND (p.start_date IS NULL OR p.start_date <= NOW())
                           AND (p.has_expiration = 0 OR p.expiration_date IS NULL OR p.expiration_date >= NOW())
                           AND a.status = 'active'
+                          AND (a.start_date IS NULL OR a.start_date <= NOW())
                           AND (a.has_expiration = 0 OR a.expiration_date IS NULL OR a.expiration_date >= NOW())
                         ORDER BY a.id ASC";
 
@@ -885,7 +887,8 @@ class AdminAdvertisementsService {
             }
 
             if (!in_array($eventType, AdvertisementConstants::VALID_EVENTS, true)) {
-                $eventType = AdvertisementConstants::EVENT_IMPRESSION;
+                Logger::warning("AdminAdvertisementsService::recordAdMetric invalid event type '{$eventType}' for ad uuid: {$adUuid}");
+                return ['success' => false, 'message_key' => 'err_invalid_metric_event'];
             }
 
             $stmt = $pdo->prepare("INSERT INTO ad_metrics (ad_id, provider_id, event_type, user_uuid, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?)");
@@ -1168,6 +1171,12 @@ class AdminAdvertisementsService {
 
     public function downloadGeneralMetricsPdf(string $period = '30'): void {
         $globalData = $this->getGlobalMetricsReportData($period);
+        if (empty($globalData['global_summary'])) {
+            http_response_code(404);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message_key' => 'admin_ad_metrics_empty']);
+            exit;
+        }
 
         $pdfService = new AdMetricsPdfService();
         $pdfBytes = $pdfService->generateGlobalAdsReport(

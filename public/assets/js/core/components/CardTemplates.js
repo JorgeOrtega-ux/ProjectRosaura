@@ -326,9 +326,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
             statusText = window.__('will_cancel_soon');
         }
 
-        const actionText = cancelAtEnd ? window.__('btn_reactivate_sub') : (window.__('btn_cancel_sub') || window.__('btn_cancel_renew'));
-        const btnClass = cancelAtEnd ? 'component-button--brand' : 'component-button--dark';
-        const changePlanText = window.__('btn_change_plan');
+        const btnClass = cancelAtEnd ? 'component-button--brand' : '';
         
         let renewText = cancelAtEnd ? window.__('status_canceled') : window.__('status_active');
 

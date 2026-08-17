@@ -110,10 +110,7 @@ INSERT INTO ad_resources (id, uuid, ad_id, resource_type, content_url, alt_text,
 (13, 'c1000000-0000-0000-0000-000000000013', 5, 'video', '/assets/media/sample_promo.mp4', 'Color Demo', 2),
 (14, 'c1000000-0000-0000-0000-000000000014', 6, 'image', '/assets/img/showcase/templates_pro.jpg', 'RetroCraft Blueprints', 0),
 (15, 'c1000000-0000-0000-0000-000000000015', 6, 'image', '/assets/img/showcase/drawing_pad.jpg', 'Drawing Tablet', 1),
-(16, 'c1000000-0000-0000-0000-000000000016', 6, 'video', '/assets/media/sample_promo.mp4', 'Templates Demo', 2),
-(17, 'c1000000-0000-0000-0000-000000000017', 7, 'image', '/assets/img/showcase/creative_tools.jpg', 'PixelCraft Studio', 0),
-(18, 'c1000000-0000-0000-0000-000000000018', 7, 'image', '/assets/img/showcase/drawing_pad.jpg', 'ChromaPad Studio', 1),
-(19, 'c1000000-0000-0000-0000-000000000019', 7, 'video', '/assets/media/sample_promo.mp4', 'PixelCraft Demo', 2)
+(16, 'c1000000-0000-0000-0000-000000000016', 6, 'video', '/assets/media/sample_promo.mp4', 'Templates Demo', 2)
 ON DUPLICATE KEY UPDATE alt_text=VALUES(alt_text);
 
 GRANT ALL PRIVILEGES ON db_advertisements.* TO 'system_web_executor'@'%';
