@@ -100,26 +100,12 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/advertisement-items/' . $
                                         <div class="component-menu-link-icon"><input class="filter-radio" data-filter-type="format" data-value="all" type="radio" name="ad_format_filter" value="all" <?php echo (empty($formatFilter) || $formatFilter === 'all') ? 'checked' : ''; ?>></div>
                                         <div class="component-menu-link-text"><span><?php echo __('filter_format_all'); ?></span></div>
                                     </label>
+                                    <?php foreach (\App\Core\System\AdvertisementConstants::getFormatsCatalog() as $fmt): ?>
                                     <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input class="filter-radio" data-filter-type="format" data-value="feed" type="radio" name="ad_format_filter" value="feed" <?php echo $formatFilter === 'feed' ? 'checked' : ''; ?>></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('admin_ad_format_feed'); ?></span></div>
+                                        <div class="component-menu-link-icon"><input class="filter-radio" data-filter-type="format" data-value="<?php echo htmlspecialchars($fmt['id']); ?>" type="radio" name="ad_format_filter" value="<?php echo htmlspecialchars($fmt['id']); ?>" <?php echo $formatFilter === $fmt['id'] ? 'checked' : ''; ?>></div>
+                                        <div class="component-menu-link-text"><span><?php echo htmlspecialchars($fmt['label']); ?></span></div>
                                     </label>
-                                    <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input class="filter-radio" data-filter-type="format" data-value="module_colors" type="radio" name="ad_format_filter" value="module_colors" <?php echo $formatFilter === 'module_colors' ? 'checked' : ''; ?>></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('admin_ad_format_module_colors'); ?></span></div>
-                                    </label>
-                                    <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input class="filter-radio" data-filter-type="format" data-value="module_templates" type="radio" name="ad_format_filter" value="module_templates" <?php echo $formatFilter === 'module_templates' ? 'checked' : ''; ?>></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('admin_ad_format_module_templates'); ?></span></div>
-                                    </label>
-                                    <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input class="filter-radio" data-filter-type="format" data-value="module_info" type="radio" name="ad_format_filter" value="module_info" <?php echo $formatFilter === 'module_info' ? 'checked' : ''; ?>></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('admin_ad_format_module_info'); ?></span></div>
-                                    </label>
-                                    <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input class="filter-radio" data-filter-type="format" data-value="banner" type="radio" name="ad_format_filter" value="banner" <?php echo $formatFilter === 'banner' ? 'checked' : ''; ?>></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('admin_ad_format_banner'); ?></span></div>
-                                    </label>
+                                    <?php endforeach; ?>
                                 </div>
                             </div>
 
@@ -224,12 +210,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/advertisement-items/' . $
                             $geoCountries = $settingsObj['geo_countries'] ?? [];
                             $blockDc = !empty($settingsObj['block_datacenters']);
 
-                            $iconName = 'widgets';
-                            if ($format === 'feed') $iconName = 'view_carousel';
-                            elseif ($format === 'module_colors') $iconName = 'palette';
-                            elseif ($format === 'module_templates') $iconName = 'dashboard_customize';
-                            elseif ($format === 'module_info') $iconName = 'info';
-                            elseif ($format === 'banner') $iconName = 'ad_units';
+                            $iconName = \App\Core\System\AdvertisementConstants::getFormatIcon($format);
 
                             $scriptRes = null;
                             if ($isNetwork && !empty($resources)) {
@@ -360,5 +341,6 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/advertisement-items/' . $
 </div>
 <script>
     window.COUNTRY_CATALOG = <?php echo json_encode(\App\Core\System\CountryConstants::getCountries(), JSON_UNESCAPED_UNICODE); ?>;
+    window.ADVERTISEMENT_FORMATS = <?php echo json_encode(\App\Core\System\AdvertisementConstants::getFormatsCatalog(), JSON_UNESCAPED_UNICODE); ?>;
 </script>
 

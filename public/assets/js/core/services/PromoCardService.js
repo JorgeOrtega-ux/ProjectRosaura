@@ -96,22 +96,6 @@ const DEFAULT_MODULE_PROMOS = {
                 { type: 'video', url: '/assets/media/sample_promo.mp4', alt: 'Templates Demo' }
             ]
         }
-    ],
-    info: [
-        {
-            id: 'b1000000-0000-0000-0000-000000000007',
-            uuid: 'b1000000-0000-0000-0000-000000000007',
-            type: PromoType.MODULE,
-            sponsor: 'PixelCraft Studio Pro',
-            title: 'Herramientas de Animación 2D',
-            description: 'Pinceles inteligentes, capas avanzadas y exportación de spritesheets en tiempo real.',
-            url: '/upgrade',
-            media: [
-                { type: 'image', url: '/assets/img/showcase/creative_tools.jpg', alt: 'PixelCraft Studio' },
-                { type: 'image', url: '/assets/img/showcase/drawing_pad.jpg', alt: 'ChromaPad Studio' },
-                { type: 'video', url: '/assets/media/sample_promo.mp4', alt: 'PixelCraft Demo' }
-            ]
-        }
     ]
 };
 

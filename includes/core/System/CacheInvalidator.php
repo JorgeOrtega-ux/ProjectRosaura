@@ -237,4 +237,40 @@ class CacheInvalidator {
             }
         } catch (\Throwable $e) {}
     }
+
+    public function advertisements(): void {
+        if (!$this->redis) return;
+        try {
+            $this->deleteByPattern('ads:*');
+        } catch (\Throwable $e) {}
+    }
+
+    public function advertisementProvider(string $providerUuid): void {
+        if (!$this->redis) return;
+        try {
+            $this->redis->del(CacheConstants::PREFIX_ADS_PROVIDER_DETAILS . $providerUuid);
+            $this->deleteByPattern(CacheConstants::PREFIX_ADS_PROVIDER_ADS . $providerUuid . '*');
+            $this->deleteByPattern(CacheConstants::PREFIX_ADS_PROVIDERS_LIST . '*');
+            $this->deleteByPattern(CacheConstants::PREFIX_ADS_METRICS_REPORT . '*');
+            $this->deleteByPattern(CacheConstants::PREFIX_ADS_ACTIVE_PUBLIC . '*');
+        } catch (\Throwable $e) {}
+    }
+
+    public function advertisement(string $adUuid, ?string $providerUuid = null): void {
+        if (!$this->redis) return;
+        try {
+            $this->deleteByPattern(CacheConstants::PREFIX_ADS_INDIVIDUAL_REPORT . $adUuid . '*');
+            $this->deleteByPattern(CacheConstants::PREFIX_ADS_GLOBAL_REPORT . '*');
+            $this->deleteByPattern(CacheConstants::PREFIX_ADS_ACTIVE_PUBLIC . '*');
+            if ($providerUuid) {
+                $this->redis->del(CacheConstants::PREFIX_ADS_PROVIDER_DETAILS . $providerUuid);
+                $this->deleteByPattern(CacheConstants::PREFIX_ADS_PROVIDER_ADS . $providerUuid . '*');
+            } else {
+                $this->deleteByPattern(CacheConstants::PREFIX_ADS_PROVIDER_ADS . '*');
+                $this->deleteByPattern(CacheConstants::PREFIX_ADS_PROVIDER_DETAILS . '*');
+            }
+            $this->deleteByPattern(CacheConstants::PREFIX_ADS_PROVIDERS_LIST . '*');
+        } catch (\Throwable $e) {}
+    }
 }
+

@@ -1,3 +1,5 @@
+import { ADVERTISEMENT_FORMATS } from '../../core/constants/AdvertisementConstants.js';
+
 export const AdminModalTemplates = {
     editUserRoleModal: {
         build: (data = {}) => {
@@ -352,21 +354,13 @@ export const AdminModalTemplates = {
             const title = isEdit ? __('modal_edit_ad_title') : __('modal_create_ad_title');
             const finishText = isEdit ? __('btn_save_changes') : __('btn_save_ad');
 
-            let formatIcon = 'view_carousel';
-            let formatLabel = __('admin_ad_format_feed');
-            if (adFormat === 'module_colors') {
-                formatIcon = 'palette';
-                formatLabel = __('admin_ad_format_module_colors');
-            } else if (adFormat === 'module_templates') {
-                formatIcon = 'dashboard_customize';
-                formatLabel = __('admin_ad_format_module_templates');
-            } else if (adFormat === 'module_info') {
-                formatIcon = 'info';
-                formatLabel = __('admin_ad_format_module_info');
-            } else if (adFormat === 'banner') {
-                formatIcon = 'ad_units';
-                formatLabel = __('admin_ad_format_banner');
-            }
+            const formatsList = (typeof window.ADVERTISEMENT_FORMATS === 'object' && Array.isArray(window.ADVERTISEMENT_FORMATS)) 
+                ? window.ADVERTISEMENT_FORMATS 
+                : ADVERTISEMENT_FORMATS;
+
+            const currentFmtDef = formatsList.find(f => f.id === adFormat) || formatsList[0] || { id: 'feed', icon: 'view_carousel', labelKey: 'admin_ad_format_feed', defaultLabel: 'Feed: Home, Búsqueda y Capturas' };
+            const formatIcon = currentFmtDef.icon || 'view_carousel';
+            const formatLabel = __(currentFmtDef.labelKey) || currentFmtDef.label || currentFmtDef.defaultLabel;
 
             let geoModeIcon = 'public';
             let geoModeLabel = __('geo_mode_all');
@@ -437,26 +431,17 @@ export const AdminModalTemplates = {
                                 <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list">
-                                        <div class="component-menu-link ${adFormat === 'feed' ? 'active' : ''}" data-action="selectAdFormat" data-format="feed" data-label="${__('admin_ad_format_feed')}" data-icon="view_carousel">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">view_carousel</span></div>
-                                            <div class="component-menu-link-text"><span>${__('admin_ad_format_feed')}</span></div>
-                                        </div>
-                                        <div class="component-menu-link ${adFormat === 'module_colors' ? 'active' : ''}" data-action="selectAdFormat" data-format="module_colors" data-label="${__('admin_ad_format_module_colors')}" data-icon="palette">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">palette</span></div>
-                                            <div class="component-menu-link-text"><span>${__('admin_ad_format_module_colors')}</span></div>
-                                        </div>
-                                        <div class="component-menu-link ${adFormat === 'module_templates' ? 'active' : ''}" data-action="selectAdFormat" data-format="module_templates" data-label="${__('admin_ad_format_module_templates')}" data-icon="dashboard_customize">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">dashboard_customize</span></div>
-                                            <div class="component-menu-link-text"><span>${__('admin_ad_format_module_templates')}</span></div>
-                                        </div>
-                                        <div class="component-menu-link ${adFormat === 'module_info' ? 'active' : ''}" data-action="selectAdFormat" data-format="module_info" data-label="${__('admin_ad_format_module_info')}" data-icon="info">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">info</span></div>
-                                            <div class="component-menu-link-text"><span>${__('admin_ad_format_module_info')}</span></div>
-                                        </div>
-                                        <div class="component-menu-link ${adFormat === 'banner' ? 'active' : ''}" data-action="selectAdFormat" data-format="banner" data-label="${__('admin_ad_format_banner')}" data-icon="ad_units">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">ad_units</span></div>
-                                            <div class="component-menu-link-text"><span>${__('admin_ad_format_banner')}</span></div>
-                                        </div>
+                                        ${formatsList.map(fmt => {
+                                            const isActive = (adFormat === fmt.id) ? 'active' : '';
+                                            const itemLabel = __(fmt.labelKey) || fmt.label || fmt.defaultLabel;
+                                            const itemIcon = fmt.icon || 'view_carousel';
+                                            return `
+                                                <div class="component-menu-link ${isActive}" data-action="selectAdFormat" data-format="${fmt.id}" data-label="${itemLabel}" data-icon="${itemIcon}">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">${itemIcon}</span></div>
+                                                    <div class="component-menu-link-text"><span>${itemLabel}</span></div>
+                                                </div>
+                                            `;
+                                        }).join('')}
                                     </div>
                                 </div>
                             </div>
@@ -606,9 +591,15 @@ export const AdminModalTemplates = {
             const title = isEdit ? __('modal_edit_network_slot_title') : __('modal_create_network_slot_title');
             const finishText = isEdit ? __('btn_save_changes') : __('btn_save_slot');
 
-            let formatIcon = 'grid_view';
+            let formatIcon = 'view_carousel';
             let formatLabel = __('admin_ad_format_feed');
-            if (slotFormat === 'modules') {
+            if (slotFormat === 'module_colors') {
+                formatIcon = 'palette';
+                formatLabel = __('admin_ad_format_module_colors');
+            } else if (slotFormat === 'module_templates') {
+                formatIcon = 'dashboard_customize';
+                formatLabel = __('admin_ad_format_module_templates');
+            } else if (slotFormat === 'modules') {
                 formatIcon = 'palette';
                 formatLabel = __('admin_ad_format_modules');
             }
@@ -662,13 +653,17 @@ export const AdminModalTemplates = {
                                 <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list">
-                                        <div class="component-menu-link ${slotFormat === 'feed' ? 'active' : ''}" data-action="selectSlotFormat" data-format="feed" data-label="${__('admin_ad_format_feed')}" data-icon="grid_view">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">grid_view</span></div>
+                                        <div class="component-menu-link ${slotFormat === 'feed' ? 'active' : ''}" data-action="selectSlotFormat" data-format="feed" data-label="${__('admin_ad_format_feed')}" data-icon="view_carousel">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">view_carousel</span></div>
                                             <div class="component-menu-link-text"><span>${__('admin_ad_format_feed')}</span></div>
                                         </div>
-                                        <div class="component-menu-link ${slotFormat === 'modules' ? 'active' : ''}" data-action="selectSlotFormat" data-format="modules" data-label="${__('admin_ad_format_modules')}" data-icon="palette">
+                                        <div class="component-menu-link ${slotFormat === 'module_colors' ? 'active' : ''}" data-action="selectSlotFormat" data-format="module_colors" data-label="${__('admin_ad_format_module_colors')}" data-icon="palette">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">palette</span></div>
-                                            <div class="component-menu-link-text"><span>${__('admin_ad_format_modules')}</span></div>
+                                            <div class="component-menu-link-text"><span>${__('admin_ad_format_module_colors')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link ${slotFormat === 'module_templates' ? 'active' : ''}" data-action="selectSlotFormat" data-format="module_templates" data-label="${__('admin_ad_format_module_templates')}" data-icon="dashboard_customize">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">dashboard_customize</span></div>
+                                            <div class="component-menu-link-text"><span>${__('admin_ad_format_module_templates')}</span></div>
                                         </div>
                                     </div>
                                 </div>

@@ -156,14 +156,7 @@ class AdMetricsPdfService {
         $targetUrl = !empty($ad['target_url']) ? $ad['target_url'] : 'Sin enlace directo';
         $reportCode = 'AD-' . strtoupper(substr(md5($ad['uuid'] ?? (string)time()), 0, 8));
 
-        $formatLabels = [
-            'feed' => 'Feed Principal (Home / Busqueda)',
-            'module_colors' => 'Modulo: Paleta de Colores',
-            'module_templates' => 'Modulo: Plantillas',
-            'module_info' => 'Modulo: Informacion de Lienzo',
-            'banner' => 'Banner Publicitario',
-            'custom' => 'Personalizado'
-        ];
+        $formatLabels = \App\Core\System\AdvertisementConstants::getFormatLabels();
         $formatText = $formatLabels[$format] ?? ucfirst($format);
 
         // Page 1 Header

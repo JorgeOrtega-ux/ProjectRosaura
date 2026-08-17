@@ -287,3 +287,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/advertisements?page=' . (
 
     </div>
 </div>
+<script>
+    window.COUNTRY_CATALOG = <?php echo json_encode(\App\Core\System\CountryConstants::getCountries(), JSON_UNESCAPED_UNICODE); ?>;
+    window.ADVERTISEMENT_FORMATS = <?php echo json_encode(\App\Core\System\AdvertisementConstants::getFormatsCatalog(), JSON_UNESCAPED_UNICODE); ?>;
+</script>

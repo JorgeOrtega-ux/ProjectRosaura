@@ -6,25 +6,64 @@ use App\Core\Helpers\Utils;
 use App\Core\Helpers\GeoIpHelper;
 use App\Core\System\Logger;
 use App\Config\Database\DatabaseManager;
+use App\Config\Database\RedisCache;
+use App\Core\System\CacheConstants;
+use App\Core\System\CacheInvalidator;
+use App\Core\System\AdvertisementConstants;
 use App\Core\System\DatabaseConstants as DB;
 
 class AdminAdvertisementsService {
     private DatabaseManager $dbManager;
+    private $redis = null;
+    private ?CacheInvalidator $cacheInvalidator = null;
 
-    public function __construct(DatabaseManager $dbManager) {
+    public function __construct(DatabaseManager $dbManager, ?RedisCache $redisCache = null) {
         $this->dbManager = $dbManager;
+        try {
+            $r = $redisCache ?: new RedisCache();
+            $this->redis = $r->getClient();
+            if ($this->redis) {
+                $this->cacheInvalidator = new CacheInvalidator($this->redis);
+            }
+        } catch (\Throwable $e) {
+            $this->redis = null;
+            $this->cacheInvalidator = null;
+        }
     }
 
     private function getPdo(): \PDO {
         return $this->dbManager->getConnection(DB::CONN_ADVERTISEMENTS);
     }
 
+    private function getInvalidator(): ?CacheInvalidator {
+        if (!$this->cacheInvalidator && $this->redis) {
+            $this->cacheInvalidator = new CacheInvalidator($this->redis);
+        }
+        return $this->cacheInvalidator;
+    }
+
     public function getProvidersList(?string $searchQuery, ?string $typeFilter = null, ?string $statusFilter = null, int $page = 1, int $perPage = 25): array {
-        $pdo = $this->getPdo();
         $searchQuery = trim($searchQuery ?? '');
         $limit = max(1, min(100, $perPage));
         if ($page < 1) $page = 1;
 
+        $typeFilterNormalized = (!empty($typeFilter) && $typeFilter !== 'all') ? $typeFilter : 'all';
+        $statusFilterNormalized = (!empty($statusFilter) && $statusFilter !== 'all') ? $statusFilter : 'all';
+
+        $cacheKey = CacheConstants::PREFIX_ADS_PROVIDERS_LIST . md5("{$searchQuery}:{$typeFilterNormalized}:{$statusFilterNormalized}:{$page}:{$limit}");
+        if ($this->redis) {
+            try {
+                $cached = $this->redis->get($cacheKey);
+                if ($cached) {
+                    $decoded = json_decode($cached, true);
+                    if (is_array($decoded)) {
+                        return $decoded;
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        $pdo = $this->getPdo();
         $whereClauses = [];
         $params = [];
 
@@ -33,14 +72,14 @@ class AdminAdvertisementsService {
             $params[':search'] = '%' . $searchQuery . '%';
         }
 
-        if (!empty($typeFilter) && $typeFilter !== 'all') {
+        if ($typeFilterNormalized !== 'all') {
             $whereClauses[] = "p.provider_type = :type";
-            $params[':type'] = $typeFilter;
+            $params[':type'] = $typeFilterNormalized;
         }
 
-        if (!empty($statusFilter) && $statusFilter !== 'all') {
+        if ($statusFilterNormalized !== 'all') {
             $whereClauses[] = "p.is_active = :status";
-            $params[':status'] = ($statusFilter === 'active') ? 1 : 0;
+            $params[':status'] = ($statusFilterNormalized === 'active') ? 1 : 0;
         }
 
         $whereSql = !empty($whereClauses) ? 'WHERE ' . implode(' AND ', $whereClauses) : '';
@@ -84,7 +123,7 @@ class AdminAdvertisementsService {
             Logger::error("AdminAdvertisementsService::getProvidersList query error: " . $e->getMessage());
         }
 
-        return [
+        $result = [
             'providers' => $providers,
             'totalProviders' => $totalProviders,
             'page' => $page,
@@ -93,14 +132,22 @@ class AdminAdvertisementsService {
             'typeFilter' => $typeFilter,
             'statusFilter' => $statusFilter
         ];
+
+        if ($this->redis) {
+            try {
+                $this->redis->setex($cacheKey, CacheConstants::TTL_ONE_HOUR, json_encode($result));
+            } catch (\Throwable $e) {}
+        }
+
+        return $result;
     }
 
     public function createProvider(array $data): array {
         $pdo = $this->getPdo();
 
         $name = trim($data['name'] ?? '');
-        $providerType = in_array($data['provider_type'] ?? '', ['network', 'direct'], true) ? $data['provider_type'] : 'direct';
-        $networkId = $providerType === 'network' ? trim($data['network_id'] ?? '') : null;
+        $providerType = in_array($data['provider_type'] ?? '', AdvertisementConstants::VALID_PROVIDER_TYPES, true) ? $data['provider_type'] : AdvertisementConstants::PROVIDER_TYPE_DIRECT;
+        $networkId = $providerType === AdvertisementConstants::PROVIDER_TYPE_NETWORK ? trim($data['network_id'] ?? '') : null;
         $hasExpiration = !empty($data['has_expiration']) ? 1 : 0;
         $expirationDate = $hasExpiration && !empty($data['expiration_date']) ? date('Y-m-d H:i:s', strtotime($data['expiration_date'])) : null;
         $startDate = !empty($data['start_date']) ? date('Y-m-d H:i:s', strtotime($data['start_date'])) : date('Y-m-d H:i:s');
@@ -110,7 +157,7 @@ class AdminAdvertisementsService {
             return ['success' => false, 'message_key' => 'err_provider_name_required'];
         }
 
-        if ($providerType === 'network' && empty($networkId)) {
+        if ($providerType === AdvertisementConstants::PROVIDER_TYPE_NETWORK && empty($networkId)) {
             return ['success' => false, 'message_key' => 'err_network_id_required'];
         }
 
@@ -129,6 +176,8 @@ class AdminAdvertisementsService {
                 $expirationDate
             ]);
 
+            $this->getInvalidator()?->advertisements();
+
             return [
                 'success' => true,
                 'uuid' => $uuid,
@@ -144,7 +193,7 @@ class AdminAdvertisementsService {
         $pdo = $this->getPdo();
 
         $name = trim($data['name'] ?? '');
-        $providerType = in_array($data['provider_type'] ?? '', ['network', 'direct'], true) ? $data['provider_type'] : null;
+        $providerType = in_array($data['provider_type'] ?? '', AdvertisementConstants::VALID_PROVIDER_TYPES, true) ? $data['provider_type'] : null;
         $networkId = isset($data['network_id']) ? trim($data['network_id']) : null;
         $hasExpiration = isset($data['has_expiration']) ? (!empty($data['has_expiration']) ? 1 : 0) : null;
         $expirationDate = !empty($data['expiration_date']) ? date('Y-m-d H:i:s', strtotime($data['expiration_date'])) : null;
@@ -185,6 +234,8 @@ class AdminAdvertisementsService {
             $stmtUpdate = $pdo->prepare("UPDATE ad_providers SET {$setSql} WHERE uuid = ?");
             $stmtUpdate->execute($params);
 
+            $this->getInvalidator()?->advertisementProvider($uuid);
+
             return ['success' => true, 'message_key' => 'msg_provider_updated_success'];
         } catch (\Throwable $e) {
             Logger::error("AdminAdvertisementsService::updateProvider error: " . $e->getMessage());
@@ -207,6 +258,8 @@ class AdminAdvertisementsService {
             $stmtUpdate = $pdo->prepare("UPDATE ad_providers SET is_active = ? WHERE uuid = ?");
             $stmtUpdate->execute([$newStatus, $uuid]);
 
+            $this->getInvalidator()?->advertisementProvider($uuid);
+
             return [
                 'success' => true,
                 'is_active' => $newStatus,
@@ -228,6 +281,8 @@ class AdminAdvertisementsService {
                 return ['success' => false, 'message_key' => 'err_provider_not_found'];
             }
 
+            $this->getInvalidator()?->advertisements();
+
             return ['success' => true, 'message_key' => 'msg_provider_deleted_success'];
         } catch (\Throwable $e) {
             Logger::error("AdminAdvertisementsService::deleteProvider error: " . $e->getMessage());
@@ -236,6 +291,19 @@ class AdminAdvertisementsService {
     }
 
     public function getProviderDetails(string $uuid): array {
+        $cacheKey = CacheConstants::PREFIX_ADS_PROVIDER_DETAILS . $uuid;
+        if ($this->redis) {
+            try {
+                $cached = $this->redis->get($cacheKey);
+                if ($cached) {
+                    $decoded = json_decode($cached, true);
+                    if (is_array($decoded)) {
+                        return $decoded;
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
         $pdo = $this->getPdo();
         try {
             $stmt = $pdo->prepare("SELECT * FROM ad_providers WHERE uuid = ?");
@@ -260,11 +328,19 @@ class AdminAdvertisementsService {
                 $ad['resources'] = $stmtRes->fetchAll(\PDO::FETCH_ASSOC);
             }
 
-            return [
+            $result = [
                 'success' => true,
                 'provider' => $provider,
                 'ads' => $ads
             ];
+
+            if ($this->redis) {
+                try {
+                    $this->redis->setex($cacheKey, CacheConstants::TTL_ONE_HOUR, json_encode($result));
+                } catch (\Throwable $e) {}
+            }
+
+            return $result;
         } catch (\Throwable $e) {
             Logger::error("AdminAdvertisementsService::getProviderDetails error: " . $e->getMessage());
             return ['success' => false, 'message_key' => 'err_provider_fetch_failed'];
@@ -272,6 +348,19 @@ class AdminAdvertisementsService {
     }
 
     public function getAdsForProvider(string $providerUuid): array {
+        $cacheKey = CacheConstants::PREFIX_ADS_PROVIDER_ADS . $providerUuid . ':all';
+        if ($this->redis) {
+            try {
+                $cached = $this->redis->get($cacheKey);
+                if ($cached) {
+                    $decoded = json_decode($cached, true);
+                    if (is_array($decoded)) {
+                        return $decoded;
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
         $pdo = $this->getPdo();
         try {
             $stmtFind = $pdo->prepare("SELECT id FROM ad_providers WHERE uuid = ?");
@@ -292,7 +381,15 @@ class AdminAdvertisementsService {
                 $ad['resources'] = $stmtRes->fetchAll(\PDO::FETCH_ASSOC);
             }
 
-            return ['success' => true, 'ads' => $ads];
+            $result = ['success' => true, 'ads' => $ads];
+
+            if ($this->redis) {
+                try {
+                    $this->redis->setex($cacheKey, CacheConstants::TTL_ONE_HOUR, json_encode($result));
+                } catch (\Throwable $e) {}
+            }
+
+            return $result;
         } catch (\Throwable $e) {
             Logger::error("AdminAdvertisementsService::getAdsForProvider error: " . $e->getMessage());
             return ['success' => false, 'message_key' => 'err_ads_fetch_failed', 'ads' => []];
@@ -300,11 +397,27 @@ class AdminAdvertisementsService {
     }
 
     public function getProviderAdsPaginated(string $providerUuid, ?string $searchQuery = '', ?string $formatFilter = null, ?string $statusFilter = null, int $page = 1, int $perPage = 25): array {
-        $pdo = $this->getPdo();
         $searchQuery = trim($searchQuery ?? '');
         $limit = max(1, min(100, $perPage));
         if ($page < 1) $page = 1;
 
+        $formatFilterNormalized = (!empty($formatFilter) && $formatFilter !== 'all') ? $formatFilter : 'all';
+        $statusFilterNormalized = (!empty($statusFilter) && $statusFilter !== 'all') ? $statusFilter : 'all';
+
+        $cacheKey = CacheConstants::PREFIX_ADS_PROVIDER_ADS . "{$providerUuid}:" . md5("{$searchQuery}:{$formatFilterNormalized}:{$statusFilterNormalized}:{$page}:{$limit}");
+        if ($this->redis) {
+            try {
+                $cached = $this->redis->get($cacheKey);
+                if ($cached) {
+                    $decoded = json_decode($cached, true);
+                    if (is_array($decoded)) {
+                        return $decoded;
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        $pdo = $this->getPdo();
         try {
             $stmtFind = $pdo->prepare("SELECT * FROM ad_providers WHERE uuid = ?");
             $stmtFind->execute([$providerUuid]);
@@ -333,18 +446,18 @@ class AdminAdvertisementsService {
                 $params[':search'] = '%' . $searchQuery . '%';
             }
 
-            if (!empty($formatFilter) && $formatFilter !== 'all') {
-                if ($formatFilter === 'modules') {
+            if ($formatFilterNormalized !== 'all') {
+                if ($formatFilterNormalized === 'modules') {
                     $whereClauses[] = "a.format LIKE 'module_%'";
                 } else {
                     $whereClauses[] = "a.format = :format";
-                    $params[':format'] = $formatFilter;
+                    $params[':format'] = $formatFilterNormalized;
                 }
             }
 
-            if (!empty($statusFilter) && $statusFilter !== 'all') {
+            if ($statusFilterNormalized !== 'all') {
                 $whereClauses[] = "a.status = :status";
-                $params[':status'] = $statusFilter;
+                $params[':status'] = $statusFilterNormalized;
             }
 
             $whereSql = 'WHERE ' . implode(' AND ', $whereClauses);
@@ -384,7 +497,7 @@ class AdminAdvertisementsService {
                 $ad['resources'] = $stmtRes->fetchAll(\PDO::FETCH_ASSOC);
             }
 
-            return [
+            $result = [
                 'success' => true,
                 'provider' => $provider,
                 'ads' => $ads,
@@ -395,6 +508,14 @@ class AdminAdvertisementsService {
                 'formatFilter' => $formatFilter,
                 'statusFilter' => $statusFilter
             ];
+
+            if ($this->redis) {
+                try {
+                    $this->redis->setex($cacheKey, CacheConstants::TTL_ONE_HOUR, json_encode($result));
+                } catch (\Throwable $e) {}
+            }
+
+            return $result;
         } catch (\Throwable $e) {
             Logger::error("AdminAdvertisementsService::getProviderAdsPaginated error: " . $e->getMessage());
             return [
@@ -428,8 +549,8 @@ class AdminAdvertisementsService {
             $description = trim($adData['description'] ?? '');
             $targetUrl = trim($adData['target_url'] ?? '');
             $sponsorLabel = trim($adData['sponsor_label'] ?? $provider['name']);
-            $format = in_array($adData['format'] ?? '', ['feed', 'module_colors', 'module_templates', 'module_info', 'banner', 'custom'], true) ? $adData['format'] : 'feed';
-            $status = in_array($adData['status'] ?? '', ['active', 'inactive', 'paused', 'expired'], true) ? $adData['status'] : 'active';
+            $format = AdvertisementConstants::isValidFormat($adData['format'] ?? '') ? $adData['format'] : AdvertisementConstants::FORMAT_FEED;
+            $status = in_array($adData['status'] ?? '', AdvertisementConstants::VALID_STATUSES, true) ? $adData['status'] : AdvertisementConstants::STATUS_ACTIVE;
             $hasExpiration = !empty($adData['has_expiration']) ? 1 : 0;
             $expirationDate = $hasExpiration && !empty($adData['expiration_date']) ? date('Y-m-d H:i:s', strtotime($adData['expiration_date'])) : null;
             $startDate = !empty($adData['start_date']) ? date('Y-m-d H:i:s', strtotime($adData['start_date'])) : date('Y-m-d H:i:s');
@@ -488,6 +609,8 @@ class AdminAdvertisementsService {
 
             $pdo->commit();
 
+            $this->getInvalidator()?->advertisement($adUuid, $providerUuid);
+
             return [
                 'success' => true,
                 'uuid' => $adUuid,
@@ -505,21 +628,24 @@ class AdminAdvertisementsService {
     public function updateAd(string $adUuid, array $adData, ?array $resources = null): array {
         $pdo = $this->getPdo();
         try {
-            $stmtFind = $pdo->prepare("SELECT id FROM advertisements WHERE uuid = ?");
+            $stmtFind = $pdo->prepare("SELECT a.id, a.provider_id, p.uuid AS provider_uuid FROM advertisements a INNER JOIN ad_providers p ON a.provider_id = p.id WHERE a.uuid = ?");
             $stmtFind->execute([$adUuid]);
-            $adId = $stmtFind->fetchColumn();
+            $adRow = $stmtFind->fetch(\PDO::FETCH_ASSOC);
 
-            if (!$adId) {
+            if (!$adRow) {
                 return ['success' => false, 'message_key' => 'err_ad_not_found'];
             }
+
+            $adId = (int)$adRow['id'];
+            $providerUuid = $adRow['provider_uuid'] ?? null;
 
             $name = trim($adData['name'] ?? '');
             $title = trim($adData['title'] ?? $name);
             $description = trim($adData['description'] ?? '');
             $targetUrl = trim($adData['target_url'] ?? '');
             $sponsorLabel = trim($adData['sponsor_label'] ?? '');
-            $format = in_array($adData['format'] ?? '', ['feed', 'module_colors', 'module_templates', 'module_info', 'banner', 'custom'], true) ? $adData['format'] : 'feed';
-            $status = in_array($adData['status'] ?? '', ['active', 'inactive', 'paused', 'expired'], true) ? $adData['status'] : 'active';
+            $format = AdvertisementConstants::isValidFormat($adData['format'] ?? '') ? $adData['format'] : AdvertisementConstants::FORMAT_FEED;
+            $status = in_array($adData['status'] ?? '', AdvertisementConstants::VALID_STATUSES, true) ? $adData['status'] : AdvertisementConstants::STATUS_ACTIVE;
             $hasExpiration = !empty($adData['has_expiration']) ? 1 : 0;
             $expirationDate = $hasExpiration && !empty($adData['expiration_date']) ? date('Y-m-d H:i:s', strtotime($adData['expiration_date'])) : null;
             $settings = isset($adData['settings']) ? (is_array($adData['settings']) ? json_encode($adData['settings']) : $adData['settings']) : null;
@@ -574,6 +700,8 @@ class AdminAdvertisementsService {
 
             $pdo->commit();
 
+            $this->getInvalidator()?->advertisement($adUuid, $providerUuid);
+
             return ['success' => true, 'message_key' => 'msg_ad_updated_success'];
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) {
@@ -587,7 +715,7 @@ class AdminAdvertisementsService {
     public function toggleAdStatus(string $adUuid): array {
         $pdo = $this->getPdo();
         try {
-            $stmt = $pdo->prepare("SELECT status FROM advertisements WHERE uuid = ?");
+            $stmt = $pdo->prepare("SELECT a.status, p.uuid AS provider_uuid FROM advertisements a INNER JOIN ad_providers p ON a.provider_id = p.id WHERE a.uuid = ?");
             $stmt->execute([$adUuid]);
             $ad = $stmt->fetch(\PDO::FETCH_ASSOC);
 
@@ -598,6 +726,8 @@ class AdminAdvertisementsService {
             $newStatus = ($ad['status'] === 'active') ? 'inactive' : 'active';
             $stmtUpdate = $pdo->prepare("UPDATE advertisements SET status = ? WHERE uuid = ?");
             $stmtUpdate->execute([$newStatus, $adUuid]);
+
+            $this->getInvalidator()?->advertisement($adUuid, $ad['provider_uuid'] ?? null);
 
             return [
                 'success' => true,
@@ -613,12 +743,18 @@ class AdminAdvertisementsService {
     public function deleteAd(string $adUuid): array {
         $pdo = $this->getPdo();
         try {
+            $stmtFind = $pdo->prepare("SELECT p.uuid AS provider_uuid FROM advertisements a INNER JOIN ad_providers p ON a.provider_id = p.id WHERE a.uuid = ?");
+            $stmtFind->execute([$adUuid]);
+            $providerUuid = $stmtFind->fetchColumn() ?: null;
+
             $stmt = $pdo->prepare("DELETE FROM advertisements WHERE uuid = ?");
             $stmt->execute([$adUuid]);
 
             if ($stmt->rowCount() === 0) {
                 return ['success' => false, 'message_key' => 'err_ad_not_found'];
             }
+
+            $this->getInvalidator()?->advertisement($adUuid, $providerUuid);
 
             return ['success' => true, 'message_key' => 'msg_ad_deleted_success'];
         } catch (\Throwable $e) {
@@ -628,81 +764,113 @@ class AdminAdvertisementsService {
     }
 
     public function getPublicActiveAds(?string $visitorIp = null): array {
-        $pdo = $this->getPdo();
-        try {
-            $resolvedIp = $visitorIp ?: Utils::getIpAddress();
-            $sql = "SELECT a.id, a.uuid, a.name, a.title, a.description, a.target_url, a.sponsor_label, a.format, a.settings,
-                           p.name AS provider_name, p.provider_type, p.network_id
-                    FROM advertisements a
-                    INNER JOIN ad_providers p ON a.provider_id = p.id
-                    WHERE p.is_active = 1
-                      AND (p.has_expiration = 0 OR p.expiration_date IS NULL OR p.expiration_date >= NOW())
-                      AND a.status = 'active'
-                      AND (a.has_expiration = 0 OR a.expiration_date IS NULL OR a.expiration_date >= NOW())
-                    ORDER BY a.id ASC";
+        $resolvedIp = $visitorIp ?: Utils::getIpAddress();
 
-            $stmt = $pdo->query($sql);
-            $ads = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $rawAds = null;
+        $rawCacheKey = CacheConstants::PREFIX_ADS_ACTIVE_PUBLIC . ':raw';
 
-            $feedAds = [];
-            $moduleAds = [];
-
-            foreach ($ads as $ad) {
-                // Geo / ASN targeting check
-                $settings = !empty($ad['settings']) ? (is_array($ad['settings']) ? $ad['settings'] : json_decode($ad['settings'], true)) : null;
-                if (!GeoIpHelper::isTargetingMatch($settings, $resolvedIp)) {
-                    continue;
+        if ($this->redis) {
+            try {
+                $cached = $this->redis->get($rawCacheKey);
+                if ($cached) {
+                    $rawAds = json_decode($cached, true);
                 }
+            } catch (\Throwable $e) {}
+        }
 
-                $stmtRes = $pdo->prepare("SELECT resource_type, content_url, raw_content, alt_text, sort_order FROM ad_resources WHERE ad_id = ? ORDER BY sort_order ASC, id ASC");
-                $stmtRes->execute([$ad['id']]);
-                $resources = $stmtRes->fetchAll(\PDO::FETCH_ASSOC);
+        if (!is_array($rawAds)) {
+            $pdo = $this->getPdo();
+            try {
+                $sql = "SELECT a.id, a.uuid, a.name, a.title, a.description, a.target_url, a.sponsor_label, a.format, a.settings,
+                               p.name AS provider_name, p.provider_type, p.network_id
+                        FROM advertisements a
+                        INNER JOIN ad_providers p ON a.provider_id = p.id
+                        WHERE p.is_active = 1
+                          AND (p.has_expiration = 0 OR p.expiration_date IS NULL OR p.expiration_date >= NOW())
+                          AND a.status = 'active'
+                          AND (a.has_expiration = 0 OR a.expiration_date IS NULL OR a.expiration_date >= NOW())
+                        ORDER BY a.id ASC";
 
-                $media = [];
-                foreach ($resources as $res) {
-                    $media[] = [
-                        'type' => $res['resource_type'],
-                        'url' => $res['content_url'],
-                        'raw' => $res['raw_content'],
-                        'alt' => $res['alt_text'] ?? $ad['title']
-                    ];
-                }
+                $stmt = $pdo->query($sql);
+                $dbAds = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-                $formattedAd = [
-                    'id' => $ad['uuid'],
-                    'uuid' => $ad['uuid'],
-                    'provider_type' => $ad['provider_type'],
-                    'network_id' => $ad['network_id'],
-                    'sponsor' => !empty($ad['sponsor_label']) ? $ad['sponsor_label'] : $ad['provider_name'],
-                    'title' => $ad['title'],
-                    'description' => $ad['description'],
-                    'url' => $ad['target_url'],
-                    'format' => $ad['format'],
-                    'media' => $media
-                ];
-
-                if ($ad['format'] === 'feed') {
-                    $formattedAd['type'] = 'feed';
-                    $feedAds[] = $formattedAd;
-                } else {
-                    $formattedAd['type'] = 'module';
-                    $moduleKey = str_replace('module_', '', $ad['format']);
-                    if (!isset($moduleAds[$moduleKey])) {
-                        $moduleAds[$moduleKey] = [];
+                $rawAds = [];
+                foreach ($dbAds as $ad) {
+                    // Validar que sea un formato soportado
+                    if (!AdvertisementConstants::isValidFormat($ad['format'])) {
+                        continue;
                     }
-                    $moduleAds[$moduleKey][] = $formattedAd;
+
+                    $stmtRes = $pdo->prepare("SELECT resource_type, content_url, raw_content, alt_text, sort_order FROM ad_resources WHERE ad_id = ? ORDER BY sort_order ASC, id ASC");
+                    $stmtRes->execute([$ad['id']]);
+                    $resources = $stmtRes->fetchAll(\PDO::FETCH_ASSOC);
+
+                    $media = [];
+                    foreach ($resources as $res) {
+                        $media[] = [
+                            'type' => $res['resource_type'],
+                            'url' => $res['content_url'],
+                            'raw' => $res['raw_content'],
+                            'alt' => $res['alt_text'] ?? $ad['title']
+                        ];
+                    }
+
+                    $ad['media'] = $media;
+                    $rawAds[] = $ad;
                 }
+
+                if ($this->redis) {
+                    try {
+                        $this->redis->setex($rawCacheKey, CacheConstants::TTL_ONE_HOUR, json_encode($rawAds));
+                    } catch (\Throwable $e) {}
+                }
+            } catch (\Throwable $e) {
+                Logger::error("AdminAdvertisementsService::getPublicActiveAds error: " . $e->getMessage());
+                return ['success' => false, 'feed_promos' => [], 'module_promos' => []];
+            }
+        }
+
+        $feedAds = [];
+        $moduleAds = [];
+
+        foreach ($rawAds as $ad) {
+            // Geo / ASN targeting check
+            $settings = !empty($ad['settings']) ? (is_array($ad['settings']) ? $ad['settings'] : json_decode($ad['settings'], true)) : null;
+            if (!GeoIpHelper::isTargetingMatch($settings, $resolvedIp)) {
+                continue;
             }
 
-            return [
-                'success' => true,
-                'feed_promos' => $feedAds,
-                'module_promos' => $moduleAds
+            $formattedAd = [
+                'id' => $ad['uuid'],
+                'uuid' => $ad['uuid'],
+                'provider_type' => $ad['provider_type'],
+                'network_id' => $ad['network_id'],
+                'sponsor' => !empty($ad['sponsor_label']) ? $ad['sponsor_label'] : $ad['provider_name'],
+                'title' => $ad['title'],
+                'description' => $ad['description'],
+                'url' => $ad['target_url'],
+                'format' => $ad['format'],
+                'media' => $ad['media'] ?? []
             ];
-        } catch (\Throwable $e) {
-            Logger::error("AdminAdvertisementsService::getPublicActiveAds error: " . $e->getMessage());
-            return ['success' => false, 'feed_promos' => [], 'module_promos' => []];
+
+            if ($ad['format'] === AdvertisementConstants::FORMAT_FEED) {
+                $formattedAd['type'] = 'feed';
+                $feedAds[] = $formattedAd;
+            } else {
+                $formattedAd['type'] = 'module';
+                $moduleKey = str_replace('module_', '', $ad['format']);
+                if (!isset($moduleAds[$moduleKey])) {
+                    $moduleAds[$moduleKey] = [];
+                }
+                $moduleAds[$moduleKey][] = $formattedAd;
+            }
         }
+
+        return [
+            'success' => true,
+            'feed_promos' => $feedAds,
+            'module_promos' => $moduleAds
+        ];
     }
 
     public function recordAdMetric(string $adUuid, string $eventType, ?string $userUuid = null, ?string $ipAddress = null, ?string $userAgent = null): array {
@@ -716,9 +884,8 @@ class AdminAdvertisementsService {
                 return ['success' => false, 'message_key' => 'err_ad_not_found'];
             }
 
-            $validEvents = ['impression', 'click', 'video_view', 'conversion'];
-            if (!in_array($eventType, $validEvents, true)) {
-                $eventType = 'impression';
+            if (!in_array($eventType, AdvertisementConstants::VALID_EVENTS, true)) {
+                $eventType = AdvertisementConstants::EVENT_IMPRESSION;
             }
 
             $stmt = $pdo->prepare("INSERT INTO ad_metrics (ad_id, provider_id, event_type, user_uuid, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?)");
@@ -743,31 +910,31 @@ class AdminAdvertisementsService {
         $label = 'Últimos 30 días';
 
         switch ($period) {
-            case '7':
+            case AdvertisementConstants::PERIOD_7:
                 $days = 7;
                 $label = 'Últimos 7 días';
                 break;
-            case '60':
+            case AdvertisementConstants::PERIOD_60:
                 $days = 60;
                 $label = 'Últimos 60 días';
                 break;
-            case '90':
+            case AdvertisementConstants::PERIOD_90:
                 $days = 90;
                 $label = 'Últimos 90 días (Trimestre)';
                 break;
-            case '180':
+            case AdvertisementConstants::PERIOD_180:
                 $days = 180;
                 $label = 'Últimos 180 días (Semestre)';
                 break;
-            case '365':
+            case AdvertisementConstants::PERIOD_365:
                 $days = 365;
                 $label = 'Últimos 365 días (1 año)';
                 break;
-            case 'all':
+            case AdvertisementConstants::PERIOD_ALL:
                 $days = null;
                 $label = 'Todo el Historial Acumulado';
                 break;
-            case '30':
+            case AdvertisementConstants::PERIOD_30:
             default:
                 $days = 30;
                 $label = 'Últimos 30 días';
@@ -779,6 +946,19 @@ class AdminAdvertisementsService {
     }
 
     public function getAdMetricsReportData(string $adUuid, string $period = '30'): ?array {
+        $cacheKey = CacheConstants::PREFIX_ADS_INDIVIDUAL_REPORT . "{$adUuid}:{$period}";
+        if ($this->redis) {
+            try {
+                $cached = $this->redis->get($cacheKey);
+                if ($cached) {
+                    $decoded = json_decode($cached, true);
+                    if (is_array($decoded)) {
+                        return $decoded;
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
         $pdo = $this->getPdo();
         try {
             $stmtAd = $pdo->prepare("SELECT a.*, p.name AS provider_name, p.provider_type, p.network_id 
@@ -826,12 +1006,20 @@ class AdminAdvertisementsService {
             $stmtDaily->execute([$adId]);
             $dailyBreakdown = $stmtDaily->fetchAll(\PDO::FETCH_ASSOC);
 
-            return [
+            $result = [
                 'ad' => $ad,
                 'summary' => $summary,
                 'daily_breakdown' => $dailyBreakdown,
                 'period_label' => $periodInfo['label']
             ];
+
+            if ($this->redis) {
+                try {
+                    $this->redis->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($result));
+                } catch (\Throwable $e) {}
+            }
+
+            return $result;
         } catch (\Throwable $e) {
             Logger::error("AdminAdvertisementsService::getAdMetricsReportData error: " . $e->getMessage());
             return null;
@@ -839,6 +1027,19 @@ class AdminAdvertisementsService {
     }
 
     public function getGlobalMetricsReportData(string $period = '30'): array {
+        $cacheKey = CacheConstants::PREFIX_ADS_GLOBAL_REPORT . $period;
+        if ($this->redis) {
+            try {
+                $cached = $this->redis->get($cacheKey);
+                if ($cached) {
+                    $decoded = json_decode($cached, true);
+                    if (is_array($decoded)) {
+                        return $decoded;
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
         $pdo = $this->getPdo();
         try {
             $periodInfo = $this->getPeriodSqlCondition($period, 'm.date_only');
@@ -878,14 +1079,8 @@ class AdminAdvertisementsService {
                              ORDER BY total_impressions DESC, total_ads DESC";
             $providersBreakdown = $pdo->query($sqlProviders)->fetchAll(\PDO::FETCH_ASSOC);
 
-            // 3. Formats breakdown
-            $formatLabels = [
-                'feed' => 'Feed Principal (Home / Búsqueda)',
-                'module_colors' => 'Herramientas: Paleta de Colores',
-                'module_templates' => 'Herramientas: Plantillas',
-                'module_info' => 'Lienzo: Información',
-                'banner' => 'Banner Estándar'
-            ];
+            // 3. Formats breakdown usando el catálogo centralizado
+            $formatLabels = AdvertisementConstants::getFormatLabels();
 
             $formatsBreakdown = [];
             foreach ($formatLabels as $fmtKey => $fmtLabel) {
@@ -915,13 +1110,21 @@ class AdminAdvertisementsService {
                        LIMIT 10";
             $topAds = $pdo->query($sqlTop)->fetchAll(\PDO::FETCH_ASSOC);
 
-            return [
+            $result = [
                 'global_summary' => $globalSummary,
                 'providers_breakdown' => $providersBreakdown,
                 'formats_breakdown' => $formatsBreakdown,
                 'top_ads' => $topAds,
                 'period_label' => $periodInfo['label']
             ];
+
+            if ($this->redis) {
+                try {
+                    $this->redis->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($result));
+                } catch (\Throwable $e) {}
+            }
+
+            return $result;
         } catch (\Throwable $e) {
             Logger::error("AdminAdvertisementsService::getGlobalMetricsReportData error: " . $e->getMessage());
             return [
@@ -986,4 +1189,3 @@ class AdminAdvertisementsService {
         exit;
     }
 }
-

@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS advertisements (
     description TEXT NULL,
     target_url VARCHAR(1024) NULL,
     sponsor_label VARCHAR(100) NULL,
-    format ENUM('feed', 'module_colors', 'module_templates', 'module_info', 'banner', 'custom') NOT NULL DEFAULT 'feed',
+    format ENUM('feed', 'module_colors', 'module_templates') NOT NULL DEFAULT 'feed',
     status ENUM('active', 'inactive', 'paused', 'expired') NOT NULL DEFAULT 'active',
     has_expiration TINYINT(1) NOT NULL DEFAULT 0,
     start_date DATETIME NULL,
@@ -91,8 +91,7 @@ INSERT INTO advertisements (id, uuid, provider_id, name, title, description, tar
 (3, 'b1000000-0000-0000-0000-000000000003', 4, 'Generador de Paletas Armónicas', 'Generador de Paletas Armónicas', 'Extracción instantánea de degradados y paletas cromáticas para tu lienzo.', '/upgrade', 'Palette Master AI', 'feed', 'active', 0),
 (4, 'b1000000-0000-0000-0000-000000000004', 5, 'Librería de Plantillas 16-Bit', 'Librería de Plantillas 16-Bit', 'Más de 5,000 mapas isométricos, tilesets y planos listos para colocar.', '/upgrade', 'NeoRetro Assets', 'feed', 'active', 0),
 (5, 'b1000000-0000-0000-0000-000000000005', 3, 'Paletas y Armonías Exclusivas', 'Paletas y Armonías Exclusivas', 'Descubre combinaciones de colores únicas y degradados profesionales para tus obras.', '/upgrade', 'Chroma Studio', 'module_colors', 'active', 0),
-(6, 'b1000000-0000-0000-0000-000000000006', 5, 'Pack de Plantillas Pixel Art', 'Pack de Plantillas Pixel Art', 'Inyecta estructuras, mapas y esquemas de referencia directamente en tu lienzo.', '/upgrade', 'RetroCraft Blueprints', 'module_templates', 'active', 0),
-(7, 'b1000000-0000-0000-0000-000000000007', 2, 'Herramientas de Animación 2D', 'Herramientas de Animación 2D', 'Pinceles inteligentes, capas avanzadas y exportación de spritesheets en tiempo real.', '/upgrade', 'PixelCraft Studio Pro', 'module_info', 'active', 0)
+(6, 'b1000000-0000-0000-0000-000000000006', 5, 'Pack de Plantillas Pixel Art', 'Pack de Plantillas Pixel Art', 'Inyecta estructuras, mapas y esquemas de referencia directamente en tu lienzo.', '/upgrade', 'RetroCraft Blueprints', 'module_templates', 'active', 0)
 ON DUPLICATE KEY UPDATE name=VALUES(name);
 
 INSERT INTO ad_resources (id, uuid, ad_id, resource_type, content_url, alt_text, sort_order) VALUES

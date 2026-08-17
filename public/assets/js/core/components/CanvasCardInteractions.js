@@ -743,20 +743,6 @@ export class CanvasCardInteractions {
                 contentEl.classList.remove('disabled');
                 contentEl.classList.add('active');
             }
-            this.renderInfoPromo(moduleEl);
-        }
-    }
-
-    async renderInfoPromo(moduleEl) {
-        if (!moduleEl || PromoService.isExempt()) return;
-        const container = moduleEl.querySelector('[data-ref="module-promo-bottom-info"]');
-        if (container && !container.hasChildNodes()) {
-            await PromoService.ensureLoaded();
-            const promo = PromoService.getModulePromo('info');
-            if (promo) {
-                container.innerHTML = CardTemplates.promoCard(promo, { basePath: this.basePath });
-                PromoService.initCardInteractions(container);
-            }
         }
     }
 }

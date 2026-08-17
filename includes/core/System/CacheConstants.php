@@ -67,6 +67,15 @@ class CacheConstants {
     public const PREFIX_CANVAS_BANNED          = 'canvas:%s:canvas_banned:%s';
     public const PREFIX_CHAT_RESTRICTED        = 'canvas:%s:chat_restricted:%s';
 
+    // --- Publicidad y Anuncios (Advertisements) ---
+    public const PREFIX_ADS_ACTIVE_PUBLIC      = 'ads:active:public';
+    public const PREFIX_ADS_PROVIDERS_LIST     = 'ads:providers:list:';
+    public const PREFIX_ADS_PROVIDER_DETAILS   = 'ads:provider:details:';
+    public const PREFIX_ADS_PROVIDER_ADS       = 'ads:provider:ads:';
+    public const PREFIX_ADS_METRICS_REPORT     = 'ads:report:';
+    public const PREFIX_ADS_GLOBAL_REPORT      = 'ads:report:global:';
+    public const PREFIX_ADS_INDIVIDUAL_REPORT  = 'ads:report:ad:';
+
     // --- Claves no-CacheConstants (internamente usadas en repos) ---
     // canvas:{canvasId}:meta:u:{userId}
     public const PREFIX_CANVAS_META            = 'canvas:';
