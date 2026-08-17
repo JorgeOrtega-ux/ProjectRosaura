@@ -243,7 +243,7 @@ class AdminUserEditController {
                 userUuid: userUuid,
                 actionType: 'resetPassword',
                 confirmText: this.translateKey('btn_send_password_reset', [], 'Enviar Enlace'),
-                confirmClass: 'component-button--dark',
+                confirmClass: 'component-button--primary',
                 actionTarget: 'submitConfirmUserAdminAction'
             });
         }
@@ -266,7 +266,7 @@ class AdminUserEditController {
                 userUuid: userUuid,
                 actionType: 'unlockRateLimit',
                 confirmText: this.translateKey('btn_unlock_rate_limit', [], 'Desbloquear Login'),
-                confirmClass: 'component-button--dark',
+                confirmClass: 'component-button--primary',
                 actionTarget: 'submitConfirmUserAdminAction'
             });
         }
@@ -310,7 +310,7 @@ class AdminUserEditController {
                 userUuid: userUuid,
                 actionType: 'syncStripe',
                 confirmText: this.translateKey('btn_sync_stripe', [], 'Sincronizar Stripe'),
-                confirmClass: 'component-button--dark',
+                confirmClass: 'component-button--primary',
                 actionTarget: 'submitConfirmUserAdminAction'
             });
         }

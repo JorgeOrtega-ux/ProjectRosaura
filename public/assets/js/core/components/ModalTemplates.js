@@ -83,7 +83,7 @@ export const ModalTemplates = {
                         </div>
                     </div>
                     <div class="component-modal-actions">
-                        <button class="component-button component-button--dark component-button--h40" data-modal-action="cancel">${__('btn_accept')}</button>
+                        <button class="component-button component-button--primary component-button--h40" data-modal-action="cancel">${__('btn_accept')}</button>
                     </div>
                 `;
             }
@@ -102,7 +102,7 @@ export const ModalTemplates = {
                     </div>
                     <div class="component-modal-actions">
                         <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                        <a href="/upgrade" class="component-button component-button--dark component-button--h40">
+                        <a href="/upgrade" class="component-button component-button--primary component-button--h40">
                             <span class="material-symbols-rounded">stars</span>
                             <span>${__('btn_upgrade')}</span>
                         </a>
@@ -118,7 +118,7 @@ export const ModalTemplates = {
                 </div>
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button class="component-button component-button--dark component-button--h40" data-modal-action="confirm">${__('btn_activate_live_chat_confirm')}</button>
+                    <button class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${__('btn_activate_live_chat_confirm')}</button>
                 </div>
             `;
         }
@@ -142,7 +142,7 @@ export const ModalTemplates = {
                     
                     <div class="component-modal-actions">
                         <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                        <button class="component-button component-button--h40 component-button--dark" data-action="submitVerifyCurrentPassword">${__('btn_verify')}</button>
+                        <button class="component-button component-button--primary component-button--h40" data-action="submitVerifyCurrentPassword">${__('btn_verify')}</button>
                     </div>
                 </div>
 
@@ -169,7 +169,7 @@ export const ModalTemplates = {
                     
                     <div class="component-modal-actions">
                         <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                        <button class="component-button component-button--h40 component-button--dark" data-action="submitUpdatePassword">${__('btn_save_password')}</button>
+                        <button class="component-button component-button--primary component-button--h40" data-action="submitUpdatePassword">${__('btn_save_password')}</button>
                     </div>
                 </div>
             `;
@@ -200,7 +200,7 @@ export const ModalTemplates = {
                 </div>
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button class="component-button component-button--dark component-button--h40" data-modal-action="confirm">${__('btn_accept')}</button>
+                    <button class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${__('btn_accept')}</button>
                 </div>
             `;
         }
@@ -260,7 +260,7 @@ export const ModalTemplates = {
                     </div>
 
                     <div class="component-modal-fullscreen-bottom-actions">
-                        <button class="component-button component-button--h45 component-button--dark component-button--pill component-button--wide" data-modal-action="confirm">
+                        <button class="component-button component-button--primary component-button--h45 component-button--pill component-button--wide" data-modal-action="confirm">
                             ${continueText}
                         </button>
                     </div>
@@ -322,7 +322,7 @@ export const ModalTemplates = {
                 if (idx === 0) {
                     actionsHtml = `
                         <div class="step-modal-actions">
-                            <button class="component-button component-button--h40 component-button--dark" data-step-target="welcome-step-2">
+                            <button class="component-button component-button--primary component-button--h40" data-step-target="welcome-step-2">
                                 ${window.__('welcome_modal_btn_next')}
                             </button>
                         </div>
@@ -330,7 +330,7 @@ export const ModalTemplates = {
                 } else if (idx === 1) {
                     actionsHtml = `
                         <div class="step-modal-actions">
-                            <button class="component-button component-button--h40 component-button--dark" data-step-target="welcome-step-3">
+                            <button class="component-button component-button--primary component-button--h40" data-step-target="welcome-step-3">
                                 ${window.__('welcome_modal_btn_next')}
                             </button>
                         </div>
@@ -338,7 +338,7 @@ export const ModalTemplates = {
                 } else {
                     actionsHtml = `
                         <div class="step-modal-actions">
-                            <button class="component-button component-button--h40 component-button--dark" data-modal-action="finish">
+                            <button class="component-button component-button--primary component-button--h40" data-modal-action="finish">
                                 ${window.__('welcome_modal_btn_finish')}
                             </button>
                         </div>
@@ -542,7 +542,7 @@ export const ModalTemplates = {
                     actionsHtml = `
                         <div class="step-modal-actions">
                             ${backBtn}
-                            <button class="component-button component-button--h40 component-button--dark" data-step-target="${modalId}-step-${stepNum + 1}">
+                            <button class="component-button component-button--primary component-button--h40" data-step-target="${modalId}-step-${stepNum + 1}">
                                 ${window.__('onboarding_btn_next') || 'Siguiente'}
                             </button>
                         </div>
@@ -551,7 +551,7 @@ export const ModalTemplates = {
                     actionsHtml = `
                         <div class="step-modal-actions">
                             ${backBtn}
-                            <button class="component-button component-button--h40 component-button--dark" data-modal-action="finish">
+                            <button class="component-button component-button--primary component-button--h40" data-modal-action="finish">
                                 ${window.__('onboarding_btn_finish') || 'Entendido'}
                             </button>
                         </div>
@@ -728,7 +728,7 @@ export const ModalTemplates = {
             </div>
             <div class="component-modal-actions">
                 <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('btn_activate')}</button>
+                <button class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${__('btn_activate')}</button>
             </div>
         `
     },
@@ -742,7 +742,7 @@ export const ModalTemplates = {
             </div>
             <div class="component-modal-actions">
                 <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('btn_delete')}</button>
+                <button class="component-button component-button--h40" data-modal-action="confirm">${__('btn_delete')}</button>
             </div>
         `
     },
@@ -780,7 +780,7 @@ export const ModalTemplates = {
             </div>
             <div class="component-modal-actions">
                 <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('btn_verify')}</button>
+                <button class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${__('btn_verify')}</button>
             </div>
         `
     },
@@ -820,7 +820,7 @@ export const ModalTemplates = {
             </div>
             <div class="component-modal-actions">
                 <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${data.confirmKey ? __(data.confirmKey) : __('btn_save')}</button>
+                <button class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${data.confirmKey ? __(data.confirmKey) : __('btn_save')}</button>
             </div>
         `
     },
@@ -839,7 +839,7 @@ export const ModalTemplates = {
             </div>
             <div class="component-modal-actions">
                 <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('btn_save_permissions')}</button>
+                <button class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${__('btn_save_permissions')}</button>
             </div>
         `
     },
@@ -859,7 +859,7 @@ export const ModalTemplates = {
             const cancelBtnText = __('btn_cancel');
             const confirmBtnText = data.confirmKey ? __(data.confirmKey) : __('btn_continue');
             const passwordLblText = __('lbl_current_password');
-            const confirmClass = data.confirmClass || 'component-button--dark';
+            const confirmClass = data.confirmClass || 'component-button--primary';
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
@@ -917,7 +917,7 @@ export const ModalTemplates = {
             
             <div class="component-modal-actions">
                 <button class="component-button component-button--h40" data-modal-action="cancel">${data.cancelKey ? __(data.cancelKey) : __('btn_cancel')}</button>
-                <button class="component-button component-button--h40 ${data.dangerBtn ? 'component-button--danger' : 'component-button--dark'}" data-modal-action="confirm">${data.confirmKey ? __(data.confirmKey) : __('btn_confirm')}</button>
+                <button class="component-button component-button--h40 ${data.dangerBtn ? 'component-button--danger' : 'component-button--primary'}" data-modal-action="confirm">${data.confirmKey ? __(data.confirmKey) : __('btn_confirm')}</button>
             </div>
         `
     },
@@ -977,7 +977,7 @@ export const ModalTemplates = {
             </div>
             <div class="component-modal-actions">
                 <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('btn_save')}</button>
+                <button class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${__('btn_save')}</button>
             </div>
         `
     },
@@ -995,7 +995,7 @@ export const ModalTemplates = {
         build: () => ModalTemplates.confirmAction.build({
             titleKey: 'title_confirm_create_canvas',
             descKey: 'desc_confirm_create_canvas',
-            confirmClass: 'component-button--dark',
+            confirmClass: 'component-button--primary',
             confirmKey: 'btn_create_canvas'
         })
     },
@@ -1093,7 +1093,7 @@ export const ModalTemplates = {
                 </div>
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button class="component-button component-button--h40 component-button--dark" data-modal-action="confirm_dynamic_form">${data.confirmKey ? __(data.confirmKey) : __('btn_accept')}</button>
+                    <button class="component-button component-button--primary component-button--h40" data-modal-action="confirm_dynamic_form">${data.confirmKey ? __(data.confirmKey) : __('btn_accept')}</button>
                 </div>
             `;
         }
@@ -1207,7 +1207,7 @@ export const ModalTemplates = {
             </div>
             <div class="component-modal-actions">
                 <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--dark component-button--h40" data-action="submitJoinLive">${__('btn_join')}</button>
+                <button class="component-button component-button--primary component-button--h40" data-action="submitJoinLive">${__('btn_join')}</button>
             </div>
         `
     },
@@ -1277,7 +1277,7 @@ export const ModalTemplates = {
             <div class="component-modal-actions">
                 <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_close')}</button>
                 <button class="component-button component-button--danger component-button--h40 ${data.isActive ? 'active' : 'disabled'}" data-action="stopLive">${__('btn_stop_live')}</button>
-                <button class="component-button component-button--dark component-button--h40 ${data.isActive ? 'disabled' : 'active'}" data-action="startLive">${__('btn_start_live')}</button>
+                <button class="component-button component-button--primary component-button--h40 ${data.isActive ? 'disabled' : 'active'}" data-action="startLive">${__('btn_start_live')}</button>
             </div>
         `
     },
@@ -1291,7 +1291,7 @@ export const ModalTemplates = {
             </div>
             <div class="component-modal-actions">
                 <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--dark component-button--h40" data-modal-action="confirm">${window.__('btn_accept')}</button>
+                <button class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${window.__('btn_accept')}</button>
             </div>
         `
     },
@@ -1425,7 +1425,7 @@ export const ModalTemplates = {
                 </div>
                 <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${window.__('btn_cancel')}</button>
-                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${window.__('btn_disconnect')}</button>
+                    <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${window.__('btn_disconnect')}</button>
                 </div>
             `;
         }
@@ -1456,7 +1456,7 @@ export const ModalTemplates = {
                 ${passwordFieldHtml}
                 <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
-                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${btnConfirm}</button>
+                    <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${btnConfirm}</button>
                 </div>
             `;
         }
@@ -1477,7 +1477,7 @@ export const ModalTemplates = {
                 </div>
                 <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('btn_confirm')}</button>
+                    <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${__('btn_confirm')}</button>
                 </div>
             `;
         }
@@ -1621,7 +1621,7 @@ export const ModalTemplates = {
                 </div>
                 <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('btn_confirm')}</button>
+                    <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${__('btn_confirm')}</button>
                 </div>
             `;
         }
@@ -1761,7 +1761,7 @@ export const ModalTemplates = {
                 </div>
                 <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('lbl_save_changes')}</button>
+                    <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${__('lbl_save_changes')}</button>
                 </div>
             `;
         },
@@ -1791,7 +1791,7 @@ export const ModalTemplates = {
                 </div>
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel', [])}</button>
-                    <button class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${__('btn_start_broadcast', [])}</button>
+                    <button class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${__('btn_start_broadcast', [])}</button>
                 </div>
             `;
         }
@@ -1886,7 +1886,7 @@ export const ModalTemplates = {
                                         <button type="button" class="component-button component-button--h30" data-action="calendarClear">${__('btn_clear')}</button>
                                         <div>
                                             <button type="button" class="component-button component-button--h30" data-action="calendarCancel">${btnCancel}</button>
-                                            <button type="button" class="component-button component-button--h30 component-button--dark" data-action="calendarConfirm">${btnConfirm}</button>
+                                            <button type="button" class="component-button component-button--primary component-button--h30" data-action="calendarConfirm">${btnConfirm}</button>
                                         </div>
                                     </div>
                                 </div>
@@ -1945,7 +1945,7 @@ export const ModalTemplates = {
                 </div>
                 <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
-                    <button type="button" class="component-button component-button--h40 component-button--dark" data-modal-action="confirm">${btnConfirm}</button>
+                    <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${btnConfirm}</button>
                 </div>
             `;
         }
@@ -2045,7 +2045,7 @@ export const ModalTemplates = {
 
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button class="component-button component-button--h40 component-button--dark" data-action="saveCanvasMemberRoleSubmit">${__('btn_save_changes')}</button>
+                    <button class="component-button component-button--primary component-button--h40" data-action="saveCanvasMemberRoleSubmit">${__('btn_save_changes')}</button>
                 </div>
             `;
         }

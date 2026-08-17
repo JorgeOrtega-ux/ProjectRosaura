@@ -376,7 +376,7 @@ class AuthController {
                     </div>
                     <div class="component-form-body">
                         <p class="component-form-desc">${window.__('cancel_deletion_prompt')}</p>
-                        <button class="component-button component-button--dark component-button--h45 component-button--full" data-action="cancelAccountDeletion" data-token="${result.temp_auth_token}">${window.__('yes_cancel_deletion')}</button>
+                        <button class="component-button component-button--primary component-button--h45 component-button--full" data-action="cancelAccountDeletion" data-token="${result.temp_auth_token}">${window.__('yes_cancel_deletion')}</button>
                         
                         <div class="component-link-container component-link-container--center">
                             <span class="component-link" data-action="continueAccountDeletion">${window.__('no_keep_deletion')}</span>

@@ -18,7 +18,7 @@ $contentPackages = $viewService->getStoreContentData();
                 </button>
 
                 <div class="component-actions disabled" data-ref="store-content-selection-actions">
-                    <button class="component-button component-button--h40" data-action="buySelectedPerk" data-tooltip="<?php echo __('buy'); ?>" data-position="bottom">
+                    <button class="component-button component-button--primary component-button--h40" data-action="buySelectedPerk" data-tooltip="<?php echo __('buy'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">shopping_cart</span>
                         <span><?php echo __('buy'); ?></span>
                     </button>

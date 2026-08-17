@@ -13,7 +13,7 @@ export const NoticeTemplates = {
                     </div>
                     <div class="component-notice-actions component-notice-actions--right">
                         ${data.cancelText ? `<button class="component-button component-button--h40 component-button--ghost" data-action="cancel">${data.cancelText}</button>` : ''}
-                        ${data.confirmText ? `<button class="component-button component-button--h40 component-button--dark" data-action="confirm">${data.confirmText}</button>` : ''}
+                        ${data.confirmText ? `<button class="component-button component-button--primary component-button--h40" data-action="confirm">${data.confirmText}</button>` : ''}
                     </div>
                 </div>
             `;
@@ -34,7 +34,7 @@ export const NoticeTemplates = {
                     </div>
                     <div class="component-notice-banner-actions component-notice-actions--right">
                         ${data.cancelText ? `<button class="component-button component-button--h40 component-button--ghost" data-action="manage_cookies">${data.cancelText}</button>` : ''}
-                        ${data.confirmText ? `<button class="component-button component-button--h40 component-button--dark" data-action="confirm">${data.confirmText}</button>` : ''}
+                        ${data.confirmText ? `<button class="component-button component-button--primary component-button--h40" data-action="confirm">${data.confirmText}</button>` : ''}
                     </div>
                 </div>
             `;

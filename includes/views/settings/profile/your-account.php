@@ -47,11 +47,11 @@ extract($accountData);
                     </div>
 
                     <div class="component-card__actions component-card__actions--stretch" data-ref="profile-avatar-actions">
-                        <button type="button" class="component-button component-button--h34" data-ref="btn-change-avatar"><?php echo $isDefaultAvatar ? __('btn_upload_avatar') : __('btn_change_avatar'); ?></button>
+                        <button type="button" class="component-button component-button--primary component-button--h34" data-ref="btn-change-avatar"><?php echo $isDefaultAvatar ? __('btn_upload_avatar') : __('btn_change_avatar'); ?></button>
                         <button type="button" class="component-button component-button--h34 <?php echo $isDefaultAvatar ? 'disabled' : ''; ?>" data-ref="btn-delete-avatar"><?php echo __('btn_delete'); ?></button>
 
                         <button type="button" class="component-button component-button--h34 disabled" data-ref="btn-cancel-avatar"><?php echo __('btn_cancel'); ?></button>
-                        <button type="button" class="component-button component-button--h34 disabled" data-ref="btn-save-avatar"><?php echo __('btn_save'); ?></button>
+                        <button type="button" class="component-button component-button--primary component-button--h34 disabled" data-ref="btn-save-avatar"><?php echo __('btn_save'); ?></button>
                     </div>
                 </div>
                 
@@ -82,7 +82,7 @@ extract($accountData);
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--stretch">
-                            <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="username"><?php echo __('btn_edit'); ?></button>
+                            <button type="button" class="component-button component-button--primary component-button--h34" data-action="toggleEditState" data-target="username"><?php echo __('btn_edit'); ?></button>
                         </div>
                     </div>
 
@@ -96,7 +96,7 @@ extract($accountData);
                                     </div>
                                     <div class="component-card__actions component-card__actions--stretch">
                                         <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="username"><?php echo __('btn_cancel'); ?></button>
-                                        <button type="button" class="component-button component-button--h34" data-action="saveUsername"><?php echo __('btn_save'); ?></button>
+                                        <button type="button" class="component-button component-button--primary component-button--h34" data-action="saveUsername"><?php echo __('btn_save'); ?></button>
                                     </div>
                                 </div>
                             </div>
@@ -117,7 +117,7 @@ extract($accountData);
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--stretch">
-                            <button type="button" class="component-button component-button--h34" data-action="requestEmailUpdate"><?php echo __('btn_edit'); ?></button>
+                            <button type="button" class="component-button component-button--primary component-button--h34" data-action="requestEmailUpdate"><?php echo __('btn_edit'); ?></button>
                         </div>
                     </div>
 
@@ -131,7 +131,7 @@ extract($accountData);
                                     </div>
                                     <div class="component-card__actions component-card__actions--stretch">
                                         <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="email"><?php echo __('btn_cancel'); ?></button>
-                                        <button type="button" class="component-button component-button--h34" data-action="saveEmail"><?php echo __('btn_save'); ?></button>
+                                        <button type="button" class="component-button component-button--primary component-button--h34" data-action="saveEmail"><?php echo __('btn_save'); ?></button>
                                     </div>
                                 </div>
                             </div>
@@ -152,9 +152,9 @@ extract($accountData);
                         </div>
                         <div class="component-card__actions component-card__actions--stretch">
                             <?php if ($subscriptionTier >= $maxSubscriptionTier): ?>
-                                <button type="button" class="component-button component-button--h34" data-nav="<?php echo APP_URL; ?>/upgrade"><?php echo __('btn_manage'); ?></button>
+                                <button type="button" class="component-button component-button--primary component-button--h34" data-nav="<?php echo APP_URL; ?>/upgrade"><?php echo __('btn_manage'); ?></button>
                             <?php else: ?>
-                                <button type="button" class="component-button component-button--h34" data-nav="<?php echo APP_URL; ?>/upgrade"><?php echo __('btn_update_plan'); ?></button>
+                                <button type="button" class="component-button component-button--primary component-button--h34" data-nav="<?php echo APP_URL; ?>/upgrade"><?php echo __('btn_update_plan'); ?></button>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -182,11 +182,11 @@ extract($accountData);
                     </div>
                     <div class="component-card__actions component-card__actions--end" data-ref="google-account-actions">
                         <?php if ($isGoogleConnected): ?>
-                            <button type="button" class="component-button component-button--h34" data-action="unlinkGoogle" data-google-name="<?php echo htmlspecialchars($userName); ?>" data-user-email="<?php echo htmlspecialchars($userEmail); ?>">
+                            <button type="button" class="component-button component-button--primary component-button--h34" data-action="unlinkGoogle" data-google-name="<?php echo htmlspecialchars($userName); ?>" data-user-email="<?php echo htmlspecialchars($userEmail); ?>">
                                 <?php echo __('btn_disconnect', []); ?>
                             </button>
                         <?php else: ?>
-                            <button type="button" class="component-button component-button--h34" data-action="linkGoogle">
+                            <button type="button" class="component-button component-button--primary component-button--h34" data-action="linkGoogle">
                                 <?php echo __('btn_connect', [], 'Conectar'); ?>
                             </button>
                         <?php endif; ?>

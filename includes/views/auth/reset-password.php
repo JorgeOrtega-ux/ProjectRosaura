@@ -19,7 +19,7 @@ $userEmail = $resetData['userEmail'];
             </div>
             
             <div class="component-form-body">
-                <button class="component-button component-button--h45 component-button--full" data-nav="<?php echo APP_URL; ?>/forgot-password">
+                <button class="component-button component-button--primary component-button--h45 component-button--full" data-nav="<?php echo APP_URL; ?>/forgot-password">
                     <?php echo __('btn_try_again'); ?>
                 </button>
                 <div class="component-link-container component-link-container--center">
@@ -57,7 +57,7 @@ $userEmail = $resetData['userEmail'];
 
                 <?php echo \App\Core\Helpers\Utils::renderTurnstile('reset_password'); ?>
 
-                <button class="component-button component-button--h45 component-button--full" data-action="submitResetPassword">
+                <button class="component-button component-button--primary component-button--h45 component-button--full" data-action="submitResetPassword">
                     <?php echo __('btn_save_password'); ?>
                 </button>
                 

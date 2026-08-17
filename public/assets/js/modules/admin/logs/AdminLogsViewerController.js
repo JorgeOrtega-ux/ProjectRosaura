@@ -52,7 +52,7 @@ class AdminLogsViewerController {
         }
         if (toggleSyntaxBtn) {
             this.isSyntaxModeEnabled = !this.isSyntaxModeEnabled;
-            toggleSyntaxBtn.classList.toggle('component-button--dark', this.isSyntaxModeEnabled);
+            toggleSyntaxBtn.classList.toggle('component-button--primary', this.isSyntaxModeEnabled);
             if (this.activeTabId) {
                 this.switchTab(this.activeTabId);
             }

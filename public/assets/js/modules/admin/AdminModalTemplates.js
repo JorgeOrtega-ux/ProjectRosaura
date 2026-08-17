@@ -77,7 +77,7 @@ export const AdminModalTemplates = {
 
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button class="component-button component-button--h40 component-button--dark" data-action="submitMultipleRolesUpdate">${__('btn_save_changes')}</button>
+                    <button class="component-button component-button--primary component-button--h40" data-action="submitMultipleRolesUpdate">${__('btn_save_changes')}</button>
                 </div>
             `;
         }
@@ -164,7 +164,7 @@ export const AdminModalTemplates = {
 
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button class="component-button component-button--h40 component-button--dark" data-action="${data.actionTarget || 'submitAdjustCoins'}">${__('btn_apply')}</button>
+                    <button class="component-button component-button--primary component-button--h40" data-action="${data.actionTarget || 'submitAdjustCoins'}">${__('btn_apply')}</button>
                 </div>
             `;
         }
@@ -193,7 +193,7 @@ export const AdminModalTemplates = {
 
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button class="component-button component-button--h40 component-button--dark" data-action="${data.actionTarget || 'submitDisable2FA'}">${__('btn_disable_2fa')}</button>
+                    <button class="component-button component-button--primary component-button--h40" data-action="${data.actionTarget || 'submitDisable2FA'}">${__('btn_disable_2fa')}</button>
                 </div>
             `;
         }
@@ -204,7 +204,7 @@ export const AdminModalTemplates = {
             const title = data.title || __('title_confirm_action');
             const desc = data.desc || '';
             const confirmText = data.confirmText || __('btn_confirm');
-            const confirmClass = data.confirmClass || 'component-button--dark';
+            const confirmClass = data.confirmClass || 'component-button--primary';
             const actionTarget = data.actionTarget || 'submitConfirmUserAdminAction';
             const userUuid = data.userUuid || '';
 
@@ -325,8 +325,8 @@ export const AdminModalTemplates = {
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel" data-ref="btn-modal-cancel">${__('btn_cancel')}</button>
                     <button class="component-button component-button--h40 disabled" data-action="providerPrevStep" data-ref="btn-modal-prev">${__('btn_prev')}</button>
-                    <button class="component-button component-button--h40 component-button--dark" data-action="providerNextStep" data-ref="btn-modal-next">${__('btn_next')}</button>
-                    <button class="component-button component-button--h40 component-button--dark disabled" data-action="submitProvider" data-ref="btn-modal-finish">${finishText}</button>
+                    <button class="component-button component-button--primary component-button--h40" data-action="providerNextStep" data-ref="btn-modal-next">${__('btn_next')}</button>
+                    <button class="component-button component-button--primary component-button--h40 disabled" data-action="submitProvider" data-ref="btn-modal-finish">${finishText}</button>
                 </div>
             `;
         }
@@ -561,8 +561,8 @@ export const AdminModalTemplates = {
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel" data-ref="btn-ad-modal-cancel">${__('btn_cancel')}</button>
                     <button class="component-button component-button--h40 disabled" data-action="adPrevStep" data-ref="btn-ad-modal-prev">${__('btn_prev')}</button>
-                    <button class="component-button component-button--h40 component-button--dark" data-action="adNextStep" data-ref="btn-ad-modal-next">${__('btn_next')}</button>
-                    <button class="component-button component-button--h40 component-button--dark disabled" data-action="submitAd" data-ref="btn-ad-modal-finish">${finishText}</button>
+                    <button class="component-button component-button--primary component-button--h40" data-action="adNextStep" data-ref="btn-ad-modal-next">${__('btn_next')}</button>
+                    <button class="component-button component-button--primary component-button--h40 disabled" data-action="submitAd" data-ref="btn-ad-modal-finish">${finishText}</button>
                 </div>
             `;
         }
@@ -765,8 +765,8 @@ export const AdminModalTemplates = {
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel" data-ref="btn-slot-modal-cancel">${__('btn_cancel')}</button>
                     <button class="component-button component-button--h40 disabled" data-action="slotPrevStep" data-ref="btn-slot-modal-prev">${__('btn_prev')}</button>
-                    <button class="component-button component-button--h40 component-button--dark" data-action="slotNextStep" data-ref="btn-slot-modal-next">${__('btn_next')}</button>
-                    <button class="component-button component-button--h40 component-button--dark disabled" data-action="submitNetworkSlot" data-ref="btn-slot-modal-finish">${finishText}</button>
+                    <button class="component-button component-button--primary component-button--h40" data-action="slotNextStep" data-ref="btn-slot-modal-next">${__('btn_next')}</button>
+                    <button class="component-button component-button--primary component-button--h40 disabled" data-action="submitNetworkSlot" data-ref="btn-slot-modal-finish">${finishText}</button>
                 </div>
             `;
         }
@@ -885,7 +885,7 @@ export const AdminModalTemplates = {
 
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button class="component-button component-button--h40 component-button--dark" data-action="confirmDownloadMetrics" data-ref="btn-confirm-download-pdf">
+                    <button class="component-button component-button--primary component-button--h40" data-action="confirmDownloadMetrics" data-ref="btn-confirm-download-pdf">
                         <span class="material-symbols-rounded">download</span>
                         <span>${__('btn_download_pdf')}</span>
                     </button>
