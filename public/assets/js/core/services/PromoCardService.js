@@ -1,11 +1,13 @@
 import { isAdFreeUser } from '../utils/uiUtils.js';
+import { ApiRoutes } from '../api/ApiRoutes.js';
+import { ApiService } from '../api/ApiServices.js';
 
 export const PromoType = {
     FEED: 'feed',
     MODULE: 'module'
 };
 
-const FEED_PROMOS = [
+const DEFAULT_FEED_PROMOS = [
     {
         id: 'promo-tools-01',
         type: PromoType.FEED,
@@ -58,7 +60,7 @@ const FEED_PROMOS = [
     }
 ];
 
-const MODULE_PROMOS = {
+const DEFAULT_MODULE_PROMOS = {
     colors: {
         id: 'promo-mod-colors',
         type: PromoType.MODULE,
@@ -102,25 +104,40 @@ const MODULE_PROMOS = {
 
 class PromoCardService {
     constructor() {
+        this.api = new ApiService();
+        this.feedPromos = DEFAULT_FEED_PROMOS;
+        this.modulePromos = DEFAULT_MODULE_PROMOS;
+        this.hasLoadedFromApi = false;
         this.initGlobalListeners();
+        this.loadActiveAds();
+    }
+
+    async loadActiveAds() {
+        if (this.isExempt()) return;
+        try {
+            const res = await this.api.post(ApiRoutes.Advertisements.GetActiveFeed, {});
+            if (res && res.success) {
+                this.hasLoadedFromApi = true;
+                if (Array.isArray(res.feed_promos)) {
+                    this.feedPromos = res.feed_promos;
+                }
+                if (res.module_promos && typeof res.module_promos === 'object') {
+                    this.modulePromos = res.module_promos;
+                }
+            }
+        } catch (_) {}
     }
 
     isExempt() {
         return isAdFreeUser();
     }
 
-    /**
-     * Injects 1 promo card every 8 real canvas items into a feed list.
-     * @param {Array} canvasList List of canvases from API
-     * @param {number} currentRealCount Current count of real canvases already loaded
-     * @returns {Array} Combined array with promo cards inserted
-     */
     injectFeedCards(canvasList, currentRealCount = 0) {
         if (!Array.isArray(canvasList) || canvasList.length === 0) {
             return canvasList || [];
         }
 
-        if (this.isExempt()) {
+        if (this.isExempt() || !this.feedPromos || this.feedPromos.length === 0) {
             return canvasList;
         }
 
@@ -132,8 +149,8 @@ class PromoCardService {
             result.push(canvas);
             realCounter++;
 
-            if (realCounter % 8 === 0) {
-                const promo = FEED_PROMOS[promoIndex % FEED_PROMOS.length];
+            if (realCounter % 8 === 0 && this.feedPromos.length > 0) {
+                const promo = this.feedPromos[promoIndex % this.feedPromos.length];
                 result.push({
                     ...promo,
                     is_promo: true,
@@ -146,17 +163,11 @@ class PromoCardService {
         return result;
     }
 
-    /**
-     * Returns the promo definition for a specific sidebar tool module ('colors', 'templates').
-     */
     getModulePromo(moduleKey) {
         if (this.isExempt()) return null;
-        return MODULE_PROMOS[moduleKey] || null;
+        return this.modulePromos[moduleKey] || null;
     }
 
-    /**
-     * Advances/switches the active slide of a promo card.
-     */
     updateCardSlide(card, targetIndex) {
         const mediaItems = Array.from(card.querySelectorAll('.component-gallery-media-item'));
         const dots = Array.from(card.querySelectorAll('.component-gallery-dot'));
@@ -214,10 +225,6 @@ class PromoCardService {
         this.updateCardSlide(card, 0);
     }
 
-    /**
-     * Initializes global event delegation on document so ANY card (virtualized,
-     * dynamically loaded, in home, search, or sidebars) works automatically.
-     */
     initGlobalListeners() {
         if (typeof document === 'undefined' || window._promoGlobalListenersBound) return;
         window._promoGlobalListenersBound = true;
@@ -260,6 +267,13 @@ class PromoCardService {
             if (extPromo) {
                 e.preventDefault();
                 const url = extPromo.getAttribute('data-target-url');
+                const promoId = extPromo.closest('[data-promo-id]')?.getAttribute('data-promo-id');
+                if (promoId) {
+                    this.api.post(ApiRoutes.Advertisements.TrackEvent, {
+                        ad_uuid: promoId,
+                        event_type: 'click'
+                    }).catch(() => {});
+                }
                 if (url) {
                     window.open(url, '_blank', 'noopener,noreferrer');
                 }
@@ -267,9 +281,7 @@ class PromoCardService {
         });
     }
 
-    initCardInteractions() {
-        // Kept for backward compatibility if called manually
-    }
+    initCardInteractions() {}
 }
 
 export const PromoService = new PromoCardService();

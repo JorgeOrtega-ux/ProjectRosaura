@@ -125,16 +125,17 @@ INSERT IGNORE INTO permissions (id, name, description, is_critical) VALUES
   (25, 'manage_store_perks', 'desc_manage_store_perks', 0),
   (26, 'manage_content', 'desc_manage_content', 0),
   (27, 'view_user_purchases', 'desc_view_user_purchases', 0),
-  (28, 'manage_monetization', 'desc_manage_monetization', 0);
+  (28, 'manage_monetization', 'desc_manage_monetization', 0),
+  (29, 'manage_advertisements', 'desc_manage_advertisements', 0);
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
   (4, 1), (4, 2), (4, 3), (4, 4), (4, 5), (4, 6), (4, 7), (4, 8), (4, 9),
   (4, 10), (4, 11), (4, 12), (4, 13), (4, 14), (4, 15), (4, 16), (4, 17), (4, 18),
-  (4, 19), (4, 20), (4, 21), (4, 22), (4, 23), (4, 24), (4, 25), (4, 26), (4, 27), (4, 28);
+  (4, 19), (4, 20), (4, 21), (4, 22), (4, 23), (4, 24), (4, 25), (4, 26), (4, 27), (4, 28), (4, 29);
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
   (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (3, 8), (3, 10), (3, 13), (3, 17), 
-  (3, 19), (3, 20), (3, 21), (3, 22), (3, 23), (3, 24), (3, 25), (3, 26), (3, 27), (3, 28);
+  (3, 19), (3, 20), (3, 21), (3, 22), (3, 23), (3, 24), (3, 25), (3, 26), (3, 27), (3, 28), (3, 29);
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
   (2, 1), (2, 2), (2, 4), (2, 5), (2, 6), (2, 19), (2, 20), (2, 21), (2, 26);

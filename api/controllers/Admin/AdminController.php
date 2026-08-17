@@ -4,14 +4,17 @@ namespace App\Api\Controllers\Admin;
 use App\Api\Controllers\BaseController;
 
 use App\Api\Services\Admin\AdminServices;
+use App\Api\Services\Admin\AdminAdvertisementsService;
 use App\Core\System\PermissionsConstants;
 
 class AdminController extends BaseController {
     
     private $adminServices;
+    private $adsService;
 
-    public function __construct(AdminServices $adminServices) {
+    public function __construct(AdminServices $adminServices, ?AdminAdvertisementsService $adsService = null) {
         $this->adminServices = $adminServices;
+        $this->adsService = $adsService;
     }
 
     private function requirePermission($permission) {
@@ -611,6 +614,137 @@ class AdminController extends BaseController {
         try { 
             $this->requirePermission(PermissionsConstants::EDIT_USERS);
             return $this->respond($this->adminServices->syncStripeSubscription($input));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    private function getAdsService(): AdminAdvertisementsService {
+        if (!$this->adsService) {
+            $dbManager = new \App\Config\Database\DatabaseManager();
+            $this->adsService = new AdminAdvertisementsService($dbManager);
+        }
+        return $this->adsService;
+    }
+
+    public function get_ad_providers($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::MANAGE_ADVERTISEMENTS);
+            $query = $input['q'] ?? ($input['search'] ?? null);
+            $page = isset($input['page']) ? (int)$input['page'] : 1;
+            $perPage = isset($input['per_page']) ? (int)$input['per_page'] : 25;
+            return $this->respond($this->getAdsService()->getProvidersList($query, $page, $perPage));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function create_ad_provider($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::MANAGE_ADVERTISEMENTS);
+            return $this->respond($this->getAdsService()->createProvider($input));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function update_ad_provider($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::MANAGE_ADVERTISEMENTS);
+            $uuid = $input['uuid'] ?? '';
+            return $this->respond($this->getAdsService()->updateProvider($uuid, $input));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function toggle_ad_provider_active($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::MANAGE_ADVERTISEMENTS);
+            $uuid = $input['uuid'] ?? '';
+            return $this->respond($this->getAdsService()->toggleProviderActive($uuid));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function delete_ad_provider($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::MANAGE_ADVERTISEMENTS);
+            $uuid = $input['uuid'] ?? '';
+            return $this->respond($this->getAdsService()->deleteProvider($uuid));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function get_ad_provider_details($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::MANAGE_ADVERTISEMENTS);
+            $uuid = $input['uuid'] ?? '';
+            return $this->respond($this->getAdsService()->getProviderDetails($uuid));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function get_provider_ads($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::MANAGE_ADVERTISEMENTS);
+            $providerUuid = $input['provider_uuid'] ?? '';
+            return $this->respond($this->getAdsService()->getAdsForProvider($providerUuid));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function create_advertisement($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::MANAGE_ADVERTISEMENTS);
+            $providerUuid = $input['provider_uuid'] ?? '';
+            $adData = $input['ad'] ?? $input;
+            $resources = $input['resources'] ?? [];
+            return $this->respond($this->getAdsService()->createAd($providerUuid, $adData, $resources));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function update_advertisement($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::MANAGE_ADVERTISEMENTS);
+            $adUuid = $input['uuid'] ?? '';
+            $adData = $input['ad'] ?? $input;
+            $resources = $input['resources'] ?? null;
+            return $this->respond($this->getAdsService()->updateAd($adUuid, $adData, $resources));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function toggle_advertisement_status($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::MANAGE_ADVERTISEMENTS);
+            $adUuid = $input['uuid'] ?? '';
+            return $this->respond($this->getAdsService()->toggleAdStatus($adUuid));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function delete_advertisement($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::MANAGE_ADVERTISEMENTS);
+            $adUuid = $input['uuid'] ?? '';
+            return $this->respond($this->getAdsService()->deleteAd($adUuid));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function get_public_active_ads($input) {
+        try {
+            return $this->respond($this->getAdsService()->getPublicActiveAds());
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function record_ad_event($input) {
+        try {
+            $adUuid = $input['ad_uuid'] ?? '';
+            $eventType = $input['event_type'] ?? 'impression';
+            $userUuid = $_SESSION['user_uuid'] ?? null;
+            $ipAddress = \App\Core\Helpers\Utils::getIpAddress();
+            $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
+            return $this->respond($this->getAdsService()->recordAdMetric($adUuid, $eventType, $userUuid, $ipAddress, $userAgent));
         }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }

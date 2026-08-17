@@ -76,6 +76,7 @@ class AdminViewService {
         $canViewLogs = in_array(PermissionsConstants::VIEW_LOGS, $userPermissions);
         $canManageMessages = in_array(PermissionsConstants::MANAGE_CONTENT, $userPermissions);
         $canManageSubscriptions = in_array(PermissionsConstants::MANAGE_SUBSCRIPTIONS, $userPermissions);
+        $canManageAdvertisements = in_array(PermissionsConstants::MANAGE_ADVERTISEMENTS, $userPermissions);
         $canManageStorePackages = in_array(PermissionsConstants::MANAGE_STORE_PACKAGES, $userPermissions);
         $canManageStorePerks = in_array(PermissionsConstants::MANAGE_STORE_PERKS, $userPermissions);
 
@@ -87,6 +88,7 @@ class AdminViewService {
             'canViewLogs' => $canViewLogs,
             'canManageMessages' => $canManageMessages,
             'canManageSubscriptions' => $canManageSubscriptions,
+            'canManageAdvertisements' => $canManageAdvertisements,
             'canManageStorePackages' => $canManageStorePackages,
             'canManageStorePerks' => $canManageStorePerks,
             'appUrl' => $appUrl
@@ -621,9 +623,44 @@ class AdminViewService {
         ];
     }
 
-    /**
+    public function getManageAdvertisementsData(?string $searchQuery, ?string $typeFilter = null, ?string $statusFilter = null, int $page = 1): array {
+        if (session_status() === PHP_SESSION_NONE) session_start();
 
-     */    public function getManageStorePackagesData(?string $searchQuery, int $page): array {
+        $userPerms = $_SESSION['user_permissions'] ?? [];
+        $canManageAds = in_array(PermissionsConstants::MANAGE_ADVERTISEMENTS, $userPerms);
+
+        $adsService = new AdminAdvertisementsService($this->dbManager);
+        $listData = $adsService->getProvidersList($searchQuery, $typeFilter, $statusFilter, $page, 25);
+
+        return [
+            'canManageAds' => $canManageAds,
+            'providers' => $listData['providers'],
+            'totalProviders' => $listData['totalProviders'],
+            'totalPages' => $listData['totalPages'],
+            'page' => $listData['page'],
+            'searchQuery' => $listData['searchQuery'],
+            'typeFilter' => $listData['typeFilter'],
+            'statusFilter' => $listData['statusFilter'],
+            'appUrl' => defined('APP_URL') ? APP_URL : ''
+        ];
+    }
+
+    public function getManageProviderAdsData(string $providerUuid, ?string $searchQuery = '', ?string $formatFilter = null, ?string $statusFilter = null, int $page = 1): array {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        $userPerms = $_SESSION['user_permissions'] ?? [];
+        $canManageAds = in_array(PermissionsConstants::MANAGE_ADVERTISEMENTS, $userPerms);
+
+        $adsService = new AdminAdvertisementsService($this->dbManager);
+        $data = $adsService->getProviderAdsPaginated($providerUuid, $searchQuery, $formatFilter, $statusFilter, $page, 25);
+
+        return array_merge($data, [
+            'canManageAds' => $canManageAds,
+            'appUrl' => defined('APP_URL') ? APP_URL : ''
+        ]);
+    }
+
+    public function getManageStorePackagesData(?string $searchQuery, int $page): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
         $db = $this->dbManager;
         $pdo = $db->getConnection(DB::CONN_IDENTITY);

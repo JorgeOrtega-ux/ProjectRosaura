@@ -57,6 +57,8 @@ export const RouteModulesMap = {
     '/admin/subscriptions': { path: './modules/admin/subscriptions/AdminSubscriptionsController.js', className: 'AdminSubscriptionsController', requiresAdminLang: true, skeletonType: 'layout-table' },
     '/admin/subscription-create': { path: './modules/admin/subscriptions/AdminSubscriptionBuilderController.js', className: 'AdminSubscriptionBuilderController', requiresAdminLang: true, skeletonType: 'layout-basic' },
     '/admin/subscription-edit/:uuid': { path: './modules/admin/subscriptions/AdminSubscriptionBuilderController.js', className: 'AdminSubscriptionBuilderController', requiresAdminLang: true, skeletonType: 'layout-basic' },
+    '/admin/advertisements': { path: './modules/admin/advertisements/AdminAdvertisementsController.js', className: 'AdminAdvertisementsController', requiresAdminLang: true, skeletonType: 'layout-table' },
+    '/admin/advertisement-items/:uuid': { path: './modules/admin/advertisements/AdminProviderAdsController.js', className: 'AdminProviderAdsController', requiresAdminLang: true, skeletonType: 'layout-table' },
 
     '/admin/store-packages': { path: './modules/admin/store/AdminPackagesController.js', className: 'AdminPackagesController', requiresAdminLang: true, skeletonType: 'layout-table' },
     '/admin/store-package-create': { path: './modules/admin/store/AdminPackageBuilderController.js', className: 'AdminPackageBuilderController', requiresAdminLang: true, skeletonType: 'layout-basic' },

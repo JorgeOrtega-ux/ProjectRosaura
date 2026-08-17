@@ -37,6 +37,11 @@ $categories = [
         'icon' => 'workspace_premium',
         'perms' => ['manage_subscriptions']
     ],
+    'advertisements' => [
+        'title' => __('perm_cat_advertisements'),
+        'icon' => 'campaign',
+        'perms' => ['manage_advertisements']
+    ],
     'store' => [
         'title' => __('perm_cat_store'),
         'icon' => 'storefront',

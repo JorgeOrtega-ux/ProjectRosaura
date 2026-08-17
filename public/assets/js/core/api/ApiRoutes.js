@@ -113,11 +113,27 @@ export const ApiRoutes = {
         ToggleStorePerkUsable: 'admin.store_perk.toggle_usable',
         SaveStorePerk: 'admin.store_perk.save',
 
+        GetAdProviders: 'admin.advertisements.list',
+        CreateAdProvider: 'admin.advertisements.create_provider',
+        UpdateAdProvider: 'admin.advertisements.update_provider',
+        ToggleAdProviderActive: 'admin.advertisements.toggle_provider_active',
+        DeleteAdProvider: 'admin.advertisements.delete_provider',
+        GetAdProviderDetails: 'admin.advertisements.get_provider',
+        GetProviderAds: 'admin.advertisements.get_ads',
+        CreateAdvertisement: 'admin.advertisements.create_ad',
+        UpdateAdvertisement: 'admin.advertisements.update_ad',
+        ToggleAdvertisementStatus: 'admin.advertisements.toggle_ad_status',
+        DeleteAdvertisement: 'admin.advertisements.delete_ad',
+
         GetServerLogs: 'admin.get_server_logs',
         GetAuditLogs: 'admin.get_audit_logs',
         GetSecurityLogs: 'admin.get_security_logs',
         GetSystemLogs: 'admin.get_system_logs',
         DeleteLogs: 'admin.delete_logs'
+    },
+    Advertisements: {
+        GetActiveFeed: 'advertisements.get_active_feed',
+        TrackEvent: 'advertisements.track_event'
     },
     Canvases: {
         GetHomeFeed: 'canvases.get_home_feed',

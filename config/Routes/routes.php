@@ -62,6 +62,8 @@ return [
     '/admin/subscriptions' => ['view' => 'admin/subscriptions/manage-subscriptions.php', 'auth' => true, 'permissions' => [PC::MANAGE_SUBSCRIPTIONS], 'requires_2fa' => false],
     '/admin/subscription-create' => ['view' => 'admin/subscriptions/subscription-builder.php', 'auth' => true, 'permissions' => [PC::MANAGE_SUBSCRIPTIONS], 'requires_2fa' => false],
     '/admin/subscription-edit/:uuid' => ['view' => 'admin/subscriptions/subscription-builder.php', 'auth' => true, 'permissions' => [PC::MANAGE_SUBSCRIPTIONS], 'requires_2fa' => false],
+    '/admin/advertisements' => ['view' => 'admin/advertisements/manage-advertisements.php', 'auth' => true, 'permissions' => [PC::MANAGE_ADVERTISEMENTS], 'requires_2fa' => false],
+    '/admin/advertisement-items/:uuid' => ['view' => 'admin/advertisements/manage-ads.php', 'auth' => true, 'permissions' => [PC::MANAGE_ADVERTISEMENTS], 'requires_2fa' => false],
 
     // Store Coin Packages
     '/admin/store-packages' => ['view' => 'admin/store/manage-packages.php', 'auth' => true, 'permissions' => [PC::MANAGE_STORE_PACKAGES], 'requires_2fa' => false],

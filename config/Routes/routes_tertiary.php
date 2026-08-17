@@ -1086,4 +1086,107 @@ return [
         'action' => 'consume_perk',
         'middleware' => [],
     ],
+    'admin.advertisements.list' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'get_ad_providers',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_ads_list', 'max' => 60, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'admin.advertisements.create_provider' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'create_ad_provider',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_create_provider', 'max' => 20, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'admin.advertisements.update_provider' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'update_ad_provider',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_update_provider', 'max' => 20, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'admin.advertisements.toggle_provider_active' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'toggle_ad_provider_active',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_toggle_provider', 'max' => 30, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'admin.advertisements.delete_provider' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'delete_ad_provider',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_del_provider', 'max' => 15, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'admin.advertisements.get_provider' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'get_ad_provider_details',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_get_provider', 'max' => 60, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'admin.advertisements.get_ads' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'get_provider_ads',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_get_ads', 'max' => 60, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'admin.advertisements.create_ad' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'create_advertisement',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_create_ad', 'max' => 20, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'admin.advertisements.update_ad' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'update_advertisement',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_update_ad', 'max' => 20, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'admin.advertisements.toggle_ad_status' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'toggle_advertisement_status',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_toggle_ad', 'max' => 30, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'admin.advertisements.delete_ad' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'delete_advertisement',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_del_ad', 'max' => 15, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'advertisements.get_active_feed' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'get_public_active_ads',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'ad_pub_feed', 'max' => 120, 'time' => 1, 'identifier' => 'ip'],
+        ],
+    ],
+    'advertisements.track_event' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'record_ad_event',
+        'middleware' => [
+            ['type' => 'RateLimit', 'key' => 'ad_track_evt', 'max' => 120, 'time' => 1, 'identifier' => 'ip'],
+        ],
+    ],
 ];

@@ -21,6 +21,9 @@ extract($dashboardData);
                 <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageSubscriptions ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/subscriptions" data-tooltip="<?php echo __('admin_manage_subscriptions', [], 'Administrar Suscripciones'); ?><?php echo !$canManageSubscriptions ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canManageSubscriptions ? 'disabled' : ''; ?>>
                     <span class="material-symbols-rounded">workspace_premium</span>
                 </button>
+                <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageAdvertisements ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/advertisements" data-tooltip="<?php echo __('admin_manage_advertisements', [], 'Gestión de Publicidad'); ?><?php echo !$canManageAdvertisements ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canManageAdvertisements ? 'disabled' : ''; ?>>
+                    <span class="material-symbols-rounded">campaign</span>
+                </button>
                 <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageStorePackages ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/store-packages" data-tooltip="Tienda de Monedas<?php echo !$canManageStorePackages ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canManageStorePackages ? 'disabled' : ''; ?>>
                     <span class="material-symbols-rounded">storefront</span>
                 </button>

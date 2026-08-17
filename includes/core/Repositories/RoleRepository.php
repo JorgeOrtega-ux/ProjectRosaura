@@ -150,6 +150,7 @@ class RoleRepository implements RoleRepositoryInterface {
             ['name' => 'join_canvas', 'description' => 'desc_join_canvas', 'is_critical' => 0, 'roles' => [1, 2, 3, 4]],
             ['name' => 'view_dashboard', 'description' => 'desc_view_dashboard', 'is_critical' => 0, 'roles' => [3, 4]],
             ['name' => 'manage_subscriptions', 'description' => 'desc_manage_subscriptions', 'is_critical' => 0, 'roles' => [3, 4]],
+            ['name' => 'manage_advertisements', 'description' => 'desc_manage_advertisements', 'is_critical' => 0, 'roles' => [3, 4]],
             ['name' => 'manage_store_packages', 'description' => 'desc_manage_store_packages', 'is_critical' => 0, 'roles' => [3, 4]],
             ['name' => 'manage_store_perks', 'description' => 'desc_manage_store_perks', 'is_critical' => 0, 'roles' => [3, 4]],
             ['name' => 'manage_content', 'description' => 'desc_manage_content', 'is_critical' => 0, 'roles' => [2, 3, 4]],
