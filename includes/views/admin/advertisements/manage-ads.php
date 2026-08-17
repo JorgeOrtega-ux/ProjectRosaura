@@ -37,6 +37,9 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/advertisement-items/' . $
             </div>
             <div class="component-top-right">
                 <div class="component-actions disabled" data-ref="ad-selection-actions">
+                    <button class="component-button component-button--icon component-button--h40" data-action="downloadAdMetrics" data-tooltip="<?php echo __('admin_ad_download_metrics'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">monitoring</span>
+                    </button>
                     <?php if ($canManageAds): ?>
                     <button class="component-button component-button--icon component-button--h40" data-action="editAd" data-tooltip="<?php echo __('btn_edit'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">edit</span>

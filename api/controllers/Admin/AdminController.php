@@ -748,4 +748,24 @@ class AdminController extends BaseController {
         }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
-}
+
+    public function download_ad_metrics($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::MANAGE_ADVERTISEMENTS);
+            $adUuid = $input['ad_uuid'] ?? ($input['uuid'] ?? '');
+            $this->getAdsService()->downloadAdMetricsPdf($adUuid);
+            exit;
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function download_general_metrics($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::MANAGE_ADVERTISEMENTS);
+            $this->getAdsService()->downloadGeneralMetricsPdf();
+            exit;
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+}
+

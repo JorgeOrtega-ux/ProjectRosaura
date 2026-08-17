@@ -269,6 +269,7 @@ class HomeController {
 
         removeInfiniteScrollSkeletons(this.contentArea);
 
+        await PromoService.ensureLoaded();
         const itemsWithPromos = PromoService.injectFeedCards(newCanvases, this.currentOffset);
 
         if (itemsWithPromos.length > 0 || (this.allCanvases.length > 0 && isLoadMore)) {

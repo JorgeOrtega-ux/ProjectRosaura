@@ -1,3 +1,5 @@
+import { PromoService } from '../services/PromoCardService.js';
+
 export class VirtualGridObserver {
     constructor(renderCallback, options = {}) {
         this.renderCallback = renderCallback;
@@ -26,6 +28,13 @@ export class VirtualGridObserver {
                     if (!el.dataset.rendered || el.dataset.rendered === 'false') {
                         el.innerHTML = this.renderCallback(canvasData);
                         el.dataset.rendered = 'true';
+
+                        if (canvasData.is_promo) {
+                            const promoUuid = canvasData.promo_uuid || canvasData.uuid || canvasData.id;
+                            if (promoUuid) {
+                                PromoService.trackImpression(promoUuid);
+                            }
+                        }
                     }
                 } else {
                     // Element left viewport

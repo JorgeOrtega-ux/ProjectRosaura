@@ -233,103 +233,80 @@ export const AdminModalTemplates = {
                 <div class="component-modal-header">
                     <div class="component-modal-header-text">
                         <h2 class="component-modal-title">${__('modal_create_provider_title')}</h2>
-                        <p class="component-modal-desc" data-ref="provider-step-desc">${__('step_provider_type_desc')}</p>
+                        <p class="component-modal-desc" data-ref="provider-step-desc">${__('step_provider_details_desc')}</p>
                     </div>
                 </div>
 
-                <div class="component-modal-body step-modal-content" data-ref="create-provider-form">
-                    
-                    <!-- ETAPA 1: Tipo de Proveedor -->
+                <div class="component-modal-body" data-ref="create-provider-form">
+                    <!-- ETAPA 1: Identificación y Tipo de Proveedor -->
                     <div class="step-modal-step active" data-step="1">
-                        <div class="component-menu-list">
-                            <div class="component-menu-link active" data-action="selectProviderType" data-type="network">
-                                <div class="component-menu-link-icon">
-                                    <span class="material-symbols-rounded">hub</span>
-                                </div>
-                                <div class="component-menu-link-text">
-                                    <span>${__('opt_ad_network')}</span>
-                                    <span class="td-muted">${__('opt_ad_network_desc')}</span>
-                                </div>
-                                <div class="component-card__actions">
-                                    <span class="material-symbols-rounded component-icon-sm" data-ref="check-network">check</span>
-                                </div>
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownCreateProviderType">
+                                <span class="material-symbols-rounded" data-ref="create-provider-type-icon">hub</span>
+                                <span class="component-dropdown-text" data-ref="create-provider-type-text" data-value="network">${__('admin_ad_type_network')}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
                             </div>
-
-                            <div class="component-menu-link" data-action="selectProviderType" data-type="direct">
-                                <div class="component-menu-link-icon">
-                                    <span class="material-symbols-rounded">corporate_fare</span>
-                                </div>
-                                <div class="component-menu-link-text">
-                                    <span>${__('opt_independent_advertiser')}</span>
-                                    <span class="td-muted">${__('opt_independent_advertiser_desc')}</span>
-                                </div>
-                                <div class="component-card__actions">
-                                    <span class="material-symbols-rounded component-icon-sm disabled" data-ref="check-direct">check</span>
+                            <div class="component-module component-module--dropdown disabled" data-module="dropdownCreateProviderType">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list">
+                                        <div class="component-menu-link active" data-action="selectProviderType" data-type="network" data-label="${__('admin_ad_type_network')}" data-icon="hub">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">hub</span></div>
+                                            <div class="component-menu-link-text"><span>${__('admin_ad_type_network')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectProviderType" data-type="direct" data-label="${__('admin_ad_type_direct')}" data-icon="corporate_fare">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">corporate_fare</span></div>
+                                            <div class="component-menu-link-text"><span>${__('admin_ad_type_direct')}</span></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- ETAPA 2: Datos del Proveedor -->
-                    <div class="step-modal-step disabled" data-step="2">
-                        <!-- Campos para Red Publicitaria -->
-                        <div class="component-card--grouped" data-ref="fields-network">
+                        <div class="component-card--grouped">
                             <div class="component-input-group">
-                                <input type="text" class="component-input-field" data-ref="input-network-name" placeholder=" " value="Google AdSense">
-                                <label class="component-input-label">${__('lbl_network_name')}</label>
+                                <input type="text" class="component-input-field" data-ref="input-provider-name" placeholder=" " value="Google AdSense" required>
+                                <label class="component-input-label" data-ref="label-provider-name">${__('lbl_network_name')}</label>
                             </div>
-                            <div class="component-input-group">
+                            <div class="component-input-group" data-ref="group-network-id">
                                 <input type="text" class="component-input-field" data-ref="input-network-id" placeholder=" " value="">
                                 <label class="component-input-label">${__('lbl_network_id')}</label>
                             </div>
                         </div>
-
-                        <!-- Campos para Anunciante Independiente -->
-                        <div class="component-card--grouped disabled" data-ref="fields-direct">
-                            <div class="component-input-group">
-                                <input type="text" class="component-input-field" data-ref="input-advertiser-name" placeholder=" " value="">
-                                <label class="component-input-label">${__('lbl_advertiser_name')}</label>
-                            </div>
-                        </div>
                     </div>
 
-                    <!-- ETAPA 3: Vigencia y Expiración -->
-                    <div class="step-modal-step disabled" data-step="3">
-                        <div class="component-menu-list">
-                            <div class="component-menu-link active" data-action="selectExpirationType" data-expiration="0">
-                                <div class="component-menu-link-icon">
-                                    <span class="material-symbols-rounded">all_inclusive</span>
-                                </div>
-                                <div class="component-menu-link-text">
-                                    <span>${__('lbl_no_expiration')}</span>
-                                    <span class="td-muted">${__('lbl_no_expiration_desc')}</span>
-                                </div>
-                                <div class="component-card__actions">
-                                    <span class="material-symbols-rounded component-icon-sm" data-ref="check-no-exp">check</span>
-                                </div>
+                    <!-- ETAPA 2: Vigencia y Expiración -->
+                    <div class="step-modal-step disabled" data-step="2">
+                        <!-- Primer Trigger: Elegir si tiene vencimiento -->
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownCreateProviderExp">
+                                <span class="material-symbols-rounded" data-ref="create-provider-exp-icon">all_inclusive</span>
+                                <span class="component-dropdown-text" data-ref="create-provider-exp-text" data-value="0">${__('lbl_no_expiration')}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
                             </div>
-
-                            <div class="component-menu-link" data-action="selectExpirationType" data-expiration="1">
-                                <div class="component-menu-link-icon">
-                                    <span class="material-symbols-rounded">event</span>
-                                </div>
-                                <div class="component-menu-link-text">
-                                    <span>${__('lbl_with_expiration')}</span>
-                                    <span class="td-muted">${__('lbl_with_expiration_desc')}</span>
-                                </div>
-                                <div class="component-card__actions">
-                                    <span class="material-symbols-rounded component-icon-sm disabled" data-ref="check-with-exp">check</span>
+                            <div class="component-module component-module--dropdown disabled" data-module="dropdownCreateProviderExp">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list">
+                                        <div class="component-menu-link active" data-action="selectExpirationType" data-expiration="0" data-label="${__('lbl_no_expiration')}" data-icon="all_inclusive">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">all_inclusive</span></div>
+                                            <div class="component-menu-link-text"><span>${__('lbl_no_expiration')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectExpirationType" data-expiration="1" data-label="${__('lbl_with_expiration')}" data-icon="event">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">event</span></div>
+                                            <div class="component-menu-link-text"><span>${__('lbl_with_expiration')}</span></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="component-input-group disabled" data-ref="calendar-picker-group">
-                            <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                                <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="openProviderCalendarPicker" data-ref="provider-expiration-trigger" data-value="">
-                                    <span class="material-symbols-rounded">calendar_month</span>
-                                    <span class="component-dropdown-text" data-ref="provider-expiration-text">${__('lbl_select_expiration_date')}</span>
-                                    <span class="material-symbols-rounded">expand_more</span>
-                                </div>
+                        <!-- Segundo Trigger: Activa moduleCalendar / calendarModal -->
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full disabled" data-ref="create-calendar-picker-group">
+                            <div class="component-dropdown-trigger" data-action="openProviderCalendarPicker" data-ref="create-provider-expiration-trigger" data-value="">
+                                <span class="material-symbols-rounded">calendar_month</span>
+                                <span class="component-dropdown-text" data-ref="create-provider-expiration-text">${__('lbl_select_expiration_date')}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
                             </div>
                         </div>
                     </div>
@@ -357,57 +334,90 @@ export const AdminModalTemplates = {
                 <div class="component-modal-header">
                     <div class="component-modal-header-text">
                         <h2 class="component-modal-title">${__('modal_edit_provider_title')}</h2>
-                        <p class="component-modal-desc">${__('modal_edit_provider_desc')}</p>
+                        <p class="component-modal-desc" data-ref="edit-provider-step-desc">${__('step_provider_details_desc')}</p>
                     </div>
                 </div>
 
                 <div class="component-modal-body" data-ref="edit-provider-form" data-uuid="${provider.uuid || ''}" data-type="${provider.provider_type || 'direct'}">
-                    <div class="component-card--grouped">
-                        <div class="component-input-group">
-                            <input type="text" class="component-input-field" data-ref="edit-provider-name" placeholder=" " value="${provider.name || ''}" required>
-                            <label class="component-input-label">${isNetwork ? __('lbl_network_name') : __('lbl_advertiser_name')}</label>
-                        </div>
-
-                        ${isNetwork ? `
-                        <div class="component-input-group">
-                            <input type="text" class="component-input-field" data-ref="edit-network-id" placeholder=" " value="${provider.network_id || ''}">
-                            <label class="component-input-label">${__('lbl_network_id')}</label>
-                        </div>
-                        ` : ''}
-
-                        <div class="component-group-item">
-                            <div class="component-card__content">
-                                <div class="component-card__icon-container component-card__icon-container--bordered">
-                                    <span class="material-symbols-rounded">event</span>
-                                </div>
-                                <div class="component-card__text">
-                                    <h2 class="component-card__title">${__('lbl_expiration_limit')}</h2>
-                                    <p class="component-card__description">${__('lbl_expiration_limit_desc')}</p>
-                                </div>
+                    <!-- ETAPA 1: Identificación y Tipo de Proveedor -->
+                    <div class="step-modal-step active" data-edit-step="1">
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownEditProviderType">
+                                <span class="material-symbols-rounded" data-ref="edit-provider-type-icon">${isNetwork ? 'hub' : 'corporate_fare'}</span>
+                                <span class="component-dropdown-text" data-ref="edit-provider-type-text" data-value="${provider.provider_type || 'direct'}">${isNetwork ? __('admin_ad_type_network') : __('admin_ad_type_direct')}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
                             </div>
-                            <div class="component-card__actions">
-                                <label class="component-toggle-switch">
-                                    <input type="checkbox" data-ref="edit-toggle-expiration" ${hasExp ? 'checked' : ''}>
-                                    <span class="component-toggle-slider"></span>
-                                </label>
+                            <div class="component-module component-module--dropdown disabled" data-module="dropdownEditProviderType">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list">
+                                        <div class="component-menu-link ${isNetwork ? 'active' : ''}" data-action="selectEditProviderType" data-type="network" data-label="${__('admin_ad_type_network')}" data-icon="hub">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">hub</span></div>
+                                            <div class="component-menu-link-text"><span>${__('admin_ad_type_network')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link ${!isNetwork ? 'active' : ''}" data-action="selectEditProviderType" data-type="direct" data-label="${__('admin_ad_type_direct')}" data-icon="corporate_fare">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">corporate_fare</span></div>
+                                            <div class="component-menu-link-text"><span>${__('admin_ad_type_direct')}</span></div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="component-input-group ${hasExp ? '' : 'disabled'}" data-ref="edit-calendar-group">
-                            <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                                <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="openProviderCalendarPicker" data-ref="edit-provider-expiration-trigger" data-value="${expDate}">
-                                    <span class="material-symbols-rounded">calendar_month</span>
-                                    <span class="component-dropdown-text" data-ref="edit-provider-expiration-text">${expDate || __('lbl_select_expiration_date')}</span>
-                                    <span class="material-symbols-rounded">expand_more</span>
+                        <div class="component-card--grouped">
+                            <div class="component-input-group">
+                                <input type="text" class="component-input-field" data-ref="edit-provider-name" placeholder=" " value="${provider.name || ''}" required>
+                                <label class="component-input-label" data-ref="edit-label-provider-name">${isNetwork ? __('lbl_network_name') : __('lbl_advertiser_name')}</label>
+                            </div>
+                            <div class="component-input-group ${isNetwork ? '' : 'disabled'}" data-ref="edit-group-network-id">
+                                <input type="text" class="component-input-field" data-ref="edit-network-id" placeholder=" " value="${provider.network_id || ''}">
+                                <label class="component-input-label">${__('lbl_network_id')}</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ETAPA 2: Vigencia y Expiración -->
+                    <div class="step-modal-step disabled" data-edit-step="2">
+                        <!-- Primer Trigger: Elegir si tiene vencimiento -->
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownEditProviderExp">
+                                <span class="material-symbols-rounded" data-ref="edit-provider-exp-icon">${hasExp ? 'event' : 'all_inclusive'}</span>
+                                <span class="component-dropdown-text" data-ref="edit-provider-exp-text" data-value="${hasExp ? '1' : '0'}">${hasExp ? __('lbl_with_expiration') : __('lbl_no_expiration')}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
+                            </div>
+                            <div class="component-module component-module--dropdown disabled" data-module="dropdownEditProviderExp">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list">
+                                        <div class="component-menu-link ${!hasExp ? 'active' : ''}" data-action="selectEditExpirationType" data-expiration="0" data-label="${__('lbl_no_expiration')}" data-icon="all_inclusive">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">all_inclusive</span></div>
+                                            <div class="component-menu-link-text"><span>${__('lbl_no_expiration')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link ${hasExp ? 'active' : ''}" data-action="selectEditExpirationType" data-expiration="1" data-label="${__('lbl_with_expiration')}" data-icon="event">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">event</span></div>
+                                            <div class="component-menu-link-text"><span>${__('lbl_with_expiration')}</span></div>
+                                        </div>
+                                    </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Segundo Trigger: Activa moduleCalendar / calendarModal -->
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full ${hasExp ? '' : 'disabled'}" data-ref="edit-calendar-picker-group">
+                            <div class="component-dropdown-trigger" data-action="openProviderCalendarPicker" data-ref="edit-provider-expiration-trigger" data-value="${expDate}">
+                                <span class="material-symbols-rounded">calendar_month</span>
+                                <span class="component-dropdown-text" data-ref="edit-provider-expiration-text">${expDate ? expDate.split(' ')[0] : __('lbl_select_expiration_date')}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="component-modal-actions">
-                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button class="component-button component-button--h40 component-button--dark" data-action="submitEditProvider">${__('btn_save_changes')}</button>
+                    <button class="component-button component-button--h40" data-modal-action="cancel" data-ref="btn-edit-modal-cancel">${__('btn_cancel')}</button>
+                    <button class="component-button component-button--h40 disabled" data-action="editProviderPrevStep" data-ref="btn-edit-modal-prev">${__('btn_prev')}</button>
+                    <button class="component-button component-button--h40 component-button--dark" data-action="editProviderNextStep" data-ref="btn-edit-modal-next">${__('btn_next')}</button>
+                    <button class="component-button component-button--h40 component-button--dark disabled" data-action="submitEditProvider" data-ref="btn-edit-modal-finish">${__('btn_save_changes')}</button>
                 </div>
             `;
         }

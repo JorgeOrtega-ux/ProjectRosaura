@@ -22,46 +22,7 @@ $isPrivileged = in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PAN
 $userTier = (int)($_SESSION['subscription_tier'] ?? $_SESSION['tier'] ?? $_SESSION['user_tier'] ?? 0);
 $isAdFree = SubscriptionPlanConstants::hasFeature($userTier, 'no_ads');
 
-$promoCatalog = [
-    [
-        'id' => 'promo-tools-01',
-        'sponsor' => 'PixelCraft Pro',
-        'description' => 'Pinceles inteligentes, capas avanzadas y exportación de spritesheets en tiempo real.',
-        'media' => [
-            ['type' => 'image', 'url' => $appUrl . '/assets/img/showcase/creative_tools.jpg', 'alt' => 'PixelCraft Tools'],
-            ['type' => 'image', 'url' => $appUrl . '/assets/img/showcase/drawing_pad.jpg', 'alt' => 'ChromaPad Studio'],
-            ['type' => 'video', 'url' => $appUrl . '/assets/media/sample_promo.mp4', 'alt' => 'PixelCraft Demo']
-        ]
-    ],
-    [
-        'id' => 'promo-tablet-02',
-        'sponsor' => 'ChromaPad X',
-        'description' => 'Sensibilidad de presión de 8192 niveles con control RGB para artistas de pixel.',
-        'media' => [
-            ['type' => 'image', 'url' => $appUrl . '/assets/img/showcase/drawing_pad.jpg', 'alt' => 'ChromaPad X'],
-            ['type' => 'image', 'url' => $appUrl . '/assets/img/showcase/palette_master.jpg', 'alt' => 'Color Match']
-        ]
-    ],
-    [
-        'id' => 'promo-palette-03',
-        'sponsor' => 'Palette Master AI',
-        'description' => 'Extracción instantánea de degradados y paletas cromáticas para tu lienzo.',
-        'media' => [
-            ['type' => 'image', 'url' => $appUrl . '/assets/img/showcase/palette_master.jpg', 'alt' => 'Palette Master'],
-            ['type' => 'image', 'url' => $appUrl . '/assets/img/showcase/templates_pro.jpg', 'alt' => 'Templates Pro'],
-            ['type' => 'video', 'url' => $appUrl . '/assets/media/sample_promo.mp4', 'alt' => 'Palette Demo']
-        ]
-    ],
-    [
-        'id' => 'promo-templates-04',
-        'sponsor' => 'NeoRetro Assets',
-        'description' => 'Más de 5,000 mapas isométricos, tilesets y planos listos para colocar.',
-        'media' => [
-            ['type' => 'image', 'url' => $appUrl . '/assets/img/showcase/templates_pro.jpg', 'alt' => 'NeoRetro Assets'],
-            ['type' => 'image', 'url' => $appUrl . '/assets/img/showcase/creative_tools.jpg', 'alt' => 'Creative Studio']
-        ]
-    ]
-];
+$promoCatalog = $galleryData['promoCatalog'] ?? [];
 ?>
 
 <div class="view-content">
@@ -171,21 +132,33 @@ $promoCatalog = [
 
                         </div>
 
-                        <?php if (!$isAdFree && ($realCount % 2 === 0)): 
+                        <?php if (!$isAdFree && !empty($promoCatalog) && ($realCount % 2 === 0)): 
                             $promo = $promoCatalog[$promoIdx % count($promoCatalog)];
                             $promoIdx++;
-                            $sponsorName = htmlspecialchars($promo['sponsor']);
-                            $description = htmlspecialchars($promo['description']);
-                            $mediaList = $promo['media'];
+                            $sponsorName = htmlspecialchars($promo['sponsor'] ?? 'Patrocinado');
+                            $description = htmlspecialchars($promo['description'] ?? $promo['title'] ?? '');
+                            $mediaList = $promo['media'] ?? [];
                             $hasMultiple = count($mediaList) > 1;
+                            $promoUuid = htmlspecialchars($promo['uuid'] ?? $promo['id'] ?? '');
+                            $targetUrl = !empty($promo['url']) ? $promo['url'] : ($appUrl . '/upgrade');
+                            $isExternal = (str_starts_with($targetUrl, 'http://') || str_starts_with($targetUrl, 'https://'));
+                            $linkActionAttr = $isExternal 
+                                ? 'data-action="openPromoLink" data-target-url="' . htmlspecialchars($targetUrl) . '" data-is-external="true"' 
+                                : 'data-action="openPromoLink" data-target-url="' . htmlspecialchars($targetUrl) . '" data-is-external="false" data-nav="' . htmlspecialchars($targetUrl) . '"';
                         ?>
-                            <div class="component-gallery-card component-gallery-card--featured" data-card-role="promo" data-promo-id="<?php echo htmlspecialchars($promo['id']); ?>">
+                            <div class="component-gallery-card component-gallery-card--featured" data-card-role="promo" data-promo-id="<?php echo $promoUuid; ?>">
                                 <div class="component-gallery-media-track">
                                     <?php foreach ($mediaList as $mIdx => $mItem): 
                                         $isFirst = ($mIdx === 0);
-                                        $activeClass = $isFirst ? 'active' : '';
-                                        $mUrl = htmlspecialchars($mItem['url']);
-                                        if ($mItem['type'] === 'video'): ?>
+                                        $activeClass = $isFirst ? 'active image-loaded' : '';
+                                        $rawUrl = $mItem['url'] ?? '';
+                                        if (!empty($rawUrl) && !str_starts_with($rawUrl, 'http://') && !str_starts_with($rawUrl, 'https://') && !empty($appUrl)) {
+                                            if (!str_starts_with($rawUrl, $appUrl)) {
+                                                $rawUrl = rtrim($appUrl, '/') . (str_starts_with($rawUrl, '/') ? '' : '/') . $rawUrl;
+                                            }
+                                        }
+                                        $mUrl = htmlspecialchars($rawUrl);
+                                        if (($mItem['type'] ?? '') === 'video'): ?>
                                             <video src="<?php echo $mUrl; ?>" 
                                                    class="component-gallery-card__image component-gallery-media-item component-gallery-card__video <?php echo $activeClass; ?>" 
                                                    muted 
@@ -223,7 +196,7 @@ $promoCatalog = [
                                     </div>
                                 <?php endif; ?>
 
-                                <div class="component-gallery-link">
+                                <div class="component-gallery-link" <?php echo $linkActionAttr; ?>>
                                     <h3 class="component-gallery-title"><?php echo $description; ?></h3>
                                 </div>
                             </div>

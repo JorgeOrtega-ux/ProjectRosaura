@@ -124,6 +124,8 @@ export const ApiRoutes = {
         UpdateAdvertisement: 'admin.advertisements.update_ad',
         ToggleAdvertisementStatus: 'admin.advertisements.toggle_ad_status',
         DeleteAdvertisement: 'admin.advertisements.delete_ad',
+        DownloadAdMetrics: 'admin.advertisements.download_ad_metrics',
+        DownloadGeneralAdMetrics: 'admin.advertisements.download_general_metrics',
 
         GetServerLogs: 'admin.get_server_logs',
         GetAuditLogs: 'admin.get_audit_logs',

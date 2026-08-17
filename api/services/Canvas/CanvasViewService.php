@@ -439,6 +439,18 @@ class CanvasViewService {
 
         $galleryTitle = $error ? __('capturas_gallery_title_error') : str_replace('{name}', $canvasName, __('capturas_gallery_title'));
 
+        $promoCatalog = [];
+        try {
+            $dbManager = new DatabaseManager();
+            $adsService = new \App\Api\Services\Admin\AdminAdvertisementsService($dbManager);
+            $adsResult = $adsService->getPublicActiveAds();
+            if (!empty($adsResult['success']) && !empty($adsResult['feed_promos'])) {
+                $promoCatalog = $adsResult['feed_promos'];
+            }
+        } catch (\Throwable $e) {
+            Logger::error("Error loading promo catalog for snapshots: " . $e->getMessage());
+        }
+
         return [
             'uuid' => $uuid,
             'snapshots' => $snapshots,
@@ -449,7 +461,8 @@ class CanvasViewService {
             'errorIcon' => $errorIcon,
             'fallbackImg' => $fallbackImg,
             'isAuthorized' => $isAuthorized ?? false,
-            'isOwner' => $isOwner ?? false
+            'isOwner' => $isOwner ?? false,
+            'promoCatalog' => $promoCatalog
         ];
     }
 

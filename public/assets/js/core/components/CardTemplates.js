@@ -66,8 +66,20 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         const description = escapeHTML(promo.description || promo.title || '');
         const basePath = config.basePath || '';
         const fallbackImg = basePath + '/assets/img/fallbacks/canvas-default.png';
-        const targetUrl = promo.url ? escapeHTML(promo.url) : `${basePath}/upgrade`;
+        const targetUrl = promo.url ? promo.url : `${basePath}/upgrade`;
         const sponsoredLabel = (window.__ ? window.__('sponsored') : null) || 'Patrocinado';
+        const promoUuid = promo.promo_uuid || promo.uuid || promo.id || '';
+
+        const resolveUrl = (url) => {
+            if (!url) return fallbackImg;
+            if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:') || url.startsWith('blob:')) {
+                return url;
+            }
+            if (basePath && url.startsWith('/') && !url.startsWith(basePath + '/')) {
+                return basePath + url;
+            }
+            return url;
+        };
 
         const mediaList = Array.isArray(promo.media) && promo.media.length > 0
             ? promo.media
@@ -78,7 +90,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         let mediaItemsHtml = '';
         if (!hasMultipleMedia) {
             const single = mediaList[0];
-            const singleUrl = single.url ? escapeHTML(single.url) : fallbackImg;
+            const singleUrl = escapeHTML(resolveUrl(single.url));
             if (single.type === 'video') {
                 mediaItemsHtml = `
                     <video src="${singleUrl}" 
@@ -104,7 +116,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                 <div class="component-gallery-media-track">
                     ${mediaList.map((item, idx) => {
                         const isFirst = idx === 0;
-                        const itemUrl = item.url ? escapeHTML(item.url) : fallbackImg;
+                        const itemUrl = escapeHTML(resolveUrl(item.url));
                         const activeClass = isFirst ? 'active image-loaded' : '';
                         if (item.type === 'video') {
                             return `
@@ -113,7 +125,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                                        muted 
                                        playsinline 
                                        loop 
-                                       preload="metadata"
+                                       preload="metadata" 
                                        data-media-index="${idx}"></video>
                             `;
                         }
@@ -142,12 +154,13 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
             `;
         }
 
-        const actionAttr = (targetUrl && (targetUrl.startsWith('http://') || targetUrl.startsWith('https://'))) 
-            ? `data-action="openExternalPromo" data-target-url="${targetUrl}"`
-            : '';
+        const isExternal = targetUrl.startsWith('http://') || targetUrl.startsWith('https://');
+        const actionAttr = isExternal
+            ? `data-action="openPromoLink" data-target-url="${escapeHTML(targetUrl)}" data-is-external="true"`
+            : `data-action="openPromoLink" data-target-url="${escapeHTML(targetUrl)}" data-is-external="false" data-nav="${escapeHTML(targetUrl)}"`;
 
         return `
-            <div class="component-gallery-card component-gallery-card--featured" data-card-role="promo" data-promo-id="${escapeHTML(promo.id || '')}">
+            <div class="component-gallery-card component-gallery-card--featured" data-card-role="promo" data-promo-id="${escapeHTML(promoUuid)}">
                 ${mediaItemsHtml}
 
                 <div class="component-badge component-badge--glass component-badge--absolute-tl">

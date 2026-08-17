@@ -4,6 +4,7 @@ import { BaseListController }   from '../../../core/base/BaseListController.js';
 import { applySelectableTable } from '../../../core/mixins/SelectableTableMixin.js';
 import { AdminModalTemplates }  from '../AdminModalTemplates.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { PromoService }        from '../../../core/services/PromoCardService.js';
 
 function _t(key) {
     return typeof window.__ === 'function' ? window.__(key) : key;
@@ -153,6 +154,7 @@ class AdminProviderAdsController extends BaseListController {
     handleGlobalClick(e) {
         const selectTarget     = e.target.closest('[data-action="selectAdRow"]');
         const searchBtn        = e.target.closest('[data-action="searchAd"]');
+        const downloadMetricsBtn = e.target.closest('[data-action="downloadAdMetrics"]');
         const editBtn          = e.target.closest('[data-action="editAd"]');
         const toggleActiveBtn  = e.target.closest('[data-action="toggleAdStatus"]');
         const delBtn           = e.target.closest('[data-action="deleteAd"]');
@@ -176,9 +178,10 @@ class AdminProviderAdsController extends BaseListController {
         const openSubMenuBtn   = e.target.closest('[data-action="openFilterSubMenu"]');
         const backSubMenuBtn   = e.target.closest('[data-action="backToMainFilters"]');
 
-        if (selectTarget)      this.handleRowSelection(selectTarget);
-        if (searchBtn)         this.toggleSearchToolbar();
-        if (editBtn)           this.openEditAdModal();
+        if (selectTarget)        this.handleRowSelection(selectTarget);
+        if (searchBtn)           this.toggleSearchToolbar();
+        if (downloadMetricsBtn)  this.downloadAdMetrics(downloadMetricsBtn);
+        if (editBtn)             this.openEditAdModal();
         if (toggleActiveBtn)   this.toggleAdStatus(toggleActiveBtn);
         if (delBtn)            this.deleteAd(delBtn);
 
@@ -289,6 +292,7 @@ class AdminProviderAdsController extends BaseListController {
             if (res.aborted) return;
             if (res.success) {
                 showMessage(_t(res.message_key || 'msg_ad_status_updated'), 'success');
+                PromoService.loadActiveAds(true).catch(() => {});
                 await this.handlePagination(window.location.href);
             } else {
                 showMessage(res.message || _t(res.message_key || 'err_default'), 'error');
@@ -316,6 +320,7 @@ class AdminProviderAdsController extends BaseListController {
                 if (res.aborted) return;
                 if (res.success) {
                     showMessage(_t('msg_ad_deleted_success'), 'success');
+                    PromoService.loadActiveAds(true).catch(() => {});
                     await this.handlePagination(window.location.href);
                 } else {
                     showMessage(res.message || _t(res.message_key || 'err_default'), 'error');
@@ -654,6 +659,7 @@ class AdminProviderAdsController extends BaseListController {
             if (res.aborted) return;
             if (res.success) {
                 showMessage(_t('msg_ad_created_success'), 'success');
+                PromoService.loadActiveAds(true).catch(() => {});
                 if (window.modalSystem) window.modalSystem.closeCurrent();
                 await this.handlePagination(window.location.href);
             } else {
@@ -721,6 +727,7 @@ class AdminProviderAdsController extends BaseListController {
             if (res.aborted) return;
             if (res.success) {
                 showMessage(_t('msg_ad_updated_success'), 'success');
+                PromoService.loadActiveAds(true).catch(() => {});
                 if (window.modalSystem) window.modalSystem.closeCurrent();
                 await this.handlePagination(window.location.href);
             } else {
@@ -782,6 +789,7 @@ class AdminProviderAdsController extends BaseListController {
             if (res.aborted) return;
             if (res.success) {
                 showMessage(_t('msg_ad_created_success'), 'success');
+                PromoService.loadActiveAds(true).catch(() => {});
                 if (window.modalSystem) window.modalSystem.closeCurrent();
                 await this.handlePagination(window.location.href);
             } else {
@@ -843,6 +851,7 @@ class AdminProviderAdsController extends BaseListController {
             if (res.aborted) return;
             if (res.success) {
                 showMessage(_t('msg_ad_updated_success'), 'success');
+                PromoService.loadActiveAds(true).catch(() => {});
                 if (window.modalSystem) window.modalSystem.closeCurrent();
                 await this.handlePagination(window.location.href);
             } else {
@@ -854,12 +863,44 @@ class AdminProviderAdsController extends BaseListController {
             if (btn) restoreButton(btn);
         }
     }
+
+    async downloadAdMetrics(btn = null) {
+        if (!this.selectedAdUuid) {
+            showMessage(_t('err_ad_not_found'), 'warning');
+            return;
+        }
+
+        const selectedRow = document.querySelector(`[data-ad-uuid="${this.selectedAdUuid}"]`);
+        const adName = selectedRow ? (selectedRow.getAttribute('data-ad-name') || selectedRow.getAttribute('data-ad-title') || 'Anuncio') : 'Anuncio';
+        const cleanName = adName.replace(/[^a-zA-Z0-9_-]/g, '_');
+        const filename = `Reporte_Metricas_${cleanName}.pdf`;
+
+        if (btn) setButtonLoading(btn);
+
+        try {
+            const result = await this.api.downloadFile(
+                ApiRoutes.Admin.DownloadAdMetrics,
+                { ad_uuid: this.selectedAdUuid },
+                filename,
+                this.abortController ? this.abortController.signal : null
+            );
+            if (result && !result.success && !result.aborted) {
+                showMessage(result.message || _t(result.message_key || 'admin_ad_metrics_download_error'), 'error');
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                showMessage(_t('admin_ad_metrics_download_error'), 'error');
+            }
+        } finally {
+            if (btn) restoreButton(btn);
+        }
+    }
 }
 
 applySelectableTable(AdminProviderAdsController, {
     idProp:       'selectedAdUuid',
     selectionRef: 'ad-selection-actions',
-    rowSelector:  '[data-ref="ads-table-body"] tr.selected',
+    rowSelector:  '[data-action="selectAdRow"]',
 });
 
 export { AdminProviderAdsController };

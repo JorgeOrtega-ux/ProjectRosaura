@@ -9,7 +9,8 @@ export const PromoType = {
 
 const DEFAULT_FEED_PROMOS = [
     {
-        id: 'promo-tools-01',
+        id: 'b1000000-0000-0000-0000-000000000001',
+        uuid: 'b1000000-0000-0000-0000-000000000001',
         type: PromoType.FEED,
         sponsor: 'PixelCraft Pro',
         title: 'Herramientas Creativas 2D',
@@ -22,7 +23,8 @@ const DEFAULT_FEED_PROMOS = [
         ]
     },
     {
-        id: 'promo-tablet-02',
+        id: 'b1000000-0000-0000-0000-000000000002',
+        uuid: 'b1000000-0000-0000-0000-000000000002',
         type: PromoType.FEED,
         sponsor: 'ChromaPad X',
         title: 'Tabletas Digitales Profesionales',
@@ -34,7 +36,8 @@ const DEFAULT_FEED_PROMOS = [
         ]
     },
     {
-        id: 'promo-palette-03',
+        id: 'b1000000-0000-0000-0000-000000000003',
+        uuid: 'b1000000-0000-0000-0000-000000000003',
         type: PromoType.FEED,
         sponsor: 'Palette Master AI',
         title: 'Generador de Paletas Armónicas',
@@ -47,7 +50,8 @@ const DEFAULT_FEED_PROMOS = [
         ]
     },
     {
-        id: 'promo-templates-04',
+        id: 'b1000000-0000-0000-0000-000000000004',
+        uuid: 'b1000000-0000-0000-0000-000000000004',
         type: PromoType.FEED,
         sponsor: 'NeoRetro Assets',
         title: 'Librería de Plantillas 16-Bit',
@@ -61,71 +65,116 @@ const DEFAULT_FEED_PROMOS = [
 ];
 
 const DEFAULT_MODULE_PROMOS = {
-    colors: {
-        id: 'promo-mod-colors',
-        type: PromoType.MODULE,
-        sponsor: 'Chroma Studio',
-        title: 'Paletas y Armonías Exclusivas',
-        description: 'Descubre combinaciones de colores únicas y degradados profesionales para tus obras.',
-        url: '/upgrade',
-        media: [
-            { type: 'image', url: '/assets/img/showcase/palette_master.jpg', alt: 'Chroma Studio' },
-            { type: 'image', url: '/assets/img/showcase/creative_tools.jpg', alt: 'Tools UI' },
-            { type: 'video', url: '/assets/media/sample_promo.mp4', alt: 'Color Demo' }
-        ]
-    },
-    templates: {
-        id: 'promo-mod-templates',
-        type: PromoType.MODULE,
-        sponsor: 'RetroCraft Blueprints',
-        title: 'Pack de Plantillas Pixel Art',
-        description: 'Inyecta estructuras, mapas y esquemas de referencia directamente en tu lienzo.',
-        url: '/upgrade',
-        media: [
-            { type: 'image', url: '/assets/img/showcase/templates_pro.jpg', alt: 'RetroCraft Blueprints' },
-            { type: 'image', url: '/assets/img/showcase/drawing_pad.jpg', alt: 'Drawing Tablet' },
-            { type: 'video', url: '/assets/media/sample_promo.mp4', alt: 'Templates Demo' }
-        ]
-    },
-    info: {
-        id: 'promo-mod-info',
-        type: PromoType.MODULE,
-        sponsor: 'PixelCraft Studio Pro',
-        title: 'Herramientas de Animación 2D',
-        description: 'Pinceles inteligentes, capas avanzadas y exportación de spritesheets en tiempo real.',
-        url: '/upgrade',
-        media: [
-            { type: 'image', url: '/assets/img/showcase/creative_tools.jpg', alt: 'PixelCraft Studio' },
-            { type: 'image', url: '/assets/img/showcase/drawing_pad.jpg', alt: 'ChromaPad Studio' },
-            { type: 'video', url: '/assets/media/sample_promo.mp4', alt: 'PixelCraft Demo' }
-        ]
-    }
+    colors: [
+        {
+            id: 'b1000000-0000-0000-0000-000000000005',
+            uuid: 'b1000000-0000-0000-0000-000000000005',
+            type: PromoType.MODULE,
+            sponsor: 'Chroma Studio',
+            title: 'Paletas y Armonías Exclusivas',
+            description: 'Descubre combinaciones de colores únicas y degradados profesionales para tus obras.',
+            url: '/upgrade',
+            media: [
+                { type: 'image', url: '/assets/img/showcase/palette_master.jpg', alt: 'Chroma Studio' },
+                { type: 'image', url: '/assets/img/showcase/creative_tools.jpg', alt: 'Tools UI' },
+                { type: 'video', url: '/assets/media/sample_promo.mp4', alt: 'Color Demo' }
+            ]
+        }
+    ],
+    templates: [
+        {
+            id: 'b1000000-0000-0000-0000-000000000006',
+            uuid: 'b1000000-0000-0000-0000-000000000006',
+            type: PromoType.MODULE,
+            sponsor: 'RetroCraft Blueprints',
+            title: 'Pack de Plantillas Pixel Art',
+            description: 'Inyecta estructuras, mapas y esquemas de referencia directamente en tu lienzo.',
+            url: '/upgrade',
+            media: [
+                { type: 'image', url: '/assets/img/showcase/templates_pro.jpg', alt: 'RetroCraft Blueprints' },
+                { type: 'image', url: '/assets/img/showcase/drawing_pad.jpg', alt: 'Drawing Tablet' },
+                { type: 'video', url: '/assets/media/sample_promo.mp4', alt: 'Templates Demo' }
+            ]
+        }
+    ],
+    info: [
+        {
+            id: 'b1000000-0000-0000-0000-000000000007',
+            uuid: 'b1000000-0000-0000-0000-000000000007',
+            type: PromoType.MODULE,
+            sponsor: 'PixelCraft Studio Pro',
+            title: 'Herramientas de Animación 2D',
+            description: 'Pinceles inteligentes, capas avanzadas y exportación de spritesheets en tiempo real.',
+            url: '/upgrade',
+            media: [
+                { type: 'image', url: '/assets/img/showcase/creative_tools.jpg', alt: 'PixelCraft Studio' },
+                { type: 'image', url: '/assets/img/showcase/drawing_pad.jpg', alt: 'ChromaPad Studio' },
+                { type: 'video', url: '/assets/media/sample_promo.mp4', alt: 'PixelCraft Demo' }
+            ]
+        }
+    ]
 };
 
 class PromoCardService {
     constructor() {
         this.api = new ApiService();
-        this.feedPromos = DEFAULT_FEED_PROMOS;
-        this.modulePromos = DEFAULT_MODULE_PROMOS;
+        this.feedPromos = [];
+        this.modulePromos = {};
         this.hasLoadedFromApi = false;
+        this.loadPromise = null;
+        this.trackedImpressions = new Set();
+        this.trackedVideos = new Set();
         this.initGlobalListeners();
         this.loadActiveAds();
     }
 
-    async loadActiveAds() {
-        if (this.isExempt()) return;
-        try {
-            const res = await this.api.post(ApiRoutes.Advertisements.GetActiveFeed, {});
-            if (res && res.success) {
-                this.hasLoadedFromApi = true;
-                if (Array.isArray(res.feed_promos)) {
-                    this.feedPromos = res.feed_promos;
+    async ensureLoaded() {
+        if (this.hasLoadedFromApi) return true;
+        if (this.loadPromise) {
+            await this.loadPromise;
+            return true;
+        }
+        await this.loadActiveAds();
+        return true;
+    }
+
+    async loadActiveAds(forceRefresh = false) {
+        if (this.isExempt()) {
+            this.feedPromos = [];
+            this.modulePromos = {};
+            this.hasLoadedFromApi = true;
+            return;
+        }
+
+        if (this.hasLoadedFromApi && !forceRefresh) {
+            return;
+        }
+
+        this.loadPromise = (async () => {
+            try {
+                const res = await this.api.post(ApiRoutes.Advertisements.GetActiveFeed, {});
+                if (res && res.success) {
+                    this.hasLoadedFromApi = true;
+                    if (Array.isArray(res.feed_promos)) {
+                        this.feedPromos = res.feed_promos;
+                    }
+                    if (res.module_promos && typeof res.module_promos === 'object') {
+                        this.modulePromos = res.module_promos;
+                    }
+                } else if (!this.hasLoadedFromApi) {
+                    // Fallback to defaults only if API fails and no previous data exists
+                    this.feedPromos = DEFAULT_FEED_PROMOS;
+                    this.modulePromos = DEFAULT_MODULE_PROMOS;
                 }
-                if (res.module_promos && typeof res.module_promos === 'object') {
-                    this.modulePromos = res.module_promos;
+            } catch (_) {
+                if (!this.hasLoadedFromApi) {
+                    this.feedPromos = DEFAULT_FEED_PROMOS;
+                    this.modulePromos = DEFAULT_MODULE_PROMOS;
                 }
             }
-        } catch (_) {}
+        })();
+
+        await this.loadPromise;
     }
 
     isExempt() {
@@ -151,10 +200,12 @@ class PromoCardService {
 
             if (realCounter % 8 === 0 && this.feedPromos.length > 0) {
                 const promo = this.feedPromos[promoIndex % this.feedPromos.length];
+                const promoUuid = promo.uuid || promo.id;
                 result.push({
                     ...promo,
                     is_promo: true,
-                    id: `promo-card-${realCounter}-${promo.id}`
+                    promo_uuid: promoUuid,
+                    id: `promo-card-${realCounter}-${promoUuid}`
                 });
                 promoIndex++;
             }
@@ -165,7 +216,33 @@ class PromoCardService {
 
     getModulePromo(moduleKey) {
         if (this.isExempt()) return null;
-        return this.modulePromos[moduleKey] || null;
+        const entry = this.modulePromos[moduleKey];
+        if (!entry) return null;
+
+        if (Array.isArray(entry)) {
+            if (entry.length === 0) return null;
+            return entry[Math.floor(Math.random() * entry.length)];
+        }
+
+        return entry;
+    }
+
+    trackImpression(adUuid) {
+        if (!adUuid || this.isExempt() || this.trackedImpressions.has(adUuid)) return;
+        this.trackedImpressions.add(adUuid);
+        this.api.post(ApiRoutes.Advertisements.TrackEvent, {
+            ad_uuid: adUuid,
+            event_type: 'impression'
+        }).catch(() => {});
+    }
+
+    trackVideoView(adUuid) {
+        if (!adUuid || this.isExempt() || this.trackedVideos.has(adUuid)) return;
+        this.trackedVideos.add(adUuid);
+        this.api.post(ApiRoutes.Advertisements.TrackEvent, {
+            ad_uuid: adUuid,
+            event_type: 'video_view'
+        }).catch(() => {});
     }
 
     updateCardSlide(card, targetIndex) {
@@ -185,6 +262,10 @@ class PromoCardService {
                     const playPromise = item.play();
                     if (playPromise !== undefined) {
                         playPromise.catch(() => {});
+                    }
+                    const promoId = card.getAttribute('data-promo-id');
+                    if (promoId) {
+                        this.trackVideoView(promoId);
                     }
                 }
             } else {
@@ -263,25 +344,48 @@ class PromoCardService {
                 }
             }
 
-            const extPromo = e.target.closest('[data-action="openExternalPromo"]');
-            if (extPromo) {
+            const promoLink = e.target.closest('[data-action="openPromoLink"], [data-action="openExternalPromo"]');
+            if (promoLink) {
                 e.preventDefault();
-                const url = extPromo.getAttribute('data-target-url');
-                const promoId = extPromo.closest('[data-promo-id]')?.getAttribute('data-promo-id');
+                const targetUrl = promoLink.getAttribute('data-target-url') || promoLink.getAttribute('href') || '/upgrade';
+                const card = promoLink.closest('[data-promo-id]');
+                const promoId = card ? card.getAttribute('data-promo-id') : null;
+                const isExternal = promoLink.getAttribute('data-is-external') === 'true' || targetUrl.startsWith('http://') || targetUrl.startsWith('https://');
+
                 if (promoId) {
                     this.api.post(ApiRoutes.Advertisements.TrackEvent, {
                         ad_uuid: promoId,
                         event_type: 'click'
                     }).catch(() => {});
                 }
-                if (url) {
-                    window.open(url, '_blank', 'noopener,noreferrer');
+
+                if (isExternal) {
+                    window.open(targetUrl, '_blank', 'noopener,noreferrer');
+                } else {
+                    const basePath = window.AppBasePath || '';
+                    const navUrl = (basePath && targetUrl.startsWith('/') && !targetUrl.startsWith(basePath + '/')) 
+                        ? `${basePath}${targetUrl}` 
+                        : targetUrl;
+                    if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
+                        window.spaRouter.navigate(navUrl);
+                    } else {
+                        window.location.href = navUrl;
+                    }
                 }
             }
         });
     }
 
-    initCardInteractions() {}
+    initCardInteractions(container = document) {
+        if (!container) return;
+        const promoCards = container.querySelectorAll('.component-gallery-card[data-card-role="promo"]');
+        promoCards.forEach((card) => {
+            const promoId = card.getAttribute('data-promo-id');
+            if (promoId) {
+                this.trackImpression(promoId);
+            }
+        });
+    }
 }
 
 export const PromoService = new PromoCardService();

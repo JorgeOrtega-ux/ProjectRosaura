@@ -1189,4 +1189,21 @@ return [
             ['type' => 'RateLimit', 'key' => 'ad_track_evt', 'max' => 120, 'time' => 1, 'identifier' => 'ip'],
         ],
     ],
+    'admin.advertisements.download_ad_metrics' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'download_ad_metrics',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_dl_ad_metrics', 'max' => 30, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'admin.advertisements.download_general_metrics' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'download_general_metrics',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_dl_gen_metrics', 'max' => 20, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
 ];
+

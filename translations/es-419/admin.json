@@ -661,5 +661,10 @@
     "step_ad_target_desc": "Configura el enlace de destino al hacer clic y el patrocinador.",
     "step_network_slot_name_desc": "Introduce el nombre identificador del bloque de red.",
     "step_network_slot_id_desc": "Especifica el identificador o Slot ID de la red.",
-    "step_network_slot_code_desc": "Pega el código de script o inserción del bloque publicitario."
+    "step_network_slot_code_desc": "Pega el código de script o inserción del bloque publicitario.",
+    "admin_ad_download_metrics": "Descargar métricas del anuncio",
+    "admin_ad_download_general_metrics": "Descargar reporte global de métricas",
+    "admin_ad_metrics_download_error": "No se pudo generar el reporte de métricas.",
+    "admin_ad_download_provider_metrics": "Descargar reporte del proveedor",
+    "admin_ad_metrics_empty": "No hay métricas registradas para este elemento aún."
 }

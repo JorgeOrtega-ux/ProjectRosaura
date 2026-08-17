@@ -727,4 +727,205 @@ class AdminAdvertisementsService {
             return ['success' => false];
         }
     }
+
+    public function getAdMetricsReportData(string $adUuid): ?array {
+        $pdo = $this->getPdo();
+        try {
+            $stmtAd = $pdo->prepare("SELECT a.*, p.name AS provider_name, p.provider_type, p.network_id 
+                                     FROM advertisements a 
+                                     INNER JOIN ad_providers p ON a.provider_id = p.id 
+                                     WHERE a.uuid = ?");
+            $stmtAd->execute([$adUuid]);
+            $ad = $stmtAd->fetch(\PDO::FETCH_ASSOC);
+
+            if (!$ad) {
+                return null;
+            }
+
+            $adId = (int)$ad['id'];
+
+            // Fetch resources
+            $stmtRes = $pdo->prepare("SELECT * FROM ad_resources WHERE ad_id = ? ORDER BY sort_order ASC, id ASC");
+            $stmtRes->execute([$adId]);
+            $ad['resources'] = $stmtRes->fetchAll(\PDO::FETCH_ASSOC);
+
+            // Fetch overall summary metrics
+            $stmtSummary = $pdo->prepare("SELECT 
+                COUNT(CASE WHEN event_type = 'impression' THEN 1 END) AS total_impressions,
+                COUNT(CASE WHEN event_type = 'click' THEN 1 END) AS total_clicks,
+                COUNT(CASE WHEN event_type = 'video_view' THEN 1 END) AS total_video_views,
+                COUNT(DISTINCT CASE WHEN user_uuid IS NOT NULL AND user_uuid != '' THEN user_uuid ELSE ip_address END) AS unique_users
+                FROM ad_metrics WHERE ad_id = ?");
+            $stmtSummary->execute([$adId]);
+            $summary = $stmtSummary->fetch(\PDO::FETCH_ASSOC) ?: [];
+
+            $totImp = (int)($summary['total_impressions'] ?? 0);
+            $totClk = (int)($summary['total_clicks'] ?? 0);
+            $summary['ctr'] = ($totImp > 0) ? round(($totClk / $totImp) * 100, 2) : 0;
+
+            // Fetch daily breakdown (last 30 active days)
+            $stmtDaily = $pdo->prepare("SELECT 
+                date_only, 
+                COUNT(CASE WHEN event_type = 'impression' THEN 1 END) AS impressions, 
+                COUNT(CASE WHEN event_type = 'click' THEN 1 END) AS clicks 
+                FROM ad_metrics 
+                WHERE ad_id = ? 
+                GROUP BY date_only 
+                ORDER BY date_only DESC 
+                LIMIT 30");
+            $stmtDaily->execute([$adId]);
+            $dailyBreakdown = $stmtDaily->fetchAll(\PDO::FETCH_ASSOC);
+
+            return [
+                'ad' => $ad,
+                'summary' => $summary,
+                'daily_breakdown' => $dailyBreakdown
+            ];
+        } catch (\Throwable $e) {
+            Logger::error("AdminAdvertisementsService::getAdMetricsReportData error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    public function getGlobalMetricsReportData(): array {
+        $pdo = $this->getPdo();
+        try {
+            // 1. Global totals
+            $stmtProvidersCount = $pdo->query("SELECT COUNT(id) FROM ad_providers");
+            $totalProviders = (int)$stmtProvidersCount->fetchColumn();
+
+            $stmtAdsCount = $pdo->query("SELECT COUNT(id) FROM advertisements");
+            $totalAds = (int)$stmtAdsCount->fetchColumn();
+
+            $stmtMetricsCount = $pdo->query("SELECT 
+                COUNT(CASE WHEN event_type = 'impression' THEN 1 END) AS total_impressions,
+                COUNT(CASE WHEN event_type = 'click' THEN 1 END) AS total_clicks
+                FROM ad_metrics");
+            $metricsRow = $stmtMetricsCount->fetch(\PDO::FETCH_ASSOC) ?: [];
+
+            $totImp = (int)($metricsRow['total_impressions'] ?? 0);
+            $totClk = (int)($metricsRow['total_clicks'] ?? 0);
+            $avgCtr = ($totImp > 0) ? round(($totClk / $totImp) * 100, 2) : 0;
+
+            $globalSummary = [
+                'total_providers' => $totalProviders,
+                'total_ads' => $totalAds,
+                'total_impressions' => $totImp,
+                'total_clicks' => $totClk,
+                'average_ctr' => $avgCtr
+            ];
+
+            // 2. Providers breakdown
+            $sqlProviders = "SELECT p.id, p.uuid, p.name, p.provider_type,
+                                    (SELECT COUNT(a.id) FROM advertisements a WHERE a.provider_id = p.id) AS total_ads,
+                                    (SELECT COUNT(m.id) FROM ad_metrics m WHERE m.provider_id = p.id AND m.event_type = 'impression') AS total_impressions,
+                                    (SELECT COUNT(m.id) FROM ad_metrics m WHERE m.provider_id = p.id AND m.event_type = 'click') AS total_clicks
+                             FROM ad_providers p
+                             ORDER BY total_impressions DESC, total_ads DESC";
+            $providersBreakdown = $pdo->query($sqlProviders)->fetchAll(\PDO::FETCH_ASSOC);
+
+            // 3. Formats breakdown
+            $formatLabels = [
+                'feed' => 'Feed Principal (Home / Búsqueda)',
+                'module_colors' => 'Herramientas: Paleta de Colores',
+                'module_templates' => 'Herramientas: Plantillas',
+                'module_info' => 'Lienzo: Información',
+                'banner' => 'Banner Estándar'
+            ];
+
+            $formatsBreakdown = [];
+            foreach ($formatLabels as $fmtKey => $fmtLabel) {
+                $stmtFmt = $pdo->prepare("SELECT 
+                    COUNT(DISTINCT a.id) AS total_ads,
+                    (SELECT COUNT(m.id) FROM ad_metrics m INNER JOIN advertisements a2 ON m.ad_id = a2.id WHERE a2.format = :fmt1 AND m.event_type = 'impression') AS total_impressions,
+                    (SELECT COUNT(m.id) FROM ad_metrics m INNER JOIN advertisements a3 ON m.ad_id = a3.id WHERE a3.format = :fmt2 AND m.event_type = 'click') AS total_clicks
+                    FROM advertisements a WHERE a.format = :fmt3");
+                $stmtFmt->execute([':fmt1' => $fmtKey, ':fmt2' => $fmtKey, ':fmt3' => $fmtKey]);
+                $fmtRow = $stmtFmt->fetch(\PDO::FETCH_ASSOC) ?: [];
+
+                $formatsBreakdown[$fmtKey] = [
+                    'label' => $fmtLabel,
+                    'total_ads' => (int)($fmtRow['total_ads'] ?? 0),
+                    'total_impressions' => (int)($fmtRow['total_impressions'] ?? 0),
+                    'total_clicks' => (int)($fmtRow['total_clicks'] ?? 0)
+                ];
+            }
+
+            // 4. Top Ads Ranking
+            $sqlTop = "SELECT a.id, a.uuid, a.name, a.title, a.format, a.sponsor_label, p.name AS provider_name,
+                              (SELECT COUNT(m.id) FROM ad_metrics m WHERE m.ad_id = a.id AND m.event_type = 'impression') AS impressions,
+                              (SELECT COUNT(m.id) FROM ad_metrics m WHERE m.ad_id = a.id AND m.event_type = 'click') AS clicks
+                       FROM advertisements a
+                       INNER JOIN ad_providers p ON a.provider_id = p.id
+                       ORDER BY clicks DESC, impressions DESC
+                       LIMIT 10";
+            $topAds = $pdo->query($sqlTop)->fetchAll(\PDO::FETCH_ASSOC);
+
+            return [
+                'global_summary' => $globalSummary,
+                'providers_breakdown' => $providersBreakdown,
+                'formats_breakdown' => $formatsBreakdown,
+                'top_ads' => $topAds
+            ];
+        } catch (\Throwable $e) {
+            Logger::error("AdminAdvertisementsService::getGlobalMetricsReportData error: " . $e->getMessage());
+            return [
+                'global_summary' => [],
+                'providers_breakdown' => [],
+                'formats_breakdown' => [],
+                'top_ads' => []
+            ];
+        }
+    }
+
+    public function downloadAdMetricsPdf(string $adUuid): void {
+        $reportData = $this->getAdMetricsReportData($adUuid);
+        if (!$reportData || empty($reportData['ad'])) {
+            http_response_code(404);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message_key' => 'err_ad_not_found']);
+            exit;
+        }
+
+        $pdfService = new AdMetricsPdfService();
+        $pdfBytes = $pdfService->generateIndividualAdReport(
+            $reportData['ad'],
+            $reportData['summary'],
+            $reportData['daily_breakdown']
+        );
+
+        $cleanName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $reportData['ad']['name'] ?? 'Anuncio');
+        $filename = "Reporte_Metricas_{$cleanName}_" . date('Ymd_His') . ".pdf";
+
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . strlen($pdfBytes));
+        header('Cache-Control: private, max-age=0, must-revalidate');
+        header('Pragma: public');
+        echo $pdfBytes;
+        exit;
+    }
+
+    public function downloadGeneralMetricsPdf(): void {
+        $globalData = $this->getGlobalMetricsReportData();
+
+        $pdfService = new AdMetricsPdfService();
+        $pdfBytes = $pdfService->generateGlobalAdsReport(
+            $globalData['global_summary'],
+            $globalData['providers_breakdown'],
+            $globalData['formats_breakdown'],
+            $globalData['top_ads']
+        );
+
+        $filename = "Reporte_Metricas_Globales_Publicidad_" . date('Ymd_His') . ".pdf";
+
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . strlen($pdfBytes));
+        header('Cache-Control: private, max-age=0, must-revalidate');
+        header('Pragma: public');
+        echo $pdfBytes;
+        exit;
+    }
 }
+

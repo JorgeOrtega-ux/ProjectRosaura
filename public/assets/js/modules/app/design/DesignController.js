@@ -243,8 +243,9 @@ class DesignController {
         this.renderModulePromos();
     }
 
-    renderModulePromos() {
+    async renderModulePromos() {
         if (PromoService.isExempt()) return;
+        await PromoService.ensureLoaded();
 
         const colorsContainer = document.querySelector('[data-ref="module-promo-bottom-colors"]');
         if (colorsContainer) {

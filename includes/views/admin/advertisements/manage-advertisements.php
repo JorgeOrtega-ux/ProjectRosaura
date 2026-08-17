@@ -47,6 +47,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/advertisements?page=' . (
                 </div>
                 
                 <div class="component-actions active" data-ref="header-default-actions">
+                    <button class="component-button component-button--icon component-button--h40" data-action="downloadGeneralMetrics" data-tooltip="<?php echo __('admin_ad_download_general_metrics'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">assessment</span>
+                    </button>
+
                     <button class="component-button component-button--icon component-button--h40 <?php echo !empty($searchQuery) ? 'has-active-filter' : ''; ?>" data-action="searchProvider" data-ref="btn-toggle-search" data-tooltip="<?php echo __('btn_search'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">search</span>
                     </button>

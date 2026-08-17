@@ -4,6 +4,7 @@ import { BaseListController }   from '../../../core/base/BaseListController.js';
 import { applySelectableTable } from '../../../core/mixins/SelectableTableMixin.js';
 import { AdminModalTemplates }  from '../AdminModalTemplates.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { PromoService }        from '../../../core/services/PromoCardService.js';
 
 function _t(key) {
     return typeof window.__ === 'function' ? window.__(key) : key;
@@ -17,11 +18,10 @@ class AdminAdvertisementsController extends BaseListController {
         this.selectedProviderType = 'network';
         this.selectedExpirationType = 0;
         this.providerExpirationDate = '';
-        this.currentAdModalStep = 1;
-        this.selectedAdFormat = 'feed';
-        this.currentSlotModalStep = 1;
-        this.selectedSlotFormat = 'feed';
-        this.resourceIndexCounter = 1;
+        this.currentEditModalStep = 1;
+        this.selectedEditProviderType = 'direct';
+        this.selectedEditExpirationType = 0;
+        this.editProviderExpirationDate = '';
         this.activeFilters = {
             type: 'all',
             status: 'all'
@@ -141,6 +141,7 @@ class AdminAdvertisementsController extends BaseListController {
     handleGlobalClick(e) {
         const selectTarget     = e.target.closest('[data-action="selectProviderRow"]');
         const searchBtn        = e.target.closest('[data-action="searchProvider"]');
+        const downloadGenMetricsBtn = e.target.closest('[data-action="downloadGeneralMetrics"]');
         const addBtn           = e.target.closest('[data-action="addProvider"]');
         const editBtn          = e.target.closest('[data-action="editProvider"]');
         const delBtn           = e.target.closest('[data-action="deleteProvider"]');
@@ -153,25 +154,36 @@ class AdminAdvertisementsController extends BaseListController {
         const stepPrevBtn      = e.target.closest('[data-action="providerPrevStep"]');
         const calPickerBtn     = e.target.closest('[data-action="openProviderCalendarPicker"]');
         const submitCreateBtn  = e.target.closest('[data-action="submitCreateProvider"]');
+
+        const editStepTypeBtn  = e.target.closest('[data-action="selectEditProviderType"]');
+        const editStepExpBtn   = e.target.closest('[data-action="selectEditExpirationType"]');
+        const editStepNextBtn  = e.target.closest('[data-action="editProviderNextStep"]');
+        const editStepPrevBtn  = e.target.closest('[data-action="editProviderPrevStep"]');
         const submitEditBtn    = e.target.closest('[data-action="submitEditProvider"]');
 
         const openSubMenuBtn   = e.target.closest('[data-action="openFilterSubMenu"]');
         const backSubMenuBtn   = e.target.closest('[data-action="backToMainFilters"]');
 
-        if (selectTarget)    this.handleRowSelection(selectTarget);
-        if (searchBtn)       this.toggleSearchToolbar();
-        if (addBtn)          this.openAddProviderModal();
-        if (editBtn)         this.openEditProviderModal();
+        if (selectTarget)            this.handleRowSelection(selectTarget);
+        if (searchBtn)               this.toggleSearchToolbar();
+        if (downloadGenMetricsBtn)   this.downloadGeneralMetrics(downloadGenMetricsBtn);
+        if (addBtn)                  this.openAddProviderModal();
+        if (editBtn)         this.openEditProviderModal(editBtn);
         if (delBtn)          this.deleteProvider(delBtn);
         if (toggleActiveBtn)  this.toggleProviderActive(toggleActiveBtn);
         if (viewAdsBtn)      this.navigateToProviderAds();
 
-        if (stepTypeBtn)     this.handleProviderTypeSelection(stepTypeBtn);
-        if (stepExpBtn)      this.handleExpirationTypeSelection(stepExpBtn);
+        if (stepTypeBtn)     this.handleProviderTypeDropdownSelection(stepTypeBtn);
+        if (stepExpBtn)      this.handleExpirationDropdownSelection(stepExpBtn);
         if (stepNextBtn)     this.handleProviderNextStep(stepNextBtn);
         if (stepPrevBtn)     this.handleProviderPrevStep(stepPrevBtn);
         if (calPickerBtn)    this.openProviderCalendarPicker(calPickerBtn);
         if (submitCreateBtn) this.submitCreateProvider(submitCreateBtn);
+
+        if (editStepTypeBtn)  this.handleEditProviderTypeDropdownSelection(editStepTypeBtn);
+        if (editStepExpBtn)   this.handleEditExpirationDropdownSelection(editStepExpBtn);
+        if (editStepNextBtn)  this.handleEditProviderNextStep(editStepNextBtn);
+        if (editStepPrevBtn)  this.handleEditProviderPrevStep(editStepPrevBtn);
         if (submitEditBtn)   this.submitEditProvider(submitEditBtn);
 
         if (openSubMenuBtn)  this.handleOpenFilterSubMenu(openSubMenuBtn);
@@ -208,15 +220,6 @@ class AdminAdvertisementsController extends BaseListController {
             if (moduleEl) moduleEl.classList.add('disabled');
 
             this.executeServerFilters();
-            return;
-        }
-
-        if (e.target && e.target.getAttribute('data-ref') === 'edit-toggle-expiration') {
-            const modal = e.target.closest('.component-modal-box') || this._getActiveModal();
-            const calGroup = modal ? modal.querySelector('[data-ref="edit-calendar-group"]') : null;
-            if (calGroup) {
-                calGroup.classList.toggle('disabled', !e.target.checked);
-            }
         }
     }
 
@@ -277,41 +280,73 @@ class AdminAdvertisementsController extends BaseListController {
         window.modalSystem.show('createProviderModal');
     }
 
-    handleProviderTypeSelection(btn) {
+    handleProviderTypeDropdownSelection(btn) {
         const type = btn.getAttribute('data-type') || 'network';
+        const label = btn.getAttribute('data-label') || '';
+        const icon = btn.getAttribute('data-icon') || 'hub';
         this.selectedProviderType = type;
 
         const modal = btn.closest('.component-modal-box') || this._getActiveModal();
         if (!modal) return;
 
-        const links = modal.querySelectorAll('[data-action="selectProviderType"]');
-        links.forEach(link => {
-            const isTarget = link.getAttribute('data-type') === type;
-            link.classList.toggle('active', isTarget);
-            const check = link.querySelector('[data-ref^="check-"]');
-            if (check) check.classList.toggle('disabled', !isTarget);
+        modal.querySelectorAll('[data-action="selectProviderType"]').forEach(link => {
+            link.classList.toggle('active', link.getAttribute('data-type') === type);
         });
+
+        const textEl = modal.querySelector('[data-ref="create-provider-type-text"]');
+        if (textEl) {
+            textEl.textContent = label;
+            textEl.setAttribute('data-value', type);
+        }
+        const iconEl = modal.querySelector('[data-ref="create-provider-type-icon"]');
+        if (iconEl) {
+            iconEl.textContent = icon;
+        }
+
+        const networkGroup = modal.querySelector('[data-ref="group-network-id"]');
+        if (networkGroup) {
+            networkGroup.classList.toggle('disabled', type !== 'network');
+        }
+
+        const labelName = modal.querySelector('[data-ref="label-provider-name"]');
+        if (labelName) {
+            labelName.textContent = type === 'network' ? _t('lbl_network_name') : _t('lbl_advertiser_name');
+        }
+
+        const dropdown = btn.closest('.component-module--dropdown');
+        if (dropdown) dropdown.classList.add('disabled');
     }
 
-    handleExpirationTypeSelection(btn) {
+    handleExpirationDropdownSelection(btn) {
         const exp = parseInt(btn.getAttribute('data-expiration') || '0', 10);
+        const label = btn.getAttribute('data-label') || '';
+        const icon = btn.getAttribute('data-icon') || 'all_inclusive';
         this.selectedExpirationType = exp;
 
         const modal = btn.closest('.component-modal-box') || this._getActiveModal();
         if (!modal) return;
 
-        const links = modal.querySelectorAll('[data-action="selectExpirationType"]');
-        links.forEach(link => {
-            const isTarget = parseInt(link.getAttribute('data-expiration'), 10) === exp;
-            link.classList.toggle('active', isTarget);
-            const check = link.querySelector('[data-ref^="check-"]');
-            if (check) check.classList.toggle('disabled', !isTarget);
+        modal.querySelectorAll('[data-action="selectExpirationType"]').forEach(link => {
+            link.classList.toggle('active', parseInt(link.getAttribute('data-expiration'), 10) === exp);
         });
 
-        const calendarGroup = modal.querySelector('[data-ref="calendar-picker-group"]');
+        const textEl = modal.querySelector('[data-ref="create-provider-exp-text"]');
+        if (textEl) {
+            textEl.textContent = label;
+            textEl.setAttribute('data-value', exp);
+        }
+        const iconEl = modal.querySelector('[data-ref="create-provider-exp-icon"]');
+        if (iconEl) {
+            iconEl.textContent = icon;
+        }
+
+        const calendarGroup = modal.querySelector('[data-ref="create-calendar-picker-group"]');
         if (calendarGroup) {
             calendarGroup.classList.toggle('disabled', exp !== 1);
         }
+
+        const dropdown = btn.closest('.component-module--dropdown');
+        if (dropdown) dropdown.classList.add('disabled');
     }
 
     handleProviderNextStep(btn = null) {
@@ -319,39 +354,19 @@ class AdminAdvertisementsController extends BaseListController {
         if (!modal) return;
 
         if (this.currentModalStep === 1) {
-            const fieldsNetwork = modal.querySelector('[data-ref="fields-network"]');
-            const fieldsDirect  = modal.querySelector('[data-ref="fields-direct"]');
+            const name = (modal.querySelector('[data-ref="input-provider-name"]')?.value || '').trim();
+            const netId = (modal.querySelector('[data-ref="input-network-id"]')?.value || '').trim();
 
-            if (this.selectedProviderType === 'network') {
-                if (fieldsNetwork) fieldsNetwork.classList.remove('disabled');
-                if (fieldsDirect) fieldsDirect.classList.add('disabled');
-            } else {
-                if (fieldsNetwork) fieldsNetwork.classList.add('disabled');
-                if (fieldsDirect) fieldsDirect.classList.remove('disabled');
+            if (!name) {
+                showMessage(_t('err_provider_name_required'), 'error');
+                return;
+            }
+            if (this.selectedProviderType === 'network' && !netId) {
+                showMessage(_t('err_network_id_required'), 'error');
+                return;
             }
 
             this._setModalStep(2, modal);
-        } else if (this.currentModalStep === 2) {
-            if (this.selectedProviderType === 'network') {
-                const netName = (modal.querySelector('[data-ref="input-network-name"]')?.value || '').trim();
-                const netId   = (modal.querySelector('[data-ref="input-network-id"]')?.value || '').trim();
-                if (!netName) {
-                    showMessage(_t('err_provider_name_required'), 'error');
-                    return;
-                }
-                if (!netId) {
-                    showMessage(_t('err_network_id_required'), 'error');
-                    return;
-                }
-            } else {
-                const advName = (modal.querySelector('[data-ref="input-advertiser-name"]')?.value || '').trim();
-                if (!advName) {
-                    showMessage(_t('err_provider_name_required'), 'error');
-                    return;
-                }
-            }
-
-            this._setModalStep(3, modal);
         }
     }
 
@@ -374,11 +389,6 @@ class AdminAdvertisementsController extends BaseListController {
             s.classList.toggle('disabled', !isActive);
         });
 
-        targetModal.querySelectorAll('.step-modal-dot[data-dot]').forEach(d => {
-            const dNum = parseInt(d.getAttribute('data-dot') || '0', 10);
-            d.classList.toggle('active', dNum === step);
-        });
-
         const btnPrev   = targetModal.querySelector('[data-ref="btn-modal-prev"]');
         const btnNext   = targetModal.querySelector('[data-ref="btn-modal-next"]');
         const btnFinish = targetModal.querySelector('[data-ref="btn-modal-finish"]');
@@ -386,14 +396,167 @@ class AdminAdvertisementsController extends BaseListController {
 
         if (btnPrev) btnPrev.classList.toggle('disabled', step === 1);
 
-        if (step === 3) {
+        if (step === 2) {
             if (btnNext) btnNext.classList.add('disabled');
             if (btnFinish) btnFinish.classList.remove('disabled');
             if (descEl) descEl.textContent = _t('step_expiration_desc');
         } else {
             if (btnNext) btnNext.classList.remove('disabled');
             if (btnFinish) btnFinish.classList.add('disabled');
-            if (descEl) descEl.textContent = step === 1 ? _t('step_provider_type_desc') : _t('step_provider_details_desc');
+            if (descEl) descEl.textContent = _t('step_provider_details_desc');
+        }
+    }
+
+    async openEditProviderModal(btn = null) {
+        if (!this.selectedProviderId || !window.modalSystem) return;
+        window.modalSystem.registerTemplates(AdminModalTemplates);
+
+        if (btn) setButtonLoading(btn);
+
+        try {
+            const res = await this.api.post(ApiRoutes.Admin.GetAdProviderDetails, { uuid: this.selectedProviderId }, this.abortController.signal);
+            if (res && res.success && res.provider) {
+                const p = res.provider;
+                this.currentEditModalStep = 1;
+                this.selectedEditProviderType = p.provider_type || 'direct';
+                this.selectedEditExpirationType = parseInt(p.has_expiration, 10) || 0;
+                this.editProviderExpirationDate = p.expiration_date || '';
+
+                window.modalSystem.show('editProviderModal', { provider: p });
+            } else {
+                showMessage(_t('err_provider_fetch_failed'), 'error');
+            }
+        } catch (err) {
+            if (err.name !== 'AbortError') showMessage(_t('err_default'), 'error');
+        } finally {
+            if (btn) restoreButton(btn);
+        }
+    }
+
+    handleEditProviderTypeDropdownSelection(btn) {
+        const type = btn.getAttribute('data-type') || 'direct';
+        const label = btn.getAttribute('data-label') || '';
+        const icon = btn.getAttribute('data-icon') || 'corporate_fare';
+        this.selectedEditProviderType = type;
+
+        const modal = btn.closest('.component-modal-box') || this._getActiveModal();
+        if (!modal) return;
+
+        modal.querySelectorAll('[data-action="selectEditProviderType"]').forEach(link => {
+            link.classList.toggle('active', link.getAttribute('data-type') === type);
+        });
+
+        const textEl = modal.querySelector('[data-ref="edit-provider-type-text"]');
+        if (textEl) {
+            textEl.textContent = label;
+            textEl.setAttribute('data-value', type);
+        }
+        const iconEl = modal.querySelector('[data-ref="edit-provider-type-icon"]');
+        if (iconEl) {
+            iconEl.textContent = icon;
+        }
+
+        const networkGroup = modal.querySelector('[data-ref="edit-group-network-id"]');
+        if (networkGroup) {
+            networkGroup.classList.toggle('disabled', type !== 'network');
+        }
+
+        const labelName = modal.querySelector('[data-ref="edit-label-provider-name"]');
+        if (labelName) {
+            labelName.textContent = type === 'network' ? _t('lbl_network_name') : _t('lbl_advertiser_name');
+        }
+
+        const dropdown = btn.closest('.component-module--dropdown');
+        if (dropdown) dropdown.classList.add('disabled');
+    }
+
+    handleEditExpirationDropdownSelection(btn) {
+        const exp = parseInt(btn.getAttribute('data-expiration') || '0', 10);
+        const label = btn.getAttribute('data-label') || '';
+        const icon = btn.getAttribute('data-icon') || 'all_inclusive';
+        this.selectedEditExpirationType = exp;
+
+        const modal = btn.closest('.component-modal-box') || this._getActiveModal();
+        if (!modal) return;
+
+        modal.querySelectorAll('[data-action="selectEditExpirationType"]').forEach(link => {
+            link.classList.toggle('active', parseInt(link.getAttribute('data-expiration'), 10) === exp);
+        });
+
+        const textEl = modal.querySelector('[data-ref="edit-provider-exp-text"]');
+        if (textEl) {
+            textEl.textContent = label;
+            textEl.setAttribute('data-value', exp);
+        }
+        const iconEl = modal.querySelector('[data-ref="edit-provider-exp-icon"]');
+        if (iconEl) {
+            iconEl.textContent = icon;
+        }
+
+        const calendarGroup = modal.querySelector('[data-ref="edit-calendar-picker-group"]');
+        if (calendarGroup) {
+            calendarGroup.classList.toggle('disabled', exp !== 1);
+        }
+
+        const dropdown = btn.closest('.component-module--dropdown');
+        if (dropdown) dropdown.classList.add('disabled');
+    }
+
+    handleEditProviderNextStep(btn = null) {
+        const modal = btn ? btn.closest('.component-modal-box') : this._getActiveModal();
+        if (!modal) return;
+
+        if (this.currentEditModalStep === 1) {
+            const name = (modal.querySelector('[data-ref="edit-provider-name"]')?.value || '').trim();
+            const netId = (modal.querySelector('[data-ref="edit-network-id"]')?.value || '').trim();
+
+            if (!name) {
+                showMessage(_t('err_provider_name_required'), 'error');
+                return;
+            }
+            if (this.selectedEditProviderType === 'network' && !netId) {
+                showMessage(_t('err_network_id_required'), 'error');
+                return;
+            }
+
+            this._setEditModalStep(2, modal);
+        }
+    }
+
+    handleEditProviderPrevStep(btn = null) {
+        const modal = btn ? btn.closest('.component-modal-box') : this._getActiveModal();
+        if (this.currentEditModalStep > 1) {
+            this._setEditModalStep(this.currentEditModalStep - 1, modal);
+        }
+    }
+
+    _setEditModalStep(step, modal = null) {
+        this.currentEditModalStep = step;
+        const targetModal = modal || this._getActiveModal();
+        if (!targetModal) return;
+
+        targetModal.querySelectorAll('.step-modal-step[data-edit-step]').forEach(s => {
+            const sNum = parseInt(s.getAttribute('data-edit-step') || '0', 10);
+            const isActive = (sNum === step);
+            s.classList.toggle('active', isActive);
+            s.classList.toggle('disabled', !isActive);
+        });
+
+        const btnPrev   = targetModal.querySelector('[data-ref="btn-edit-modal-prev"]');
+        const btnNext   = targetModal.querySelector('[data-ref="btn-edit-modal-next"]');
+        const btnFinish = targetModal.querySelector('[data-ref="btn-edit-modal-finish"]');
+        const descEl    = targetModal.querySelector('[data-ref="edit-provider-step-desc"]');
+
+        if (btnPrev) btnPrev.classList.toggle('disabled', step === 1);
+
+        if (step === 2) {
+            if (btnNext) btnNext.classList.add('disabled');
+            if (btnFinish) btnFinish.classList.remove('disabled');
+            if (descEl) descEl.textContent = _t('step_expiration_desc');
+        } else {
+            if (btnNext) btnNext.classList.remove('disabled');
+            if (btnFinish) btnFinish.classList.add('disabled');
+            if (descEl) descEl.textContent = _t('step_provider_details_desc');
         }
     }
 
@@ -409,10 +572,11 @@ class AdminAdvertisementsController extends BaseListController {
         if (res && res.confirmed) {
             const data = res.data || {};
             const iso = data.isoString || '';
-            const display = data.displayString || iso;
+            const display = data.displayString || (iso ? iso.split('T')[0] : '');
 
             triggerBtn.setAttribute('data-value', iso);
             this.providerExpirationDate = iso;
+            this.editProviderExpirationDate = iso;
 
             const textEl = triggerBtn.querySelector('[data-ref$="expiration-text"]');
             if (textEl) textEl.textContent = display || _t('lbl_select_expiration_date');
@@ -423,14 +587,13 @@ class AdminAdvertisementsController extends BaseListController {
         const modal = btn ? btn.closest('.component-modal-box') : this._getActiveModal();
         if (!modal) return;
 
-        let name = '';
-        let networkId = null;
+        const name = (modal.querySelector('[data-ref="input-provider-name"]')?.value || '').trim();
+        const networkId = this.selectedProviderType === 'network' ? (modal.querySelector('[data-ref="input-network-id"]')?.value || '').trim() : null;
+        const expDate = this.selectedExpirationType === 1 ? (this.providerExpirationDate || modal.querySelector('[data-ref="create-provider-expiration-trigger"]')?.getAttribute('data-value') || null) : null;
 
-        if (this.selectedProviderType === 'network') {
-            name = (modal.querySelector('[data-ref="input-network-name"]')?.value || '').trim();
-            networkId = (modal.querySelector('[data-ref="input-network-id"]')?.value || '').trim();
-        } else {
-            name = (modal.querySelector('[data-ref="input-advertiser-name"]')?.value || '').trim();
+        if (!name) {
+            showMessage(_t('err_provider_name_required'), 'error');
+            return;
         }
 
         const payload = {
@@ -438,7 +601,7 @@ class AdminAdvertisementsController extends BaseListController {
             provider_type: this.selectedProviderType,
             network_id: networkId,
             has_expiration: this.selectedExpirationType,
-            expiration_date: this.selectedExpirationType === 1 ? this.providerExpirationDate : null,
+            expiration_date: expDate,
             is_active: 1
         };
 
@@ -449,6 +612,7 @@ class AdminAdvertisementsController extends BaseListController {
             if (res.aborted) return;
             if (res.success) {
                 showMessage(_t('msg_provider_created_success'), 'success');
+                PromoService.loadActiveAds(true).catch(() => {});
                 if (window.modalSystem) window.modalSystem.closeCurrent();
                 await this.handlePagination(window.location.href);
             } else {
@@ -461,22 +625,6 @@ class AdminAdvertisementsController extends BaseListController {
         }
     }
 
-    async openEditProviderModal() {
-        if (!this.selectedProviderId || !window.modalSystem) return;
-        window.modalSystem.registerTemplates(AdminModalTemplates);
-
-        try {
-            const res = await this.api.post(ApiRoutes.Admin.GetAdProviderDetails, { uuid: this.selectedProviderId }, this.abortController.signal);
-            if (res && res.success && res.provider) {
-                window.modalSystem.show('editProviderModal', { provider: res.provider });
-            } else {
-                showMessage(_t('err_provider_fetch_failed'), 'error');
-            }
-        } catch (err) {
-            if (err.name !== 'AbortError') showMessage(_t('err_default'), 'error');
-        }
-    }
-
     async submitEditProvider(btn = null) {
         const modal = btn ? btn.closest('.component-modal-box') : this._getActiveModal();
         if (!modal) return;
@@ -485,13 +633,10 @@ class AdminAdvertisementsController extends BaseListController {
         if (!form) return;
 
         const uuid = form.getAttribute('data-uuid');
-        const type = form.getAttribute('data-type');
         const name = (modal.querySelector('[data-ref="edit-provider-name"]')?.value || '').trim();
-        const networkId = type === 'network' ? (modal.querySelector('[data-ref="edit-network-id"]')?.value || '').trim() : null;
-        const toggleExp = modal.querySelector('[data-ref="edit-toggle-expiration"]');
-        const hasExp = toggleExp ? (toggleExp.checked ? 1 : 0) : 0;
+        const networkId = this.selectedEditProviderType === 'network' ? (modal.querySelector('[data-ref="edit-network-id"]')?.value || '').trim() : null;
         const expTrigger = modal.querySelector('[data-ref="edit-provider-expiration-trigger"]');
-        const expDate = expTrigger ? expTrigger.getAttribute('data-value') : null;
+        const expDate = this.selectedEditExpirationType === 1 ? (this.editProviderExpirationDate || (expTrigger ? expTrigger.getAttribute('data-value') : null)) : null;
 
         if (!name) {
             showMessage(_t('err_provider_name_required'), 'error');
@@ -501,9 +646,10 @@ class AdminAdvertisementsController extends BaseListController {
         const payload = {
             uuid: uuid,
             name: name,
+            provider_type: this.selectedEditProviderType,
             network_id: networkId,
-            has_expiration: hasExp,
-            expiration_date: hasExp ? expDate : null
+            has_expiration: this.selectedEditExpirationType,
+            expiration_date: expDate
         };
 
         if (btn) setButtonLoading(btn);
@@ -513,6 +659,7 @@ class AdminAdvertisementsController extends BaseListController {
             if (res.aborted) return;
             if (res.success) {
                 showMessage(_t('msg_provider_updated_success'), 'success');
+                PromoService.loadActiveAds(true).catch(() => {});
                 if (window.modalSystem) window.modalSystem.closeCurrent();
                 await this.handlePagination(window.location.href);
             } else {
@@ -534,6 +681,7 @@ class AdminAdvertisementsController extends BaseListController {
             if (res.aborted) return;
             if (res.success) {
                 showMessage(_t(res.message_key || 'msg_provider_status_updated'), 'success');
+                PromoService.loadActiveAds(true).catch(() => {});
                 await this.handlePagination(window.location.href);
             } else {
                 showMessage(res.message || _t(res.message_key || 'err_default'), 'error');
@@ -561,6 +709,7 @@ class AdminAdvertisementsController extends BaseListController {
                 if (res.aborted) return;
                 if (res.success) {
                     showMessage(_t('msg_provider_deleted_success'), 'success');
+                    PromoService.loadActiveAds(true).catch(() => {});
                     await this.handlePagination(window.location.href);
                 } else {
                     showMessage(res.message || _t(res.message_key || 'err_default'), 'error');
@@ -579,6 +728,30 @@ class AdminAdvertisementsController extends BaseListController {
             window.spaRouter.navigate(`${this.basePath}/admin/advertisement-items/${this.selectedProviderId}`);
         } else {
             window.location.href = `${this.basePath}/admin/advertisement-items/${this.selectedProviderId}`;
+        }
+    }
+
+    async downloadGeneralMetrics(btn = null) {
+        if (btn) setButtonLoading(btn);
+
+        const filename = `Reporte_Metricas_Globales_Publicidad_${new Date().toISOString().slice(0, 10)}.pdf`;
+
+        try {
+            const result = await this.api.downloadFile(
+                ApiRoutes.Admin.DownloadGeneralAdMetrics,
+                {},
+                filename,
+                this.abortController ? this.abortController.signal : null
+            );
+            if (result && !result.success && !result.aborted) {
+                showMessage(result.message || _t(result.message_key || 'admin_ad_metrics_download_error'), 'error');
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                showMessage(_t('admin_ad_metrics_download_error'), 'error');
+            }
+        } finally {
+            if (btn) restoreButton(btn);
         }
     }
 }

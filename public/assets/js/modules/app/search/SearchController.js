@@ -134,6 +134,7 @@ export class SearchController {
                     return;
                 }
 
+                await PromoService.ensureLoaded();
                 const itemsWithPromos = PromoService.injectFeedCards(newCanvases, this.allCanvases.length);
 
                 renderVirtualGridItems(this.contentArea, itemsWithPromos, this.virtualObserver, isLoadMore, 'home-all-canvases');
