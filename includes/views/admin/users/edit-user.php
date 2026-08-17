@@ -212,22 +212,7 @@ $subscriptionPlanLabel = \App\Core\System\SubscriptionPlanConstants::getTierLimi
                                 </div>
                             </div>
 
-                            <hr class="component-divider">
 
-                            <div class="component-group-item">
-                                <div class="component-card__content">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('lbl_user_coins'); ?></h2>
-                                        <p class="component-card__description"><?php echo __('lbl_user_coins_desc'); ?></p>
-                                        <span class="component-display-value" data-ref="admin-display-coins"><?php echo (int)($user['coins'] ?? 0); ?></span>
-                                    </div>
-                                </div>
-                                <div class="component-card__actions component-card__actions--stretch">
-                                    <button type="button" class="component-button component-button--h34" data-action="adminOpenAdjustCoins" data-user-id="<?php echo $targetUserId; ?>" data-user-uuid="<?php echo htmlspecialchars($targetUserUuid); ?>" data-username="<?php echo htmlspecialchars($user['username']); ?>">
-                                        <span><?php echo __('btn_adjust_coins'); ?></span>
-                                    </button>
-                                </div>
-                            </div>
 
                             <hr class="component-divider">
 

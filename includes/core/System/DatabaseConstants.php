@@ -59,7 +59,7 @@ class DatabaseConstants {
     public const THEME_SYSTEM = 'system';
     public const THEME_LIGHT  = 'light';
     public const THEME_DARK   = 'dark';
-    public const ALLOWED_PREF_KEYS = ['language', 'open_links_new_tab', 'theme', 'extended_alerts', 'allow_telemetry', 'accepted_store_terms', 'accepted_content_store_terms'];
+    public const ALLOWED_PREF_KEYS = ['language', 'open_links_new_tab', 'theme', 'extended_alerts', 'allow_telemetry'];
     public const VERIFY_TYPE_ACTIVATION = 'account_activation';
     public const VERIFY_TYPE_PASSWORD = 'password_reset';
     public const PRIVACY_PUBLIC   = 'public';

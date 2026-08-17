@@ -215,8 +215,7 @@ class AuthServices {
             'user_2fa' => $user['two_factor_enabled'] ?? 0,
             'user_asn' => $asn,
             'google_id' => $user['google_id'] ?? null,
-            'subscription_tier' => (int)($user['subscription_tier'] ?? 0),
-            'purchase_preference' => $user['purchase_preference'] ?? 'verify'
+            'subscription_tier' => (int)($user['subscription_tier'] ?? 0)
         ];
 
         return $this->sessionManager->addAccount($user['id'], $userData);

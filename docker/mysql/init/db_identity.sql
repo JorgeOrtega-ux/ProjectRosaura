@@ -53,25 +53,7 @@ INSERT IGNORE INTO subscription_tiers (id, uuid, tier_level, is_active, is_popul
   (3, '1c9f2231-5f21-4d9a-b851-9f9f2f111222', 2, 1, 1, 'Pro', '{"type":"solid","colors":[{"hex":"#fd7e14","percentage":100}]}', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 9.99, 99.99, 10, 1000, 100, 2500, 5, 1, 1, 1, 0, 0, 1, 1, 0, 50, 50),
   (4, '87cf9a91-4c12-4d2c-a222-7f8f9a92231c', 3, 1, 0, 'Ultra', '{"type":"gradient","angle":295,"colors":[{"hex":"#E92D18","percentage":28},{"hex":"#306EE2","percentage":29},{"hex":"#249A41","percentage":28},{"hex":"#CD9308","percentage":15}]}', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 'price_1TpZuHE4dfTcnyKKN5zBsSDl', 19.99, 199.99, 50, 5000, -1, 50000, 25, 1, 1, 1, 1, 1, 1, 1, 250, 100, 100);
 
-CREATE TABLE IF NOT EXISTS `store_coin_packages` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `uuid` CHAR(36) UNIQUE DEFAULT NULL,
-  `amount` INT NOT NULL DEFAULT 0,
-  `bonus_amount` INT NOT NULL DEFAULT 0,
-  `is_active` tinyint(1) NOT NULL DEFAULT 1,
-  `is_popular` tinyint(1) NOT NULL DEFAULT 0,
-  `price_usd` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-  `stripe_price_id` varchar(255) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
-INSERT IGNORE INTO `store_coin_packages` (`id`, `uuid`, `amount`, `bonus_amount`, `is_active`, `is_popular`, `price_usd`, `stripe_price_id`) VALUES
-(1, '10000000-0000-0000-0000-000000001000', 1000, 0, 1, 0, 2.99, 'price_1Tq2JyE4dfTcnyKKhgS3IK9l'),
-(2, '27500000-0000-0000-0000-000000002750', 2750, 750, 1, 1, 6.99, 'price_1Tq2KME4dfTcnyKK8LBoUUWT'),
-(3, '57500000-0000-0000-0000-000000005750', 5750, 1250, 1, 1, 12.99, 'price_1Tq2KdE4dfTcnyKKY9DebxeP'),
-(4, '13250000-0000-0000-0000-000000013250', 13250, 3250, 1, 1, 24.99, 'price_1Tq2L5E4dfTcnyKKa5FoxTj4');
 
 
 CREATE TABLE IF NOT EXISTS `permissions` (
@@ -121,8 +103,6 @@ INSERT IGNORE INTO permissions (id, name, description, is_critical) VALUES
   (21, 'join_canvas', 'desc_join_canvas', 0),
   (22, 'view_dashboard', 'desc_view_dashboard', 0),
   (23, 'manage_subscriptions', 'desc_manage_subscriptions', 0),
-  (24, 'manage_store_packages', 'desc_manage_store_packages', 0),
-  (25, 'manage_store_perks', 'desc_manage_store_perks', 0),
   (26, 'manage_content', 'desc_manage_content', 0),
   (27, 'view_user_purchases', 'desc_view_user_purchases', 0),
   (28, 'manage_monetization', 'desc_manage_monetization', 0),
@@ -131,11 +111,11 @@ INSERT IGNORE INTO permissions (id, name, description, is_critical) VALUES
 INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
   (4, 1), (4, 2), (4, 3), (4, 4), (4, 5), (4, 6), (4, 7), (4, 8), (4, 9),
   (4, 10), (4, 11), (4, 12), (4, 13), (4, 14), (4, 15), (4, 16), (4, 17), (4, 18),
-  (4, 19), (4, 20), (4, 21), (4, 22), (4, 23), (4, 24), (4, 25), (4, 26), (4, 27), (4, 28), (4, 29);
+  (4, 19), (4, 20), (4, 21), (4, 22), (4, 23), (4, 26), (4, 27), (4, 28), (4, 29);
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
   (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (3, 8), (3, 10), (3, 13), (3, 17), 
-  (3, 19), (3, 20), (3, 21), (3, 22), (3, 23), (3, 24), (3, 25), (3, 26), (3, 27), (3, 28), (3, 29);
+  (3, 19), (3, 20), (3, 21), (3, 22), (3, 23), (3, 26), (3, 27), (3, 28), (3, 29);
 
 INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
   (2, 1), (2, 2), (2, 4), (2, 5), (2, 6), (2, 19), (2, 20), (2, 21), (2, 26);
@@ -150,8 +130,6 @@ CREATE TABLE IF NOT EXISTS `users` (
   `email` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
   `subscription_tier` tinyint(1) DEFAULT 0, -- NOTA DE IMPLEMENTACIÓN: Nuevo campo para el nivel de suscripción (0=Básico, 1=Pro, 2=Advanced)
-  `coins` int(11) NOT NULL DEFAULT 0,
-  `purchase_preference` ENUM('fast', 'verify') DEFAULT 'verify',
   `stripe_customer_id` varchar(255) DEFAULT NULL,
   `two_factor_secret` varchar(64) DEFAULT NULL,
   `two_factor_enabled` tinyint(1) DEFAULT 0,
@@ -394,85 +372,7 @@ CREATE TABLE IF NOT EXISTS server_config (
 
 INSERT INTO server_config (id) SELECT 1 WHERE NOT EXISTS (SELECT * FROM server_config);
 
-CREATE TABLE IF NOT EXISTS `store_purchases` (
-  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-  `user_id` INT(11) DEFAULT NULL,
-  `stripe_payment_intent_id` VARCHAR(255) DEFAULT NULL,
-  `stripe_checkout_session_id` VARCHAR(255) DEFAULT NULL,
-  `item_type` VARCHAR(50) NOT NULL, -- e.g., 'coins'
-  `item_amount` INT NOT NULL, -- e.g., 1000
-  `amount_cents` INT NOT NULL,
-  `currency` VARCHAR(3) NOT NULL DEFAULT 'usd',
-  `status` ENUM('succeeded', 'pending', 'failed', 'refunded') NOT NULL DEFAULT 'pending',
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_store_purchases_user (`user_id`),
-  INDEX idx_sp_user_created (`user_id`, `created_at` DESC),
-  UNIQUE INDEX idx_store_purchases_session (`stripe_checkout_session_id`),
-  CONSTRAINT fk_store_purchases_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `user_perks` (
-  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-  `user_id` INT(11) NOT NULL,
-  `perk_id` VARCHAR(100) NOT NULL,
-  `coins_spent` INT NOT NULL DEFAULT 0,
-  `is_used` TINYINT(1) NOT NULL DEFAULT 0,
-  `used_at` DATETIME DEFAULT NULL,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_user_perks_user (`user_id`),
-  INDEX idx_user_perk_active (`user_id`, `perk_id`, `is_used`),
-  CONSTRAINT fk_user_perks_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS `user_perk_balances` (
-  `user_id` INT(11) NOT NULL,
-  `perk_id` VARCHAR(100) NOT NULL,
-  `quantity_available` INT NOT NULL DEFAULT 0,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`user_id`, `perk_id`),
-  CONSTRAINT fk_user_perk_balances_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS `store_perk_packages` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `uuid` CHAR(36) UNIQUE DEFAULT NULL,
-  `perk_id` VARCHAR(100) UNIQUE NOT NULL,
-  `price_coins` INT NOT NULL DEFAULT 0,
-  `is_single_use` tinyint(1) NOT NULL DEFAULT 1,
-  `is_active` tinyint(1) NOT NULL DEFAULT 1,
-  `is_usable` tinyint(1) NOT NULL DEFAULT 1,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
-
-INSERT IGNORE INTO `store_perk_packages` (uuid, perk_id, price_coins, is_single_use, is_active, is_usable) VALUES
-('e0000000-0000-0000-0000-000000000002', 'pixel_missile_1', 500, 1, 1, 1),
-('e0000000-0000-0000-0000-000000000003', 'pixel_bomb_1', 1000, 1, 1, 1),
-('e0000000-0000-0000-0000-000000000004', 'cluster_bomb_1', 2500, 1, 1, 1),
-('e0000000-0000-0000-0000-000000000005', 'atomic_bomb_1', 5000, 1, 1, 1),
-('e0000000-0000-0000-0000-000000000006', 'meteor_shower_1', 10000, 1, 1, 1),
-('e0000000-0000-0000-0000-000000000007', 'orbital_cannon_1', 15000, 1, 1, 1),
-('e0000000-0000-0000-0000-000000000008', 'black_hole_1', 20000, 1, 1, 1),
-('e0000000-0000-0000-0000-000000000009', 'mines_1', 1500, 1, 1, 1),
-('e0000000-0000-0000-0000-000000000010', 'supernova_blast', 12000, 1, 1, 1),
-('e0000000-0000-0000-0000-000000000011', 'ion_strike', 8000, 1, 1, 1);
-
-CREATE TABLE IF NOT EXISTS `user_coin_transactions` (
-  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-  `uuid` CHAR(36) NOT NULL UNIQUE,
-  `user_id` INT(11) NOT NULL,
-  `amount` INT NOT NULL,
-  `type` ENUM('charge', 'spend', 'refund', 'bonus', 'admin_adjustment') NOT NULL,
-  `reference_table` VARCHAR(50) DEFAULT NULL,
-  `reference_id` BIGINT DEFAULT NULL,
-  `description` VARCHAR(255) DEFAULT NULL,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_uct_user (`user_id`),
-  INDEX idx_uct_user_created (`user_id`, `created_at` DESC),
-  INDEX idx_uct_ref (`reference_table`, `reference_id`),
-  CONSTRAINT fk_uct_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 

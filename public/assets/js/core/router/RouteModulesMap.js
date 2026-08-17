@@ -13,9 +13,6 @@ export const RouteModulesMap = {
     
     '/canvases/c/v/:canvas/:msg/:idx': { path: './modules/app/canvases/ChatViewerController.js', className: 'ChatViewerController', skeletonType: 'layout-basic' },
 
-    '/store/coins': { path: './modules/store/StoreController.js', className: 'StoreController', skeletonType: 'layout-table' },
-    '/store/content': { path: './modules/store/StoreController.js', className: 'StoreController', skeletonType: 'layout-table' },
-
     '/login': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-auth' },
     '/login/two-factor': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-auth' },
     '/register': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-auth' },
@@ -59,14 +56,6 @@ export const RouteModulesMap = {
     '/admin/subscription-edit/:uuid': { path: './modules/admin/subscriptions/AdminSubscriptionBuilderController.js', className: 'AdminSubscriptionBuilderController', requiresAdminLang: true, skeletonType: 'layout-basic' },
     '/admin/advertisements': { path: './modules/admin/advertisements/AdminAdvertisementsController.js', className: 'AdminAdvertisementsController', requiresAdminLang: true, skeletonType: 'layout-table' },
     '/admin/advertisement-items/:uuid': { path: './modules/admin/advertisements/AdminProviderAdsController.js', className: 'AdminProviderAdsController', requiresAdminLang: true, skeletonType: 'layout-table' },
-
-    '/admin/store-packages': { path: './modules/admin/store/AdminPackagesController.js', className: 'AdminPackagesController', requiresAdminLang: true, skeletonType: 'layout-table' },
-    '/admin/store-package-create': { path: './modules/admin/store/AdminPackageBuilderController.js', className: 'AdminPackageBuilderController', requiresAdminLang: true, skeletonType: 'layout-basic' },
-    '/admin/store-package-edit/:uuid': { path: './modules/admin/store/AdminPackageBuilderController.js', className: 'AdminPackageBuilderController', requiresAdminLang: true, skeletonType: 'layout-basic' },
-
-    '/admin/store-perks': { path: './modules/admin/store/AdminPerksController.js', className: 'AdminPerksController', requiresAdminLang: true, skeletonType: 'layout-table' },
-    '/admin/store-perk-create': { path: './modules/admin/store/AdminPerkBuilderController.js', className: 'AdminPerkBuilderController', requiresAdminLang: true, skeletonType: 'layout-basic' },
-    '/admin/store-perk-edit/:uuid': { path: './modules/admin/store/AdminPerkBuilderController.js', className: 'AdminPerkBuilderController', requiresAdminLang: true, skeletonType: 'layout-basic' },
 
     '/admin/role-edit/:uuid': { path: './modules/admin/roles/AdminRoleBuilderController.js', className: 'AdminRoleBuilderController', requiresAdminLang: true, skeletonType: 'layout-basic' },
     '/admin/role-permissions/:uuid': { path: './modules/admin/roles/AdminRolePermissionsController.js', className: 'AdminRolePermissionsController', requiresAdminLang: true, skeletonType: 'layout-basic' },

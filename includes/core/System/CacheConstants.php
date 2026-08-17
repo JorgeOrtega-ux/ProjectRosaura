@@ -35,15 +35,12 @@ class CacheConstants {
     public const KEY_SYSTEM_PANIC_MODE = 'system_status:panic_mode';
     public const KEY_SERVER_CONFIG = 'system:server_config';
     public const KEY_SUBSCRIPTION_TIERS_ALL = 'system:subscription_tiers:all';
-    public const KEY_STORE_COIN_PACKAGES = 'system:store:coin_packages';
-    public const KEY_STORE_PERK_PACKAGES = 'system:store:perk_packages';
     public const PREFIX_CHAT_CANVAS_RECENT = 'chat:canvas:recent:';
     public const PREFIX_CANVAS_PUBLIC_PAGE = 'canvases:public:page:';
     public const PREFIX_CANVAS_HOME_FEED = 'canvases:home:feed:';
     public const PREFIX_CANVAS_DETAIL = 'canvas:id:';
     public const PREFIX_USER_PROFILE = 'user:profile:';
     public const PREFIX_USER_PAYMENT_HISTORY = 'user:payment_history:';
-    public const PREFIX_STORE_COINS = 'store:user:coins:';
     public const PREFIX_USER_TEMPLATE_TOKENS = 'user:template_tokens:';
     public const PATTERN_CACHE = 'cache:*';
     public const PATTERN_PR_CACHE = 'PR_cache:*';
@@ -51,7 +48,6 @@ class CacheConstants {
     // --- Nuevas constantes de caché ---
     public const PREFIX_USER_SUBSCRIPTION    = 'user:subscription:';
     public const PREFIX_USER_STORAGE         = 'user:storage:';
-    public const PREFIX_USER_PERKS           = 'user:perks:';
     public const PREFIX_USER_PALETTE         = 'user:palettes:';
     public const PREFIX_CANVAS_OWNER_LIST    = 'canvas:owner:';
     public const PREFIX_CANVAS_DASHBOARD     = 'canvas:user_dashboard:';
@@ -89,9 +85,7 @@ class CacheConstants {
     public const PREFIX_VERCODE_ID             = 'vercode:id:';
     public const PREFIX_VERCODE_IDENT          = 'vercode:ident:';
     public const PREFIX_VERCODE_CODE           = 'vercode:code:';
-    // user perks subkeys (concatenar a PREFIX_USER_PERKS)
-    public const SUBKEY_PERKS_ALL              = 'all:';
-    public const SUBKEY_PERKS_UNUSED           = 'unused:';
+
 
     // --- TTLs ---
     public const TTL_THIRTY_SECS  = 30;

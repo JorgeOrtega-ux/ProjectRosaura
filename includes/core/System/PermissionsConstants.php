@@ -29,8 +29,6 @@ class PermissionsConstants {
     public const VIEW_DASHBOARD = 'view_dashboard';
     public const MANAGE_SUBSCRIPTIONS = 'manage_subscriptions';
     public const MANAGE_ADVERTISEMENTS = 'manage_advertisements';
-    public const MANAGE_STORE_PACKAGES = 'manage_store_packages';
-    public const MANAGE_STORE_PERKS = 'manage_store_perks';
     public const MANAGE_CONTENT = 'manage_content';
     
     public const MANAGE_SETTINGS = 'manage_settings';

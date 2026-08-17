@@ -143,11 +143,7 @@ class AdminUserPurchasesController {
                     const statusRow = this.container.querySelector('[data-ref="filter-status-row"]');
                     if (statusRow) statusRow.classList.add('disabled');
 
-                    if (this.coinItems.length === 0) {
-                        this.loadCoinHistory();
-                    } else {
-                        this.applyFiltersAndRender();
-                    }
+                    this.applyFiltersAndRender();
                 } else {
                     this.activeTab = 'payments';
 
@@ -389,10 +385,8 @@ class AdminUserPurchasesController {
                         itemStatus = 'failed';
                     }
 
-                    const descLower = (item.description || '').toLowerCase();
-                    const isCoins = descLower.includes('coin') || descLower.includes('moneda');
-                    const itemType = isCoins ? 'coins' : 'subscription';
-                    const iconName = isCoins ? 'monetization_on' : 'description';
+                    const itemType = 'subscription';
+                    const iconName = 'description';
 
                     const rowHtml = `
                         <tr class="component-table-row" data-action="selectPurchase" data-id="${rowId}" data-receipt-url="${receiptUrl}" data-pdf-url="${pdfUrl}" data-type="${itemType}" data-status="${itemStatus}">
@@ -438,123 +432,7 @@ class AdminUserPurchasesController {
         }
     }
 
-    async loadCoinHistory() {
-        if (!this.tbody || !this.targetUserUuid) return;
 
-        this.tbody.innerHTML = `
-            <tr>
-                <td class="component-empty-table-cell" colspan="4">
-                    <div class="component-empty-state component-empty-state--table">
-                        <div class="component-spinner component-spinner--centered"></div>
-                        <p class="component-empty-state-text">${window.__('dt_loading')}</p>
-                    </div>
-                </td>
-            </tr>
-        `;
-
-        try {
-            const response = await this.api.post(
-                ApiRoutes.Admin.GetUserCoinTransactions, 
-                { target_user_uuid: this.targetUserUuid, limit: 100, offset: 0 }, 
-                this.abortController.signal
-            );
-            
-            if (response.success && response.data && response.data.length > 0) {
-                this.coinItems = response.data.map(item => {
-                    const date = new Date(item.created_at).toLocaleDateString();
-                    const description = window.__(item.description) || item.description || window.__('transaction');
-                    
-                    const amountVal = parseInt(item.amount, 10);
-                    const sign = amountVal > 0 ? '+' : '';
-                    const formattedAmount = `${sign}${amountVal.toLocaleString()} ${window.__('coins')}`;
-                    const amountClass = amountVal > 0 ? 'component-text-notice--success' : 'component-badge--danger';
-
-                    let statusClass = 'component-text-notice--success';
-                    let typeText = window.__('type_charge');
-                    if (item.type === 'spend') {
-                        statusClass = 'component-badge--warning';
-                        typeText = window.__('type_spend');
-                    } else if (item.type === 'refund') {
-                        statusClass = 'component-badge--info';
-                        typeText = window.__('type_refund');
-                    } else if (item.type === 'bonus') {
-                        statusClass = 'component-text-notice--success';
-                        typeText = window.__('type_bonus');
-                    } else if (item.type === 'admin_adjustment') {
-                        statusClass = 'component-badge--muted';
-                        typeText = window.__('type_support');
-                    }
-
-                    let iconName = 'toll';
-                    if (item.type === 'spend') iconName = 'shopping_bag';
-                    else if (item.type === 'refund') iconName = 'history';
-                    else if (item.type === 'bonus') iconName = 'stars';
-                    else if (item.type === 'admin_adjustment') iconName = 'admin_panel_settings';
-
-                    const rowHtml = `
-                        <tr class="component-table-row" data-action="selectPurchase" data-id="${item.id}" data-type="coins-ledger" data-status="succeeded">
-                            <td>
-                                <div class="component-badge component-badge--sm">
-                                    <span class="material-symbols-rounded">calendar_month</span>
-                                    <span class="search-target">${date}</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="component-badge component-badge--sm">
-                                    <span class="material-symbols-rounded">${iconName}</span>
-                                    <span class="search-target">${escapeHTML(description)}</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="component-badge component-badge--sm">
-                                    <span class="material-symbols-rounded">toll</span>
-                                    <span class="search-target ${amountClass}">${formattedAmount}</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="component-badge component-badge--sm">
-                                    <span class="search-target ${statusClass}">${typeText}</span>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-
-                    return {
-                        id: item.id,
-                        type: 'coins-ledger',
-                        status: 'succeeded',
-                        html: rowHtml
-                    };
-                });
-
-                this.applyFiltersAndRender();
-            } else {
-                this.tbody.innerHTML = `
-                    <tr>
-                        <td class="component-empty-table-cell" colspan="4">
-                            <div class="component-empty-state component-empty-state--table">
-                                <span class="material-symbols-rounded component-empty-state-icon">receipt_long</span>
-                                <p class="component-empty-state-text">${window.__('empty_purchase_history')}</p>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }
-        } catch (error) {
-            if (error.name !== 'AbortError') {
-                this.tbody.innerHTML = `
-                    <tr>
-                        <td class="component-empty-table-cell" colspan="4">
-                            <div class="component-empty-state component-empty-state--table">
-                                <span class="material-symbols-rounded component-empty-state-icon">error</span>
-                                <p class="component-empty-state-text">${window.__('err_connection')}</p>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }
-        }
-    }
 }
 
 export { AdminUserPurchasesController };

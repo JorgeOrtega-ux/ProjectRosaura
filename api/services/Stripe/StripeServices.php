@@ -29,27 +29,7 @@ class StripeServices {
         ]
     ];
 
-    private function getCoinPrices(): array {
-        $packages = [];
-        if (class_exists(\App\Core\System\StorePackagesConfig::class) && method_exists(\App\Core\System\StorePackagesConfig::class, 'getCoinPackages')) {
-            try {
-                $packages = \App\Core\System\StorePackagesConfig::getCoinPackages();
-                if (!is_array($packages)) $packages = [];
-            } catch (\Throwable $e) {
-                $packages = [];
-            }
-        }
 
-        $prices = [];
-        foreach ($packages as $amount => $pkg) {
-            $envKey = $pkg['stripe_env_key'] ?? '';
-            $priceId = (!empty($envKey) && !empty($_ENV[$envKey])) ? $_ENV[$envKey] : ($pkg['default_price_id'] ?? null);
-            if ($priceId) {
-                $prices[$amount] = $priceId;
-            }
-        }
-        return $prices;
-    }
 
     private function resolvePriceId(int $tier, string $billingPeriod): ?string {
         // 1. Try environment variable mapping
@@ -278,7 +258,7 @@ class StripeServices {
             $periodLabel = $billingPeriod === 'yearly' ? 'Anual' : 'Mensual';
 
             $forceCheckout = (bool)($input['force_checkout'] ?? false);
-            $purchasePreference = $forceCheckout ? 'verify' : ($user['purchase_preference'] ?? $this->sessionManager->get('purchase_preference', 'verify'));
+            $purchasePreference = 'verify';
             
             if ($purchasePreference === 'fast') {
                 try {
@@ -439,187 +419,7 @@ class StripeServices {
         }
     }
 
-    public function createCoinCheckoutSession(array $input): array {
-        if (!$this->sessionManager->isLoggedIn()) {
-            http_response_code(401);
-            return ['success' => false, 'message_key' => 'error.unauthorized'];
-        }
 
-        $userId = $this->sessionManager->getActiveAccountId();
-        $coinsAmount = isset($input['amount']) ? (int) $input['amount'] : 0;
-
-        $coinPrices = $this->getCoinPrices();
-        if (!isset($coinPrices[$coinsAmount])) {
-            return ['success' => false, 'message_key' => 'stripe.invalid_coin_amount'];
-        }
-
-        try {
-            $redisInstance = new \App\Config\Database\RedisCache();
-            $redisClient = $redisInstance->getClient();
-            if ($redisClient) {
-                $lockKey = "user_lock:stripe_coin:{$userId}";
-                if (!$redisClient->set($lockKey, "1", 'EX', 2, 'NX')) {
-                    return ['success' => false, 'message_key' => 'error.too_many_requests'];
-                }
-            }
-        } catch (\Throwable $e) {}
-
-        $priceId = $coinPrices[$coinsAmount];
-        \Stripe\Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
-
-        $user = $this->userRepo->findById($userId);
-        if (!$user) {
-            return ['success' => false, 'message_key' => 'error.user_not_found'];
-        }
-
-        $stripeCustomerId = $this->subscriptionRepo->getStripeCustomerIdByUserId($userId);
-
-        try {
-            if ($stripeCustomerId) {
-                try {
-                    $stripeCustomer = \Stripe\Customer::retrieve($stripeCustomerId);
-                    if (!empty($stripeCustomer->deleted)) {
-                        $stripeCustomerId = null;
-                    }
-                } catch (\Exception $e) {
-                    $stripeCustomerId = null;
-                }
-            }
-
-            if (!$stripeCustomerId) {
-                $stripeCustomer = \Stripe\Customer::create([
-                    'email' => $user['email'],
-                    'name' => $user['username'],
-                    'metadata' => ['user_id' => $userId]
-                ]);
-                $stripeCustomerId = $stripeCustomer->id;
-                $this->subscriptionRepo->updateUserStripeCustomerId($userId, $stripeCustomerId);
-            }
-
-            $purchasePreference = $this->sessionManager->get('purchase_preference', 'verify');
-            
-            if ($purchasePreference === 'fast') {
-                try {
-                    $customer = \Stripe\Customer::retrieve($stripeCustomerId);
-                    $defaultPmId = $customer->invoice_settings->default_payment_method;
-                    
-                    if (!$defaultPmId) {
-                        $paymentMethods = \Stripe\PaymentMethod::all([
-                            'customer' => $stripeCustomerId,
-                            'type' => 'card',
-                            'limit' => 1
-                        ]);
-                        if (!empty($paymentMethods->data)) {
-                            $defaultPmId = $paymentMethods->data[0]->id;
-                            \Stripe\Customer::update($stripeCustomerId, [
-                                'invoice_settings' => [
-                                    'default_payment_method' => $defaultPmId
-                                ]
-                            ]);
-                        }
-                    }
-
-                    if ($defaultPmId) {
-                        $price = \Stripe\Price::retrieve($priceId);
-                        
-                        $paymentIntent = \Stripe\PaymentIntent::create([
-                            'amount' => $price->unit_amount,
-                            'currency' => $price->currency,
-                            'customer' => $stripeCustomerId,
-                            'payment_method' => $defaultPmId,
-                            'off_session' => true,
-                            'confirm' => true,
-                            'description' => "Purchase of {$coinsAmount} coins",
-                            'metadata' => [
-                                'type' => 'coins',
-                                'user_id' => (string) $userId,
-                                'amount' => (string) $coinsAmount
-                            ]
-                        ]);
-
-                        if ($paymentIntent->status === 'succeeded') {
-                            $storeRepo = new \App\Core\Repositories\StoreRepository(new \App\Config\Database\DatabaseManager());
-                            $storeRepo->processCoinPurchaseSession([
-                                'user_id' => $userId,
-                                'stripe_payment_intent_id' => $paymentIntent->id,
-                                'stripe_checkout_session_id' => 'pi_fast_' . $paymentIntent->id,
-                                'item_type' => 'coins',
-                                'item_amount' => $coinsAmount,
-                                'amount_cents' => $price->unit_amount,
-                                'currency' => $price->currency,
-                                'status' => 'succeeded'
-                            ]);
-
-                            $this->subscriptionRepo->createPaymentRecord([
-                                'user_id' => $userId,
-                                'stripe_payment_intent_id' => $paymentIntent->id,
-                                'stripe_invoice_id' => null,
-                                'amount_cents' => $price->unit_amount,
-                                'currency' => $price->currency,
-                                'description' => "Purchase of {$coinsAmount} coins (Fast)",
-                                'status' => 'succeeded'
-                            ]);
-                            
-                            return [
-                                'success' => true,
-                                'fast_payment' => true,
-                                'message_key' => 'stripe.payment_successful',
-                                'checkout_url' => null 
-                            ];
-                        }
-                    }
-                } catch (\Exception $e) {
-                    Logger::info("Fast payment failed or requires auth, falling back to checkout", ['user_id' => $userId, 'error' => $e->getMessage()]);
-                }
-            }
-
-            $baseUrl = $this->getBaseUrl($input);
-            $returnUrl = isset($input['return_url']) ? rtrim($input['return_url'], '/') : $baseUrl . '/store';
-            Logger::info("Stripe Coin Checkout preparing return URLs", ['return_url' => $returnUrl, 'user_id' => $userId]);
-
-            $session = \Stripe\Checkout\Session::create([
-                'customer' => $stripeCustomerId,
-                'mode' => 'payment',
-                'line_items' => [[
-                    'price' => $priceId,
-                    'quantity' => 1
-                ]],
-                'success_url' => $returnUrl . '?checkout=success&session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => $returnUrl . '?status=cancel',
-                'metadata' => [
-                    'type' => 'coins',
-                    'user_id' => (string) $userId,
-                    'amount' => (string) $coinsAmount
-                ],
-                'payment_intent_data' => [
-                    'description' => "Purchase of {$coinsAmount} coins",
-                    'metadata' => [
-                        'type' => 'coins',
-                        'user_id' => (string) $userId,
-                        'amount' => (string) $coinsAmount
-                    ]
-                ]
-            ]);
-
-            Logger::info("Stripe Coin Checkout Session created", [
-                'user_id' => $userId,
-                'session_id' => $session->id,
-                'amount' => $coinsAmount
-            ]);
-
-            return [
-                'success' => true,
-                'checkout_url' => $session->url
-            ];
-
-        } catch (\Stripe\Exception\ApiErrorException $e) {
-            Logger::error("Stripe API Error creating coin checkout session", [
-                'user_id' => $userId,
-                'error' => $e->getMessage()
-            ]);
-            return ['success' => false, 'message_key' => 'stripe.api_error', 'message' => __('err_stripe_api')];
-        }
-    }
 
     public function updateSubscription(array $input): array {
         if (!$this->sessionManager->isLoggedIn()) {
@@ -651,7 +451,7 @@ class StripeServices {
         }
 
         $user = $this->userRepo->findById($userId);
-        $purchasePreference = $user['purchase_preference'] ?? $this->sessionManager->get('purchase_preference', 'verify');
+        $purchasePreference = 'verify';
 
         if ($purchasePreference === 'verify') {
             $submittedPassword = trim($input['password'] ?? '');
@@ -839,9 +639,7 @@ class StripeServices {
                 
                 foreach ($charges->data as $charge) {
                     $desc = $charge->description;
-                    if (empty($desc) && isset($charge->metadata->type) && $charge->metadata->type === 'coins') {
-                        $desc = "Purchase of " . ($charge->metadata->amount ?? '') . " coins";
-                    }
+
 
                     $pdfUrl = null;
                     if (!empty($charge->invoice) && is_object($charge->invoice) && !empty($charge->invoice->invoice_pdf)) {

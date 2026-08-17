@@ -668,7 +668,6 @@ class CanvasViewService {
                 'cBatch' => 5,
                 'cCooldown' => 10,
                 'cLimit' => 10,
-                'cAllowPurchases' => 1,
                 'cAllowChat' => 0,
                 'cTags' => []
             ];
@@ -684,7 +683,6 @@ class CanvasViewService {
         $cBatch = (int)($canvasData['cooldown_pixels_batch'] ?? 5);
         $cCooldown = (int)($canvasData['cooldown_seconds'] ?? 10);
         $cLimit = (int)($canvasData['max_participants'] ?? 10);
-        $cAllowPurchases = (int)($canvasData['allow_purchases'] ?? 1);
         $cAllowChat = (int)($canvasData['allow_chat'] ?? 0);
         $cTags = !empty($canvasData['tags']) ? (json_decode($canvasData['tags'], true) ?? []) : [];
 
@@ -703,7 +701,6 @@ class CanvasViewService {
             'cBatch' => $cBatch,
             'cCooldown' => $cCooldown,
             'cLimit' => $cLimit,
-            'cAllowPurchases' => $cAllowPurchases,
             'cAllowChat' => $cAllowChat,
             'cTags' => $cTags
         ];

@@ -236,61 +236,6 @@ class AdminServices {
         ];
     }
 
-    public function getUserPurchases($data) {
-        if (!$this->hasPermission(PermissionsConstants::VIEW_USER_PURCHASES)) {
-            return ['success' => false, 'message' => __('error.unauthorized')];
-        }
-
-        $targetUserUuid = $data['target_user_uuid'] ?? null;
-        $targetUserId = (int)($data['target_user_id'] ?? 0);
-
-        if (!$targetUserId && $targetUserUuid) {
-            $user = $this->userRepository->findByUuid($targetUserUuid);
-            if ($user) $targetUserId = (int)$user['id'];
-        }
-
-        if (!$targetUserId) {
-            return ['success' => false, 'message' => __('admin.user_not_found')];
-        }
-
-        global $container;
-        if (isset($container) && $container instanceof \App\Core\Container) {
-            $stripeServices = $container->get(\App\Api\Services\Stripe\StripeServices::class);
-            $history = $stripeServices->getPaymentHistoryForUser($targetUserId, ['limit' => 100, 'offset' => 0]);
-            return ['success' => true, 'data' => $history];
-        }
-
-        return ['success' => false, 'message' => __('err_general')];
-    }
-
-    public function getUserCoinTransactions($data) {
-        if (!$this->hasPermission(PermissionsConstants::VIEW_USER_PURCHASES)) {
-            return ['success' => false, 'message' => __('error.unauthorized')];
-        }
-
-        $targetUserUuid = $data['target_user_uuid'] ?? null;
-        $targetUserId = (int)($data['target_user_id'] ?? 0);
-
-        if (!$targetUserId && $targetUserUuid) {
-            $user = $this->userRepository->findByUuid($targetUserUuid);
-            if ($user) $targetUserId = (int)$user['id'];
-        }
-
-        if (!$targetUserId) {
-            return ['success' => false, 'message' => __('admin.user_not_found')];
-        }
-
-        global $container;
-        if (isset($container) && $container instanceof \App\Core\Container) {
-            $storeRepo = $container->get(\App\Core\Interfaces\StoreRepositoryInterface::class);
-            $limit = isset($data['limit']) ? (int)$data['limit'] : 100;
-            $offset = isset($data['offset']) ? (int)$data['offset'] : 0;
-            $history = $storeRepo->getCoinTransactionsHistory($targetUserId, $limit, $offset);
-            return ['success' => true, 'data' => $history];
-        }
-
-        return ['success' => false, 'message' => __('err_general')];
-    }
 
     public function updateAvatar($data) {
         if (!$this->hasPermission(PermissionsConstants::EDIT_USERS)) return ['success' => false, 'message' => __('error.unauthorized')];
@@ -966,202 +911,6 @@ class AdminServices {
         }
     }
 
-    public function saveStorePackage($data) {
-        $uuid = $data['uuid'] ?? null;
-        $amount = (int)($data['amount'] ?? 0);
-        $bonusAmount = (int)($data['bonus_amount'] ?? 0);
-        $priceUsd = (float)($data['price_usd'] ?? 0);
-        $stripePriceId = $data['stripe_price_id'] ?? null;
-
-        if ($amount <= 0 || $priceUsd < 0) {
-            return ['success' => false, 'message' => 'Datos inválidos. La cantidad y el precio son obligatorios.'];
-        }
-
-        try {
-            $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
-            
-            if ($uuid) {
-                // Update
-                $stmt = $pdo->prepare("UPDATE store_coin_packages SET amount = ?, bonus_amount = ?, price_usd = ?, stripe_price_id = ? WHERE uuid = ?");
-                $stmt->execute([$amount, $bonusAmount, $priceUsd, $stripePriceId, $uuid]);
-                $msg = 'Paquete actualizado correctamente';
-            } else {
-                // Insert
-                $uuid = Utils::generateUUID();
-                $stmt = $pdo->prepare("INSERT INTO store_coin_packages (uuid, amount, bonus_amount, price_usd, stripe_price_id, is_active) VALUES (?, ?, ?, ?, ?, 1)");
-                $stmt->execute([$uuid, $amount, $bonusAmount, $priceUsd, $stripePriceId]);
-                $msg = 'Paquete creado correctamente';
-            }
-
-            try {
-                $redisCache = new \App\Config\Database\RedisCache();
-                (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->storePackages();
-            } catch (\Throwable $t) {}
-
-            return ['success' => true, 'message' => $msg, 'uuid' => $uuid];
-        } catch (\PDOException $e) {
-            Logger::error("saveStorePackage Error", ['exception' => $e]);
-            return ['success' => false, 'message' => 'Error al guardar el paquete de monedas'];
-        }
-    }
-
-    public function toggleStorePackageVisibility($data) {
-        $uuid = $data['uuid'] ?? '';
-        if (empty($uuid)) return ['success' => false, 'message' => 'UUID faltante'];
-        try {
-            $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
-            $stmt = $pdo->prepare("UPDATE store_coin_packages SET is_active = 1 - is_active WHERE uuid = ?");
-            $stmt->execute([$uuid]);
-
-            try {
-                $redisCache = new \App\Config\Database\RedisCache();
-                (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->storePackages();
-            } catch (\Throwable $t) {}
-
-            return ['success' => true, 'message' => 'Visibilidad actualizada'];
-        } catch (\PDOException $e) {
-            return ['success' => false, 'message' => 'Error de BD'];
-        }
-    }
-
-    public function setStorePackagePopular($data) {
-        $uuid = $data['uuid'] ?? '';
-        if (empty($uuid)) return ['success' => false, 'message' => 'UUID faltante'];
-        try {
-            $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
-            // Primero limpiamos el popular de todos
-            $pdo->query("UPDATE store_coin_packages SET is_popular = 0");
-            $stmt = $pdo->prepare("UPDATE store_coin_packages SET is_popular = 1 WHERE uuid = ?");
-            $stmt->execute([$uuid]);
-
-            try {
-                $redisCache = new \App\Config\Database\RedisCache();
-                (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->storePackages();
-            } catch (\Throwable $t) {}
-
-            return ['success' => true, 'message' => 'Paquete marcado como popular'];
-        } catch (\PDOException $e) {
-            return ['success' => false, 'message' => 'Error de BD'];
-        }
-    }
-
-    public function deleteStorePackage($data) {
-        $uuid = $data['uuid'] ?? '';
-        if (empty($uuid)) return ['success' => false, 'message' => 'UUID faltante'];
-        try {
-            $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
-            $stmt = $pdo->prepare("DELETE FROM store_coin_packages WHERE uuid = ?");
-            $stmt->execute([$uuid]);
-
-            try {
-                $redisCache = new \App\Config\Database\RedisCache();
-                (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->storePackages();
-            } catch (\Throwable $t) {}
-
-            return ['success' => true, 'message' => 'Paquete eliminado permanentemente'];
-        } catch (\PDOException $e) {
-            Logger::error("deleteStorePackage Error", ['exception' => $e]);
-            return ['success' => false, 'message' => 'Error al eliminar el paquete'];
-        }
-    }
-
-    public function saveStorePerk($data) {
-        $uuid = $data['uuid'] ?? '';
-        $perkId = $data['perk_id'] ?? '';
-        $priceCoins = (int)($data['price_coins'] ?? 0);
-
-        if (empty($perkId) || $priceCoins < 0) {
-            return ['success' => false, 'message' => __('err_invalid_perk_data')];
-        }
-
-        try {
-            $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
-            
-            $isUsable = isset($data['is_usable']) ? (int)(bool)$data['is_usable'] : 1;
-            $isActive = isset($data['is_active']) ? (int)(bool)$data['is_active'] : 1;
-
-            if ($uuid) {
-                // Update
-                $stmt = $pdo->prepare("UPDATE store_perk_packages SET perk_id = ?, price_coins = ?, is_active = ?, is_usable = ? WHERE uuid = ?");
-                $stmt->execute([$perkId, $priceCoins, $isActive, $isUsable, $uuid]);
-                $msg = __('msg_perk_updated_success');
-            } else {
-                // Insert
-                $uuid = Utils::generateUUID();
-                $stmt = $pdo->prepare("INSERT INTO store_perk_packages (uuid, perk_id, price_coins, is_active, is_usable) VALUES (?, ?, ?, ?, ?)");
-                $stmt->execute([$uuid, $perkId, $priceCoins, $isActive, $isUsable]);
-                $msg = __('msg_perk_created_success');
-            }
-
-            try {
-                $redisCache = new \App\Config\Database\RedisCache();
-                (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->storePerkPackages();
-            } catch (\Throwable $t) {}
-
-            return ['success' => true, 'message' => $msg, 'uuid' => $uuid];
-        } catch (\PDOException $e) {
-            Logger::error("saveStorePerk Error", ['exception' => $e]);
-            return ['success' => false, 'message' => __('err_save_perk_failed')];
-        }
-    }
-
-    public function toggleStorePerkVisibility($data) {
-        $uuid = $data['uuid'] ?? '';
-        if (empty($uuid)) return ['success' => false, 'message' => __('err_missing_uuid')];
-        try {
-            $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
-            $stmt = $pdo->prepare("UPDATE store_perk_packages SET is_active = 1 - is_active WHERE uuid = ?");
-            $stmt->execute([$uuid]);
-
-            try {
-                $redisCache = new \App\Config\Database\RedisCache();
-                (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->storePerkPackages();
-            } catch (\Throwable $t) {}
-
-            return ['success' => true, 'message' => __('msg_perk_purchasable_updated')];
-        } catch (\PDOException $e) {
-            return ['success' => false, 'message' => __('err_db_error')];
-        }
-    }
-
-    public function toggleStorePerkUsable($data) {
-        $uuid = $data['uuid'] ?? '';
-        if (empty($uuid)) return ['success' => false, 'message' => __('err_missing_uuid')];
-        try {
-            $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
-            $stmt = $pdo->prepare("UPDATE store_perk_packages SET is_usable = 1 - is_usable WHERE uuid = ?");
-            $stmt->execute([$uuid]);
-
-            try {
-                $redisCache = new \App\Config\Database\RedisCache();
-                (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->storePerkPackages();
-            } catch (\Throwable $t) {}
-
-            return ['success' => true, 'message' => __('msg_perk_usable_updated')];
-        } catch (\PDOException $e) {
-            return ['success' => false, 'message' => __('err_db_error')];
-        }
-    }
-
-    public function deleteStorePerk($data) {
-        $uuid = $data['uuid'] ?? '';
-        if (empty($uuid)) return ['success' => false, 'message' => __('err_missing_uuid')];
-        try {
-            $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
-            $stmt = $pdo->prepare("DELETE FROM store_perk_packages WHERE uuid = ?");
-            $stmt->execute([$uuid]);
-
-            try {
-                $redisCache = new \App\Config\Database\RedisCache();
-                (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->storePerkPackages();
-            } catch (\Throwable $t) {}
-
-            return ['success' => true, 'message' => __('msg_perk_deleted_success')];
-        } catch (\PDOException $e) {
-            Logger::error("deleteStorePerk Error", ['exception' => $e]);
-            return ['success' => false, 'message' => __('err_delete_perk_failed')];
-        }
-    }
 
 
     public function getRoles() {
@@ -1689,10 +1438,7 @@ class AdminServices {
             $totalPixels = (int)$pdoCanvases->query("SELECT COALESCE(SUM(total_pixels), 0) FROM canvases")->fetchColumn();
         } catch (\Exception $e) {}
 
-        $totalPerksUsed = 0;
-        try {
-            $totalPerksUsed = (int)$pdoIdentity->query("SELECT COUNT(*) FROM user_perks WHERE is_used = 1")->fetchColumn();
-        } catch (\Exception $e) {}
+
 
         $totalCanvases = 0;
         try { $totalCanvases = (int)$pdoCanvases->query("SELECT COUNT(*) FROM " . \App\Core\System\DatabaseConstants::TBL_CANVASES)->fetchColumn(); } catch (\Exception $e) {}
@@ -1730,7 +1476,6 @@ class AdminServices {
                 'logins' => $totalLogins,
                 'messages' => $totalMessages,
                 'pixels' => $totalPixels,
-                'perks_used' => $totalPerksUsed,
                 'canvases' => $totalCanvases,
                 'banned_users' => $totalBanned,
                 'avg_latency' => $avgLatency
@@ -2159,68 +1904,6 @@ class AdminServices {
         }
     }
 
-    public function adjustCoins(array $data): array {
-        $this->requirePermission(PermissionsConstants::EDIT_USERS);
-
-        $targetUserId = !empty($data['target_user_id']) ? (int)$data['target_user_id'] : null;
-        $targetUserUuid = !empty($data['target_user_uuid']) ? trim($data['target_user_uuid']) : null;
-        $amount = (int)($data['amount'] ?? 0);
-        $action = trim($data['action'] ?? 'add'); // add, subtract, set
-        $reason = trim($data['reason'] ?? 'Admin adjustment');
-
-        $user = null;
-        if ($targetUserId) {
-            $user = $this->userRepository->findById($targetUserId);
-        } elseif ($targetUserUuid) {
-            $user = $this->userRepository->findByUuid($targetUserUuid);
-        }
-
-        if (!$user) {
-            return ['success' => false, 'message' => __('err_user_not_found')];
-        }
-
-        $authCheck = $this->canEditUser($user);
-        if (!$authCheck['allowed']) return ['success' => false, 'message' => $authCheck['message']];
-
-        try {
-            $userId = (int)$user['id'];
-            $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
-
-            $stmt = $pdo->prepare("SELECT coins FROM " . DB::TBL_USERS . " WHERE id = ? FOR UPDATE");
-            $stmt->execute([$userId]);
-            $currentCoins = (int)$stmt->fetchColumn();
-
-            $newBalance = $currentCoins;
-            if ($action === 'set') {
-                $newBalance = max(0, $amount);
-            } elseif ($action === 'subtract') {
-                $newBalance = max(0, $currentCoins - $amount);
-            } else {
-                $newBalance = max(0, $currentCoins + $amount);
-            }
-
-            $upd = $pdo->prepare("UPDATE " . DB::TBL_USERS . " SET coins = ? WHERE id = ?");
-            $upd->execute([$newBalance, $userId]);
-
-            $redis = (new \App\Config\Database\RedisCache())->getClient();
-            if ($redis) {
-                $redis->del(CacheConstants::PREFIX_STORE_COINS . $userId);
-                $redis->del(CacheConstants::PREFIX_USER_PROFILE . $userId);
-            }
-
-            $adminId = $this->sessionManager->get('user_id');
-            Logger::info("Admin [{$adminId}] adjusted coins for user {$user['uuid']}: {$currentCoins} -> {$newBalance} (Reason: {$reason})");
-
-            return [
-                'success' => true,
-                'message' => __('msg_coins_adjusted_success'),
-                'coins' => $newBalance
-            ];
-        } catch (\Throwable $e) {
-            Logger::error("Failed to adjust coins: " . $e->getMessage());
-            return ['success' => false, 'message' => __('err_internal_server_error')];
-        }
-    }
 
     public function terminateSessions(array $data): array {
         $this->requirePermission(PermissionsConstants::EDIT_USERS);

@@ -36,9 +36,7 @@ export class PreferenceManager {
         if (window.AppUserPrefs && window.AppUserPrefs[key] !== undefined && window.AppUserPrefs[key] !== null) {
             return window.AppUserPrefs[key];
         }
-        const local = localStorage.getItem('pr_' + key);
         if (local !== null) return local;
-        if (key === 'purchase_preference') return 'verify';
         return null;
     }
 
@@ -80,27 +78,6 @@ export class PreferenceManager {
     async save(key, value, password = '') {
         const previousValue = this.get(key);
         let googleCredential = '';
-
-        // Caso especial: compra rápida requiere confirmar contraseña
-        if (key === 'purchase_preference' && value === 'fast' && !password) {
-            if (window.modalSystem) {
-                const res = await window.modalSystem.show('confirmPasswordModal', {
-                    title: window.__('title_confirm_fast_payment'),
-                    desc: window.__('desc_confirm_fast_payment')
-                });
-
-                if (res && (res.confirmed || res.action === 'confirm' || res.action === true)) {
-                    password = (res.data && res.data.confirmSecPasswordInput) || res.confirmSecPasswordInput || '';
-                    googleCredential = (res.data && (res.data.credential || res.data.google_token)) || '';
-                    if (!password && !googleCredential) {
-                        this.showToast(window.__('err_identity_verification_required') || window.__('auth_incorrect_password'), 'error');
-                        return;
-                    }
-                } else {
-                    return;
-                }
-            }
-        }
 
         // Aplicar inmediatamente
         if (key === 'theme') this.themeManager.apply(value);

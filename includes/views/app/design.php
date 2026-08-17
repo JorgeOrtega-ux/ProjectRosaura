@@ -130,12 +130,6 @@ extract($designData);
                     <span class="material-symbols-rounded">photo_library</span>
                 </button>
 
-                <?php if ($canvasAllowPurchases == '1'): ?>
-                <button class="component-button component-button--icon component-button--h32" data-action="togglePerksInventory" data-tooltip="<?php echo __('tooltip_active_advantages'); ?> [P]" data-position="bottom">
-                    <span class="material-symbols-rounded">stars</span>
-                </button>
-                <?php endif; ?>
-
                 <?php if (isset($isOwner) && $isOwner): ?>
                 <button class="component-button component-button--icon component-button--h32" data-action="toggleOwnerTools" data-ref="btn-owner-tools" data-tooltip="<?php echo __('tooltip_owner_tools'); ?> [O]" data-position="bottom">
                     <span class="material-symbols-rounded">construction</span>

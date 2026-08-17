@@ -385,10 +385,8 @@ export class PurchaseHistoryController {
                         itemStatus = 'failed';
                     }
 
-                    const descLower = (item.description || '').toLowerCase();
-                    const isCoins = descLower.includes('coin') || descLower.includes('moneda');
-                    const itemType = isCoins ? 'coins' : 'subscription';
-                    const iconName = isCoins ? 'monetization_on' : 'description';
+                    const itemType = 'subscription';
+                    const iconName = 'description';
 
                     const rowHtml = `
                         <tr class="component-table-row" data-action="selectPurchase" data-id="${rowId}" data-receipt-url="${receiptUrl}" data-pdf-url="${pdfUrl}" data-type="${itemType}" data-status="${itemStatus}">
@@ -517,10 +515,6 @@ export class PurchaseHistoryController {
                     }
 
                     let iconName = 'toll';
-                    if (item.type === 'spend') iconName = 'shopping_bag';
-                    else if (item.type === 'refund') iconName = 'history';
-                    else if (item.type === 'bonus') iconName = 'stars';
-                    else if (item.type === 'admin_adjustment') iconName = 'admin_panel_settings';
 
                     const rowHtml = `
                         <tr class="component-table-row" data-action="selectPurchase" data-id="${item.id}" data-type="coins-ledger" data-status="succeeded">

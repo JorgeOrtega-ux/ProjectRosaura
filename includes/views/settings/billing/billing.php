@@ -147,55 +147,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                 </div>
 
                 <!-- 3. Preferencias de Compra -->
-                <div class="component-card--grouped">
-                    <div class="component-group-item component-group-item--stacked">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">Preferencias de Compra</h2>
-                                <p class="component-card__description">Elige cómo quieres confirmar tus compras.</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--start">
-                            <?php 
-                                $activeAccountId = $_SESSION['active_account'] ?? null;
-                                $account = ($activeAccountId && isset($_SESSION['accounts'][$activeAccountId])) ? $_SESSION['accounts'][$activeAccountId] : [];
-                                $userPrefs = $account['user_prefs'] ?? [];
-                                $purchasePref = $account['purchase_preference'] ?? ($userPrefs['purchase_preference'] ?? ($_SESSION['purchase_preference'] ?? 'verify'));
-                                $prefText = $purchasePref === 'fast' ? 'Pago rápido (Automático)' : 'Pago con verificación';
-                            ?>
-                            <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="modulePurchasePref">
-                                    <span class="material-symbols-rounded">security</span>
-                                    <span class="component-dropdown-text"><?php echo htmlspecialchars($prefText); ?></span>
-                                    <span class="material-symbols-rounded">expand_more</span>
-                                </div>
-                                <div class="component-module component-module--dropdown disabled" data-module="modulePurchasePref">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited active" data-ref="menuMainPurchasePref">
-                                        <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list">
-                                            <div class="component-menu-link <?php echo $purchasePref === 'verify' ? 'active' : ''; ?>" data-action="setPref" data-key="purchase_preference" data-value="verify">
-                                                <div class="component-menu-link-icon">
-                                                    <span class="material-symbols-rounded">security</span>
-                                                </div>
-                                                <div class="component-menu-link-text">
-                                                    <span>Pago con verificación</span>
-                                                </div>
-                                            </div>
-                                            <div class="component-menu-link <?php echo $purchasePref === 'fast' ? 'active' : ''; ?>" data-action="setPref" data-key="purchase_preference" data-value="fast">
-                                                <div class="component-menu-link-icon">
-                                                    <span class="material-symbols-rounded">bolt</span>
-                                                </div>
-                                                <div class="component-menu-link-text">
-                                                    <span>Pago rápido (Automático)</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
 
             </div> <!-- end component-bottom -->
         </div> <!-- end component-wrapper -->

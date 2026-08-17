@@ -59,14 +59,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                         <div class="component-menu-link-icon"><input type="radio" name="purchase_type_filter" class="filter-radio" data-filter-type="type" value="payments_subscription"></div>
                                         <div class="component-menu-link-text"><span><?php echo __('type_subscription'); ?></span></div>
                                     </label>
-                                    <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input type="radio" name="purchase_type_filter" class="filter-radio" data-filter-type="type" value="payments_coins"></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('type_coins'); ?></span></div>
-                                    </label>
-                                    <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input type="radio" name="purchase_type_filter" class="filter-radio" data-filter-type="type" value="coins_virtual"></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('tab_coins_virtual'); ?></span></div>
-                                    </label>
+
                                 </div>
                             </div>
 
@@ -161,8 +154,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                     $statusText = __('failed');
                                 }
                                 
-                                $isCoins = (strpos(strtolower($description), 'coin') !== false || strpos(strtolower($description), 'moneda') !== false);
-                                $itemType = $isCoins ? 'coins' : 'subscription';
+                                $itemType = 'subscription';
                                 $itemStatus = ($item['status'] === 'succeeded' || $item['status'] === 'paid') ? 'succeeded' : 'failed';
                             ?>
                             <tr class="component-table-row" data-id="<?php echo htmlspecialchars($item['id'] ?? ''); ?>" data-receipt-url="<?php echo htmlspecialchars($item['receipt_url'] ?? ''); ?>" data-pdf-url="<?php echo htmlspecialchars($item['pdf_url'] ?? ''); ?>" data-type="<?php echo $itemType; ?>" data-status="<?php echo $itemStatus; ?>">
@@ -174,7 +166,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                 </td>
                                 <td>
                                     <div class="component-badge component-badge--sm">
-                                        <span class="material-symbols-rounded"><?php echo $isCoins ? 'monetization_on' : 'description'; ?></span>
+                                        <span class="material-symbols-rounded">description</span>
                                         <span class="search-target"><?php echo $description; ?></span>
                                     </div>
                                 </td>

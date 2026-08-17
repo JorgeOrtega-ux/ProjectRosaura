@@ -73,14 +73,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                         <div class="component-menu-link-icon"><input class="filter-radio" data-filter-type="type" data-value="payments_subscription" type="radio" name="purchase_type_filter" value="payments_subscription"></div>
                                         <div class="component-menu-link-text"><span><?php echo __('type_subscription'); ?></span></div>
                                     </label>
-                                    <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input class="filter-radio" data-filter-type="type" data-value="payments_coins" type="radio" name="purchase_type_filter" value="payments_coins"></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('type_coins'); ?></span></div>
-                                    </label>
-                                    <label class="component-menu-link component-menu-link--bordered">
-                                        <div class="component-menu-link-icon"><input class="filter-radio" data-filter-type="type" data-value="coins_virtual" type="radio" name="purchase_type_filter" value="coins_virtual"></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('tab_coins_virtual'); ?></span></div>
-                                    </label>
+
                                 </div>
                             </div>
 
@@ -174,8 +167,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                     $statusText = __('failed');
                                 }
                                 
-                                $isCoins = (strpos(strtolower($description), 'coin') !== false || strpos(strtolower($description), 'moneda') !== false);
-                                $itemType = $isCoins ? 'coins' : 'subscription';
+                                $itemType = 'subscription';
                                 $itemStatus = ($item['status'] === 'succeeded' || $item['status'] === 'paid') ? 'succeeded' : 'failed';
                             ?>
                             <tr class="component-table-row" data-action="selectPurchase" data-id="<?php echo htmlspecialchars($item['id'] ?? ''); ?>" data-receipt-url="<?php echo htmlspecialchars($item['receipt_url'] ?? ''); ?>" data-pdf-url="<?php echo htmlspecialchars($item['pdf_url'] ?? ''); ?>" data-type="<?php echo $itemType; ?>" data-status="<?php echo $itemStatus; ?>">
@@ -187,7 +179,7 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                                 </td>
                                 <td>
                                     <div class="component-badge component-badge--sm">
-                                        <span class="material-symbols-rounded"><?php echo $isCoins ? 'monetization_on' : 'description'; ?></span>
+                                        <span class="material-symbols-rounded">description</span>
                                         <span class="search-target"><?php echo $description; ?></span>
                                     </div>
                                 </td>

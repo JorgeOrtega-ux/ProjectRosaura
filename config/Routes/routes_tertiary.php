@@ -131,22 +131,6 @@ return [
             ],
         ],
     ],
-    'admin.get_user_coin_transactions' => [
-        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
-        'action' => 'get_user_coin_transactions',
-        'middleware' => [
-            [
-                'type' => 'Telemetry',
-            ],
-            [
-                'type' => 'RateLimit',
-                'key' => 'admin_get_user_coin_transactions',
-                'max' => 30,
-                'time' => 1,
-                'identifier' => 'user_id',
-            ],
-        ],
-    ],
     'admin.update_avatar' => [
         'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
         'action' => 'update_avatar',
@@ -419,70 +403,6 @@ return [
             ],
         ],
     ],
-    'admin.store_package.save' => [
-        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
-        'action' => 'save_store_package',
-        'middleware' => [
-            ['type' => 'Telemetry'],
-            ['type' => 'RateLimit', 'key' => 'adm_save_pkg', 'max' => 15, 'time' => 1, 'identifier' => 'user_id'],
-        ],
-    ],
-    'admin.store_package.toggle_visibility' => [
-        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
-        'action' => 'toggle_store_package_visibility',
-        'middleware' => [
-            ['type' => 'Telemetry'],
-            ['type' => 'RateLimit', 'key' => 'adm_toggle_pkg', 'max' => 30, 'time' => 1, 'identifier' => 'user_id'],
-        ],
-    ],
-    'admin.store_package.set_popular' => [
-        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
-        'action' => 'set_store_package_popular',
-        'middleware' => [
-            ['type' => 'Telemetry'],
-            ['type' => 'RateLimit', 'key' => 'adm_pop_pkg', 'max' => 30, 'time' => 1, 'identifier' => 'user_id'],
-        ],
-    ],
-    'admin.store_package.delete' => [
-        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
-        'action' => 'delete_store_package',
-        'middleware' => [
-            ['type' => 'Telemetry'],
-            ['type' => 'RateLimit', 'key' => 'adm_del_pkg', 'max' => 10, 'time' => 1, 'identifier' => 'user_id'],
-        ],
-    ],
-    'admin.store_perk.save' => [
-        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
-        'action' => 'save_store_perk',
-        'middleware' => [
-            ['type' => 'Telemetry'],
-            ['type' => 'RateLimit', 'key' => 'adm_save_perk', 'max' => 15, 'time' => 1, 'identifier' => 'user_id'],
-        ],
-    ],
-    'admin.store_perk.toggle_visibility' => [
-        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
-        'action' => 'toggle_store_perk_visibility',
-        'middleware' => [
-            ['type' => 'Telemetry'],
-            ['type' => 'RateLimit', 'key' => 'adm_toggle_perk', 'max' => 30, 'time' => 1, 'identifier' => 'user_id'],
-        ],
-    ],
-    'admin.store_perk.toggle_usable' => [
-        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
-        'action' => 'toggle_store_perk_usable',
-        'middleware' => [
-            ['type' => 'Telemetry'],
-            ['type' => 'RateLimit', 'key' => 'adm_usable_perk', 'max' => 30, 'time' => 1, 'identifier' => 'user_id'],
-        ],
-    ],
-    'admin.store_perk.delete' => [
-        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
-        'action' => 'delete_store_perk',
-        'middleware' => [
-            ['type' => 'Telemetry'],
-            ['type' => 'RateLimit', 'key' => 'adm_del_perk', 'max' => 10, 'time' => 1, 'identifier' => 'user_id'],
-        ],
-    ],
     'admin.get_permissions' => [
         'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
         'action' => 'get_permissions',
@@ -717,22 +637,6 @@ return [
             [
                 'type' => 'RateLimit',
                 'key' => 'admin_unlock_rl',
-                'max' => 20,
-                'time' => 1,
-                'identifier' => 'user_id',
-            ],
-        ],
-    ],
-    'admin.adjust_coins' => [
-        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
-        'action' => 'adjust_coins',
-        'middleware' => [
-            [
-                'type' => 'Telemetry',
-            ],
-            [
-                'type' => 'RateLimit',
-                'key' => 'admin_adjust_coins',
                 'max' => 20,
                 'time' => 1,
                 'identifier' => 'user_id',
@@ -984,107 +888,6 @@ return [
                 'identifier' => 'user_id',
             ],
         ],
-    ],
-    'stripe.create_coin_checkout' => [
-        'controller' => 'App\\Api\\Controllers\\Stripe\\StripeController',
-        'action' => 'create_coin_checkout',
-        'middleware' => [
-            [
-                'type' => 'Telemetry',
-            ],
-            [
-                'type' => 'RateLimit',
-                'key' => 'stripe_coin_checkout',
-                'max' => 5,
-                'time' => 5,
-                'identifier' => 'user_id',
-            ],
-        ],
-    ],
-    'store.buy_perk' => [
-        'controller' => 'App\\Api\\Controllers\\Store\\StoreController',
-        'action' => 'buy_perk',
-        'middleware' => [
-            [
-                'type' => 'Telemetry',
-            ],
-            [
-                'type' => 'RateLimit',
-                'key' => 'store_buy_perk',
-                'max' => 50,
-                'time' => 5,
-                'identifier' => 'user_id',
-            ],
-        ],
-    ],
-    'store.get_balance' => [
-        'controller' => 'App\\Api\\Controllers\\Store\\StoreController',
-        'action' => 'get_balance',
-        'middleware' => [
-            [
-                'type' => 'Telemetry',
-            ],
-            [
-                'type' => 'RateLimit',
-                'key' => 'store_get_balance',
-                'max' => 20,
-                'time' => 1,
-                'identifier' => 'user_id',
-            ],
-        ],
-    ],
-    'store.get_my_perks' => [
-        'controller' => 'App\\Api\\Controllers\\Store\\StoreController',
-        'action' => 'get_my_perks',
-        'middleware' => [
-            [
-                'type' => 'Telemetry',
-            ],
-            [
-                'type' => 'RateLimit',
-                'key' => 'store_get_perks',
-                'max' => 20,
-                'time' => 1,
-                'identifier' => 'user_id',
-            ],
-        ],
-    ],
-    'store.activate_perk' => [
-        'controller' => 'App\\Api\\Controllers\\Store\\StoreController',
-        'action' => 'activate_perk',
-        'middleware' => [
-            [
-                'type' => 'Telemetry',
-            ],
-            [
-                'type' => 'RateLimit',
-                'key' => 'store_activate_perk',
-                'max' => 10,
-                'time' => 5,
-                'identifier' => 'user_id',
-            ],
-        ],
-    ],
-    'store.get_transaction_history' => [
-        'controller' => 'App\\Api\\Controllers\\Store\\StoreController',
-        'action' => 'get_transaction_history',
-        'middleware' => [
-            [
-                'type' => 'Telemetry',
-            ],
-            [
-                'type' => 'RateLimit',
-                'key' => 'store_tx_history',
-                'max' => 30,
-                'time' => 1,
-                'identifier' => 'user_id',
-            ],
-        ],
-    ],
-    'internal.user.consume_perk' => [
-        'controller' => 'App\\Api\\Controllers\\Internal\\InternalUserController',
-        'action' => 'consume_perk',
-        'middleware' => [],
     ],
     'admin.advertisements.list' => [
         'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',

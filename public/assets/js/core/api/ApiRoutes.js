@@ -60,11 +60,9 @@ export const ApiRoutes = {
         UpdateRole: 'admin.update_role',
         GetUserRoles: 'admin.get_user_roles',
         GetUserPurchases: 'admin.get_user_purchases',
-        GetUserCoinTransactions: 'admin.get_user_coin_transactions',
 
         SendPasswordReset: 'admin.send_password_reset',
         UnlockRateLimit: 'admin.unlock_rate_limit',
-        AdjustCoins: 'admin.adjust_coins',
         TerminateSessions: 'admin.terminate_sessions',
         Disable2FA: 'admin.disable_2fa',
         SyncStripe: 'admin.sync_stripe',
@@ -102,16 +100,6 @@ export const ApiRoutes = {
         ToggleVisibilityTier: 'admin.subscriptions.toggle_visibility',
         SetPopularTier: 'admin.subscriptions.set_popular',
         SaveTier: 'admin.subscriptions.save',
-
-        DeleteStorePackage: 'admin.store_package.delete',
-        ToggleStorePackage: 'admin.store_package.toggle_visibility',
-        SetStorePackagePopular: 'admin.store_package.set_popular',
-        SaveStorePackage: 'admin.store_package.save',
-
-        DeleteStorePerk: 'admin.store_perk.delete',
-        ToggleStorePerk: 'admin.store_perk.toggle_visibility',
-        ToggleStorePerkUsable: 'admin.store_perk.toggle_usable',
-        SaveStorePerk: 'admin.store_perk.save',
 
         GetAdProviders: 'admin.advertisements.list',
         CreateAdProvider: 'admin.advertisements.create_provider',
@@ -205,7 +193,6 @@ export const ApiRoutes = {
     Stripe: {
         CreateCheckout: 'stripe.create_checkout',
         PreviewUpgrade: 'stripe.preview_upgrade',
-        CreateCoinCheckout: 'stripe.create_coin_checkout',
         UpdateSubscription: 'stripe.update_subscription',
         GetPaymentHistory: 'stripe.get_payment_history',
         DownloadReceipt: 'stripe.download_receipt',
@@ -216,13 +203,6 @@ export const ApiRoutes = {
         CancelSubscription: 'stripe.cancel_or_reactivate_subscription',
         CancelOrReactivateSubscription: 'stripe.cancel_or_reactivate_subscription',
         ToggleAutoRenewal: 'stripe.cancel_or_reactivate_subscription'
-    },
-    Store: {
-        GetBalance: 'store.get_balance',
-        BuyPerk: 'store.buy_perk',
-        GetMyPerks: 'store.get_my_perks',
-        ActivatePerk: 'store.activate_perk',
-        GetTransactionHistory: 'store.get_transaction_history'
     },
     Chat: {
         History: 'chat.history',

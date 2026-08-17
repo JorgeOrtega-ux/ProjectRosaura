@@ -9,8 +9,6 @@ return [
     '/search' => ['view' => 'app/search.php'], 
     '/upgrade' => ['view' => 'app/upgrade.php'], 
     '/premium' => ['view' => 'app/upgrade.php'], 
-    '/store/coins' => ['view' => 'app/store-coins.php', 'auth' => true],
-    '/store/content' => ['view' => 'app/store-content.php', 'auth' => true],
     '/login' => ['view' => 'auth/login.php', 'guest_only' => true],
     '/login/two-factor' => ['view' => 'auth/login.php', 'guest_only' => true],
     '/register' => ['view' => 'auth/register.php', 'guest_only' => true],
@@ -65,15 +63,6 @@ return [
     '/admin/advertisements' => ['view' => 'admin/advertisements/manage-advertisements.php', 'auth' => true, 'permissions' => [PC::MANAGE_ADVERTISEMENTS], 'requires_2fa' => false],
     '/admin/advertisement-items/:uuid' => ['view' => 'admin/advertisements/manage-ads.php', 'auth' => true, 'permissions' => [PC::MANAGE_ADVERTISEMENTS], 'requires_2fa' => false],
 
-    // Store Coin Packages
-    '/admin/store-packages' => ['view' => 'admin/store/manage-packages.php', 'auth' => true, 'permissions' => [PC::MANAGE_STORE_PACKAGES], 'requires_2fa' => false],
-    '/admin/store-package-create' => ['view' => 'admin/store/package-builder.php', 'auth' => true, 'permissions' => [PC::MANAGE_STORE_PACKAGES], 'requires_2fa' => false],
-    '/admin/store-package-edit/:uuid' => ['view' => 'admin/store/package-builder.php', 'auth' => true, 'permissions' => [PC::MANAGE_STORE_PACKAGES], 'requires_2fa' => false],
-
-    // Store Content Perks
-    '/admin/store-perks' => ['view' => 'admin/store/manage-perks.php', 'auth' => true, 'permissions' => [PC::MANAGE_STORE_PERKS], 'requires_2fa' => false],
-    '/admin/store-perk-create' => ['view' => 'admin/store/perk-builder.php', 'auth' => true, 'permissions' => [PC::MANAGE_STORE_PERKS], 'requires_2fa' => false],
-    '/admin/store-perk-edit/:uuid' => ['view' => 'admin/store/perk-builder.php', 'auth' => true, 'permissions' => [PC::MANAGE_STORE_PERKS], 'requires_2fa' => false],
     '/admin/messages' => ['view' => 'admin/messages/manage-messages.php', 'auth' => true, 'permissions' => [PC::MANAGE_CONTENT], 'requires_2fa' => false],
     '/admin/messages/visibility/:uuid' => ['view' => 'admin/messages/edit-visibility.php', 'auth' => true, 'permissions' => [PC::MANAGE_CONTENT], 'requires_2fa' => false],
     '/admin/messages/reports/:uuid' => ['view' => 'admin/messages/reports.php', 'auth' => true, 'permissions' => [PC::MANAGE_CONTENT], 'requires_2fa' => false],

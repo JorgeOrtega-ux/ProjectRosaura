@@ -6,47 +6,13 @@ use App\Core\System\DatabaseConstants as DB;
 use App\Core\Helpers\Utils;
 use PDO;
 use Exception;
-use App\Core\System\StorePackagesConfig;
 use App\Core\System\SubscriptionPlanConstants;
 use App\Core\System\SubscriptionFeatureConfig;
 use App\Core\System\Logger;
 
 class AppViewService {
 
-    /**
 
-     */
-    public function getStoreCoinsData(): array {
-        if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfig::class, 'getCoinPackages')) {
-            try {
-                $packages = StorePackagesConfig::getCoinPackages();
-                return is_array($packages) ? $packages : [];
-            } catch (\Throwable $e) {
-                Logger::error("Error loading store coin packages: " . $e->getMessage(), ['exception' => $e]);
-                return [];
-            }
-        }
-        return [];
-    }
-
-    /**
-     * Obtiene los paquetes de contenido/ventajas para la vista store-content.
-     */
-    public function getStoreContentData(): array {
-        if (class_exists(StorePackagesConfig::class) && method_exists(StorePackagesConfig::class, 'getContentPackages')) {
-            try {
-                $packages = StorePackagesConfig::getContentPackages();
-                if (is_array($packages)) {
-                    return array_filter($packages, fn($p) => !empty($p['is_active']));
-                }
-                return [];
-            } catch (\Throwable $e) {
-                Logger::error("Error loading store content packages: " . $e->getMessage(), ['exception' => $e]);
-                return [];
-            }
-        }
-        return [];
-    }
 
     /**
      * Formatea capacidad de almacenamiento en MB a formato legible.
@@ -192,7 +158,6 @@ class AppViewService {
         $canvasPrivacy = 'private'; 
         $canvasApproval = '0'; 
         $canvasAllowChat = '0';
-        $canvasAllowPurchases = '1';
         $canvasCooldownBatch = '5';
         $canvasCooldownSeconds = '10';
         $resetActive = '0';
@@ -229,7 +194,7 @@ class AppViewService {
                 $dbManager = new DatabaseManager();
                 $db = $dbManager->getConnection(DB::CONN_CANVASES);
                 $sql = "SELECT c.id, c.name, c.size, c.palette_id, c.privacy, c.requires_approval, c.is_subscription_locked, 
-                               c.cooldown_pixels_batch, c.cooldown_seconds, c.owner_id, c.created_at, c.max_participants, c.allow_chat, c.allow_purchases, c.members_count,
+                               c.cooldown_pixels_batch, c.cooldown_seconds, c.owner_id, c.created_at, c.max_participants, c.allow_chat, c.members_count,
                                r.is_active as reset_active, r.next_reset_at,
                                rs.is_active as resize_active, rs.next_resize_at, rs.target_size
                         FROM " . DB::TBL_CANVASES . " c
@@ -249,7 +214,6 @@ class AppViewService {
                     $canvasPrivacy = $canvas['privacy'] ?? 'private';
                     $canvasApproval = $canvas['requires_approval'] ?? '0';
                     $canvasAllowChat = $canvas['allow_chat'] ?? '0';
-                    $canvasAllowPurchases = $canvas['allow_purchases'] ?? '1';
                     $membersCount = $canvas['members_count'] ?? '0';
                     $canvasCreatedAt = isset($canvas['created_at']) ? date('d/m/Y', strtotime($canvas['created_at'])) : '';
 
@@ -424,7 +388,6 @@ class AppViewService {
             'canvasPrivacy' => $canvasPrivacy,
             'canvasApproval' => $canvasApproval,
             'canvasAllowChat' => $canvasAllowChat,
-            'canvasAllowPurchases' => $canvasAllowPurchases,
             'canvasCooldownBatch' => $canvasCooldownBatch,
             'canvasCooldownSeconds' => $canvasCooldownSeconds,
             'resetActive' => $resetActive,

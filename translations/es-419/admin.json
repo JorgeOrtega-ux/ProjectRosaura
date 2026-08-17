@@ -251,14 +251,6 @@
             "name": "Administrar suscripciones",
             "desc": "Permite gestionar los planes, precios y características de suscripciones."
         },
-        "manage_store_packages": {
-            "name": "Administrar tienda de monedas",
-            "desc": "Permite gestionar los paquetes de monedas y sus precios."
-        },
-        "manage_store_perks": {
-            "name": "Administrar tienda de ventajas",
-            "desc": "Permite gestionar las ventajas y perks disponibles en la tienda."
-        },
         "manage_content": {
             "name": "Moderar contenido y mensajes",
             "desc": "Permite supervisar mensajes, reportes y visibilidad de contenido."

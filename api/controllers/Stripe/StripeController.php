@@ -18,10 +18,6 @@ class StripeController extends BaseController {
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
-    public function create_coin_checkout($input) {
-        try { return $this->respond($this->stripeServices->createCoinCheckoutSession($input)); }
-        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
-    }
 
     public function preview_upgrade($input) {
         try { 

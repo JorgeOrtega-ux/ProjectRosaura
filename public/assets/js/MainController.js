@@ -104,15 +104,6 @@ export class MainController {
         window.addEventListener('systemMaintenanceTriggered', this.handleMaintenanceBound);
         document.addEventListener('visibilitychange', this.handleVisibilityChangeBound);
 
-        window.addEventListener('coins-updated', (e) => {
-            if (e.detail && e.detail.balance !== undefined) {
-                const displays = document.querySelectorAll('[data-ref="user-coins-balance"]');
-                displays.forEach(d => {
-                    d.textContent = formatNumber(e.detail.balance);
-                });
-            }
-        });
-
         window.addEventListener('subscription-updated', (e) => {
             if (e.detail && e.detail.tier !== undefined) {
                 window.appUserTier = parseInt(e.detail.tier, 10);
@@ -212,21 +203,6 @@ export class MainController {
     handleViewLoaded() {
         this.syncUIPreferences();
         this.moduleManager.markBottomSheets();
-        this.updateCoinsDisplay();
-    }
-
-    async updateCoinsDisplay() {
-        const displays = document.querySelectorAll('[data-ref="user-coins-balance"]');
-        if (displays.length === 0) return;
-        
-        try {
-            const response = await this.api.post(ApiRoutes.Store.GetBalance, {});
-            if (response && response.success && response.coins !== undefined) {
-                displays.forEach(d => {
-                    d.textContent = formatNumber(response.coins);
-                });
-            }
-        } catch (e) {}
     }
 
     // Proxy methods delegando responsabilidades a managers correspondientes
@@ -267,7 +243,6 @@ export class MainController {
         const lang = this.getPref('language');
         const openLinks = this.getPref('open_links_new_tab');
         const alerts = this.getPref('extended_alerts');
-        const purchasePref = this.getPref('purchase_preference') || 'verify';
 
         const toggleLinks = document.querySelector('[data-key="open_links_new_tab"]');
         if (toggleLinks) toggleLinks.checked = (openLinks == 1 || openLinks == '1');
@@ -282,9 +257,6 @@ export class MainController {
             if (item.getAttribute('data-key') === 'language') {
                 item.classList.toggle('active', item.getAttribute('data-value') === lang);
             }
-            if (item.getAttribute('data-key') === 'purchase_preference') {
-                item.classList.toggle('active', item.getAttribute('data-value') === purchasePref);
-            }
         });
 
         const themeTriggerTxt = document.querySelector('[data-action="toggleModule"][data-target="moduleTheme"] .component-dropdown-text');
@@ -297,12 +269,6 @@ export class MainController {
         if (langTriggerTxt) {
             const activeItem = document.querySelector('[data-key="language"].active .component-menu-link-text span');
             if (activeItem) langTriggerTxt.textContent = activeItem.textContent;
-        }
-
-        const prefTriggerTxt = document.querySelector('[data-action="toggleModule"][data-target="modulePurchasePref"] .component-dropdown-text');
-        if (prefTriggerTxt) {
-            const activeItem = document.querySelector('[data-key="purchase_preference"].active .component-menu-link-text span');
-            if (activeItem) prefTriggerTxt.textContent = activeItem.textContent;
         }
     }
 

@@ -56,14 +56,6 @@ class CacheInvalidator {
         } catch (\Throwable $e) {}
     }
 
-    public function userPerks(int $userId): void {
-        if (!$this->redis) return;
-        try {
-            $this->redis->del(CacheConstants::PREFIX_USER_PERKS . CacheConstants::SUBKEY_PERKS_ALL . $userId);
-            $this->redis->del(CacheConstants::PREFIX_USER_PERKS . CacheConstants::SUBKEY_PERKS_UNUSED . $userId);
-        } catch (\Throwable $e) {}
-    }
-
     public function userSubscription(int $userId): void {
         if (!$this->redis) return;
         try {
@@ -137,13 +129,6 @@ class CacheInvalidator {
         } catch (\Throwable $e) {}
     }
 
-    public function userCoins(int $userId): void {
-        if (!$this->redis) return;
-        try {
-            $this->redis->del(CacheConstants::PREFIX_STORE_COINS . $userId);
-        } catch (\Throwable $e) {}
-    }
-
     public function userPaymentHistory(int $userId): void {
         if (!$this->redis) return;
         try {
@@ -202,28 +187,6 @@ class CacheInvalidator {
         if (!$this->redis) return;
         try {
             $this->redis->del(CacheConstants::PREFIX_USER_PALETTE . $userId);
-        } catch (\Throwable $e) {}
-    }
-
-    public function storePackages(): void {
-        if (!$this->redis) return;
-        try {
-            $this->redis->del(CacheConstants::KEY_STORE_COIN_PACKAGES);
-            $this->deleteByPattern('store:coin_packages:*');
-            if (class_exists(StorePackagesConfig::class)) {
-                StorePackagesConfig::resetCache();
-            }
-        } catch (\Throwable $e) {}
-    }
-
-    public function storePerkPackages(): void {
-        if (!$this->redis) return;
-        try {
-            $this->redis->del(CacheConstants::KEY_STORE_PERK_PACKAGES);
-            $this->deleteByPattern('store:perk_packages:*');
-            if (class_exists(StorePackagesConfig::class)) {
-                StorePackagesConfig::resetCache();
-            }
         } catch (\Throwable $e) {}
     }
 

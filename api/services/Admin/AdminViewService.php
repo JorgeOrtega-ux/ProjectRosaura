@@ -77,8 +77,6 @@ class AdminViewService {
         $canManageMessages = in_array(PermissionsConstants::MANAGE_CONTENT, $userPermissions);
         $canManageSubscriptions = in_array(PermissionsConstants::MANAGE_SUBSCRIPTIONS, $userPermissions);
         $canManageAdvertisements = in_array(PermissionsConstants::MANAGE_ADVERTISEMENTS, $userPermissions);
-        $canManageStorePackages = in_array(PermissionsConstants::MANAGE_STORE_PACKAGES, $userPermissions);
-        $canManageStorePerks = in_array(PermissionsConstants::MANAGE_STORE_PERKS, $userPermissions);
 
         $appUrl = defined('APP_URL') ? APP_URL : '';
 
@@ -89,8 +87,6 @@ class AdminViewService {
             'canManageMessages' => $canManageMessages,
             'canManageSubscriptions' => $canManageSubscriptions,
             'canManageAdvertisements' => $canManageAdvertisements,
-            'canManageStorePackages' => $canManageStorePackages,
-            'canManageStorePerks' => $canManageStorePerks,
             'appUrl' => $appUrl
         ];
     }
@@ -139,7 +135,6 @@ class AdminViewService {
         $canDeleteUsers = in_array(PermissionsConstants::DELETE_USERS, $userPerms) || $isSuperAdmin;
         $canModerateUsers = count(array_intersect([PermissionsConstants::MODERATE_USERS, PermissionsConstants::DELETE_USERS], $userPerms)) > 0;
         $canViewKardex = in_array(PermissionsConstants::VIEW_KARDEX, $userPerms);
-        $canViewUserPurchases = in_array(PermissionsConstants::VIEW_USER_PURCHASES, $userPerms);
 
         $limit = 25;
         if ($page < 1) $page = 1;
@@ -290,7 +285,6 @@ class AdminViewService {
             'canDeleteUsers' => $canDeleteUsers,
             'canModerateUsers' => $canModerateUsers,
             'canViewKardex' => $canViewKardex,
-            'canViewUserPurchases' => $canViewUserPurchases,
             'isSuperAdmin' => $isSuperAdmin,
             'appUrl' => defined('APP_URL') ? APP_URL : ''
         ];
@@ -516,49 +510,6 @@ class AdminViewService {
         ];
     }
 
-    public function getUserPurchasesData(?string $targetUserUuid, int $page = 1): array {
-        if (session_status() === PHP_SESSION_NONE) session_start();
-
-        if (empty($targetUserUuid)) {
-            return ['redirect' => (defined('APP_URL') ? APP_URL : '') . "/admin/users"];
-        }
-
-        $db = $this->dbManager;
-        $redis = new RedisCache();
-        $roleRepo = new RoleRepository($db, $redis);
-        $userRepo = new UserRepository($db, $roleRepo);
-        $targetUser = $userRepo->findByUuid($targetUserUuid);
-
-        if (!$targetUser) {
-            return ['redirect' => (defined('APP_URL') ? APP_URL : '') . "/admin/users"];
-        }
-
-        $targetUserId = (int)$targetUser['id'];
-
-        $history = [];
-        try {
-            global $container;
-            if (isset($container) && $container instanceof \App\Core\Container) {
-                $stripeServices = $container->get(\App\Api\Services\Stripe\StripeServices::class);
-                $history = $stripeServices->getPaymentHistoryForUser($targetUserId, ['limit' => 100, 'offset' => 0]);
-            }
-        } catch (\Throwable $e) {
-            Logger::error("getUserPurchasesData error: " . $e->getMessage(), ['exception' => $e]);
-        }
-
-        $subColorRaw = $targetUser['subscription_color'] ?? '';
-        $subscriptionBgCss = self::parseSubscriptionColor($subColorRaw);
-
-        return [
-            'redirect' => null,
-            'targetUser' => $targetUser,
-            'targetUserId' => $targetUserId,
-            'targetUserUuid' => $targetUserUuid,
-            'history' => $history,
-            'subscriptionBgCss' => $subscriptionBgCss,
-            'appUrl' => defined('APP_URL') ? APP_URL : ''
-        ];
-    }
 
     public function getManageSubscriptionsData(?string $searchQuery, int $page = 1): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
@@ -660,210 +611,7 @@ class AdminViewService {
         ]);
     }
 
-    public function getManageStorePackagesData(?string $searchQuery, int $page): array {
-        if (session_status() === PHP_SESSION_NONE) session_start();
-        $db = $this->dbManager;
-        $pdo = $db->getConnection(DB::CONN_IDENTITY);
 
-        $tbl = 'store_coin_packages';
-        $searchQuery = trim($searchQuery ?? '');
-        $limit = 25;
-        if ($page < 1) $page = 1;
-
-        $searchCondition = "";
-        $searchParams = [];
-        if ($searchQuery !== '') {
-            $searchCondition = "WHERE amount LIKE :search OR stripe_price_id LIKE :search";
-            $searchParams[':search'] = '%' . $searchQuery . '%';
-        }
-
-        $totalPackages = 0;
-        try {
-            $stmtCount = $pdo->prepare("SELECT COUNT(id) FROM {$tbl} {$searchCondition}");
-            foreach ($searchParams as $key => $val) {
-                $stmtCount->bindValue($key, $val);
-            }
-            $stmtCount->execute();
-            $totalPackages = (int)$stmtCount->fetchColumn();
-        } catch (\Throwable $e) {
-            Logger::error("getManageStorePackagesData error counting: " . $e->getMessage());
-        }
-
-        $totalPages = ceil($totalPackages / $limit);
-        if ($totalPages < 1) $totalPages = 1;
-        if ($page > $totalPages) $page = $totalPages;
-
-        $offset = ($page - 1) * $limit;
-        $packages = [];
-
-        try {
-            $sql = "SELECT * FROM {$tbl} {$searchCondition} ORDER BY amount ASC LIMIT :limit OFFSET :offset";
-            $stmt = $pdo->prepare($sql);
-            foreach ($searchParams as $key => $val) {
-                $stmt->bindValue($key, $val);
-            }
-            $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
-            $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
-            $stmt->execute();
-            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-                $amount = (int)$row['amount'];
-                $bonusAmount = (int)($row['bonus_amount'] ?? 0);
-                $baseAmount = $amount - $bonusAmount;
-
-                $meta = \App\Core\System\StorePackagesConfig::getCoinVisualMetadata($amount);
-
-                $row['name'] = __('store_coins_title_format', ['amount' => number_format($amount)]);
-                $row['description'] = $bonusAmount > 0 
-                    ? __('store_coins_desc_bonus_format', ['base' => number_format($baseAmount), 'bonus' => number_format($bonusAmount)])
-                    : __('store_coins_desc_format');
-                $row['bonus_text'] = $bonusAmount > 0 
-                    ? __('store_coins_bonus_format', ['bonus' => number_format($bonusAmount)])
-                    : null;
-                $row['icon'] = $meta['icon'];
-                $row['icon_color'] = $meta['icon_color'];
-                $row['border_color'] = $meta['border_color'];
-                $row['badge_color'] = $meta['badge_color'];
-
-                $packages[] = $row;
-            }
-        } catch (\Throwable $e) {
-            Logger::error("getManageStorePackagesData error fetching: " . $e->getMessage());
-        }
-
-        return [
-            'appUrl' => defined('APP_URL') ? APP_URL : 'http://localhost',
-            'searchQuery' => $searchQuery,
-            'page' => $page,
-            'totalPages' => $totalPages,
-            'totalPackages' => $totalPackages,
-            'packages' => $packages
-        ];
-    }
-
-    public function getStorePackageBuilderData(?string $targetUuid = null): array {
-        if (session_status() === PHP_SESSION_NONE) session_start();
-        $db = $this->dbManager;
-        $pdo = $db->getConnection(DB::CONN_IDENTITY);
-
-        $isEdit = false;
-        $package = null;
-
-        if (!empty($targetUuid)) {
-            try {
-                $stmt = $pdo->prepare("SELECT * FROM store_coin_packages WHERE uuid = :uuid LIMIT 1");
-                $stmt->execute(['uuid' => $targetUuid]);
-                $package = $stmt->fetch(\PDO::FETCH_ASSOC);
-                if ($package) {
-                    $isEdit = true;
-                }
-            } catch (\Throwable $e) {
-                Logger::error("getStorePackageBuilderData error: " . $e->getMessage(), ['exception' => $e]);
-            }
-        }
-
-        return [
-            'error' => null,
-            'isEdit' => $isEdit,
-            'package' => $package
-        ];
-    }
-
-    public function getManageStorePerksData(?string $searchQuery, int $page): array {
-        if (session_status() === PHP_SESSION_NONE) session_start();
-        $db = $this->dbManager;
-        $pdo = $db->getConnection(DB::CONN_IDENTITY);
-
-        $tbl = 'store_perk_packages';
-        $searchQuery = trim($searchQuery ?? '');
-        $limit = 25;
-        if ($page < 1) $page = 1;
-
-        $searchCondition = "";
-        $searchParams = [];
-        if ($searchQuery !== '') {
-            $searchCondition = "WHERE perk_id LIKE :search";
-            $searchParams[':search'] = '%' . $searchQuery . '%';
-        }
-
-        $totalPerks = 0;
-        try {
-            $stmtCount = $pdo->prepare("SELECT COUNT(id) FROM {$tbl} {$searchCondition}");
-            foreach ($searchParams as $key => $val) {
-                $stmtCount->bindValue($key, $val);
-            }
-            $stmtCount->execute();
-            $totalPerks = (int)$stmtCount->fetchColumn();
-        } catch (\Throwable $e) {
-            Logger::error("getManageStorePerksData error counting: " . $e->getMessage());
-        }
-
-        $totalPages = ceil($totalPerks / $limit);
-        if ($totalPages < 1) $totalPages = 1;
-        if ($page > $totalPages) $page = $totalPages;
-
-        $offset = ($page - 1) * $limit;
-        $perks = [];
-
-        try {
-            $sql = "SELECT * FROM {$tbl} {$searchCondition} ORDER BY price_coins ASC LIMIT :limit OFFSET :offset";
-            $stmt = $pdo->prepare($sql);
-            foreach ($searchParams as $key => $val) {
-                $stmt->bindValue($key, $val);
-            }
-            $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
-            $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
-            $stmt->execute();
-            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-                $perkId = $row['perk_id'];
-                $meta = \App\Core\System\StorePackagesConfig::getPerkVisualMetadata($perkId);
-
-                $row['name'] = "store_content_{$perkId}_name";
-                $row['description'] = "store_content_{$perkId}_desc";
-                $row['icon'] = $meta['icon'];
-
-                $perks[] = $row;
-            }
-        } catch (\Throwable $e) {
-            Logger::error("getManageStorePerksData error fetching: " . $e->getMessage());
-        }
-
-        return [
-            'appUrl' => defined('APP_URL') ? APP_URL : 'http://localhost',
-            'searchQuery' => $searchQuery,
-            'page' => $page,
-            'totalPages' => $totalPages,
-            'totalPerks' => $totalPerks,
-            'perks' => $perks
-        ];
-    }
-
-    public function getStorePerkBuilderData(?string $targetUuid = null): array {
-        if (session_status() === PHP_SESSION_NONE) session_start();
-        $db = $this->dbManager;
-        $pdo = $db->getConnection(DB::CONN_IDENTITY);
-
-        $isEdit = false;
-        $perk = null;
-
-        if (!empty($targetUuid)) {
-            try {
-                $stmt = $pdo->prepare("SELECT * FROM store_perk_packages WHERE uuid = :uuid LIMIT 1");
-                $stmt->execute(['uuid' => $targetUuid]);
-                $perk = $stmt->fetch(\PDO::FETCH_ASSOC);
-                if ($perk) {
-                    $isEdit = true;
-                }
-            } catch (\Throwable $e) {
-                Logger::error("getStorePerkBuilderData error: " . $e->getMessage(), ['exception' => $e]);
-            }
-        }
-
-        return [
-            'error' => null,
-            'isEdit' => $isEdit,
-            'perk' => $perk
-        ];
-    }
 
     /**
 

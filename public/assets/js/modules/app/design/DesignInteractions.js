@@ -61,42 +61,6 @@ export const DesignInteractions = {
         }
 
 
-        const btnPerks = e.target.closest('[data-action="togglePerksInventory"]');
-        if (btnPerks) {
-            e.preventDefault();
-            this.showInventoryPerks = !this.showInventoryPerks;
-            if (this.showInventoryPerks) {
-                btnPerks.classList.add('active');
-                if (this.showOwnerTools) {
-                    this.showOwnerTools = false;
-                    const btnOwnerTools = document.querySelector('[data-action="toggleOwnerTools"]');
-                    if (btnOwnerTools) btnOwnerTools.classList.remove('active');
-                }
-                if (!this.inventoryPerks) {
-                    this.loadUserPerks();
-                } else {
-                    this.updatePerkBadges();
-                }
-            } else {
-                btnPerks.classList.remove('active');
-                this.updatePerkBadges();
-            }
-            return;
-        }
-
-        const btnActivatePerk = e.target.closest('[data-action="activatePerk"]');
-        if (btnActivatePerk) {
-            if (this.perkGlobalCooldownUntil && Date.now() < this.perkGlobalCooldownUntil) {
-                const remSecs = Math.ceil((this.perkGlobalCooldownUntil - Date.now()) / 1000);
-                if (typeof showMessage === 'function') showMessage(`Espera ${remSecs}s a que finalice tu ventaja activa.`, 'warning');
-                return;
-            }
-            soundManager.playUiClick();
-            if (typeof this.activatePerk === 'function') {
-                this.activatePerk(btnActivatePerk.getAttribute('data-perk-id'), btnActivatePerk);
-            }
-            return;
-        }
 
         const btnOwnerTools = e.target.closest('[data-action="toggleOwnerTools"]');
         if (btnOwnerTools) {
@@ -104,11 +68,6 @@ export const DesignInteractions = {
             this.showOwnerTools = !this.showOwnerTools;
             if (this.showOwnerTools) {
                 btnOwnerTools.classList.add('active');
-                if (this.showInventoryPerks) {
-                    this.showInventoryPerks = false;
-                    const btnPerksElement = document.querySelector('[data-action="togglePerksInventory"]');
-                    if (btnPerksElement) btnPerksElement.classList.remove('active');
-                }
             } else {
                 btnOwnerTools.classList.remove('active');
             }
@@ -308,12 +267,6 @@ export const DesignInteractions = {
             const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-colors"]');
             if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
         } else if (keyUpper === 'T') {
-            const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-templates"]');
-            if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
-        } else if (keyUpper === 'P') {
-            const btn = document.querySelector('[data-action="togglePerksInventory"]');
-            if (btn && !btn.classList.contains('disabled') && !btn.classList.contains('disabled-interaction')) { e.preventDefault(); btn.click(); }
-        } else if (keyUpper === 'O') {
             const btn = document.querySelector('[data-action="toggleOwnerTools"]');
             if (btn && !btn.classList.contains('disabled') && !btn.classList.contains('disabled-interaction')) { e.preventDefault(); btn.click(); }
         } else if (keyUpper === 'H') {
@@ -1331,15 +1284,6 @@ export const DesignInteractions = {
                     userId: window.activeUserId || null
                 });
             }
-            if (this.inventoryPerks && usedPerk) {
-                const perkObj = this.inventoryPerks.find(p => p.perk_id === usedPerk);
-                if (perkObj) {
-                    perkObj.count = Math.max(0, parseInt(perkObj.count, 10) - 1);
-                    if (perkObj.count === 0) {
-                        this.inventoryPerks = this.inventoryPerks.filter(p => p.perk_id !== usedPerk);
-                    }
-                }
-            }
             this.interactionMode = 'normal';
             this.activeBomb = null;
             this.perkBombReady = null;
@@ -1347,7 +1291,6 @@ export const DesignInteractions = {
             this.updateSelectionUI();
             this.requestRender();
             if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
-            if (typeof this.loadUserPerks === 'function') this.loadUserPerks();
             return;
         }
 
@@ -1599,104 +1542,7 @@ export const DesignInteractions = {
 
     // handleNuclearWarning gestionado por DesignNetwork.js
 
-    async loadUserPerks() {
-        try {
-            const result = await this.api.post(ApiRoutes.Store.GetMyPerks, {});
-            if (result && result.success) {
-                const grouped = {};
-                result.data.forEach(p => {
-                    if (!grouped[p.perk_id]) {
-                        grouped[p.perk_id] = { ...p, count: 0 };
-                    }
-                    grouped[p.perk_id].count += parseInt(p.count) || 1;
-                    if (p.is_usable !== undefined) {
-                        grouped[p.perk_id].is_usable = p.is_usable;
-                    }
-                });
-                this.inventoryPerks = Object.values(grouped);
-                if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
-            }
-        } catch (error) {
-        }
-    },
 
-    async activatePerk(perkId, btn) {
-        if (!perkId) return;
-
-        const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
-        if (owned && owned.is_usable === false) {
-            const msg = (typeof window.__ === 'function' ? window.__('err_perk_temporarily_disabled') : null) || 'Esta ventaja se encuentra temporalmente deshabilitada para su uso.';
-            if (typeof showMessage === 'function') showMessage(msg, 'warning');
-            return;
-        }
-
-        if (perkId === 'mines_1') {
-            const count = owned ? parseInt(owned.count, 10) : 0;
-            if (count <= 0) {
-                if (typeof showMessage === 'function') showMessage(window.__('err_perk_not_owned'), 'warning');
-                return;
-            }
-
-            if (this.interactionMode === 'placing_mines') {
-                this.interactionMode = 'normal';
-                this.selectedPixels.clear();
-                if (typeof showMessage === 'function') showMessage('Modo Colocación de Minas desactivado', 'info');
-            } else {
-                this.interactionMode = 'placing_mines';
-                this.activeBomb = null;
-                this.selectedPixels.clear();
-                if (typeof showMessage === 'function') showMessage('Modo Colocación de Minas activado. Selecciona hasta 10 píxeles en el lienzo.', 'info');
-            }
-
-            if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
-            this.updateSelectionUI();
-            this.syncMinesToWorker();
-            this.requestRender();
-            return;
-        }
-
-        if (PerksRegistry.isBomb(perkId)) {
-            const count = owned ? parseInt(owned.count, 10) : 0;
-            if (count <= 0) {
-                if (typeof showMessage === 'function') showMessage(window.__('err_perk_not_owned'), 'warning');
-                return;
-            }
-
-            if (this.activeBomb === perkId && this.interactionMode === 'bombing') {
-                this.perkBombReady = null;
-                this.interactionMode = 'normal';
-                this.activeBomb = null;
-            } else {
-                this.perkBombReady = perkId;
-                this.interactionMode = 'bombing';
-                this.activeBomb = perkId;
-                if (typeof showMessage === 'function') showMessage(window.__('msg_perk_equipped_select_target'), 'info');
-            }
-
-            if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
-            this.updateSelectionUI();
-            return;
-        }
-
-        try {
-            if (btn) btn.classList.add('loading');
-            const result = await this.api.post(ApiRoutes.Store.ActivatePerk, { perk_id: perkId });
-            if (btn) btn.classList.remove('loading');
-            
-            if (result && result.success) {
-                if (typeof showMessage === 'function') {
-                    showMessage(window.__('msg_perk_activated_success'), 'success');
-                }
-                this.loadUserPerks(); 
-            } else {
-                if (typeof showMessage === 'function') showMessage(result?.message_key || window.__('err_activate_perk'), 'error');
-            }
-        } catch (error) {
-            if (btn) btn.classList.remove('loading');
-            if (typeof showMessage === 'function') showMessage(window.__('err_server_connection'), 'error');
-        }
-    },
-    
     updatePerkBadges() {
         const badgesRight = document.querySelector('[data-ref="badges-right"]');
         if (!badgesRight) return;
@@ -1709,11 +1555,6 @@ export const DesignInteractions = {
             }
         });
         const isGlobalCooldown = !!(this.perkGlobalCooldownUntil && Date.now() < this.perkGlobalCooldownUntil);
-        const btnPerksElement = document.querySelector('[data-action="togglePerksInventory"]');
-        if (btnPerksElement) {
-            if (isGlobalCooldown) btnPerksElement.classList.add('disable-interaction');
-            else btnPerksElement.classList.remove('disable-interaction');
-        }
 
         const PERK_ORDER = PerksRegistry.getDisplayOrder();
         let renderedInventoryCount = 0;
@@ -1726,16 +1567,12 @@ export const DesignInteractions = {
             let clickHandler = null;
 
             if (PerksRegistry.isBomb(perkId) && perkId !== 'mines_1') {
-                const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
-                const totalAmount = owned ? parseInt(owned.count, 10) : 0;
-                const isUsable = !owned || owned.is_usable !== false;
-                
                 isActive = (this.activeBomb === perkId && this.interactionMode === 'bombing');
                 
                 if (isActive) {
                     isToggledOn = true;
                     const titleText = PerksRegistry.getLabel(perkId);
-                    activeHtml = `<span class="material-symbols-rounded component-text-danger">${icon}</span><span>${titleText} (${totalAmount})</span>`;
+                    activeHtml = `<span class="material-symbols-rounded component-text-danger">${icon}</span><span>${titleText}</span>`;
                     clickHandler = () => {
                         this.interactionMode = 'normal';
                         this.activeBomb = null;
@@ -1743,34 +1580,14 @@ export const DesignInteractions = {
                         this.updateSelectionUI();
                         this.updatePerkBadges();
                     };
-                    if (this.showInventoryPerks) renderedInventoryCount++;
-                } else if (totalAmount > 0 && this.showInventoryPerks) {
-                    isActive = true; 
-                    isToggledOn = false;
-                    const titleText = PerksRegistry.getLabel(perkId);
-                    const statusSuffix = !isUsable ? ' <span class="material-symbols-rounded" style="font-size:13px;opacity:0.7;">block</span>' : '';
-                    activeHtml = `<span class="material-symbols-rounded">${icon}</span><span>${titleText} (${totalAmount})${statusSuffix}</span>`;
-                    clickHandler = () => {
-                        if (!isUsable) {
-                            const msg = (typeof window.__ === 'function' ? window.__('err_perk_temporarily_disabled') : null) || 'Esta ventaja se encuentra temporalmente deshabilitada para su uso.';
-                            if (typeof showMessage === 'function') showMessage(msg, 'warning');
-                            return;
-                        }
-                        this.activatePerk(perkId);
-                    };
-                    renderedInventoryCount++;
                 }
             } else if (perkId === 'mines_1') {
-                const owned = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
-                const totalAmount = owned ? parseInt(owned.count, 10) : 0;
-                const isUsable = !owned || owned.is_usable !== false;
-                
                 isActive = (this.interactionMode === 'placing_mines');
                 
                 if (isActive) {
                     isToggledOn = true;
                     const titleText = PerksRegistry.getLabel(perkId);
-                    activeHtml = `<span class="material-symbols-rounded component-text-success">${icon}</span><span>${titleText} (${totalAmount})</span>`;
+                    activeHtml = `<span class="material-symbols-rounded component-text-success">${icon}</span><span>${titleText}</span>`;
                     clickHandler = () => {
                         this.interactionMode = 'normal';
                         this.selectedPixels.clear();
@@ -1779,37 +1596,15 @@ export const DesignInteractions = {
                         this.syncMinesToWorker();
                         this.requestRender();
                     };
-                    if (this.showInventoryPerks) renderedInventoryCount++;
-                } else if (totalAmount > 0 && this.showInventoryPerks) {
-                    isActive = true;
-                    isToggledOn = false;
-                    const titleText = PerksRegistry.getLabel(perkId);
-                    const statusSuffix = !isUsable ? ' <span class="material-symbols-rounded" style="font-size:13px;opacity:0.7;">block</span>' : '';
-                    activeHtml = `<span class="material-symbols-rounded">${icon}</span><span>${titleText} (${totalAmount})${statusSuffix}</span>`;
-                    clickHandler = () => {
-                        if (!isUsable) {
-                            const msg = (typeof window.__ === 'function' ? window.__('err_perk_temporarily_disabled') : null) || 'Esta ventaja se encuentra temporalmente deshabilitada para su uso.';
-                            if (typeof showMessage === 'function') showMessage(msg, 'warning');
-                            return;
-                        }
-                        this.activatePerk(perkId);
-                    };
-                    renderedInventoryCount++;
                 }
             }
 
-            const invItem = this.inventoryPerks ? this.inventoryPerks.find(p => p.perk_id === perkId) : null;
-            const isUsable = !invItem || invItem.is_usable !== false;
-            
             if (isActive) {
                 const badge = document.createElement('div');
                 badge.className = 'component-badge';
-                badge.style.cursor = isUsable ? 'pointer' : 'not-allowed';
-                if (!isUsable) {
-                    badge.style.opacity = '0.6';
-                }
+                badge.style.cursor = 'pointer';
                 badge.innerHTML = activeHtml;
-                if (isGlobalCooldown && isUsable) {
+                if (isGlobalCooldown) {
                     badge.classList.add('disable-interaction');
                 }
                 if (isToggledOn) {
@@ -1823,43 +1618,7 @@ export const DesignInteractions = {
                 }
                 if (clickHandler) badge.addEventListener('click', clickHandler);
                 badgesRight.appendChild(badge);
-            } 
-            else if (invItem && parseInt(invItem.count, 10) > 0 && this.showInventoryPerks) {
-                const badge = document.createElement('div');
-                badge.className = `component-badge inventory-badge-temp ${!isUsable ? 'component-badge--disabled' : ''}`;
-                badge.style.cursor = isUsable ? 'pointer' : 'not-allowed';
-                if (!isUsable) {
-                    badge.style.opacity = '0.55';
-                    badge.setAttribute('data-tooltip', (typeof window.__ === 'function' ? window.__('err_perk_temporarily_disabled') : null) || 'Ventaja temporalmente deshabilitada');
-                    badge.setAttribute('data-position', 'top');
-                }
-                if (isGlobalCooldown && isUsable) {
-                    badge.classList.add('disable-interaction');
-                }
-                const titleText = PerksRegistry.getLabel(perkId);
-                const statusSuffix = !isUsable ? ' <span class="material-symbols-rounded" style="font-size:13px;opacity:0.7;">block</span>' : '';
-                badge.innerHTML = `<span class="material-symbols-rounded">${icon}</span><span>${titleText} (${invItem.count})${statusSuffix}</span>`;
-                badge.addEventListener('click', () => {
-                    if (!isUsable) {
-                        const msg = (typeof window.__ === 'function' ? window.__('err_perk_temporarily_disabled') : null) || 'Esta ventaja se encuentra temporalmente deshabilitada para su uso.';
-                        if (typeof showMessage === 'function') showMessage(msg, 'warning');
-                        return;
-                    }
-                    this.activatePerk(perkId, badge);
-                });
-                badgesRight.appendChild(badge);
-                renderedInventoryCount++;
             }
-        });
-
-        if (this.showInventoryPerks && renderedInventoryCount === 0) {
-            const emptyBadge = document.createElement('div');
-            emptyBadge.className = 'component-badge component-badge--muted inventory-badge-temp';
-            const rawTrans = window.__('badge_no_perks_available');
-            const displayLabel = (rawTrans && rawTrans !== 'badge_no_perks_available') ? rawTrans : 'Sin ventajas disponibles';
-            emptyBadge.innerHTML = `<span class="material-symbols-rounded">info</span><span>${displayLabel}</span>`;
-            badgesRight.appendChild(emptyBadge);
-        }
 
         if (this.isOwner) {
             const now = Date.now();

@@ -43,31 +43,7 @@ class AdminController extends BaseController {
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
-    public function get_user_purchases($input) {
-        try { 
-            $this->requirePermission(PermissionsConstants::VIEW_USER_PURCHASES);
-            $safeInput = [
-                'target_user_id' => $input['target_user_id'] ?? null,
-                'target_user_uuid' => $input['target_user_uuid'] ?? null
-            ];
-            return $this->respond($this->adminServices->getUserPurchases($safeInput)); 
-        }
-        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
-    }
 
-    public function get_user_coin_transactions($input) {
-        try { 
-            $this->requirePermission(PermissionsConstants::VIEW_USER_PURCHASES);
-            $safeInput = [
-                'target_user_id' => $input['target_user_id'] ?? null,
-                'target_user_uuid' => $input['target_user_uuid'] ?? null,
-                'limit' => $input['limit'] ?? 100,
-                'offset' => $input['offset'] ?? 0
-            ];
-            return $this->respond($this->adminServices->getUserCoinTransactions($safeInput)); 
-        }
-        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
-    }
 
     public function update_avatar($input) {
         try { 
@@ -282,91 +258,6 @@ class AdminController extends BaseController {
         } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
-    public function save_store_package($input) {
-        try {
-            $this->requirePermission(PermissionsConstants::MANAGE_STORE_PACKAGES);
-            $safeInput = [
-                'uuid' => $input['uuid'] ?? null,
-                'name' => $input['name'] ?? null,
-                'amount' => $input['amount'] ?? null,
-                'price_usd' => $input['price_usd'] ?? null,
-                'description' => $input['description'] ?? null,
-                'bonus_text' => $input['bonus_text'] ?? null,
-                'icon' => $input['icon'] ?? null,
-                'icon_color' => $input['icon_color'] ?? null,
-                'border_color' => $input['border_color'] ?? null,
-                'badge_color' => $input['badge_color'] ?? null,
-                'stripe_price_id' => $input['stripe_price_id'] ?? null,
-                'is_active' => $input['is_active'] ?? null
-            ];
-            return $this->respond($this->adminServices->saveStorePackage($safeInput));
-        } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
-    }
-
-    public function toggle_store_package_visibility($input) {
-        try {
-            $this->requirePermission(PermissionsConstants::MANAGE_STORE_PACKAGES);
-            $safeInput = ['uuid' => $input['uuid'] ?? null];
-            return $this->respond($this->adminServices->toggleStorePackageVisibility($safeInput));
-        } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
-    }
-
-    public function set_store_package_popular($input) {
-        try {
-            $this->requirePermission(PermissionsConstants::MANAGE_STORE_PACKAGES);
-            $safeInput = ['uuid' => $input['uuid'] ?? null];
-            return $this->respond($this->adminServices->setStorePackagePopular($safeInput));
-        } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
-    }
-
-    public function delete_store_package($input) {
-        try {
-            $this->requirePermission(PermissionsConstants::MANAGE_STORE_PACKAGES);
-            $safeInput = ['uuid' => $input['uuid'] ?? null];
-            return $this->respond($this->adminServices->deleteStorePackage($safeInput));
-        } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
-    }
-
-    public function save_store_perk($input) {
-        try {
-            $this->requirePermission(PermissionsConstants::MANAGE_STORE_PERKS);
-            $safeInput = [
-                'uuid' => $input['uuid'] ?? null,
-                'perk_id' => $input['perk_id'] ?? null,
-                'name' => $input['name'] ?? null,
-                'price_coins' => $input['price_coins'] ?? null,
-                'description' => $input['description'] ?? null,
-                'icon' => $input['icon'] ?? null,
-                'is_active' => $input['is_active'] ?? null,
-                'is_usable' => $input['is_usable'] ?? null
-            ];
-            return $this->respond($this->adminServices->saveStorePerk($safeInput));
-        } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
-    }
-
-    public function toggle_store_perk_visibility($input) {
-        try {
-            $this->requirePermission(PermissionsConstants::MANAGE_STORE_PERKS);
-            $safeInput = ['uuid' => $input['uuid'] ?? null];
-            return $this->respond($this->adminServices->toggleStorePerkVisibility($safeInput));
-        } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
-    }
-
-    public function toggle_store_perk_usable($input) {
-        try {
-            $this->requirePermission(PermissionsConstants::MANAGE_STORE_PERKS);
-            $safeInput = ['uuid' => $input['uuid'] ?? null];
-            return $this->respond($this->adminServices->toggleStorePerkUsable($safeInput));
-        } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
-    }
-
-    public function delete_store_perk($input) {
-        try {
-            $this->requirePermission(PermissionsConstants::MANAGE_STORE_PERKS);
-            $safeInput = ['uuid' => $input['uuid'] ?? null];
-            return $this->respond($this->adminServices->deleteStorePerk($safeInput));
-        } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
-    }
 
     public function get_permissions() {
         try { 
@@ -586,13 +477,6 @@ class AdminController extends BaseController {
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
-    public function adjust_coins($input) {
-        try {
-            $this->requirePermission(PermissionsConstants::EDIT_USERS);
-            return $this->respond($this->adminServices->adjustCoins($input));
-        }
-        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
-    }
 
     public function terminate_sessions($input) {
         try {

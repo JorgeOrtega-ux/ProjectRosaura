@@ -4,25 +4,21 @@ namespace App\Api\Controllers\Stripe;
 
 use App\Config\Database\RedisCache;
 use App\Core\Interfaces\SubscriptionRepositoryInterface;
-use App\Core\Interfaces\StoreRepositoryInterface;
 use App\Core\System\Logger;
 use App\Core\System\SubscriptionPlanConstants;
 use App\Api\Services\Canvas\CanvasLockManager;
 
 class StripeWebhookController {
     private SubscriptionRepositoryInterface $subRepo;
-    private StoreRepositoryInterface $storeRepo;
     private RedisCache $redisCache;
     private CanvasLockManager $lockManager;
 
     public function __construct(
         SubscriptionRepositoryInterface $subRepo,
-        StoreRepositoryInterface $storeRepo,
         RedisCache $redisCache,
         CanvasLockManager $lockManager
     ) {
         $this->subRepo = $subRepo;
-        $this->storeRepo = $storeRepo;
         $this->redisCache = $redisCache;
         $this->lockManager = $lockManager;
     }
@@ -104,39 +100,6 @@ class StripeWebhookController {
             return;
         }
 
-        if (isset($metadata->type) && $metadata->type === 'coins') {
-            $userId = isset($metadata->user_id) ? (int) $metadata->user_id : 0;
-            $amountCoins = isset($metadata->amount) ? (int) $metadata->amount : 0;
-
-            if ($userId > 0 && $amountCoins > 0) {
-                $processed = $this->storeRepo->processCoinPurchaseSession([
-                    'user_id' => $userId,
-                    'stripe_payment_intent_id' => $session->payment_intent ?? null,
-                    'stripe_checkout_session_id' => $session->id,
-                    'item_type' => 'coins',
-                    'item_amount' => $amountCoins,
-                    'amount_cents' => $session->amount_total ?? 0,
-                    'currency' => strtolower($session->currency ?? 'usd'),
-                    'status' => 'succeeded'
-                ]);
-
-                if ($processed) {
-                    $this->subRepo->createPaymentRecord([
-                        'user_id' => $userId,
-                        'stripe_payment_intent_id' => $session->payment_intent ?? null,
-                        'stripe_invoice_id' => null,
-                        'amount_cents' => $session->amount_total ?? 0,
-                        'currency' => strtolower($session->currency ?? 'usd'),
-                        'description' => "Purchase of {$amountCoins} coins",
-                        'status' => 'succeeded'
-                    ]);
-                    Logger::info("Stripe webhook: coins purchased successfully", ['user_id' => $userId, 'coins' => $amountCoins, 'session_id' => $session->id]);
-                } else {
-                    Logger::info("Stripe webhook: ignoring duplicate or failed coin session", ['session_id' => $session->id]);
-                }
-            }
-            return;
-        }
 
         $userId = isset($metadata->user_id) ? (int) $metadata->user_id : 0;
         $tier = isset($metadata->tier) ? (int) $metadata->tier : 0;

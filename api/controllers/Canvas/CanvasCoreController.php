@@ -116,7 +116,6 @@ class CanvasCoreController extends BaseController {
             $cooldownBatch = $input['cooldown_pixels_batch'] ?? 5;
             $cooldownSeconds = $input['cooldown_seconds'] ?? 10;
 
-            $allowPurchases = isset($input['allow_purchases']) ? (int)$input['allow_purchases'] : 1;
             $allowChat = isset($input['allow_chat']) ? (int)$input['allow_chat'] : 0;
             $tags = isset($input['tags']) && is_array($input['tags']) ? $input['tags'] : [];
             $templateId = $input['template_id'] ?? null;
@@ -131,7 +130,7 @@ class CanvasCoreController extends BaseController {
             $result = $this->canvasServices->createCanvas(
                 $userId, $name, $privacy, $requiresApproval, 
                 $size, (int)$limit, $paletteId, (int)$cooldownBatch, (int)$cooldownSeconds,
-                $allowPurchases, $allowChat, $tags, $templateId
+                $allowChat, $tags, $templateId
             );
 
 
@@ -173,7 +172,6 @@ class CanvasCoreController extends BaseController {
                 'max_participants' => $input['max_members'] ?? null,
                 'cooldown_pixels_batch' => $input['cooldown_pixels_batch'] ?? null,
                 'cooldown_seconds' => $input['cooldown_seconds'] ?? null,
-                'allow_purchases' => isset($input['allow_purchases']) ? (int)$input['allow_purchases'] : null,
                 'allow_chat' => isset($input['allow_chat']) ? (int)$input['allow_chat'] : null,
                 'tags' => isset($input['tags']) && is_array($input['tags']) ? $input['tags'] : []
             ];

@@ -53,7 +53,7 @@ class UserRepository implements UserRepositoryInterface {
         try {
             $stmtUser = $this->pdo->prepare("
                 SELECT 
-                    u.id, u.uuid, u.username, u.email, u.password, u.google_id, u.subscription_tier, u.profile_picture, u.purchase_preference,
+                    u.id, u.uuid, u.username, u.email, u.password, u.google_id, u.subscription_tier, u.profile_picture,
                     u.two_factor_secret, u.two_factor_enabled, u.two_factor_recovery_codes, u.deletion_scheduled_at, u.created_at,
                     u.template_tokens_used, u.template_tokens_reset_at,
                     ur.is_suspended, ur.suspension_type, ur.suspension_reason, ur.suspension_end_date, 
@@ -361,19 +361,6 @@ class UserRepository implements UserRepositoryInterface {
         }
     }
 
-    public function updatePurchasePreference(int $userId, string $pref): bool {
-        $tblUsers = DB::TBL_USERS;
-        try {
-            $stmt = $this->pdo->prepare("UPDATE {$tblUsers} SET purchase_preference = ? WHERE id = ?");
-            $res = $stmt->execute([$pref, $userId]);
-            if ($res) $this->invalidateProfileCache($userId);
-            return $res;
-        } catch (PDOException $e) {
-            Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'pref' => $pref, 'exception' => $e]);
-            return false;
-        }
-    }
-
     public function setFlag(int $userId, string $flagKey): bool {
         $tblFlags = DB::TBL_USER_FLAGS;
         try {
@@ -507,13 +494,12 @@ class UserRepository implements UserRepositoryInterface {
             // Anonymize financial records
             $this->pdo->prepare("UPDATE " . DB::TBL_SUBSCRIPTIONS . " SET user_id = NULL WHERE user_id = ?")->execute([$userId]);
             $this->pdo->prepare("UPDATE " . DB::TBL_PAYMENT_HISTORY . " SET user_id = NULL WHERE user_id = ?")->execute([$userId]);
-            $this->pdo->prepare("UPDATE store_purchases SET user_id = NULL WHERE user_id = ?")->execute([$userId]);
 
             // Delete non-financial user records
             $identityTables = [
-                'user_perks', 'user_perk_balances', 'custom_palettes', 'user_flags',
+                'custom_palettes', 'user_flags',
                 'user_preferences', 'user_restrictions', 'auth_tokens',
-                'user_roles', 'user_coin_transactions'
+                'user_roles'
             ];
             foreach ($identityTables as $table) {
                 try {

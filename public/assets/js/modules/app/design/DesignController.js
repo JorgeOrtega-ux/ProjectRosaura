@@ -181,7 +181,6 @@ class DesignController {
         this.isSelecting = false;
         this.interactionMode = 'normal';
         this.showOwnerTools = false;
-        this.showInventoryPerks = false;
         this.ownerEraserBox = null;
         this.ownerEraserStep = 0;
         this.ownerEraserStart = null;
@@ -224,11 +223,6 @@ class DesignController {
             this.checkCanvasAccess();
             
             const uid = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
-            if (uid) {
-                if (typeof this.loadUserPerks === 'function') {
-                    this.loadUserPerks();
-                }
-            }
             
             this.startCooldownLoop();
             

@@ -95,18 +95,6 @@ class AdminUserEditController {
         const btnSetPref = e.target.closest('[data-action="adminSetPref"]');
         if (btnSetPref) this.savePrefFromDropdown(btnSetPref);
 
-        const btnAdjustCoins = e.target.closest('[data-action="adminOpenAdjustCoins"]');
-        if (btnAdjustCoins) this.openAdjustCoinsModal(btnAdjustCoins);
-
-        const btnSubmitAdjustCoins = e.target.closest('[data-action="adminSubmitAdjustCoins"]');
-        if (btnSubmitAdjustCoins) this.submitAdjustCoins(btnSubmitAdjustCoins);
-
-        const btnAdjustConfig = e.target.closest('[data-action="adjustConfig"]');
-        if (btnAdjustConfig) this.handleAdjustCoins(btnAdjustConfig);
-
-        const btnSelectCoinsReason = e.target.closest('[data-action="selectCoinsReason"]');
-        if (btnSelectCoinsReason) this.handleSelectCoinsReason(btnSelectCoinsReason);
-
         const btnResetPass = e.target.closest('[data-action="adminSendPasswordReset"]');
         if (btnResetPass) this.confirmPasswordReset(btnResetPass);
 
@@ -135,94 +123,6 @@ class AdminUserEditController {
             const key = e.target.getAttribute('data-key');
             const value = e.target.checked ? 1 : 0;
             this.savePreference(key, value);
-        }
-    }
-
-    openAdjustCoinsModal(btn) {
-        if (!this.targetUserId) {
-            this.targetUserId = btn.getAttribute('data-user-id') || document.querySelector('.view-content[data-user-id]')?.getAttribute('data-user-id');
-        }
-        const username = btn.getAttribute('data-username') || document.querySelector('[data-ref="admin-display-username"]')?.textContent || 'Usuario';
-        const userUuid = btn.getAttribute('data-user-uuid') || '';
-        if (window.modalSystem) {
-            window.modalSystem.show('adjustUserCoinsModal', {
-                userUuid: userUuid,
-                username: username,
-                actionTarget: 'adminSubmitAdjustCoins'
-            });
-        }
-    }
-
-    handleAdjustCoins(btn) {
-        handleInlineNumberAdjustment(btn);
-    }
-
-    handleSelectCoinsReason(item) {
-        const val = item.getAttribute('data-val');
-        const labelText = item.querySelector('.component-menu-link-text span')?.textContent || val;
-
-        const textEl = document.querySelector('[data-ref="adjust-coins-reason-text"]');
-        if (textEl) {
-            textEl.textContent = labelText;
-            textEl.setAttribute('data-value', val);
-        }
-
-        const menuList = item.closest('.component-menu-list');
-        if (menuList) {
-            menuList.querySelectorAll('.component-menu-link').forEach(l => l.classList.remove('active'));
-            item.classList.add('active');
-        }
-
-        const dropdown = document.querySelector('[data-module="dropdownAdjustCoinsReason"]');
-        if (dropdown && window.appInstance) {
-            window.appInstance.closeModule(dropdown);
-        } else if (dropdown) {
-            dropdown.classList.remove('active');
-            dropdown.classList.add('disabled');
-        }
-    }
-
-    async submitAdjustCoins(btn) {
-        const modalBody = document.querySelector('[data-ref="admin-adjust-coins-form"]');
-        if (!modalBody) return;
-        const amountEl = modalBody.querySelector('[data-ref="val_adjust_coins_amount"]');
-        const amount = parseInt(amountEl?.getAttribute('data-value') || amountEl?.textContent || '0', 10);
-        
-        const reasonTextEl = modalBody.querySelector('[data-ref="adjust-coins-reason-text"]');
-        const reason = reasonTextEl?.getAttribute('data-value') || reasonTextEl?.textContent?.trim() || 'Ajuste administrativo';
-
-        if (isNaN(amount) || amount === 0) {
-            showMessage(this.translateKey('err_invalid_amount', [], 'Ingresa una cantidad válida distinta de 0.'), 'error');
-            return;
-        }
-
-        if (!this.targetUserId) {
-            this.targetUserId = document.querySelector('.view-content[data-user-id]')?.getAttribute('data-user-id');
-        }
-
-        setButtonLoading(btn);
-        try {
-            const result = await this.api.post(ApiRoutes.Admin.AdjustCoins, {
-                target_user_id: this.targetUserId,
-                amount: Math.abs(amount),
-                action: amount > 0 ? 'add' : 'subtract',
-                reason: reason
-            }, this.abortController?.signal);
-
-            restoreButton(btn);
-            if (result && result.success) {
-                showMessage(result.message || this.translateKey('msg_coins_adjusted_success', [], 'Monedas ajustadas correctamente.'), 'success');
-                if (window.modalSystem && window.modalSystem.closeCurrent) window.modalSystem.closeCurrent(true);
-                const dispCoins = document.querySelector('[data-ref="admin-display-coins"]');
-                if (dispCoins && result.coins !== undefined) {
-                    dispCoins.textContent = result.coins;
-                }
-            } else {
-                showMessage(result?.message || this.translateKey('err_generic', [], 'Error al procesar solicitud.'), 'error');
-            }
-        } catch (e) {
-            restoreButton(btn);
-            showMessage(this.translateKey('err_generic', [], 'Error al conectar con el servidor.'), 'error');
         }
     }
 

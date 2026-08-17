@@ -377,7 +377,7 @@ def process_deletion(payload):
         Logger.info(f"Executing master record eradication in db_identity for User ID: {user_id}")
         
         # Disassociate financial purchase records to preserve accounting logs (user_id = NULL)
-        financial_tables = ['subscriptions', 'payment_history', 'store_purchases']
+        financial_tables = ['subscriptions', 'payment_history']
         for ft in financial_tables:
             try:
                 cursor_id.execute(f"UPDATE {ft} SET user_id = NULL WHERE user_id = %s", (user_id,))
@@ -386,7 +386,7 @@ def process_deletion(payload):
 
         # Delete non-financial user records
         identity_tables = [
-            'user_perks', 'custom_palettes', 'user_flags', 'user_preferences',
+            'custom_palettes', 'user_flags', 'user_preferences',
             'user_restrictions', 'auth_tokens', 'sessions',
             'user_roles', 'verification_codes', 'personal_access_tokens'
         ]

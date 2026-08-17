@@ -190,8 +190,6 @@ def seed_database(project_root, target_records=10000):
             'admin@example.com',
             DEFAULT_PASSWORD_HASH,
             3, # Ultra
-            100000,
-            'verify',
             'cus_admin_stripe_001',
             None,
             0,
@@ -211,7 +209,6 @@ def seed_database(project_root, target_records=10000):
             u_name = f"{fn.lower()}_{ln.lower()}_{i}"
             u_email = f"{fn.lower()}.{ln.lower()}.{i}@example.com"
             tier = random.choices([0, 1, 2, 3], weights=[70, 15, 10, 5])[0]
-            coins = random.randint(0, 25000)
             u_uuid = str(uuid.uuid4())
             created = random_date(365)
             storage = random.randint(0, 15 * 1024 * 1024)
@@ -222,8 +219,6 @@ def seed_database(project_root, target_records=10000):
                 u_email,
                 DEFAULT_PASSWORD_HASH,
                 tier,
-                coins,
-                'verify',
                 f'cus_stripe_{u_uuid[:8]}',
                 None,
                 0,
@@ -238,11 +233,11 @@ def seed_database(project_root, target_records=10000):
             ))
 
         sql_users = """
-        INSERT INTO `users` (id, uuid, username, email, password, subscription_tier, coins, purchase_preference,
-                            stripe_customer_id, two_factor_secret, two_factor_enabled, two_factor_recovery_codes,
+        INSERT INTO `users` (id, uuid, username, email, password, subscription_tier, stripe_customer_id,
+                            two_factor_secret, two_factor_enabled, two_factor_recovery_codes,
                             deletion_scheduled_at, profile_picture, google_id, created_at, storage_used_bytes,
                             template_tokens_used, template_tokens_reset_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         for i in range(0, len(user_rows), BATCH_SIZE):
             cursor.executemany(sql_users, user_rows[i:i+BATCH_SIZE])
@@ -422,83 +417,7 @@ def seed_database(project_root, target_records=10000):
             cursor.executemany(sql_tokens, tokens_rows[i:i+BATCH_SIZE])
         conn.commit()
 
-        # Tabla: store_purchases
-        print("  -> Generando tabla: `store_purchases`...")
-        sp_rows = []
-        for i in range(1, target_records + 1):
-            sp_rows.append((
-                random.randint(1, target_records),
-                f'pi_{uuid.uuid4().hex[:16]}',
-                f'cs_checkout_{uuid.uuid4().hex[:12]}_{i}',
-                random.choice(['coins', 'perk_missile', 'perk_bomb', 'perk_meteor']),
-                random.choice([1000, 2750, 5750, 13250]),
-                random.choice([299, 699, 1299, 2499]),
-                'usd',
-                'succeeded',
-                random_date(180)
-            ))
-        sql_sp = """
-        INSERT INTO `store_purchases` (user_id, stripe_payment_intent_id, stripe_checkout_session_id, item_type,
-                                       item_amount, amount_cents, currency, status, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """
-        for i in range(0, len(sp_rows), BATCH_SIZE):
-            cursor.executemany(sql_sp, sp_rows[i:i+BATCH_SIZE])
-        conn.commit()
-
-        # Tabla: user_coin_transactions
-        print("  -> Generando tabla: `user_coin_transactions`...")
-        uct_rows = []
-        for i in range(1, target_records + 1):
-            uct_rows.append((
-                str(uuid.uuid4()),
-                random.randint(1, target_records),
-                random.choice([500, 1000, -250, -500, 2500, -1000]),
-                random.choice(['charge', 'spend', 'bonus', 'admin_adjustment']),
-                'store_purchases',
-                i,
-                'Transacción de monedas del sistema',
-                random_date(180)
-            ))
-        sql_uct = """
-        INSERT INTO `user_coin_transactions` (uuid, user_id, amount, type, reference_table, reference_id, description, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        """
-        for i in range(0, len(uct_rows), BATCH_SIZE):
-            cursor.executemany(sql_uct, uct_rows[i:i+BATCH_SIZE])
-        conn.commit()
-
-        # Tabla: user_perks
-        print("  -> Generando tabla: `user_perks`...")
-        perks_list = ['pixel_missile_1', 'pixel_bomb_1', 'cluster_bomb_1', 'atomic_bomb_1', 'meteor_shower_1']
-        up_rows = []
-        for i in range(1, target_records + 1):
-            up_rows.append((
-                random.randint(1, target_records),
-                random.choice(perks_list),
-                random.choice([500, 1000, 2500, 5000]),
-                random.choice([0, 1]),
-                datetime.now() if random.choice([True, False]) else None,
-                random_date(150)
-            ))
-        sql_up = "INSERT INTO `user_perks` (user_id, perk_id, coins_spent, is_used, used_at, created_at) VALUES (%s, %s, %s, %s, %s, %s)"
-        for i in range(0, len(up_rows), BATCH_SIZE):
-            cursor.executemany(sql_up, up_rows[i:i+BATCH_SIZE])
-        conn.commit()
-
-        # Tabla: user_perk_balances
-        print("  -> Generando tabla: `user_perk_balances`...")
-        upb_rows = []
-        for i in range(1, target_records + 1):
-            upb_rows.append((
-                i,
-                random.choice(perks_list),
-                random.randint(1, 10)
-            ))
-        sql_upb = "INSERT IGNORE INTO `user_perk_balances` (user_id, perk_id, quantity_available) VALUES (%s, %s, %s)"
-        for i in range(0, len(upb_rows), BATCH_SIZE):
-            cursor.executemany(sql_upb, upb_rows[i:i+BATCH_SIZE])
-        conn.commit()
+        # Se removieron las tablas del sistema de monedas
 
         # Tabla: user_restrictions
         print("  -> Generando tabla: `user_restrictions`...")
@@ -554,7 +473,6 @@ def seed_database(project_root, target_records=10000):
                 tags_json,
                 privacy,
                 0, # requires_approval
-                1, # allow_purchases
                 1, # allow_chat
                 0, # is_subscription_locked
                 None,
@@ -572,11 +490,11 @@ def seed_database(project_root, target_records=10000):
             ))
 
         sql_canvases = """
-        INSERT INTO `canvases` (id, uuid, owner_id, name, tags, privacy, requires_approval, allow_purchases,
+        INSERT INTO `canvases` (id, uuid, owner_id, name, tags, privacy, requires_approval,
                                allow_chat, is_subscription_locked, locked_reasons, size, palette_id, max_participants,
                                cooldown_pixels_batch, cooldown_seconds, favorites_count, members_count, total_pixels,
                                total_messages, is_frozen, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         for i in range(0, len(canvas_rows), BATCH_SIZE):
             cursor.executemany(sql_canvases, canvas_rows[i:i+BATCH_SIZE])

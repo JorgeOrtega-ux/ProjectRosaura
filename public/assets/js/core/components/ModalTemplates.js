@@ -210,32 +210,15 @@ export const ModalTemplates = {
         fullScreen: true,
         build: (data = {}) => {
             const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
-            const isCoins = data.item_type === 'coins' || (data.coins !== undefined && data.coins > 0);
-            
             let badgeIcon = 'stars';
             let badgeText = '';
             
-            if (isCoins) {
-                badgeIcon = 'toll';
-                const coinAmount = data.coins || data.amount || 0;
-                let formattedCoins = '0';
-                if (typeof window.formatNumber === 'function') {
-                    formattedCoins = window.formatNumber(coinAmount);
-                } else if (!isNaN(Number(coinAmount))) {
-                    formattedCoins = Number(coinAmount).toLocaleString('en-US');
-                } else {
-                    formattedCoins = coinAmount;
-                }
-                badgeText = `${formattedCoins} ${__('coins')}`;
-            } else {
-                let tierName = data.tier_name || '';
-                if (!tierName && window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
-                    const found = window.APP_TIERS.find(t => parseInt(t.tier_level, 10) === parseInt(data.tier, 10));
-                    if (found && found.name) tierName = found.name;
-                }
-                badgeIcon = 'stars';
-                badgeText = `${__('subscription')} ${tierName}`;
+            let tierName = data.tier_name || '';
+            if (!tierName && window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
+                const found = window.APP_TIERS.find(t => parseInt(t.tier_level, 10) === parseInt(data.tier, 10));
+                if (found && found.name) tierName = found.name;
             }
+            badgeText = `${__('subscription')} ${tierName}`;
 
             const thanksTitle = __('thank_you_purchase');
             const momentsDesc = __('in_few_moments_items');
@@ -1575,53 +1558,6 @@ export const ModalTemplates = {
                 <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
                     <button type="button" class="component-button component-button--h40 component-button--danger" data-modal-action="unprotect">${btnRemove}</button>
-                </div>
-            `;
-        }
-    },
-
-    confirmBulkPerkPurchaseModal: {
-        build: (data = {}) => {
-            const items = data.items || [];
-            const totalCoins = data.totalCoins || 0;
-            const formattedTotal = (typeof window.formatNumber === 'function') ? window.formatNumber(totalCoins) : totalCoins;
-
-            const __ = (typeof window.__ === 'function') ? window.__ : ((k, p) => {
-                let text = k;
-                if (p) {
-                    for (const [pKey, pValue] of Object.entries(p)) {
-                        text = text.replace(new RegExp(`{${pKey}}`, 'g'), pValue);
-                    }
-                }
-                return text;
-            });
-
-            // Build inline description: "[ventaja] y otras X más, con un costo de [total] monedas"
-            const uniqueNames = [...new Set(items.map(i => i.name))];
-            let descText;
-            if (uniqueNames.length === 0) {
-                descText = `${__('msg_confirm_bulk_purchase_desc_cost').replace(':cost', `<b>${formattedTotal} ${__('coins')}</b>`)}`;
-            } else if (uniqueNames.length === 1) {
-                descText = `${__('msg_confirm_bulk_purchase_desc_single')
-                    .replace(':name', `<b>${uniqueNames[0]}</b>`)
-                    .replace(':cost', `<b>${formattedTotal} ${__('coins')}</b>`)}`;
-            } else {
-                const others = uniqueNames.length - 1;
-                descText = `${__('msg_confirm_bulk_purchase_desc_multi')
-                    .replace(':name', `<b>${uniqueNames[0]}</b>`)
-                    .replace(':others', `<b>${others}</b>`)
-                    .replace(':cost', `<b>${formattedTotal} ${__('coins')}</b>`)}`;
-            }
-
-            return `
-                <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header">
-                    <h2 class="component-modal-title">${__('msg_confirm_bulk_purchase_title', { total: formattedTotal })}</h2>
-                    <p class="component-modal-desc">${descText}</p>
-                </div>
-                <div class="component-modal-actions">
-                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${__('btn_confirm')}</button>
                 </div>
             `;
         }

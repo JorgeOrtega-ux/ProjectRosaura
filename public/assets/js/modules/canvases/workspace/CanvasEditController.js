@@ -17,8 +17,7 @@ class CanvasEditController {
             palette_id: 'default',
             max_members: 10,
             cooldown_pixels_batch: 5,
-            cooldown_seconds: 10,
-            allow_purchases: 1
+            cooldown_seconds: 10
         };
 
         this.handleClickBound = this.handleClick.bind(this);
@@ -71,10 +70,7 @@ class CanvasEditController {
             this.state.palette_id = textPalette.getAttribute('data-current-palette') || 'default';
         }
 
-        const allowPurchasesInput = this.container.querySelector('[data-ref="val_allow_purchases"]');
-        if (allowPurchasesInput) {
-            this.state.allow_purchases = allowPurchasesInput.checked ? 1 : 0;
-        }
+
 
         this.renderPalettes();
     }
@@ -351,10 +347,7 @@ class CanvasEditController {
             this.state.cooldown_seconds = parseInt(inputSec.getAttribute('data-value'), 10) || 10;
         }
 
-        const allowPurchasesInput = this.container.querySelector('[data-ref="val_allow_purchases"]');
-        if (allowPurchasesInput) {
-            this.state.allow_purchases = allowPurchasesInput.checked ? 1 : 0;
-        }
+
 
         const allowChatInput = this.container.querySelector('[data-ref="val_allow_chat"]');
         if (allowChatInput) {
@@ -376,7 +369,6 @@ class CanvasEditController {
             max_members: this.state.max_members,
             cooldown_pixels_batch: this.state.cooldown_pixels_batch,
             cooldown_seconds: this.state.cooldown_seconds,
-            allow_purchases: this.state.allow_purchases,
             allow_chat: this.state.allow_chat,
             tags: activeTags
         };

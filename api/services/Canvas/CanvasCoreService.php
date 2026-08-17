@@ -505,7 +505,6 @@ class CanvasCoreService {
         string $paletteId = 'default', 
         int $cooldownBatch = 5, 
         int $cooldownSeconds = 10,
-        int $allowPurchases = 1,
         int $allowChat = 0,
         array $tags = [],
         ?string $templateId = null,
@@ -582,7 +581,6 @@ class CanvasCoreService {
                 'max_participants'      => $limit,
                 'cooldown_pixels_batch' => max(1, $cooldownBatch),
                 'cooldown_seconds'      => max(0, $cooldownSeconds),
-                'allow_purchases'       => $allowPurchases,
                 'allow_chat'            => $allowChat,
                 'tags'                  => array_values(array_intersect($tags, [
                     'art', 'gaming', 'anime', 'flags', 'memes', 'pixelart', 
@@ -770,10 +768,6 @@ class CanvasCoreService {
             $data['cooldown_pixels_batch'] = isset($data['cooldown_pixels_batch']) ? min($maxPixelsPerBatch, max(1, (int)$data['cooldown_pixels_batch'])) : ($canvas['cooldown_pixels_batch'] ?? 5);
             $data['cooldown_seconds'] = isset($data['cooldown_seconds']) ? max(0, (int)$data['cooldown_seconds']) : ($canvas['cooldown_seconds'] ?? 10);
             
-            if (isset($data['allow_purchases'])) {
-                $data['allow_purchases'] = (int)$data['allow_purchases'];
-            }
-
             if (isset($data['allow_chat'])) {
                 $data['allow_chat'] = (int)$data['allow_chat'];
             }
@@ -872,7 +866,6 @@ class CanvasCoreService {
                 'max_participants' => ($planLimits['max_members_per_canvas'] !== -1) ? $planLimits['max_members_per_canvas'] : $canvas['max_participants'],
                 'cooldown_pixels_batch' => $canvas['cooldown_pixels_batch'],
                 'cooldown_seconds' => $canvas['cooldown_seconds'],
-                'allow_purchases' => $canvas['allow_purchases'] ?? 1,
                 'allow_chat' => $canvas['allow_chat'] ?? 0,
                 'tags' => isset($canvas['tags']) ? (is_array($canvas['tags']) ? $canvas['tags'] : json_decode($canvas['tags'], true)) : []
             ];

@@ -384,21 +384,7 @@ extract($editData);
                         </div>
                     </div>
                             <hr class="component-divider">
-                            <div class="component-group-item">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('lbl_allow_purchases'); ?></h2>
-                                <p class="component-card__description"><?php echo __('desc_allow_purchases'); ?></p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <label class="component-toggle-switch">
-                                <input type="checkbox" data-ref="val_allow_purchases" <?php echo $cAllowPurchases ? 'checked' : ''; ?>>
-                                <span class="component-toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-                    <hr class="component-divider">
+
                     <div class="component-group-item <?php echo !$hasLiveChat ? 'disabled-interaction' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_pro')) . '" data-position="top"'; ?>>
                         <div class="component-card__content">
                             <div class="component-card__text">

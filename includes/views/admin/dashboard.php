@@ -24,12 +24,7 @@ extract($dashboardData);
                 <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageAdvertisements ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/advertisements" data-tooltip="<?php echo __('admin_manage_advertisements', [], 'Gestión de Publicidad'); ?><?php echo !$canManageAdvertisements ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canManageAdvertisements ? 'disabled' : ''; ?>>
                     <span class="material-symbols-rounded">campaign</span>
                 </button>
-                <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageStorePackages ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/store-packages" data-tooltip="Tienda de Monedas<?php echo !$canManageStorePackages ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canManageStorePackages ? 'disabled' : ''; ?>>
-                    <span class="material-symbols-rounded">storefront</span>
-                </button>
-                <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageStorePerks ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/store-perks" data-tooltip="Tienda de Ventajas<?php echo !$canManageStorePerks ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canManageStorePerks ? 'disabled' : ''; ?>>
-                    <span class="material-symbols-rounded">shopping_bag</span>
-                </button>
+
                 <button class="component-button component-button--icon component-button--h40 <?php echo !$canManageRoles ? 'disabled-interaction' : ''; ?>" data-nav="<?php echo APP_URL; ?>/admin/roles" data-tooltip="<?php echo __('btn_manage_roles'); ?><?php echo !$canManageRoles ? ' (' . __('lbl_permission_required', [], 'Sin permiso') . ')' : ''; ?>" data-position="bottom" <?php echo !$canManageRoles ? 'disabled' : ''; ?>>
                     <span class="material-symbols-rounded">admin_panel_settings</span>
                 </button>
@@ -93,15 +88,7 @@ extract($dashboardData);
                     </div>
                 </div>
 
-                <div class="component-item-card component-stat-card">
-                    <div class="component-card__icon-container component-card__icon-container--bordered component-stat-card__icon">
-                        <span class="material-symbols-rounded">auto_awesome</span>
-                    </div>
-                    <div class="component-stat-card__content">
-                        <span class="component-stat-card__title"><?php echo __('admin_dashboard_perks_used'); ?></span>
-                        <span class="component-stat-card__value" data-ref="stat-perks">--</span>
-                    </div>
-                </div>
+
 
                 <div class="component-item-card component-stat-card">
                     <div class="component-card__icon-container component-card__icon-container--bordered component-stat-card__icon">

@@ -114,10 +114,6 @@ class CanvasesCreateController {
             this.formState.limit = parseInt(limitEl.getAttribute('data-value'), 10) || 10;
         }
 
-        const allowPurchasesEl = document.querySelector('[data-ref="val_allow_purchases"]');
-        if (allowPurchasesEl) {
-            this.formState.allow_purchases = allowPurchasesEl.checked ? 1 : 0;
-        }
 
         const allowChatEl = document.querySelector('[data-ref="val_allow_chat"]');
         if (allowChatEl) {

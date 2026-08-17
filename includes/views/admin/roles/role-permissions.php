@@ -42,11 +42,7 @@ $categories = [
         'icon' => 'campaign',
         'perms' => ['manage_advertisements']
     ],
-    'store' => [
-        'title' => __('perm_cat_store'),
-        'icon' => 'storefront',
-        'perms' => ['manage_store_packages', 'manage_store_perks']
-    ],
+
     'content' => [
         'title' => __('perm_cat_content'),
         'icon' => 'chat',

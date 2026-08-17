@@ -300,7 +300,7 @@ export const DesignNetwork = {
                             this.myProtectedExpiries[off] = data.expiries[idx];
                         });
                     }
-                    if (typeof this.loadUserPerks === 'function') this.loadUserPerks();
+
                     if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
                     if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
                 }
@@ -314,7 +314,7 @@ export const DesignNetwork = {
                     if (Array.isArray(data.offsets)) {
                         data.offsets.forEach(off => this.myMines.add(off));
                     }
-                    if (typeof this.loadUserPerks === 'function') this.loadUserPerks();
+
                     if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
                     if (typeof this.syncMinesToWorker === 'function') this.syncMinesToWorker();
                 }
@@ -344,7 +344,7 @@ export const DesignNetwork = {
                         preparingBadges.forEach(b => b.remove());
                     }
                     this.perkGlobalCooldownUntil = 0;
-                    if (typeof this.loadUserPerks === 'function') this.loadUserPerks();
+
                     if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
 
                     if (data.balance !== undefined) {
@@ -1517,10 +1517,6 @@ export const DesignNetwork = {
                 this.wsManager.send({ type: 'init', userId: uid, version: '2.0.3' });
             }
 
-            // 2. Cargar inventario de ventajas del usuario
-            if (typeof this.loadUserPerks === 'function') {
-                this.loadUserPerks();
-            }
 
             // 3. Reconciliar selección e interfaz
             this.updateSelectionUI();

@@ -66,11 +66,11 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $sql = "INSERT INTO " . DB::TBL_CANVASES . "
             (uuid, owner_id, name, privacy, requires_approval, size, palette_id,
              max_participants, cooldown_pixels_batch, cooldown_seconds,
-             allow_purchases, allow_chat, tags)
+             allow_chat, tags)
             VALUES
             (:uuid, :owner_id, :name, :privacy, :requires_approval, :size, :palette_id,
              :max_participants, :cooldown_pixels_batch, :cooldown_seconds,
-             :allow_purchases, :allow_chat, :tags)";
+             :allow_chat, :tags)";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
@@ -84,7 +84,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':max_participants'      => $canvasData['max_participants'] ?? null,
             ':cooldown_pixels_batch' => $canvasData['cooldown_pixels_batch'] ?? 1,
             ':cooldown_seconds'      => $canvasData['cooldown_seconds'] ?? 0,
-            ':allow_purchases'       => $canvasData['allow_purchases'] ?? 0,
             ':allow_chat'            => $canvasData['allow_chat'] ?? 0,
             ':tags'                  => isset($canvasData['tags']) ? json_encode($canvasData['tags']) : null
         ]);
@@ -575,7 +574,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
                     max_participants = :max_participants,
                     cooldown_pixels_batch = :cooldown_pixels_batch,
                     cooldown_seconds = :cooldown_seconds,
-                    allow_purchases = :allow_purchases,
                     allow_chat = :allow_chat,
                     tags = :tags
                 ";
@@ -591,7 +589,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':max_participants'      => $data['max_participants'],
             ':cooldown_pixels_batch' => $data['cooldown_pixels_batch'],
             ':cooldown_seconds'      => $data['cooldown_seconds'],
-            ':allow_purchases'       => $data['allow_purchases'] ?? 1,
             ':allow_chat'            => $data['allow_chat'] ?? 0,
             ':tags'                  => isset($data['tags']) ? json_encode($data['tags']) : null,
             ':id'                    => $id

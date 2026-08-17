@@ -11,7 +11,6 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   `tags` json DEFAULT NULL,
   `privacy` enum('public', 'private') DEFAULT 'private',
   `requires_approval` tinyint(1) NOT NULL DEFAULT 0,
-  `allow_purchases` tinyint(1) NOT NULL DEFAULT 1,
   `allow_chat` tinyint(1) NOT NULL DEFAULT 0,
   `is_subscription_locked` tinyint(1) NOT NULL DEFAULT 0,
   `locked_reasons` json DEFAULT NULL,
