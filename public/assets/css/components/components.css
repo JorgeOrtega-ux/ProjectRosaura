@@ -3320,10 +3320,6 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     max-width: 425px;
     max-height: calc(100vh - 48px);
     max-height: calc(100dvh - 48px);
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
-    overscroll-behavior: contain;
     display: flex;
     flex-direction: column;
     gap: 8px;

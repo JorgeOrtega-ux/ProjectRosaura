@@ -233,9 +233,6 @@ export class ModuleManager {
     handleOutsideClick(e) {
         if (this.dragState.isDragging) return;
 
-        const isClickInsideModal = e.target.closest('.component-modal-overlay, .modal-container, .chat-image-viewer-overlay, .component-modal-box');
-        if (isClickInsideModal) return;
-
         const activeModules = document.querySelectorAll('.component-module:not(.disabled)');
         if (activeModules.length === 0) return;
 

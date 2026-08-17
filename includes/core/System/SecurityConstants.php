@@ -19,7 +19,10 @@ class SecurityConstants {
         'Linode',
         'Vultr Holdings, LLC',
         'Google Cloud',
-        'Microsoft Corporation'
+        'Google LLC',
+        'Microsoft Corporation',
+        'Cloudflare, Inc.',
+        'Oracle Corporation',
+        'Alibaba.com Singapore E-Commerce Private Limited'
     ];
 }
-?>

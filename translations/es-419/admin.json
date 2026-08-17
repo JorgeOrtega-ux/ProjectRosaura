@@ -677,5 +677,20 @@
     "metrics_period_180": "Últimos 180 días (Semestre)",
     "metrics_period_365": "Últimos 365 días (1 año)",
     "metrics_period_all": "Todo el Historial Acumulado",
-    "btn_download_pdf": "Descargar PDF"
+    "btn_download_pdf": "Descargar PDF",
+    "step_ad_targeting_desc": "Configura la segmentación geográfica por países y la protección contra tráfico de Data Centers/VPNs.",
+    "step_network_slot_targeting_desc": "Configura qué regiones geográficas y tipos de red pueden cargar este bloque publicitario.",
+    "lbl_geo_mode": "Modo de Segmentación Geográfica",
+    "geo_mode_all": "Global (Todos los países)",
+    "geo_mode_allow": "Permitir solo países específicos",
+    "geo_mode_block": "Bloquear países específicos",
+    "lbl_select_countries": "Seleccionar Países",
+    "lbl_search_country": "Buscar país...",
+    "lbl_block_datacenters": "Bloquear Data Centers y Hosting (ASN)",
+    "lbl_block_datacenters_desc": "Evita mostrar este anuncio a tráfico de servidores en la nube, proxies y VPNs de riesgo.",
+    "admin_ad_col_targeting": "Segmentación",
+    "lbl_targeting_global": "Global",
+    "lbl_targeting_allowed": "Permitidos",
+    "lbl_targeting_blocked": "Bloqueados",
+    "lbl_targeting_datacenters_blocked": "Sin Data Centers"
 }

@@ -224,37 +224,48 @@ export const AdminModalTemplates = {
             `;
         }
     },
-    createProviderModal: {
+    providerModal: {
         build: (data = {}) => {
             const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const provider = data.provider || null;
+            const isEdit = !!provider;
+            const providerType = provider ? (provider.provider_type || 'direct') : 'network';
+            const isNetwork = providerType === 'network';
+            const hasExp = provider ? (parseInt(provider.has_expiration, 10) === 1) : false;
+            const expDate = provider ? (provider.expiration_date || '') : '';
+            const providerName = provider ? (provider.name || '') : (isEdit ? '' : 'Google AdSense');
+            const networkId = provider ? (provider.network_id || '') : '';
+            const uuid = provider ? (provider.uuid || '') : '';
+
+            const title = isEdit ? __('modal_edit_provider_title') : __('modal_create_provider_title');
+            const finishText = isEdit ? __('btn_save_changes') : __('btn_create_provider');
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
                     <div class="component-modal-header-text">
-                        <h2 class="component-modal-title">${__('modal_create_provider_title')}</h2>
+                        <h2 class="component-modal-title">${title}</h2>
                         <p class="component-modal-desc" data-ref="provider-step-desc">${__('step_provider_details_desc')}</p>
                     </div>
                 </div>
 
-                <div class="component-modal-body" data-ref="create-provider-form">
-                    <!-- ETAPA 1: Identificación y Tipo de Proveedor -->
+                <div class="component-modal-body" data-ref="provider-form" data-uuid="${uuid}" data-type="${providerType}" data-mode="${isEdit ? 'edit' : 'create'}">
                     <div class="step-modal-step active" data-step="1">
                         <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
-                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownCreateProviderType">
-                                <span class="material-symbols-rounded" data-ref="create-provider-type-icon">hub</span>
-                                <span class="component-dropdown-text" data-ref="create-provider-type-text" data-value="network">${__('admin_ad_type_network')}</span>
+                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownProviderType">
+                                <span class="material-symbols-rounded" data-ref="provider-type-icon">${isNetwork ? 'hub' : 'corporate_fare'}</span>
+                                <span class="component-dropdown-text" data-ref="provider-type-text" data-value="${providerType}">${isNetwork ? __('admin_ad_type_network') : __('admin_ad_type_direct')}</span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
-                            <div class="component-module component-module--dropdown disabled" data-module="dropdownCreateProviderType">
+                            <div class="component-module component-module--dropdown disabled" data-module="dropdownProviderType">
                                 <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list">
-                                        <div class="component-menu-link active" data-action="selectProviderType" data-type="network" data-label="${__('admin_ad_type_network')}" data-icon="hub">
+                                        <div class="component-menu-link ${isNetwork ? 'active' : ''}" data-action="selectProviderType" data-type="network" data-label="${__('admin_ad_type_network')}" data-icon="hub">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">hub</span></div>
                                             <div class="component-menu-link-text"><span>${__('admin_ad_type_network')}</span></div>
                                         </div>
-                                        <div class="component-menu-link" data-action="selectProviderType" data-type="direct" data-label="${__('admin_ad_type_direct')}" data-icon="corporate_fare">
+                                        <div class="component-menu-link ${!isNetwork ? 'active' : ''}" data-action="selectProviderType" data-type="direct" data-label="${__('admin_ad_type_direct')}" data-icon="corporate_fare">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">corporate_fare</span></div>
                                             <div class="component-menu-link-text"><span>${__('admin_ad_type_direct')}</span></div>
                                         </div>
@@ -265,34 +276,32 @@ export const AdminModalTemplates = {
 
                         <div class="component-card--grouped">
                             <div class="component-input-group">
-                                <input type="text" class="component-input-field" data-ref="input-provider-name" placeholder=" " value="Google AdSense" required>
-                                <label class="component-input-label" data-ref="label-provider-name">${__('lbl_network_name')}</label>
+                                <input class="component-input-field" data-ref="provider-name" type="text" placeholder=" " value="${providerName}" required>
+                                <label class="component-input-label" data-ref="provider-name-label">${isNetwork ? __('lbl_network_name') : __('lbl_advertiser_name')}</label>
                             </div>
-                            <div class="component-input-group" data-ref="group-network-id">
-                                <input type="text" class="component-input-field" data-ref="input-network-id" placeholder=" " value="">
+                            <div class="component-input-group ${isNetwork ? '' : 'disabled'}" data-ref="provider-network-id-group">
+                                <input class="component-input-field" data-ref="provider-network-id" type="text" placeholder=" " value="${networkId}">
                                 <label class="component-input-label">${__('lbl_network_id')}</label>
                             </div>
                         </div>
                     </div>
 
-                    <!-- ETAPA 2: Vigencia y Expiración -->
                     <div class="step-modal-step disabled" data-step="2">
-                        <!-- Primer Trigger: Elegir si tiene vencimiento -->
                         <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
-                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownCreateProviderExp">
-                                <span class="material-symbols-rounded" data-ref="create-provider-exp-icon">all_inclusive</span>
-                                <span class="component-dropdown-text" data-ref="create-provider-exp-text" data-value="0">${__('lbl_no_expiration')}</span>
+                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownProviderExp">
+                                <span class="material-symbols-rounded" data-ref="provider-exp-icon">${hasExp ? 'event' : 'all_inclusive'}</span>
+                                <span class="component-dropdown-text" data-ref="provider-exp-text" data-value="${hasExp ? '1' : '0'}">${hasExp ? __('lbl_with_expiration') : __('lbl_no_expiration')}</span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
-                            <div class="component-module component-module--dropdown disabled" data-module="dropdownCreateProviderExp">
+                            <div class="component-module component-module--dropdown disabled" data-module="dropdownProviderExp">
                                 <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list">
-                                        <div class="component-menu-link active" data-action="selectExpirationType" data-expiration="0" data-label="${__('lbl_no_expiration')}" data-icon="all_inclusive">
+                                        <div class="component-menu-link ${!hasExp ? 'active' : ''}" data-action="selectExpirationType" data-expiration="0" data-label="${__('lbl_no_expiration')}" data-icon="all_inclusive">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">all_inclusive</span></div>
                                             <div class="component-menu-link-text"><span>${__('lbl_no_expiration')}</span></div>
                                         </div>
-                                        <div class="component-menu-link" data-action="selectExpirationType" data-expiration="1" data-label="${__('lbl_with_expiration')}" data-icon="event">
+                                        <div class="component-menu-link ${hasExp ? 'active' : ''}" data-action="selectExpirationType" data-expiration="1" data-label="${__('lbl_with_expiration')}" data-icon="event">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">event</span></div>
                                             <div class="component-menu-link-text"><span>${__('lbl_with_expiration')}</span></div>
                                         </div>
@@ -301,11 +310,10 @@ export const AdminModalTemplates = {
                             </div>
                         </div>
 
-                        <!-- Segundo Trigger: Activa moduleCalendar / calendarModal -->
-                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full disabled" data-ref="create-calendar-picker-group">
-                            <div class="component-dropdown-trigger" data-action="openProviderCalendarPicker" data-ref="create-provider-expiration-trigger" data-value="">
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full ${hasExp ? '' : 'disabled'}" data-ref="provider-calendar-picker-group">
+                            <div class="component-dropdown-trigger" data-action="openProviderCalendarPicker" data-ref="provider-expiration-trigger" data-value="${expDate}">
                                 <span class="material-symbols-rounded">calendar_month</span>
-                                <span class="component-dropdown-text" data-ref="create-provider-expiration-text">${__('lbl_select_expiration_date')}</span>
+                                <span class="component-dropdown-text" data-ref="provider-expiration-text">${expDate ? expDate.split(' ')[0] : __('lbl_select_expiration_date')}</span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
                         </div>
@@ -316,396 +324,33 @@ export const AdminModalTemplates = {
                     <button class="component-button component-button--h40" data-modal-action="cancel" data-ref="btn-modal-cancel">${__('btn_cancel')}</button>
                     <button class="component-button component-button--h40 disabled" data-action="providerPrevStep" data-ref="btn-modal-prev">${__('btn_prev')}</button>
                     <button class="component-button component-button--h40 component-button--dark" data-action="providerNextStep" data-ref="btn-modal-next">${__('btn_next')}</button>
-                    <button class="component-button component-button--h40 component-button--dark disabled" data-action="submitCreateProvider" data-ref="btn-modal-finish">${__('btn_create_provider')}</button>
+                    <button class="component-button component-button--h40 component-button--dark disabled" data-action="submitProvider" data-ref="btn-modal-finish">${finishText}</button>
                 </div>
             `;
         }
+    },
+    createProviderModal: {
+        build: (data = {}) => AdminModalTemplates.providerModal.build(data)
     },
     editProviderModal: {
-        build: (data = {}) => {
-            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
-            const provider = data.provider || {};
-            const isNetwork = provider.provider_type === 'network';
-            const hasExp = parseInt(provider.has_expiration, 10) === 1;
-            const expDate = provider.expiration_date || '';
-
-            return `
-                <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header">
-                    <div class="component-modal-header-text">
-                        <h2 class="component-modal-title">${__('modal_edit_provider_title')}</h2>
-                        <p class="component-modal-desc" data-ref="edit-provider-step-desc">${__('step_provider_details_desc')}</p>
-                    </div>
-                </div>
-
-                <div class="component-modal-body" data-ref="edit-provider-form" data-uuid="${provider.uuid || ''}" data-type="${provider.provider_type || 'direct'}">
-                    <!-- ETAPA 1: Identificación y Tipo de Proveedor -->
-                    <div class="step-modal-step active" data-edit-step="1">
-                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
-                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownEditProviderType">
-                                <span class="material-symbols-rounded" data-ref="edit-provider-type-icon">${isNetwork ? 'hub' : 'corporate_fare'}</span>
-                                <span class="component-dropdown-text" data-ref="edit-provider-type-text" data-value="${provider.provider_type || 'direct'}">${isNetwork ? __('admin_ad_type_network') : __('admin_ad_type_direct')}</span>
-                                <span class="material-symbols-rounded">expand_more</span>
-                            </div>
-                            <div class="component-module component-module--dropdown disabled" data-module="dropdownEditProviderType">
-                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
-                                    <div class="pill-container"><div class="drag-handle"></div></div>
-                                    <div class="component-menu-list">
-                                        <div class="component-menu-link ${isNetwork ? 'active' : ''}" data-action="selectEditProviderType" data-type="network" data-label="${__('admin_ad_type_network')}" data-icon="hub">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">hub</span></div>
-                                            <div class="component-menu-link-text"><span>${__('admin_ad_type_network')}</span></div>
-                                        </div>
-                                        <div class="component-menu-link ${!isNetwork ? 'active' : ''}" data-action="selectEditProviderType" data-type="direct" data-label="${__('admin_ad_type_direct')}" data-icon="corporate_fare">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">corporate_fare</span></div>
-                                            <div class="component-menu-link-text"><span>${__('admin_ad_type_direct')}</span></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="component-card--grouped">
-                            <div class="component-input-group">
-                                <input type="text" class="component-input-field" data-ref="edit-provider-name" placeholder=" " value="${provider.name || ''}" required>
-                                <label class="component-input-label" data-ref="edit-label-provider-name">${isNetwork ? __('lbl_network_name') : __('lbl_advertiser_name')}</label>
-                            </div>
-                            <div class="component-input-group ${isNetwork ? '' : 'disabled'}" data-ref="edit-group-network-id">
-                                <input type="text" class="component-input-field" data-ref="edit-network-id" placeholder=" " value="${provider.network_id || ''}">
-                                <label class="component-input-label">${__('lbl_network_id')}</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ETAPA 2: Vigencia y Expiración -->
-                    <div class="step-modal-step disabled" data-edit-step="2">
-                        <!-- Primer Trigger: Elegir si tiene vencimiento -->
-                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
-                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownEditProviderExp">
-                                <span class="material-symbols-rounded" data-ref="edit-provider-exp-icon">${hasExp ? 'event' : 'all_inclusive'}</span>
-                                <span class="component-dropdown-text" data-ref="edit-provider-exp-text" data-value="${hasExp ? '1' : '0'}">${hasExp ? __('lbl_with_expiration') : __('lbl_no_expiration')}</span>
-                                <span class="material-symbols-rounded">expand_more</span>
-                            </div>
-                            <div class="component-module component-module--dropdown disabled" data-module="dropdownEditProviderExp">
-                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
-                                    <div class="pill-container"><div class="drag-handle"></div></div>
-                                    <div class="component-menu-list">
-                                        <div class="component-menu-link ${!hasExp ? 'active' : ''}" data-action="selectEditExpirationType" data-expiration="0" data-label="${__('lbl_no_expiration')}" data-icon="all_inclusive">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">all_inclusive</span></div>
-                                            <div class="component-menu-link-text"><span>${__('lbl_no_expiration')}</span></div>
-                                        </div>
-                                        <div class="component-menu-link ${hasExp ? 'active' : ''}" data-action="selectEditExpirationType" data-expiration="1" data-label="${__('lbl_with_expiration')}" data-icon="event">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">event</span></div>
-                                            <div class="component-menu-link-text"><span>${__('lbl_with_expiration')}</span></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Segundo Trigger: Activa moduleCalendar / calendarModal -->
-                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full ${hasExp ? '' : 'disabled'}" data-ref="edit-calendar-picker-group">
-                            <div class="component-dropdown-trigger" data-action="openProviderCalendarPicker" data-ref="edit-provider-expiration-trigger" data-value="${expDate}">
-                                <span class="material-symbols-rounded">calendar_month</span>
-                                <span class="component-dropdown-text" data-ref="edit-provider-expiration-text">${expDate ? expDate.split(' ')[0] : __('lbl_select_expiration_date')}</span>
-                                <span class="material-symbols-rounded">expand_more</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="component-modal-actions">
-                    <button class="component-button component-button--h40" data-modal-action="cancel" data-ref="btn-edit-modal-cancel">${__('btn_cancel')}</button>
-                    <button class="component-button component-button--h40 disabled" data-action="editProviderPrevStep" data-ref="btn-edit-modal-prev">${__('btn_prev')}</button>
-                    <button class="component-button component-button--h40 component-button--dark" data-action="editProviderNextStep" data-ref="btn-edit-modal-next">${__('btn_next')}</button>
-                    <button class="component-button component-button--h40 component-button--dark disabled" data-action="submitEditProvider" data-ref="btn-edit-modal-finish">${__('btn_save_changes')}</button>
-                </div>
-            `;
-        }
+        build: (data = {}) => AdminModalTemplates.providerModal.build(data)
     },
-    manageProviderAdsModal: {
+    adModal: {
         build: (data = {}) => {
             const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
-            const provider = data.provider || {};
-            const isNetwork = provider.provider_type === 'network';
-            const ads = data.ads || [];
+            const ad = data.ad || null;
+            const isEdit = !!ad;
+            const providerUuid = data.providerUuid || (ad ? ad.provider_uuid : '') || '';
+            const adUuid = ad ? (ad.uuid || '') : '';
+            const adFormat = ad ? (ad.format || 'feed') : 'feed';
+            const resources = data.resources || (ad ? ad.resources : []) || [];
+            const settings = ad && ad.settings ? (typeof ad.settings === 'string' ? JSON.parse(ad.settings) : ad.settings) : (data.settings || {});
+            const geoMode = settings.geo_mode || 'all';
+            const geoCountries = Array.isArray(settings.geo_countries) ? settings.geo_countries : [];
+            const blockDatacenters = !!settings.block_datacenters;
 
-            const adsHtml = ads.length > 0 ? ads.map(ad => {
-                const isActive = ad.status === 'active';
-                const resources = ad.resources || [];
-                const resCount = resources.length;
-                const formatLabel = __('admin_ad_format_' + ad.format);
-                const subText = isNetwork ? __('lbl_network_slot') : `${resCount} ${__('lbl_resources_count')}`;
-
-                return `
-                    <div class="component-group-item" data-ad-uuid="${ad.uuid}">
-                        <div class="component-card__content">
-                            <div class="component-card__icon-container component-card__icon-container--bordered">
-                                <span class="material-symbols-rounded">${ad.format === 'feed' ? 'view_carousel' : (isNetwork ? 'hub' : 'widgets')}</span>
-                            </div>
-                            <div class="component-card__text">
-                                <h2 class="component-card__title">${ad.title || ad.name}</h2>
-                                <p class="component-card__description">${formatLabel} &bull; ${subText}</p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions">
-                            <button class="component-button component-button--icon component-button--h34 ${isActive ? 'component-button--success' : ''}" data-action="toggleAdStatus" data-ad-uuid="${ad.uuid}" data-tooltip="${__('btn_toggle_status')}">
-                                <span class="material-symbols-rounded">${isActive ? 'check_circle' : 'cancel'}</span>
-                            </button>
-                            <button class="component-button component-button--icon component-button--h34 component-button--danger" data-action="deleteAd" data-ad-uuid="${ad.uuid}" data-tooltip="${__('btn_delete')}">
-                                <span class="material-symbols-rounded">delete</span>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('') : `
-                <div class="component-empty-state component-empty-state--compact">
-                    <span class="material-symbols-rounded component-empty-state-icon">${isNetwork ? 'hub' : 'ad_units'}</span>
-                    <p class="component-empty-state-text">${__('admin_no_ads_in_provider')}</p>
-                </div>
-            `;
-
-            return `
-                <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header">
-                    <div class="component-modal-header-text">
-                        <h2 class="component-modal-title">${__('modal_manage_ads_title')}</h2>
-                        <p class="component-modal-desc">${__('modal_manage_ads_desc')} <b>${provider.name || ''}</b>.</p>
-                    </div>
-                </div>
-
-                <div class="component-modal-body" data-ref="manage-ads-body" data-provider-uuid="${provider.uuid || ''}" data-provider-type="${provider.provider_type || 'direct'}">
-                    <div class="component-actions-bar">
-                        <button class="component-button component-button--h34 component-button--dark" data-action="${isNetwork ? 'openCreateNetworkSlotModal' : 'openCreateAdModal'}" data-provider-uuid="${provider.uuid || ''}">
-                            <span class="material-symbols-rounded">add</span>
-                            <span>${isNetwork ? __('btn_new_network_slot') : __('btn_new_ad')}</span>
-                        </button>
-                    </div>
-
-                    <div class="component-card--grouped" data-ref="ads-list-container">
-                        ${adsHtml}
-                    </div>
-                </div>
-
-                <div class="component-modal-actions">
-                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_close')}</button>
-                </div>
-            `;
-        }
-    },
-    createNetworkSlotModal: {
-        build: (data = {}) => {
-            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
-            const providerUuid = data.providerUuid || '';
-
-            return `
-                <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header">
-                    <div class="component-modal-header-text">
-                        <h2 class="component-modal-title">${__('modal_create_network_slot_title')}</h2>
-                        <p class="component-modal-desc" data-ref="slot-step-desc">${__('step_network_slot_format_desc')}</p>
-                    </div>
-                </div>
-
-                <div class="component-modal-body" data-ref="create-network-slot-form" data-provider-uuid="${providerUuid}">
-                    <!-- ETAPA 1: Formato y Ubicación (Dropdown Trigger) -->
-                    <div class="step-modal-step active" data-slot-step="1">
-                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
-                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownCreateSlotFormat">
-                                <span class="material-symbols-rounded" data-ref="create-slot-format-icon">grid_view</span>
-                                <span class="component-dropdown-text" data-ref="create-slot-format-text" data-value="feed">${__('admin_ad_format_feed')}</span>
-                                <span class="material-symbols-rounded">expand_more</span>
-                            </div>
-                            <div class="component-module component-module--dropdown disabled" data-module="dropdownCreateSlotFormat">
-                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
-                                    <div class="pill-container"><div class="drag-handle"></div></div>
-                                    <div class="component-menu-list">
-                                        <div class="component-menu-link active" data-action="selectSlotFormat" data-format="feed" data-label="${__('admin_ad_format_feed')}" data-icon="grid_view">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">grid_view</span></div>
-                                            <div class="component-menu-link-text"><span>${__('admin_ad_format_feed')}</span></div>
-                                        </div>
-                                        <div class="component-menu-link" data-action="selectSlotFormat" data-format="modules" data-label="${__('admin_ad_format_modules')}" data-icon="palette">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">palette</span></div>
-                                            <div class="component-menu-link-text"><span>${__('admin_ad_format_modules')}</span></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ETAPA 2: Nombre del Bloque -->
-                    <div class="step-modal-step disabled" data-slot-step="2">
-                        <div class="component-input-group">
-                            <input class="component-input-field" data-ref="slot-name" type="text" placeholder=" " value="" required>
-                            <label class="component-input-label">${__('lbl_slot_name')}</label>
-                        </div>
-                    </div>
-
-                    <!-- ETAPA 3: ID del Bloque / Slot ID -->
-                    <div class="step-modal-step disabled" data-slot-step="3">
-                        <div class="component-input-group">
-                            <input class="component-input-field" data-ref="slot-id" type="text" placeholder=" " value="">
-                            <label class="component-input-label">${__('lbl_slot_id')}</label>
-                        </div>
-                    </div>
-
-                    <!-- ETAPA 4: Código de Script -->
-                    <div class="step-modal-step disabled" data-slot-step="4">
-                        <div class="component-input-group">
-                            <textarea class="component-input-field" data-ref="slot-code" placeholder=" " rows="4"></textarea>
-                            <label class="component-input-label">${__('lbl_slot_code')}</label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="component-modal-actions">
-                    <button class="component-button component-button--h40" data-modal-action="cancel" data-ref="btn-slot-modal-cancel">${__('btn_cancel')}</button>
-                    <button class="component-button component-button--h40 disabled" data-action="slotPrevStep" data-ref="btn-slot-modal-prev">${__('btn_prev')}</button>
-                    <button class="component-button component-button--h40 component-button--dark" data-action="slotNextStep" data-ref="btn-slot-modal-next">${__('btn_next')}</button>
-                    <button class="component-button component-button--h40 component-button--dark disabled" data-action="submitCreateNetworkSlot" data-ref="btn-slot-modal-finish">${__('btn_save_slot')}</button>
-                </div>
-            `;
-        }
-    },
-    createAdModal: {
-        build: (data = {}) => {
-            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
-            const providerUuid = data.providerUuid || '';
-
-            return `
-                <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header">
-                    <div class="component-modal-header-text">
-                        <h2 class="component-modal-title">${__('modal_create_ad_title')}</h2>
-                        <p class="component-modal-desc" data-ref="ad-step-desc">${__('step_ad_format_desc')}</p>
-                    </div>
-                </div>
-
-                <div class="component-modal-body" data-ref="create-ad-form" data-provider-uuid="${providerUuid}">
-                    <!-- ETAPA 1: Formato y Ubicación (Dropdown Trigger) -->
-                    <div class="step-modal-step active" data-ad-step="1">
-                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
-                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownCreateAdFormat">
-                                <span class="material-symbols-rounded" data-ref="create-ad-format-icon">view_carousel</span>
-                                <span class="component-dropdown-text" data-ref="create-ad-format-text" data-value="feed">${__('admin_ad_format_feed')}</span>
-                                <span class="material-symbols-rounded">expand_more</span>
-                            </div>
-                            <div class="component-module component-module--dropdown disabled" data-module="dropdownCreateAdFormat">
-                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
-                                    <div class="pill-container"><div class="drag-handle"></div></div>
-                                    <div class="component-menu-list">
-                                        <div class="component-menu-link active" data-action="selectAdFormat" data-format="feed" data-label="${__('admin_ad_format_feed')}" data-icon="view_carousel">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">view_carousel</span></div>
-                                            <div class="component-menu-link-text"><span>${__('admin_ad_format_feed')}</span></div>
-                                        </div>
-                                        <div class="component-menu-link" data-action="selectAdFormat" data-format="module_colors" data-label="${__('admin_ad_format_module_colors')}" data-icon="palette">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">palette</span></div>
-                                            <div class="component-menu-link-text"><span>${__('admin_ad_format_module_colors')}</span></div>
-                                        </div>
-                                        <div class="component-menu-link" data-action="selectAdFormat" data-format="module_templates" data-label="${__('admin_ad_format_module_templates')}" data-icon="dashboard_customize">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">dashboard_customize</span></div>
-                                            <div class="component-menu-link-text"><span>${__('admin_ad_format_module_templates')}</span></div>
-                                        </div>
-                                        <div class="component-menu-link" data-action="selectAdFormat" data-format="module_info" data-label="${__('admin_ad_format_module_info')}" data-icon="info">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">info</span></div>
-                                            <div class="component-menu-link-text"><span>${__('admin_ad_format_module_info')}</span></div>
-                                        </div>
-                                        <div class="component-menu-link" data-action="selectAdFormat" data-format="banner" data-label="${__('admin_ad_format_banner')}" data-icon="ad_units">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">ad_units</span></div>
-                                            <div class="component-menu-link-text"><span>${__('admin_ad_format_banner')}</span></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ETAPA 2: Título y Nombre del Anuncio -->
-                    <div class="step-modal-step disabled" data-ad-step="2">
-                        <div class="component-input-group">
-                            <input class="component-input-field" data-ref="ad-name" type="text" placeholder=" " required>
-                            <label class="component-input-label">${__('lbl_ad_title')}</label>
-                        </div>
-                    </div>
-
-                    <!-- ETAPA 3: Descripción del Anuncio -->
-                    <div class="step-modal-step disabled" data-ad-step="3">
-                        <div class="component-input-group">
-                            <textarea class="component-input-field" data-ref="ad-description" placeholder=" " rows="4"></textarea>
-                            <label class="component-input-label">${__('lbl_ad_description')}</label>
-                        </div>
-                    </div>
-
-                    <!-- ETAPA 4: Enlace de Destino y Patrocinador -->
-                    <div class="step-modal-step disabled" data-ad-step="4">
-                        <div class="component-card--grouped">
-                            <div class="component-input-group">
-                                <input class="component-input-field" data-ref="ad-target-url" type="text" placeholder=" " value="/upgrade" required>
-                                <label class="component-input-label">${__('lbl_ad_target_url')}</label>
-                            </div>
-                            <div class="component-input-group">
-                                <input class="component-input-field" data-ref="ad-sponsor-label" type="text" placeholder=" ">
-                                <label class="component-input-label">${__('lbl_ad_sponsor_label')}</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ETAPA 5: Creativos Multimedia (Multi-Recurso URLs) -->
-                    <div class="step-modal-step disabled" data-ad-step="5">
-                        <div class="component-card--grouped" data-ref="resources-builder-container">
-                            <div class="component-resource-row" data-index="0">
-                                <div class="component-input-group">
-                                    <input class="component-input-field" data-ref="res-url-0" type="text" placeholder=" " value="/assets/img/showcase/creative_tools.jpg" required>
-                                    <label class="component-input-label">${__('lbl_resource_url')}</label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="component-actions-bar">
-                            <button class="component-button component-button--h34" data-action="addResourceRow" type="button">
-                                <span class="material-symbols-rounded">add</span>
-                                <span>${__('btn_add_resource')}</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="component-modal-actions">
-                    <button class="component-button component-button--h40" data-modal-action="cancel" data-ref="btn-ad-modal-cancel">${__('btn_cancel')}</button>
-                    <button class="component-button component-button--h40 disabled" data-action="adPrevStep" data-ref="btn-ad-modal-prev">${__('btn_prev')}</button>
-                    <button class="component-button component-button--h40 component-button--dark" data-action="adNextStep" data-ref="btn-ad-modal-next">${__('btn_next')}</button>
-                    <button class="component-button component-button--h40 component-button--dark disabled" data-action="submitCreateAd" data-ref="btn-ad-modal-finish">${__('btn_save_ad')}</button>
-                </div>
-            `;
-        }
-    },
-    confirmDeleteProviderModal: {
-        build: (data = {}) => {
-            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
-            const providerName = data.providerName || __('unknown_provider');
-
-            return `
-                <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header">
-                    <div class="component-modal-header-text">
-                        <h2 class="component-modal-title">${__('modal_delete_provider_title')}</h2>
-                        <p class="component-modal-desc">${__('modal_delete_provider_desc')} <b>${providerName}</b>. ${__('modal_delete_provider_warning')}</p>
-                    </div>
-                </div>
-
-                <div class="component-modal-actions">
-                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_delete')}</button>
-                </div>
-            `;
-        }
-    },
-    editAdModal: {
-        build: (data = {}) => {
-            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
-            const ad = data.ad || {};
-            const resources = data.resources || ad.resources || [];
-            const adFormat = ad.format || 'feed';
+            const title = isEdit ? __('modal_edit_ad_title') : __('modal_create_ad_title');
+            const finishText = isEdit ? __('btn_save_changes') : __('btn_save_ad');
 
             let formatIcon = 'view_carousel';
             let formatLabel = __('admin_ad_format_feed');
@@ -722,6 +367,34 @@ export const AdminModalTemplates = {
                 formatIcon = 'ad_units';
                 formatLabel = __('admin_ad_format_banner');
             }
+
+            let geoModeIcon = 'public';
+            let geoModeLabel = __('geo_mode_all');
+            if (geoMode === 'allow') {
+                geoModeIcon = 'travel_explore';
+                geoModeLabel = __('geo_mode_allow');
+            } else if (geoMode === 'block') {
+                geoModeIcon = 'block';
+                geoModeLabel = __('geo_mode_block');
+            }
+
+            const countryCatalog = window.COUNTRY_CATALOG || {};
+            const selectedCount = geoCountries.length;
+            const selectedCountriesText = selectedCount > 0 ? `${selectedCount} ${__('lbl_targeting_allowed')}` : __('lbl_select_countries');
+
+            const countriesListHtml = Object.entries(countryCatalog).map(([code, name]) => {
+                const isChecked = geoCountries.includes(code) ? 'checked' : '';
+                return `
+                    <label class="component-menu-link component-menu-link--bordered nav-item country-item" data-code="${code}" data-name="${name.toLowerCase()}">
+                        <div class="component-menu-link-icon">
+                            <input type="checkbox" class="geo-country-checkbox" value="${code}" ${isChecked}>
+                        </div>
+                        <div class="component-menu-link-text">
+                            <span><b>${code}</b> - ${name}</span>
+                        </div>
+                    </label>
+                `;
+            }).join('');
 
             const resourcesHtml = resources.length > 0 ? resources.map((res, idx) => `
                 <div class="component-resource-row" data-index="${idx}">
@@ -747,21 +420,20 @@ export const AdminModalTemplates = {
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
                     <div class="component-modal-header-text">
-                        <h2 class="component-modal-title">${__('modal_edit_ad_title')}</h2>
+                        <h2 class="component-modal-title">${title}</h2>
                         <p class="component-modal-desc" data-ref="ad-step-desc">${__('step_ad_format_desc')}</p>
                     </div>
                 </div>
 
-                <div class="component-modal-body" data-ref="edit-ad-form" data-ad-uuid="${ad.uuid || ''}">
-                    <!-- ETAPA 1: Formato y Ubicación (Dropdown Trigger) -->
+                <div class="component-modal-body" data-ref="ad-form" data-provider-uuid="${providerUuid}" data-ad-uuid="${adUuid}" data-mode="${isEdit ? 'edit' : 'create'}">
                     <div class="step-modal-step active" data-ad-step="1">
                         <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
-                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownEditAdFormat">
-                                <span class="material-symbols-rounded" data-ref="create-ad-format-icon">${formatIcon}</span>
-                                <span class="component-dropdown-text" data-ref="create-ad-format-text" data-value="${adFormat}">${formatLabel}</span>
+                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownAdFormat">
+                                <span class="material-symbols-rounded" data-ref="ad-format-icon">${formatIcon}</span>
+                                <span class="component-dropdown-text" data-ref="ad-format-text" data-value="${adFormat}">${formatLabel}</span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
-                            <div class="component-module component-module--dropdown disabled" data-module="dropdownEditAdFormat">
+                            <div class="component-module component-module--dropdown disabled" data-module="dropdownAdFormat">
                                 <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list">
@@ -791,37 +463,33 @@ export const AdminModalTemplates = {
                         </div>
                     </div>
 
-                    <!-- ETAPA 2: Título y Nombre del Anuncio -->
                     <div class="step-modal-step disabled" data-ad-step="2">
                         <div class="component-input-group">
-                            <input class="component-input-field" data-ref="ad-name" type="text" placeholder=" " value="${ad.name || ad.title || ''}" required>
+                            <input class="component-input-field" data-ref="ad-name" type="text" placeholder=" " value="${ad ? (ad.name || ad.title || '') : ''}" required>
                             <label class="component-input-label">${__('lbl_ad_title')}</label>
                         </div>
                     </div>
 
-                    <!-- ETAPA 3: Descripción del Anuncio -->
                     <div class="step-modal-step disabled" data-ad-step="3">
                         <div class="component-input-group">
-                            <textarea class="component-input-field" data-ref="ad-description" placeholder=" " rows="4">${ad.description || ''}</textarea>
+                            <textarea class="component-input-field" data-ref="ad-description" placeholder=" " rows="4">${ad ? (ad.description || '') : ''}</textarea>
                             <label class="component-input-label">${__('lbl_ad_description')}</label>
                         </div>
                     </div>
 
-                    <!-- ETAPA 4: Enlace de Destino y Patrocinador -->
                     <div class="step-modal-step disabled" data-ad-step="4">
                         <div class="component-card--grouped">
                             <div class="component-input-group">
-                                <input class="component-input-field" data-ref="ad-target-url" type="text" placeholder=" " value="${ad.target_url || '/upgrade'}" required>
+                                <input class="component-input-field" data-ref="ad-target-url" type="text" placeholder=" " value="${ad ? (ad.target_url || '/upgrade') : '/upgrade'}" required>
                                 <label class="component-input-label">${__('lbl_ad_target_url')}</label>
                             </div>
                             <div class="component-input-group">
-                                <input class="component-input-field" data-ref="ad-sponsor-label" type="text" placeholder=" " value="${ad.sponsor_label || ''}">
+                                <input class="component-input-field" data-ref="ad-sponsor-label" type="text" placeholder=" " value="${ad ? (ad.sponsor_label || '') : ''}">
                                 <label class="component-input-label">${__('lbl_ad_sponsor_label')}</label>
                             </div>
                         </div>
                     </div>
 
-                    <!-- ETAPA 5: Creativos Multimedia (Multi-Recurso URLs) -->
                     <div class="step-modal-step disabled" data-ad-step="5">
                         <div class="component-card--grouped" data-ref="resources-builder-container">
                             ${resourcesHtml}
@@ -834,24 +502,109 @@ export const AdminModalTemplates = {
                             </button>
                         </div>
                     </div>
+
+                    <div class="step-modal-step disabled" data-ad-step="6">
+                        <div class="component-card--grouped">
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownAdGeoMode">
+                                    <span class="material-symbols-rounded" data-ref="geo-mode-icon">${geoModeIcon}</span>
+                                    <span class="component-dropdown-text" data-ref="geo-mode-text" data-value="${geoMode}">${geoModeLabel}</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown disabled" data-module="dropdownAdGeoMode">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list">
+                                            <div class="component-menu-link ${geoMode === 'all' ? 'active' : ''}" data-action="selectGeoMode" data-mode="all" data-label="${__('geo_mode_all')}" data-icon="public">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">public</span></div>
+                                                <div class="component-menu-link-text"><span>${__('geo_mode_all')}</span></div>
+                                            </div>
+                                            <div class="component-menu-link ${geoMode === 'allow' ? 'active' : ''}" data-action="selectGeoMode" data-mode="allow" data-label="${__('geo_mode_allow')}" data-icon="travel_explore">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">travel_explore</span></div>
+                                                <div class="component-menu-link-text"><span>${__('geo_mode_allow')}</span></div>
+                                            </div>
+                                            <div class="component-menu-link ${geoMode === 'block' ? 'active' : ''}" data-action="selectGeoMode" data-mode="block" data-label="${__('geo_mode_block')}" data-icon="block">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">block</span></div>
+                                                <div class="component-menu-link-text"><span>${__('geo_mode_block')}</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="component-targeting-countries ${geoMode === 'all' ? 'disabled' : ''}" data-ref="geo-countries-container">
+                                <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                                    <div class="component-dropdown-trigger component-dropdown-trigger--space-between" data-action="toggleModule" data-target="dropdownTargetCountries">
+                                        <div class="component-dropdown-trigger-title">
+                                            <span class="material-symbols-rounded">flag</span>
+                                            <span class="component-dropdown-text" data-ref="target-countries-text">${selectedCountriesText}</span>
+                                        </div>
+                                        <span class="material-symbols-rounded">expand_more</span>
+                                    </div>
+                                    <div class="component-module component-module--dropdown disabled" data-module="dropdownTargetCountries">
+                                        <div class="component-menu component-menu--w-full component-menu--h-auto">
+                                            <div class="pill-container"><div class="drag-handle"></div></div>
+                                            <div class="component-menu-header">
+                                                <div class="component-search">
+                                                    <div class="component-search-icon"><span class="material-symbols-rounded">search</span></div>
+                                                    <div class="component-search-input">
+                                                        <input type="text" class="search-input" data-ref="search-country-input" data-action="filterCountryList" placeholder="${__('lbl_search_country')}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="component-menu-list component-menu-list--max-h200 component-menu-list--scrollable" data-ref="countries-checkbox-list">
+                                                ${countriesListHtml}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <label class="component-menu-link component-menu-link--bordered nav-item">
+                                <div class="component-menu-link-icon">
+                                    <input type="checkbox" data-ref="block-datacenters-checkbox" ${blockDatacenters ? 'checked' : ''}>
+                                </div>
+                                <div class="component-menu-link-text">
+                                    <span>${__('lbl_block_datacenters')}</span>
+                                    <p class="component-menu-link-subtext">${__('lbl_block_datacenters_desc')}</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel" data-ref="btn-ad-modal-cancel">${__('btn_cancel')}</button>
                     <button class="component-button component-button--h40 disabled" data-action="adPrevStep" data-ref="btn-ad-modal-prev">${__('btn_prev')}</button>
                     <button class="component-button component-button--h40 component-button--dark" data-action="adNextStep" data-ref="btn-ad-modal-next">${__('btn_next')}</button>
-                    <button class="component-button component-button--h40 component-button--dark disabled" data-action="submitEditAd" data-ref="btn-ad-modal-finish">${__('btn_save_changes')}</button>
+                    <button class="component-button component-button--h40 component-button--dark disabled" data-action="submitAd" data-ref="btn-ad-modal-finish">${finishText}</button>
                 </div>
             `;
         }
     },
-    editNetworkSlotModal: {
+    createAdModal: {
+        build: (data = {}) => AdminModalTemplates.adModal.build(data)
+    },
+    editAdModal: {
+        build: (data = {}) => AdminModalTemplates.adModal.build(data)
+    },
+    networkSlotModal: {
         build: (data = {}) => {
             const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
-            const ad = data.ad || {};
-            const resources = data.resources || ad.resources || [];
+            const ad = data.ad || null;
+            const isEdit = !!ad;
+            const providerUuid = data.providerUuid || (ad ? ad.provider_uuid : '') || '';
+            const adUuid = ad ? (ad.uuid || '') : '';
+            const slotFormat = ad ? (ad.format || 'feed') : 'feed';
+            const resources = data.resources || (ad ? ad.resources : []) || [];
             const scriptRes = resources.find(r => r.resource_type === 'script') || resources[0] || {};
-            const slotFormat = ad.format || 'feed';
+            const settings = ad && ad.settings ? (typeof ad.settings === 'string' ? JSON.parse(ad.settings) : ad.settings) : (data.settings || {});
+            const geoMode = settings.geo_mode || 'all';
+            const geoCountries = Array.isArray(settings.geo_countries) ? settings.geo_countries : [];
+            const blockDatacenters = !!settings.block_datacenters;
+
+            const title = isEdit ? __('modal_edit_network_slot_title') : __('modal_create_network_slot_title');
+            const finishText = isEdit ? __('btn_save_changes') : __('btn_save_slot');
 
             let formatIcon = 'grid_view';
             let formatLabel = __('admin_ad_format_feed');
@@ -860,25 +613,52 @@ export const AdminModalTemplates = {
                 formatLabel = __('admin_ad_format_modules');
             }
 
+            let geoModeIcon = 'public';
+            let geoModeLabel = __('geo_mode_all');
+            if (geoMode === 'allow') {
+                geoModeIcon = 'travel_explore';
+                geoModeLabel = __('geo_mode_allow');
+            } else if (geoMode === 'block') {
+                geoModeIcon = 'block';
+                geoModeLabel = __('geo_mode_block');
+            }
+
+            const countryCatalog = window.COUNTRY_CATALOG || {};
+            const selectedCount = geoCountries.length;
+            const selectedCountriesText = selectedCount > 0 ? `${selectedCount} ${__('lbl_targeting_allowed')}` : __('lbl_select_countries');
+
+            const countriesListHtml = Object.entries(countryCatalog).map(([code, name]) => {
+                const isChecked = geoCountries.includes(code) ? 'checked' : '';
+                return `
+                    <label class="component-menu-link component-menu-link--bordered nav-item country-item" data-code="${code}" data-name="${name.toLowerCase()}">
+                        <div class="component-menu-link-icon">
+                            <input type="checkbox" class="geo-country-checkbox" value="${code}" ${isChecked}>
+                        </div>
+                        <div class="component-menu-link-text">
+                            <span><b>${code}</b> - ${name}</span>
+                        </div>
+                    </label>
+                `;
+            }).join('');
+
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
                     <div class="component-modal-header-text">
-                        <h2 class="component-modal-title">${__('modal_edit_network_slot_title')}</h2>
+                        <h2 class="component-modal-title">${title}</h2>
                         <p class="component-modal-desc" data-ref="slot-step-desc">${__('step_network_slot_format_desc')}</p>
                     </div>
                 </div>
 
-                <div class="component-modal-body" data-ref="edit-network-slot-form" data-ad-uuid="${ad.uuid || ''}">
-                    <!-- ETAPA 1: Formato y Ubicación (Dropdown Trigger) -->
+                <div class="component-modal-body" data-ref="network-slot-form" data-provider-uuid="${providerUuid}" data-ad-uuid="${adUuid}" data-mode="${isEdit ? 'edit' : 'create'}">
                     <div class="step-modal-step active" data-slot-step="1">
                         <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
-                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownEditSlotFormat">
-                                <span class="material-symbols-rounded" data-ref="create-slot-format-icon">${formatIcon}</span>
-                                <span class="component-dropdown-text" data-ref="create-slot-format-text" data-value="${slotFormat}">${formatLabel}</span>
+                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownSlotFormat">
+                                <span class="material-symbols-rounded" data-ref="slot-format-icon">${formatIcon}</span>
+                                <span class="component-dropdown-text" data-ref="slot-format-text" data-value="${slotFormat}">${formatLabel}</span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
-                            <div class="component-module component-module--dropdown disabled" data-module="dropdownEditSlotFormat">
+                            <div class="component-module component-module--dropdown disabled" data-module="dropdownSlotFormat">
                                 <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list">
@@ -896,15 +676,13 @@ export const AdminModalTemplates = {
                         </div>
                     </div>
 
-                    <!-- ETAPA 2: Nombre del Bloque -->
                     <div class="step-modal-step disabled" data-slot-step="2">
                         <div class="component-input-group">
-                            <input class="component-input-field" data-ref="slot-name" type="text" placeholder=" " value="${ad.name || ad.title || ''}" required>
+                            <input class="component-input-field" data-ref="slot-name" type="text" placeholder=" " value="${ad ? (ad.name || ad.title || '') : ''}" required>
                             <label class="component-input-label">${__('lbl_slot_name')}</label>
                         </div>
                     </div>
 
-                    <!-- ETAPA 3: ID del Bloque / Slot ID -->
                     <div class="step-modal-step disabled" data-slot-step="3">
                         <div class="component-input-group">
                             <input class="component-input-field" data-ref="slot-id" type="text" placeholder=" " value="${scriptRes.content_url || ''}">
@@ -912,11 +690,79 @@ export const AdminModalTemplates = {
                         </div>
                     </div>
 
-                    <!-- ETAPA 4: Código de Script -->
                     <div class="step-modal-step disabled" data-slot-step="4">
                         <div class="component-input-group">
                             <textarea class="component-input-field" data-ref="slot-code" placeholder=" " rows="4">${scriptRes.raw_content || ''}</textarea>
                             <label class="component-input-label">${__('lbl_slot_code')}</label>
+                        </div>
+                    </div>
+
+                    <div class="step-modal-step disabled" data-slot-step="5">
+                        <div class="component-card--grouped">
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownSlotGeoMode">
+                                    <span class="material-symbols-rounded" data-ref="slot-geo-mode-icon">${geoModeIcon}</span>
+                                    <span class="component-dropdown-text" data-ref="slot-geo-mode-text" data-value="${geoMode}">${geoModeLabel}</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown disabled" data-module="dropdownSlotGeoMode">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list">
+                                            <div class="component-menu-link ${geoMode === 'all' ? 'active' : ''}" data-action="selectSlotGeoMode" data-mode="all" data-label="${__('geo_mode_all')}" data-icon="public">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">public</span></div>
+                                                <div class="component-menu-link-text"><span>${__('geo_mode_all')}</span></div>
+                                            </div>
+                                            <div class="component-menu-link ${geoMode === 'allow' ? 'active' : ''}" data-action="selectSlotGeoMode" data-mode="allow" data-label="${__('geo_mode_allow')}" data-icon="travel_explore">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">travel_explore</span></div>
+                                                <div class="component-menu-link-text"><span>${__('geo_mode_allow')}</span></div>
+                                            </div>
+                                            <div class="component-menu-link ${geoMode === 'block' ? 'active' : ''}" data-action="selectSlotGeoMode" data-mode="block" data-label="${__('geo_mode_block')}" data-icon="block">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">block</span></div>
+                                                <div class="component-menu-link-text"><span>${__('geo_mode_block')}</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="component-targeting-countries ${geoMode === 'all' ? 'disabled' : ''}" data-ref="slot-geo-countries-container">
+                                <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                                    <div class="component-dropdown-trigger component-dropdown-trigger--space-between" data-action="toggleModule" data-target="dropdownSlotTargetCountries">
+                                        <div class="component-dropdown-trigger-title">
+                                            <span class="material-symbols-rounded">flag</span>
+                                            <span class="component-dropdown-text" data-ref="slot-target-countries-text">${selectedCountriesText}</span>
+                                        </div>
+                                        <span class="material-symbols-rounded">expand_more</span>
+                                    </div>
+                                    <div class="component-module component-module--dropdown disabled" data-module="dropdownSlotTargetCountries">
+                                        <div class="component-menu component-menu--w-full component-menu--h-auto">
+                                            <div class="pill-container"><div class="drag-handle"></div></div>
+                                            <div class="component-menu-header">
+                                                <div class="component-search">
+                                                    <div class="component-search-icon"><span class="material-symbols-rounded">search</span></div>
+                                                    <div class="component-search-input">
+                                                        <input type="text" class="search-input" data-ref="search-slot-country-input" data-action="filterCountryList" placeholder="${__('lbl_search_country')}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="component-menu-list component-menu-list--max-h200 component-menu-list--scrollable" data-ref="slot-countries-checkbox-list">
+                                                ${countriesListHtml}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <label class="component-menu-link component-menu-link--bordered nav-item">
+                                <div class="component-menu-link-icon">
+                                    <input type="checkbox" data-ref="slot-block-datacenters-checkbox" ${blockDatacenters ? 'checked' : ''}>
+                                </div>
+                                <div class="component-menu-link-text">
+                                    <span>${__('lbl_block_datacenters')}</span>
+                                    <p class="component-menu-link-subtext">${__('lbl_block_datacenters_desc')}</p>
+                                </div>
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -925,7 +771,34 @@ export const AdminModalTemplates = {
                     <button class="component-button component-button--h40" data-modal-action="cancel" data-ref="btn-slot-modal-cancel">${__('btn_cancel')}</button>
                     <button class="component-button component-button--h40 disabled" data-action="slotPrevStep" data-ref="btn-slot-modal-prev">${__('btn_prev')}</button>
                     <button class="component-button component-button--h40 component-button--dark" data-action="slotNextStep" data-ref="btn-slot-modal-next">${__('btn_next')}</button>
-                    <button class="component-button component-button--h40 component-button--dark disabled" data-action="submitEditNetworkSlot" data-ref="btn-slot-modal-finish">${__('btn_save_changes')}</button>
+                    <button class="component-button component-button--h40 component-button--dark disabled" data-action="submitNetworkSlot" data-ref="btn-slot-modal-finish">${finishText}</button>
+                </div>
+            `;
+        }
+    },
+    createNetworkSlotModal: {
+        build: (data = {}) => AdminModalTemplates.networkSlotModal.build(data)
+    },
+    editNetworkSlotModal: {
+        build: (data = {}) => AdminModalTemplates.networkSlotModal.build(data)
+    },
+    confirmDeleteProviderModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const providerName = data.providerName || __('unknown_provider');
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${__('modal_delete_provider_title')}</h2>
+                        <p class="component-modal-desc">${__('modal_delete_provider_desc')} <b>${providerName}</b>. ${__('modal_delete_provider_warning')}</p>
+                    </div>
+                </div>
+
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_delete')}</button>
                 </div>
             `;
         }
@@ -954,7 +827,7 @@ export const AdminModalTemplates = {
     downloadMetricsPeriodModal: {
         build: (data = {}) => {
             const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
-            const targetName = data.targetName || 'Publicidad';
+            const targetName = data.targetName || '';
             const isGlobal = !!data.isGlobal;
             const targetUuid = data.targetUuid || '';
 
@@ -967,7 +840,7 @@ export const AdminModalTemplates = {
                     </div>
                 </div>
 
-                <div class="component-modal-body" data-ref="download-metrics-form" data-target-uuid="${targetUuid}" data-is-global="${isGlobal ? '1' : '0'}">
+                <div class="component-modal-body" data-ref="download-metrics-form" data-target-uuid="${targetUuid}" data-target-name="${targetName}" data-is-global="${isGlobal ? '1' : '0'}">
                     <div class="component-input-group">
                         <label class="component-input-label component-input-label--static">${__('lbl_metrics_period')}</label>
                         <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
@@ -1017,7 +890,7 @@ export const AdminModalTemplates = {
 
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button class="component-button component-button--h40 component-button--dark" data-action="${isGlobal ? 'confirmDownloadGeneralMetrics' : 'confirmDownloadAdMetrics'}" data-ref="btn-confirm-download-pdf">
+                    <button class="component-button component-button--h40 component-button--dark" data-action="confirmDownloadMetrics" data-ref="btn-confirm-download-pdf">
                         <span class="material-symbols-rounded">download</span>
                         <span>${__('btn_download_pdf')}</span>
                     </button>

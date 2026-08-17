@@ -193,11 +193,12 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/advertisement-items/' . $
                     <thead>
                         <tr>
                             <th><?php echo __('admin_ad_col_title'); ?></th>
-                            <th data-width="190"><?php echo __('admin_ad_col_format'); ?></th>
-                            <th data-width="140"><?php echo __('admin_ad_col_status'); ?></th>
-                            <th data-width="170"><?php echo __('admin_ad_col_resources'); ?></th>
-                            <th data-width="200"><?php echo __('admin_ad_col_target'); ?></th>
-                            <th data-width="160"><?php echo __('admin_roles_col_created_at'); ?></th>
+                            <th data-width="170"><?php echo __('admin_ad_col_format'); ?></th>
+                            <th data-width="130"><?php echo __('admin_ad_col_status'); ?></th>
+                            <th data-width="160"><?php echo __('admin_ad_col_targeting'); ?></th>
+                            <th data-width="160"><?php echo __('admin_ad_col_resources'); ?></th>
+                            <th data-width="180"><?php echo __('admin_ad_col_target'); ?></th>
+                            <th data-width="140"><?php echo __('admin_roles_col_created_at'); ?></th>
                         </tr>
                     </thead>
                     <tbody data-ref="ads-table-body">
@@ -215,6 +216,13 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/advertisement-items/' . $
                             $formatKey = 'admin_ad_format_' . $format;
                             $formatTitle = __($formatKey);
                             $resourcesJson = json_encode($resources);
+                            $settingsRaw = $ad['settings'] ?? null;
+                            $settingsObj = is_string($settingsRaw) ? json_decode($settingsRaw, true) : (is_array($settingsRaw) ? $settingsRaw : []);
+                            $settingsJson = json_encode($settingsObj ?: new \stdClass());
+
+                            $geoMode = $settingsObj['geo_mode'] ?? 'all';
+                            $geoCountries = $settingsObj['geo_countries'] ?? [];
+                            $blockDc = !empty($settingsObj['block_datacenters']);
 
                             $iconName = 'widgets';
                             if ($format === 'feed') $iconName = 'view_carousel';
@@ -244,7 +252,8 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/advertisement-items/' . $
                             data-ad-sponsor="<?php echo htmlspecialchars($sponsor); ?>"
                             data-ad-format="<?php echo htmlspecialchars($format); ?>"
                             data-ad-status="<?php echo htmlspecialchars($status); ?>"
-                            data-ad-resources="<?php echo htmlspecialchars($resourcesJson, ENT_QUOTES, 'UTF-8'); ?>">
+                            data-ad-resources="<?php echo htmlspecialchars($resourcesJson, ENT_QUOTES, 'UTF-8'); ?>"
+                            data-ad-settings="<?php echo htmlspecialchars($settingsJson, ENT_QUOTES, 'UTF-8'); ?>">
                             <td>
                                 <div class="component-badge component-badge--sm">
                                     <span class="material-symbols-rounded"><?php echo $iconName; ?></span>
@@ -267,6 +276,24 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/advertisement-items/' . $
                                     <div class="component-badge component-badge--sm component-badge--danger" data-ref="ad-status-badge">
                                         <span class="material-symbols-rounded component-icon-sm">cancel</span>
                                         <span><?php echo __('admin_status_inactive'); ?></span>
+                                    </div>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php if ($geoMode === 'allow' && !empty($geoCountries)): ?>
+                                    <div class="component-badge component-badge--sm component-badge--primary" data-tooltip="<?php echo implode(', ', $geoCountries); ?>">
+                                        <span class="material-symbols-rounded component-icon-sm">travel_explore</span>
+                                        <span><?php echo count($geoCountries) . ' ' . __('lbl_targeting_allowed'); ?></span>
+                                    </div>
+                                <?php elseif ($geoMode === 'block' && !empty($geoCountries)): ?>
+                                    <div class="component-badge component-badge--sm component-badge--danger" data-tooltip="<?php echo implode(', ', $geoCountries); ?>">
+                                        <span class="material-symbols-rounded component-icon-sm">block</span>
+                                        <span><?php echo count($geoCountries) . ' ' . __('lbl_targeting_blocked'); ?></span>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="component-badge component-badge--sm component-badge--muted">
+                                        <span class="material-symbols-rounded component-icon-sm">public</span>
+                                        <span><?php echo __('lbl_targeting_global'); ?></span>
                                     </div>
                                 <?php endif; ?>
                             </td>
@@ -311,7 +338,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/advertisement-items/' . $
                         <?php endforeach; ?>
                         
                         <tr class="disabled" data-ref="empty-search-table">
-                            <td class="component-empty-table-cell" colspan="6">
+                            <td class="component-empty-table-cell" colspan="7">
                                 <div class="component-empty-state component-empty-state--table">
                                     <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
                                     <p class="component-empty-state-text"><?php echo __('admin_ad_search_empty'); ?></p>
@@ -331,3 +358,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/advertisement-items/' . $
 
     </div>
 </div>
+<script>
+    window.COUNTRY_CATALOG = <?php echo json_encode(\App\Core\System\CountryConstants::getCountries(), JSON_UNESCAPED_UNICODE); ?>;
+</script>
+

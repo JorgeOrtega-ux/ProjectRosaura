@@ -3,6 +3,7 @@
 namespace App\Api\Services\Admin;
 
 use App\Core\Helpers\Utils;
+use App\Core\Helpers\GeoIpHelper;
 use App\Core\System\Logger;
 use App\Config\Database\DatabaseManager;
 use App\Core\System\DatabaseConstants as DB;
@@ -521,6 +522,7 @@ class AdminAdvertisementsService {
             $status = in_array($adData['status'] ?? '', ['active', 'inactive', 'paused', 'expired'], true) ? $adData['status'] : 'active';
             $hasExpiration = !empty($adData['has_expiration']) ? 1 : 0;
             $expirationDate = $hasExpiration && !empty($adData['expiration_date']) ? date('Y-m-d H:i:s', strtotime($adData['expiration_date'])) : null;
+            $settings = isset($adData['settings']) ? (is_array($adData['settings']) ? json_encode($adData['settings']) : $adData['settings']) : null;
 
             if (empty($name)) {
                 return ['success' => false, 'message_key' => 'err_ad_name_required'];
@@ -528,7 +530,7 @@ class AdminAdvertisementsService {
 
             $pdo->beginTransaction();
 
-            $stmtUpdate = $pdo->prepare("UPDATE advertisements SET name = ?, title = ?, description = ?, target_url = ?, sponsor_label = ?, format = ?, status = ?, has_expiration = ?, expiration_date = ? WHERE id = ?");
+            $stmtUpdate = $pdo->prepare("UPDATE advertisements SET name = ?, title = ?, description = ?, target_url = ?, sponsor_label = ?, format = ?, status = ?, has_expiration = ?, expiration_date = ?, settings = ? WHERE id = ?");
             $stmtUpdate->execute([
                 $name,
                 $title,
@@ -539,6 +541,7 @@ class AdminAdvertisementsService {
                 $status,
                 $hasExpiration,
                 $expirationDate,
+                $settings,
                 $adId
             ]);
 
@@ -624,9 +627,10 @@ class AdminAdvertisementsService {
         }
     }
 
-    public function getPublicActiveAds(): array {
+    public function getPublicActiveAds(?string $visitorIp = null): array {
         $pdo = $this->getPdo();
         try {
+            $resolvedIp = $visitorIp ?: Utils::getIpAddress();
             $sql = "SELECT a.id, a.uuid, a.name, a.title, a.description, a.target_url, a.sponsor_label, a.format, a.settings,
                            p.name AS provider_name, p.provider_type, p.network_id
                     FROM advertisements a
@@ -644,6 +648,12 @@ class AdminAdvertisementsService {
             $moduleAds = [];
 
             foreach ($ads as $ad) {
+                // Geo / ASN targeting check
+                $settings = !empty($ad['settings']) ? (is_array($ad['settings']) ? $ad['settings'] : json_decode($ad['settings'], true)) : null;
+                if (!GeoIpHelper::isTargetingMatch($settings, $resolvedIp)) {
+                    continue;
+                }
+
                 $stmtRes = $pdo->prepare("SELECT resource_type, content_url, raw_content, alt_text, sort_order FROM ad_resources WHERE ad_id = ? ORDER BY sort_order ASC, id ASC");
                 $stmtRes->execute([$ad['id']]);
                 $resources = $stmtRes->fetchAll(\PDO::FETCH_ASSOC);

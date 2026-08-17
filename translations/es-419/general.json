@@ -1984,6 +1984,10 @@
     "ad_mock_sponsor_tagline": "Guarda tus lienzos en alta resolución con almacenamiento ilimitado y copias automáticas.",
     "ad_mock_sound_muted": "Silenciado",
     "ad_mock_sound_unmuted": "Sonido activado",
-    "ad_remaining_time": "Segundos restantes"
+    "ad_remaining_time": "Segundos restantes",
+    "region_blocked_title": "Servicio no disponible en tu región",
+    "region_blocked_desc": "Este servicio o función no se encuentra disponible actualmente para tu país o región.",
+    "err_service_unavailable_in_country": "Esta funcionalidad no está disponible actualmente en {country}.",
+    "lbl_your_country": "tu país"
 }
 

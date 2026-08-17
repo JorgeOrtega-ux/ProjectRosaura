@@ -68,6 +68,15 @@ switch ($type) {
         ];
         break;
 
+    case 'region_blocked':
+        http_response_code(403);
+        $config = [
+            'icon' => 'public_off',
+            'title' => __('region_blocked_title') ?: 'Servicio no disponible en tu región',
+            'desc' => __('region_blocked_desc') ?: 'Este servicio o función no se encuentra disponible actualmente para tu país o región.'
+        ];
+        break;
+
     case '404':
     default:
         http_response_code(404);
