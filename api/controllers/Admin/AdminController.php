@@ -753,7 +753,8 @@ class AdminController extends BaseController {
         try {
             $this->requirePermission(PermissionsConstants::MANAGE_ADVERTISEMENTS);
             $adUuid = $input['ad_uuid'] ?? ($input['uuid'] ?? '');
-            $this->getAdsService()->downloadAdMetricsPdf($adUuid);
+            $period = isset($input['period']) ? (string)$input['period'] : '30';
+            $this->getAdsService()->downloadAdMetricsPdf($adUuid, $period);
             exit;
         }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
@@ -762,7 +763,8 @@ class AdminController extends BaseController {
     public function download_general_metrics($input) {
         try {
             $this->requirePermission(PermissionsConstants::MANAGE_ADVERTISEMENTS);
-            $this->getAdsService()->downloadGeneralMetricsPdf();
+            $period = isset($input['period']) ? (string)$input['period'] : '30';
+            $this->getAdsService()->downloadGeneralMetricsPdf($period);
             exit;
         }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }

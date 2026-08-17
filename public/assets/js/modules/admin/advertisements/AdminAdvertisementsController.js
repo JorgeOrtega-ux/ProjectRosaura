@@ -163,10 +163,14 @@ class AdminAdvertisementsController extends BaseListController {
 
         const openSubMenuBtn   = e.target.closest('[data-action="openFilterSubMenu"]');
         const backSubMenuBtn   = e.target.closest('[data-action="backToMainFilters"]');
+        const selectPeriodBtn  = e.target.closest('[data-action="selectMetricsPeriod"]');
+        const confirmDownloadGenMetricsBtn = e.target.closest('[data-action="confirmDownloadGeneralMetrics"]');
 
         if (selectTarget)            this.handleRowSelection(selectTarget);
         if (searchBtn)               this.toggleSearchToolbar();
         if (downloadGenMetricsBtn)   this.downloadGeneralMetrics(downloadGenMetricsBtn);
+        if (selectPeriodBtn)         this.handleMetricsPeriodSelection(selectPeriodBtn);
+        if (confirmDownloadGenMetricsBtn) this.confirmDownloadGeneralMetrics(confirmDownloadGenMetricsBtn);
         if (addBtn)                  this.openAddProviderModal();
         if (editBtn)         this.openEditProviderModal(editBtn);
         if (delBtn)          this.deleteProvider(delBtn);
@@ -731,20 +735,57 @@ class AdminAdvertisementsController extends BaseListController {
         }
     }
 
-    async downloadGeneralMetrics(btn = null) {
+    downloadGeneralMetrics(btn = null) {
+        if (window.modalSystem) {
+            window.modalSystem.show('downloadMetricsPeriodModal', {
+                targetName: 'Publicidad Global',
+                targetUuid: '',
+                isGlobal: true
+            });
+        }
+    }
+
+    handleMetricsPeriodSelection(target) {
+        const value = target.getAttribute('data-value') || '30';
+        const label = target.getAttribute('data-label') || '';
+        const modal = this._getActiveModal();
+        if (!modal) return;
+
+        const dropdown = modal.querySelector('[data-module="dropdownMetricsPeriod"]');
+        const triggerText = modal.querySelector('[data-ref="period-text"]');
+
+        if (triggerText) {
+            triggerText.textContent = label;
+            triggerText.setAttribute('data-value', value);
+        }
+
+        modal.querySelectorAll('[data-action="selectMetricsPeriod"]').forEach(item => {
+            item.classList.toggle('active', item === target);
+        });
+
+        if (dropdown) dropdown.classList.add('disabled');
+    }
+
+    async confirmDownloadGeneralMetrics(btn = null) {
+        const modal = this._getActiveModal();
+        const triggerText = modal ? modal.querySelector('[data-ref="period-text"]') : null;
+        const period = triggerText ? (triggerText.getAttribute('data-value') || '30') : '30';
+
         if (btn) setButtonLoading(btn);
 
-        const filename = `Reporte_Metricas_Globales_Publicidad_${new Date().toISOString().slice(0, 10)}.pdf`;
+        const filename = `Reporte_Metricas_Globales_Publicidad_${period}d_${new Date().toISOString().slice(0, 10)}.pdf`;
 
         try {
             const result = await this.api.downloadFile(
                 ApiRoutes.Admin.DownloadGeneralAdMetrics,
-                {},
+                { period: period },
                 filename,
                 this.abortController ? this.abortController.signal : null
             );
             if (result && !result.success && !result.aborted) {
                 showMessage(result.message || _t(result.message_key || 'admin_ad_metrics_download_error'), 'error');
+            } else {
+                if (window.modalSystem) window.modalSystem.closeCurrent();
             }
         } catch (error) {
             if (error.name !== 'AbortError') {

@@ -666,5 +666,16 @@
     "admin_ad_download_general_metrics": "Descargar reporte global de métricas",
     "admin_ad_metrics_download_error": "No se pudo generar el reporte de métricas.",
     "admin_ad_download_provider_metrics": "Descargar reporte del proveedor",
-    "admin_ad_metrics_empty": "No hay métricas registradas para este elemento aún."
+    "admin_ad_metrics_empty": "No hay métricas registradas para este elemento aún.",
+    "modal_download_metrics_title": "Descargar Reporte de Métricas",
+    "modal_download_metrics_desc": "Selecciona el período de tiempo que deseas incluir en el informe PDF de",
+    "lbl_metrics_period": "Período del Reporte",
+    "metrics_period_7": "Últimos 7 días (Semana reciente)",
+    "metrics_period_30": "Últimos 30 días (1 mes)",
+    "metrics_period_60": "Últimos 60 días (2 meses)",
+    "metrics_period_90": "Últimos 90 días (Trimestre)",
+    "metrics_period_180": "Últimos 180 días (Semestre)",
+    "metrics_period_365": "Últimos 365 días (1 año)",
+    "metrics_period_all": "Todo el Historial Acumulado",
+    "btn_download_pdf": "Descargar PDF"
 }

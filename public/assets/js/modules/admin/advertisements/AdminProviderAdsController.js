@@ -177,10 +177,14 @@ class AdminProviderAdsController extends BaseListController {
 
         const openSubMenuBtn   = e.target.closest('[data-action="openFilterSubMenu"]');
         const backSubMenuBtn   = e.target.closest('[data-action="backToMainFilters"]');
+        const selectPeriodBtn  = e.target.closest('[data-action="selectMetricsPeriod"]');
+        const confirmDownloadAdMetricsBtn = e.target.closest('[data-action="confirmDownloadAdMetrics"]');
 
         if (selectTarget)        this.handleRowSelection(selectTarget);
         if (searchBtn)           this.toggleSearchToolbar();
         if (downloadMetricsBtn)  this.downloadAdMetrics(downloadMetricsBtn);
+        if (selectPeriodBtn)     this.handleMetricsPeriodSelection(selectPeriodBtn);
+        if (confirmDownloadAdMetricsBtn) this.confirmDownloadAdMetrics(confirmDownloadAdMetricsBtn);
         if (editBtn)             this.openEditAdModal();
         if (toggleActiveBtn)   this.toggleAdStatus(toggleActiveBtn);
         if (delBtn)            this.deleteAd(delBtn);
@@ -864,7 +868,7 @@ class AdminProviderAdsController extends BaseListController {
         }
     }
 
-    async downloadAdMetrics(btn = null) {
+    downloadAdMetrics(btn = null) {
         if (!this.selectedAdUuid) {
             showMessage(_t('err_ad_not_found'), 'warning');
             return;
@@ -872,20 +876,67 @@ class AdminProviderAdsController extends BaseListController {
 
         const selectedRow = document.querySelector(`[data-ad-uuid="${this.selectedAdUuid}"]`);
         const adName = selectedRow ? (selectedRow.getAttribute('data-ad-name') || selectedRow.getAttribute('data-ad-title') || 'Anuncio') : 'Anuncio';
+
+        if (window.modalSystem) {
+            window.modalSystem.show('downloadMetricsPeriodModal', {
+                targetName: adName,
+                targetUuid: this.selectedAdUuid,
+                isGlobal: false
+            });
+        }
+    }
+
+    handleMetricsPeriodSelection(target) {
+        const value = target.getAttribute('data-value') || '30';
+        const label = target.getAttribute('data-label') || '';
+        const modal = this._getActiveModal();
+        if (!modal) return;
+
+        const dropdown = modal.querySelector('[data-module="dropdownMetricsPeriod"]');
+        const triggerText = modal.querySelector('[data-ref="period-text"]');
+
+        if (triggerText) {
+            triggerText.textContent = label;
+            triggerText.setAttribute('data-value', value);
+        }
+
+        modal.querySelectorAll('[data-action="selectMetricsPeriod"]').forEach(item => {
+            item.classList.toggle('active', item === target);
+        });
+
+        if (dropdown) dropdown.classList.add('disabled');
+    }
+
+    async confirmDownloadAdMetrics(btn = null) {
+        const modal = this._getActiveModal();
+        const form = modal ? modal.querySelector('[data-ref="download-metrics-form"]') : null;
+        const triggerText = modal ? modal.querySelector('[data-ref="period-text"]') : null;
+        const period = triggerText ? (triggerText.getAttribute('data-value') || '30') : '30';
+        const adUuid = form ? (form.getAttribute('data-target-uuid') || this.selectedAdUuid) : this.selectedAdUuid;
+
+        if (!adUuid) {
+            showMessage(_t('err_ad_not_found'), 'warning');
+            return;
+        }
+
+        const selectedRow = document.querySelector(`[data-ad-uuid="${adUuid}"]`);
+        const adName = selectedRow ? (selectedRow.getAttribute('data-ad-name') || selectedRow.getAttribute('data-ad-title') || 'Anuncio') : 'Anuncio';
         const cleanName = adName.replace(/[^a-zA-Z0-9_-]/g, '_');
-        const filename = `Reporte_Metricas_${cleanName}.pdf`;
+        const filename = `Reporte_Metricas_${cleanName}_${period}d.pdf`;
 
         if (btn) setButtonLoading(btn);
 
         try {
             const result = await this.api.downloadFile(
                 ApiRoutes.Admin.DownloadAdMetrics,
-                { ad_uuid: this.selectedAdUuid },
+                { ad_uuid: adUuid, period: period },
                 filename,
                 this.abortController ? this.abortController.signal : null
             );
             if (result && !result.success && !result.aborted) {
                 showMessage(result.message || _t(result.message_key || 'admin_ad_metrics_download_error'), 'error');
+            } else {
+                if (window.modalSystem) window.modalSystem.closeCurrent();
             }
         } catch (error) {
             if (error.name !== 'AbortError') {

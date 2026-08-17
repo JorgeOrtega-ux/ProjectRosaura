@@ -98,44 +98,54 @@ class AdMetricsPdfService {
         return $width;
     }
 
-    private function drawHeader(string $superTitle, string $mainTitle, string $reportCode): void {
-        // Dark premium brand top header bar
+    private function drawHeader(string $superTitle, string $mainTitle, string $reportCode, string $periodLabel = ''): void {
         $this->drawRect(40, 770, 515, 50, [15, 23, 42]);
         $this->drawRect(40, 767, 515, 3, [2, 132, 199]); // Accent line
 
-        // Brand & title
         $this->drawText('PROJECT ROSAURA', 55, 797, 'F2', 14, [255, 255, 255]);
         $this->drawText(strtoupper($superTitle), 55, 780, 'F1', 8, [148, 163, 184]);
 
-        // Right side info
         $this->drawText(strtoupper($mainTitle), 360, 797, 'F2', 9, [255, 255, 255]);
         $this->drawText("REPORTE: " . $reportCode, 360, 780, 'F1', 8, [148, 163, 184]);
 
-        // Meta info line under header
         $now = date('d/m/Y H:i:s');
-        $this->drawText("Emitido el: " . $now . " | Servidor Oficial Project Rosaura", 42, 750, 'F1', 8, [100, 116, 139]);
+        $periodInfo = !empty($periodLabel) ? " | Periodo: {$periodLabel}" : '';
+        $this->drawText("Emitido el: {$now}{$periodInfo} | Servidor Oficial Project Rosaura", 42, 750, 'F1', 8, [100, 116, 139]);
         $this->drawLine(40, 742, 555, 742, [226, 232, 240], 1);
     }
 
-    private function drawFooter(int $pageNum, int $total): void {
+    private function drawContinuationHeader(string $superTitle, string $mainTitle, string $reportCode, string $subContext = ''): void {
+        $this->drawRect(40, 785, 515, 35, [15, 23, 42]);
+        $this->drawRect(40, 782, 515, 3, [2, 132, 199]);
+
+        $this->drawText('PROJECT ROSAURA', 50, 802, 'F2', 10.5, [255, 255, 255]);
+        $this->drawText(strtoupper($superTitle) . ' (CONTINUACION)', 50, 790, 'F1', 7.5, [148, 163, 184]);
+
+        $this->drawText(strtoupper($mainTitle), 360, 802, 'F2', 8.5, [255, 255, 255]);
+        $this->drawText("REPORTE: " . $reportCode, 360, 790, 'F1', 7.5, [148, 163, 184]);
+
+        if (!empty($subContext)) {
+            $this->drawText($subContext, 42, 768, 'F2', 8, [100, 116, 139]);
+            $this->drawLine(40, 762, 555, 762, [226, 232, 240], 1);
+        }
+    }
+
+    private function drawFooter(): void {
         $this->drawLine(40, 50, 555, 50, [226, 232, 240], 1);
         $this->drawText("Project Rosaura Analytics Engine © " . date('Y') . " - Documento Confidencial de Auditoria", 40, 38, 'F1', 7.5, [148, 163, 184]);
-        $this->drawText("Pagina {$pageNum} de {$total}", 495, 38, 'F1', 7.5, [148, 163, 184]);
+        $this->drawText("Pagina {{PAGE_NUM}} de {{TOTAL_PAGES}}", 480, 38, 'F1', 7.5, [148, 163, 184]);
     }
 
     private function drawKpiCard(float $x, float $y, float $w, float $h, string $title, string $value, string $subtitle, array $topColor): void {
-        // Card background
         $this->drawRect($x, $y, $w, $h, [248, 250, 252], [226, 232, 240], 1);
-        // Top accent line
         $this->drawRect($x, $y + $h - 3, $w, 3, $topColor);
 
-        // Titles and Value
         $this->drawText(strtoupper($title), $x + 10, $y + $h - 16, 'F2', 7.5, [100, 116, 139]);
         $this->drawText($value, $x + 10, $y + $h - 35, 'F2', 15, [15, 23, 42]);
         $this->drawText($subtitle, $x + 10, $y + 10, 'F1', 7.5, [148, 163, 184]);
     }
 
-    public function generateIndividualAdReport(array $ad, array $summary, array $dailyBreakdown): string {
+    public function generateIndividualAdReport(array $ad, array $summary, array $dailyBreakdown, string $periodLabel = 'Últimos 30 días'): string {
         $this->reset();
         $this->startNewPage();
 
@@ -146,7 +156,6 @@ class AdMetricsPdfService {
         $targetUrl = !empty($ad['target_url']) ? $ad['target_url'] : 'Sin enlace directo';
         $reportCode = 'AD-' . strtoupper(substr(md5($ad['uuid'] ?? (string)time()), 0, 8));
 
-        // Format label
         $formatLabels = [
             'feed' => 'Feed Principal (Home / Busqueda)',
             'module_colors' => 'Modulo: Paleta de Colores',
@@ -157,7 +166,8 @@ class AdMetricsPdfService {
         ];
         $formatText = $formatLabels[$format] ?? ucfirst($format);
 
-        $this->drawHeader('AUDITORIA DE ANUNCIO INDIVIDUAL', 'METRICAS Y RENDIMIENTO', $reportCode);
+        // Page 1 Header
+        $this->drawHeader('AUDITORIA DE ANUNCIO INDIVIDUAL', 'METRICAS Y RENDIMIENTO', $reportCode, $periodLabel);
 
         // Section 1: Ad Information Box
         $boxY = 645;
@@ -167,12 +177,10 @@ class AdMetricsPdfService {
 
         $this->drawText("INFORMACION DEL ANUNCIO Y CONFIGURACION", 50, $boxY + $boxH - 16, 'F2', 8.5, [30, 41, 59]);
 
-        // Status Badge in header of info box
         $statusBg = ($status === 'ACTIVE') ? [220, 252, 231] : [254, 226, 226];
         $statusText = ($status === 'ACTIVE') ? [22, 101, 52] : [153, 27, 27];
         $this->drawBadge($status === 'ACTIVE' ? 'ACTIVO' : 'INACTIVO', 475, $boxY + $boxH - 18, $statusBg, $statusText, 7.5);
 
-        // Fields inside Info Box
         $this->drawText("Titulo / Campana:", 50, $boxY + 46, 'F2', 8, [100, 116, 139]);
         $this->drawText(mb_strimwidth($adTitle, 0, 45, '...'), 145, $boxY + 46, 'F2', 8.5, [15, 23, 42]);
 
@@ -204,17 +212,16 @@ class AdMetricsPdfService {
         $ctrVal = number_format((float)($summary['ctr'] ?? 0), 2) . '%';
         $uniqueUsers = number_format((int)($summary['unique_users'] ?? 0));
 
-        $this->drawKpiCard(40, $kpiY, $cardW, $cardH, 'Impresiones (Vistas)', $totImpressions, 'Impactos visuales', [2, 132, 199]);
+        $this->drawKpiCard(40, $kpiY, $cardW, $cardH, 'Impresiones (Vistas)', $totImpressions, 'Impactos en periodo', [2, 132, 199]);
         $this->drawKpiCard(40 + ($cardW + $gap), $kpiY, $cardW, $cardH, 'Clics Totales', $totClicks, 'Interaccion directa', [16, 185, 129]);
         $this->drawKpiCard(40 + ($cardW + $gap) * 2, $kpiY, $cardW, $cardH, 'CTR Promedio', $ctrVal, 'Clics / Impresiones', [139, 92, 246]);
         $this->drawKpiCard(40 + ($cardW + $gap) * 3, $kpiY, $cardW, $cardH, 'Usuarios Unicos', $uniqueUsers, 'Alcance estimado', [245, 158, 11]);
 
-        // Section 3: Performance Table (Daily Breakdown)
+        // Section 3: Performance Table (Dynamic Multi-Page)
         $tblY = 525;
-        $this->drawText("HISTORIAL DE RENDIMIENTO DIARIO (ULTIMOS REGISTROS)", 40, $tblY, 'F2', 9, [15, 23, 42]);
-        $this->drawText("Monitoreo continuo de eventos", 390, $tblY, 'F1', 7.5, [100, 116, 139]);
+        $this->drawText("HISTORIAL DE RENDIMIENTO DIARIO DETALLADO", 40, $tblY, 'F2', 9, [15, 23, 42]);
+        $this->drawText("Periodo: " . $periodLabel, 390, $tblY, 'F1', 7.5, [100, 116, 139]);
 
-        // Table header
         $thY = $tblY - 22;
         $this->drawRect(40, $thY, 515, 18, [15, 23, 42]);
         $this->drawText("FECHA", 50, $thY + 5, 'F2', 7.5, [255, 255, 255]);
@@ -224,18 +231,38 @@ class AdMetricsPdfService {
         $this->drawText("ESTADO DE RENDIMIENTO", 450, $thY + 5, 'F2', 7.5, [255, 255, 255]);
 
         $rowY = $thY - 18;
-        $rowCount = 0;
-        $maxRows = 16;
+        $totalDailyRows = count($dailyBreakdown);
+        $totalDailyPrinted = 0;
 
-        if (empty($dailyBreakdown)) {
+        if ($totalDailyRows === 0) {
             $this->drawRect(40, $rowY, 515, 24, [248, 250, 252], [226, 232, 240], 1);
-            $this->drawText("No hay registros diarios de interaccion registrados todavia.", 155, $rowY + 8, 'F1', 8.5, [148, 163, 184]);
-            $rowY -= 28;
+            $this->drawText("No hay registros de interaccion para el periodo seleccionado.", 150, $rowY + 8, 'F1', 8.5, [148, 163, 184]);
+            $rowY -= 32;
         } else {
             foreach ($dailyBreakdown as $day) {
-                if ($rowCount >= $maxRows) break;
+                // Check if we need to wrap to a new page
+                // Page 1 bottom threshold is 140 if there are remaining rows, or 180 if single page
+                $bottomThreshold = ($totalDailyPrinted < $totalDailyRows - 1) ? 90 : 170;
 
-                $bg = ($rowCount % 2 === 0) ? [255, 255, 255] : [248, 250, 252];
+                if ($rowY < $bottomThreshold) {
+                    $this->drawFooter();
+                    $this->startNewPage();
+
+                    $subCtx = "Campana: {$adTitle} | Patrocinador: {$sponsor}";
+                    $this->drawContinuationHeader('AUDITORIA DE ANUNCIO INDIVIDUAL', 'METRICAS Y RENDIMIENTO', $reportCode, $subCtx);
+
+                    $thY = 740;
+                    $this->drawRect(40, $thY, 515, 18, [15, 23, 42]);
+                    $this->drawText("FECHA", 50, $thY + 5, 'F2', 7.5, [255, 255, 255]);
+                    $this->drawText("IMPRESIONES", 160, $thY + 5, 'F2', 7.5, [255, 255, 255]);
+                    $this->drawText("CLICS", 270, $thY + 5, 'F2', 7.5, [255, 255, 255]);
+                    $this->drawText("CTR (%)", 370, $thY + 5, 'F2', 7.5, [255, 255, 255]);
+                    $this->drawText("ESTADO DE RENDIMIENTO", 450, $thY + 5, 'F2', 7.5, [255, 255, 255]);
+
+                    $rowY = $thY - 18;
+                }
+
+                $bg = ($totalDailyPrinted % 2 === 0) ? [255, 255, 255] : [248, 250, 252];
                 $this->drawRect(40, $rowY, 515, 18, $bg, [241, 245, 249], 0.5);
 
                 $dayDate = $day['date_only'] ?? $day['date'] ?? date('Y-m-d');
@@ -253,46 +280,55 @@ class AdMetricsPdfService {
                 $this->drawText($perfText, 450, $rowY + 5, 'F1', 8, $perfColor);
 
                 $rowY -= 18;
-                $rowCount++;
+                $totalDailyPrinted++;
             }
         }
 
+        // Check space for Resources & Certification boxes on current page
+        if ($rowY < 140) {
+            $this->drawFooter();
+            $this->startNewPage();
+            $subCtx = "Campana: {$adTitle} | Resumen de Creativos y Certificacion";
+            $this->drawContinuationHeader('AUDITORIA DE ANUNCIO INDIVIDUAL', 'METRICAS Y RENDIMIENTO', $reportCode, $subCtx);
+            $rowY = 730;
+        }
+
         // Section 4: Resources & Media Attached
-        if ($rowY > 140 && !empty($ad['resources'])) {
+        if (!empty($ad['resources'])) {
             $this->drawText("RECURSOS Y CREATIVOS ASOCIADOS", 40, $rowY - 10, 'F2', 8.5, [15, 23, 42]);
-            $resBoxY = $rowY - 60;
-            $this->drawRect(40, $resBoxY, 515, 42, [248, 250, 252], [226, 232, 240], 1);
+            $resBoxY = $rowY - 56;
+            $this->drawRect(40, $resBoxY, 515, 38, [248, 250, 252], [226, 232, 240], 1);
 
             $resCount = count($ad['resources']);
             $resSummary = [];
             foreach ($ad['resources'] as $res) {
                 $resSummary[] = strtoupper($res['resource_type'] ?? 'MEDIO') . ' (' . basename($res['content_url'] ?? 'script') . ')';
             }
-            $resStr = implode(', ', array_slice($resSummary, 0, 3));
-            if ($resCount > 3) $resStr .= " y " . ($resCount - 3) . " mas...";
+            $resStr = implode(', ', array_slice($resSummary, 0, 4));
+            if ($resCount > 4) $resStr .= " y " . ($resCount - 4) . " mas...";
 
-            $this->drawText("Total de creativos registrados: " . $resCount, 50, $resBoxY + 24, 'F2', 8, [30, 41, 59]);
-            $this->drawText(mb_strimwidth($resStr, 0, 95, '...'), 50, $resBoxY + 10, 'F1', 7.5, [100, 116, 139]);
+            $this->drawText("Total de creativos registrados: " . $resCount, 50, $resBoxY + 22, 'F2', 8, [30, 41, 59]);
+            $this->drawText(mb_strimwidth($resStr, 0, 95, '...'), 50, $resBoxY + 8, 'F1', 7.5, [100, 116, 139]);
         }
 
         // Certification Seal Box
-        $certY = 62;
-        $this->drawRect(40, $certY, 515, 28, [241, 245, 249], [226, 232, 240], 1);
-        $this->drawText("CERTIFICACION DE INTEGRIDAD: Reporte generado de manera automatica por el modulo de publicidad.", 50, $certY + 15, 'F2', 7, [71, 85, 105]);
-        $this->drawText("Los datos mostrados corresponden a metricas directas de interaccion validadas contra bots e impresiones fraudulentas.", 50, $certY + 6, 'F1', 6.5, [148, 163, 184]);
+        $certY = 60;
+        $this->drawRect(40, $certY, 515, 26, [241, 245, 249], [226, 232, 240], 1);
+        $this->drawText("CERTIFICACION DE INTEGRIDAD: Reporte generado de manera automatica por el modulo de publicidad.", 50, $certY + 14, 'F2', 7, [71, 85, 105]);
+        $this->drawText("Los datos mostrados corresponden a metricas directas de interaccion validadas contra bots e impresiones fraudulentas.", 50, $certY + 5, 'F1', 6.5, [148, 163, 184]);
 
-        $this->drawFooter(1, 1);
+        $this->drawFooter();
         $this->endPage();
 
         return $this->compilePdf();
     }
 
-    public function generateGlobalAdsReport(array $globalSummary, array $providersBreakdown, array $formatsBreakdown, array $topAds): string {
+    public function generateGlobalAdsReport(array $globalSummary, array $providersBreakdown, array $formatsBreakdown, array $topAds, string $periodLabel = 'Últimos 30 días'): string {
         $this->reset();
         $this->startNewPage();
 
         $reportCode = 'GLOBAL-' . strtoupper(substr(md5((string)time()), 0, 8));
-        $this->drawHeader('AUDITORIA GLOBAL DE PUBLICIDAD', 'ESTADISTICAS DE TODA LA PLATAFORMA', $reportCode);
+        $this->drawHeader('AUDITORIA GLOBAL DE PUBLICIDAD', 'ESTADISTICAS DE TODA LA PLATAFORMA', $reportCode, $periodLabel);
 
         // Section 1: Top Macro KPI Cards
         $kpiY = 665;
@@ -308,7 +344,7 @@ class AdMetricsPdfService {
 
         $this->drawKpiCard(40, $kpiY, $cardW, $cardH, 'Proveedores', $totProviders, 'Redes y Directos', [2, 132, 199]);
         $this->drawKpiCard(40 + ($cardW + $gap), $kpiY, $cardW, $cardH, 'Anuncios Totales', $totAds, 'Creativos activos', [16, 185, 129]);
-        $this->drawKpiCard(40 + ($cardW + $gap) * 2, $kpiY, $cardW, $cardH, 'Impresiones Totales', $totImpressions, 'Vistas globales', [139, 92, 246]);
+        $this->drawKpiCard(40 + ($cardW + $gap) * 2, $kpiY, $cardW, $cardH, 'Impresiones Totales', $totImpressions, 'Impactos en periodo', [139, 92, 246]);
         $this->drawKpiCard(40 + ($cardW + $gap) * 3, $kpiY, $cardW, $cardH, 'Clics Totales', $totClicks, 'Interaccion total', [245, 158, 11]);
         $this->drawKpiCard(40 + ($cardW + $gap) * 4, $kpiY, $cardW, $cardH, 'CTR Promedio', $ctrAvg, 'Tasa de respuesta', [239, 68, 68]);
 
@@ -333,7 +369,7 @@ class AdMetricsPdfService {
             $rowY -= 24;
         } else {
             foreach ($providersBreakdown as $p) {
-                if ($rowCount >= 7) break;
+                if ($rowCount >= 8) break;
                 $bg = ($rowCount % 2 === 0) ? [255, 255, 255] : [248, 250, 252];
                 $this->drawRect(40, $rowY, 515, 17, $bg, [241, 245, 249], 0.5);
 
@@ -393,7 +429,14 @@ class AdMetricsPdfService {
 
         // Section 4: Top Performing Ads Ranking
         $topY = $fmtRowY - 15;
-        if ($topY > 120 && !empty($topAds)) {
+        if ($topY < 140) {
+            $this->drawFooter();
+            $this->startNewPage();
+            $this->drawContinuationHeader('AUDITORIA GLOBAL DE PUBLICIDAD', 'RANKING DE RENDIMIENTO', $reportCode, 'Top Anuncios con Mayor Impacto');
+            $topY = 740;
+        }
+
+        if (!empty($topAds)) {
             $this->drawText("TOP ANUNCIOS CON MAYOR IMPACTO Y RESPUESTA", 40, $topY, 'F2', 9, [15, 23, 42]);
 
             $topThY = $topY - 18;
@@ -408,7 +451,7 @@ class AdMetricsPdfService {
             $topRowY = $topThY - 17;
             $rank = 1;
             foreach ($topAds as $tAd) {
-                if ($topRowY < 85 || $rank > 5) break;
+                if ($topRowY < 85) break;
 
                 $bg = ($rank % 2 === 0) ? [248, 250, 252] : [255, 255, 255];
                 $this->drawRect(40, $topRowY, 515, 17, $bg, [241, 245, 249], 0.5);
@@ -437,7 +480,7 @@ class AdMetricsPdfService {
         $this->drawText("INFORME EJECUTIVO CONSOLIDADO - Datos globales calculados a partir de telemetria en tiempo real.", 50, $sealY + 12, 'F2', 7, [71, 85, 105]);
         $this->drawText("Project Rosaura Ad Server v2.0 - Todos los derechos reservados.", 50, $sealY + 4, 'F1', 6.5, [148, 163, 184]);
 
-        $this->drawFooter(1, 1);
+        $this->drawFooter();
         $this->endPage();
 
         return $this->compilePdf();
@@ -450,14 +493,15 @@ class AdMetricsPdfService {
             $this->pages = [""];
         }
 
-        // Object map:
-        // 1: Catalog
-        // 2: Pages
-        // 3: Font F1 (Helvetica)
-        // 4: Font F2 (Helvetica-Bold)
-        // 5: Font F3 (Helvetica-Oblique)
-        // Page 1: Obj 6, Content 1: Obj 7
-        // Page 2: Obj 8, Content 2: Obj 9 ...
+        // Replace page placeholders with actual total numbers
+        for ($i = 0; $i < $numPages; $i++) {
+            $pageNum = $i + 1;
+            $this->pages[$i] = str_replace(
+                ['{{PAGE_NUM}}', '{{TOTAL_PAGES}}'],
+                [(string)$pageNum, (string)$numPages],
+                $this->pages[$i]
+            );
+        }
 
         $pageObjIds = [];
         $contentObjIds = [];
@@ -475,23 +519,12 @@ class AdMetricsPdfService {
         $kidsStr = implode(' ', $kids);
 
         $pdf = "%PDF-1.4\n";
-
-        // 1 0 obj Catalog
         $pdf .= "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n";
-
-        // 2 0 obj Pages
         $pdf .= "2 0 obj\n<< /Type /Pages /Kids [{$kidsStr}] /Count {$numPages} >>\nendobj\n";
-
-        // 3 0 obj Helvetica
         $pdf .= "3 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n";
-
-        // 4 0 obj Helvetica-Bold
         $pdf .= "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj\n";
-
-        // 5 0 obj Helvetica-Oblique
         $pdf .= "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique >>\nendobj\n";
 
-        // Pages and Contents
         for ($i = 0; $i < $numPages; $i++) {
             $pid = $pageObjIds[$i];
             $cid = $contentObjIds[$i];
@@ -504,7 +537,6 @@ class AdMetricsPdfService {
 
         $totalObjs = $nextId - 1;
         $xrefOffset = strlen($pdf);
-
         $xref = "xref\n0 " . ($totalObjs + 1) . "\n0000000000 65535 f \n";
 
         for ($obj = 1; $obj <= $totalObjs; $obj++) {

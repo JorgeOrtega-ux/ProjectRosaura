@@ -728,7 +728,47 @@ class AdminAdvertisementsService {
         }
     }
 
-    public function getAdMetricsReportData(string $adUuid): ?array {
+    private function getPeriodSqlCondition(string $period, string $column = 'm.date_only'): array {
+        $days = 30;
+        $label = 'Últimos 30 días';
+
+        switch ($period) {
+            case '7':
+                $days = 7;
+                $label = 'Últimos 7 días';
+                break;
+            case '60':
+                $days = 60;
+                $label = 'Últimos 60 días';
+                break;
+            case '90':
+                $days = 90;
+                $label = 'Últimos 90 días (Trimestre)';
+                break;
+            case '180':
+                $days = 180;
+                $label = 'Últimos 180 días (Semestre)';
+                break;
+            case '365':
+                $days = 365;
+                $label = 'Últimos 365 días (1 año)';
+                break;
+            case 'all':
+                $days = null;
+                $label = 'Todo el Historial Acumulado';
+                break;
+            case '30':
+            default:
+                $days = 30;
+                $label = 'Últimos 30 días';
+                break;
+        }
+
+        $where = $days !== null ? "{$column} >= DATE_SUB(CURDATE(), INTERVAL {$days} DAY)" : "1=1";
+        return ['where' => $where, 'days' => $days, 'label' => $label];
+    }
+
+    public function getAdMetricsReportData(string $adUuid, string $period = '30'): ?array {
         $pdo = $this->getPdo();
         try {
             $stmtAd = $pdo->prepare("SELECT a.*, p.name AS provider_name, p.provider_type, p.network_id 
@@ -743,19 +783,20 @@ class AdminAdvertisementsService {
             }
 
             $adId = (int)$ad['id'];
+            $periodInfo = $this->getPeriodSqlCondition($period, 'date_only');
 
             // Fetch resources
             $stmtRes = $pdo->prepare("SELECT * FROM ad_resources WHERE ad_id = ? ORDER BY sort_order ASC, id ASC");
             $stmtRes->execute([$adId]);
             $ad['resources'] = $stmtRes->fetchAll(\PDO::FETCH_ASSOC);
 
-            // Fetch overall summary metrics
+            // Fetch summary metrics for period
             $stmtSummary = $pdo->prepare("SELECT 
                 COUNT(CASE WHEN event_type = 'impression' THEN 1 END) AS total_impressions,
                 COUNT(CASE WHEN event_type = 'click' THEN 1 END) AS total_clicks,
                 COUNT(CASE WHEN event_type = 'video_view' THEN 1 END) AS total_video_views,
                 COUNT(DISTINCT CASE WHEN user_uuid IS NOT NULL AND user_uuid != '' THEN user_uuid ELSE ip_address END) AS unique_users
-                FROM ad_metrics WHERE ad_id = ?");
+                FROM ad_metrics WHERE ad_id = ? AND {$periodInfo['where']}");
             $stmtSummary->execute([$adId]);
             $summary = $stmtSummary->fetch(\PDO::FETCH_ASSOC) ?: [];
 
@@ -763,23 +804,23 @@ class AdminAdvertisementsService {
             $totClk = (int)($summary['total_clicks'] ?? 0);
             $summary['ctr'] = ($totImp > 0) ? round(($totClk / $totImp) * 100, 2) : 0;
 
-            // Fetch daily breakdown (last 30 active days)
+            // Fetch daily breakdown for period
             $stmtDaily = $pdo->prepare("SELECT 
                 date_only, 
                 COUNT(CASE WHEN event_type = 'impression' THEN 1 END) AS impressions, 
                 COUNT(CASE WHEN event_type = 'click' THEN 1 END) AS clicks 
                 FROM ad_metrics 
-                WHERE ad_id = ? 
+                WHERE ad_id = ? AND {$periodInfo['where']}
                 GROUP BY date_only 
-                ORDER BY date_only DESC 
-                LIMIT 30");
+                ORDER BY date_only DESC");
             $stmtDaily->execute([$adId]);
             $dailyBreakdown = $stmtDaily->fetchAll(\PDO::FETCH_ASSOC);
 
             return [
                 'ad' => $ad,
                 'summary' => $summary,
-                'daily_breakdown' => $dailyBreakdown
+                'daily_breakdown' => $dailyBreakdown,
+                'period_label' => $periodInfo['label']
             ];
         } catch (\Throwable $e) {
             Logger::error("AdminAdvertisementsService::getAdMetricsReportData error: " . $e->getMessage());
@@ -787,9 +828,12 @@ class AdminAdvertisementsService {
         }
     }
 
-    public function getGlobalMetricsReportData(): array {
+    public function getGlobalMetricsReportData(string $period = '30'): array {
         $pdo = $this->getPdo();
         try {
+            $periodInfo = $this->getPeriodSqlCondition($period, 'm.date_only');
+            $periodWhereDirect = $this->getPeriodSqlCondition($period, 'date_only')['where'];
+
             // 1. Global totals
             $stmtProvidersCount = $pdo->query("SELECT COUNT(id) FROM ad_providers");
             $totalProviders = (int)$stmtProvidersCount->fetchColumn();
@@ -800,7 +844,7 @@ class AdminAdvertisementsService {
             $stmtMetricsCount = $pdo->query("SELECT 
                 COUNT(CASE WHEN event_type = 'impression' THEN 1 END) AS total_impressions,
                 COUNT(CASE WHEN event_type = 'click' THEN 1 END) AS total_clicks
-                FROM ad_metrics");
+                FROM ad_metrics WHERE {$periodWhereDirect}");
             $metricsRow = $stmtMetricsCount->fetch(\PDO::FETCH_ASSOC) ?: [];
 
             $totImp = (int)($metricsRow['total_impressions'] ?? 0);
@@ -818,8 +862,8 @@ class AdminAdvertisementsService {
             // 2. Providers breakdown
             $sqlProviders = "SELECT p.id, p.uuid, p.name, p.provider_type,
                                     (SELECT COUNT(a.id) FROM advertisements a WHERE a.provider_id = p.id) AS total_ads,
-                                    (SELECT COUNT(m.id) FROM ad_metrics m WHERE m.provider_id = p.id AND m.event_type = 'impression') AS total_impressions,
-                                    (SELECT COUNT(m.id) FROM ad_metrics m WHERE m.provider_id = p.id AND m.event_type = 'click') AS total_clicks
+                                    (SELECT COUNT(m.id) FROM ad_metrics m WHERE m.provider_id = p.id AND m.event_type = 'impression' AND {$periodInfo['where']}) AS total_impressions,
+                                    (SELECT COUNT(m.id) FROM ad_metrics m WHERE m.provider_id = p.id AND m.event_type = 'click' AND {$periodInfo['where']}) AS total_clicks
                              FROM ad_providers p
                              ORDER BY total_impressions DESC, total_ads DESC";
             $providersBreakdown = $pdo->query($sqlProviders)->fetchAll(\PDO::FETCH_ASSOC);
@@ -837,8 +881,8 @@ class AdminAdvertisementsService {
             foreach ($formatLabels as $fmtKey => $fmtLabel) {
                 $stmtFmt = $pdo->prepare("SELECT 
                     COUNT(DISTINCT a.id) AS total_ads,
-                    (SELECT COUNT(m.id) FROM ad_metrics m INNER JOIN advertisements a2 ON m.ad_id = a2.id WHERE a2.format = :fmt1 AND m.event_type = 'impression') AS total_impressions,
-                    (SELECT COUNT(m.id) FROM ad_metrics m INNER JOIN advertisements a3 ON m.ad_id = a3.id WHERE a3.format = :fmt2 AND m.event_type = 'click') AS total_clicks
+                    (SELECT COUNT(m.id) FROM ad_metrics m INNER JOIN advertisements a2 ON m.ad_id = a2.id WHERE a2.format = :fmt1 AND m.event_type = 'impression' AND {$periodInfo['where']}) AS total_impressions,
+                    (SELECT COUNT(m.id) FROM ad_metrics m INNER JOIN advertisements a3 ON m.ad_id = a3.id WHERE a3.format = :fmt2 AND m.event_type = 'click' AND {$periodInfo['where']}) AS total_clicks
                     FROM advertisements a WHERE a.format = :fmt3");
                 $stmtFmt->execute([':fmt1' => $fmtKey, ':fmt2' => $fmtKey, ':fmt3' => $fmtKey]);
                 $fmtRow = $stmtFmt->fetch(\PDO::FETCH_ASSOC) ?: [];
@@ -853,8 +897,8 @@ class AdminAdvertisementsService {
 
             // 4. Top Ads Ranking
             $sqlTop = "SELECT a.id, a.uuid, a.name, a.title, a.format, a.sponsor_label, p.name AS provider_name,
-                              (SELECT COUNT(m.id) FROM ad_metrics m WHERE m.ad_id = a.id AND m.event_type = 'impression') AS impressions,
-                              (SELECT COUNT(m.id) FROM ad_metrics m WHERE m.ad_id = a.id AND m.event_type = 'click') AS clicks
+                              (SELECT COUNT(m.id) FROM ad_metrics m WHERE m.ad_id = a.id AND m.event_type = 'impression' AND {$periodInfo['where']}) AS impressions,
+                              (SELECT COUNT(m.id) FROM ad_metrics m WHERE m.ad_id = a.id AND m.event_type = 'click' AND {$periodInfo['where']}) AS clicks
                        FROM advertisements a
                        INNER JOIN ad_providers p ON a.provider_id = p.id
                        ORDER BY clicks DESC, impressions DESC
@@ -865,7 +909,8 @@ class AdminAdvertisementsService {
                 'global_summary' => $globalSummary,
                 'providers_breakdown' => $providersBreakdown,
                 'formats_breakdown' => $formatsBreakdown,
-                'top_ads' => $topAds
+                'top_ads' => $topAds,
+                'period_label' => $periodInfo['label']
             ];
         } catch (\Throwable $e) {
             Logger::error("AdminAdvertisementsService::getGlobalMetricsReportData error: " . $e->getMessage());
@@ -873,13 +918,14 @@ class AdminAdvertisementsService {
                 'global_summary' => [],
                 'providers_breakdown' => [],
                 'formats_breakdown' => [],
-                'top_ads' => []
+                'top_ads' => [],
+                'period_label' => 'Últimos 30 días'
             ];
         }
     }
 
-    public function downloadAdMetricsPdf(string $adUuid): void {
-        $reportData = $this->getAdMetricsReportData($adUuid);
+    public function downloadAdMetricsPdf(string $adUuid, string $period = '30'): void {
+        $reportData = $this->getAdMetricsReportData($adUuid, $period);
         if (!$reportData || empty($reportData['ad'])) {
             http_response_code(404);
             header('Content-Type: application/json');
@@ -891,7 +937,8 @@ class AdminAdvertisementsService {
         $pdfBytes = $pdfService->generateIndividualAdReport(
             $reportData['ad'],
             $reportData['summary'],
-            $reportData['daily_breakdown']
+            $reportData['daily_breakdown'],
+            $reportData['period_label'] ?? 'Últimos 30 días'
         );
 
         $cleanName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $reportData['ad']['name'] ?? 'Anuncio');
@@ -906,15 +953,16 @@ class AdminAdvertisementsService {
         exit;
     }
 
-    public function downloadGeneralMetricsPdf(): void {
-        $globalData = $this->getGlobalMetricsReportData();
+    public function downloadGeneralMetricsPdf(string $period = '30'): void {
+        $globalData = $this->getGlobalMetricsReportData($period);
 
         $pdfService = new AdMetricsPdfService();
         $pdfBytes = $pdfService->generateGlobalAdsReport(
             $globalData['global_summary'],
             $globalData['providers_breakdown'],
             $globalData['formats_breakdown'],
-            $globalData['top_ads']
+            $globalData['top_ads'],
+            $globalData['period_label'] ?? 'Últimos 30 días'
         );
 
         $filename = "Reporte_Metricas_Globales_Publicidad_" . date('Ymd_His') . ".pdf";
