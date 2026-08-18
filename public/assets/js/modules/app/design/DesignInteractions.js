@@ -1619,6 +1619,7 @@ export const DesignInteractions = {
                 if (clickHandler) badge.addEventListener('click', clickHandler);
                 badgesRight.appendChild(badge);
             }
+        });
 
         if (this.isOwner) {
             const now = Date.now();
