@@ -281,6 +281,14 @@ def process_reset_task(r, db, task_data):
             "size": str(canvas_size)
         })
 
+        active_tl_path = os.path.join(BASE_DIR, 'storage', 'timelapses', f"canvas_{canvas_id}_active.jsonl")
+        try:
+            w_res, h_res = parse_size(canvas_size)
+            with open(active_tl_path, "w", encoding="utf-8") as f_tl_reset:
+                f_tl_reset.write(json.dumps({"t": int(time.time() * 1000), "type": "init", "w": w_res, "h": h_res}) + "\n")
+        except Exception as tl_res_err:
+            logging.error(f"Error resetting active timelapse for canvas {canvas_id}: {tl_res_err}")
+
         r.delete(f"canvas:{canvas_id}:reset_lock")
         r.publish("admin:canvas_events", json.dumps({"type": "canvas_cleared", "canvas_id": canvas_id, "next_reset_at": None}))
         logging.info(f"Canvas reset for {canvas_id} completed successfully.")
@@ -643,13 +651,58 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
             snapshot_uuid = str(uuid.uuid4())
             public_filepath = f"snapshots_archive/{canvas_uuid}/{archive_filename}"
             
+            # Archive and freeze active timelapse JSONL for this snapshot
+            timelapse_path_s3 = None
+            active_tl_path = os.path.join(BASE_DIR, 'storage', 'timelapses', f"canvas_{canvas_id}_active.jsonl")
+            snap_tl_dir = os.path.join(BASE_DIR, 'storage', 'timelapses', 'snapshots')
+            os.makedirs(snap_tl_dir, exist_ok=True)
+            snap_tl_path = os.path.join(snap_tl_dir, f"{snapshot_uuid}.jsonl")
+
+            timelapse_data = None
+            if os.path.exists(active_tl_path):
+                try:
+                    with open(active_tl_path, "r", encoding="utf-8") as f_in:
+                        timelapse_data = f_in.read()
+                except Exception as e:
+                    print(f"[!] Error reading active timelapse for canvas {canvas_id}: {e}")
+
+            if not timelapse_data:
+                try:
+                    s3_active_tl = s3.get_object(Bucket=S3_BUCKET, Key=f"timelapses/canvas_{canvas_id}_active.jsonl")
+                    timelapse_data = s3_active_tl['Body'].read().decode('utf-8')
+                except Exception:
+                    timelapse_data = None
+
+            if not timelapse_data:
+                w_snap, h_snap = parse_size(size_str)
+                timelapse_data = json.dumps({"t": int(time.time() * 1000), "type": "init", "w": w_snap, "h": h_snap}) + "\n"
+
+            try:
+                with open(snap_tl_path, "w", encoding="utf-8") as f_snap_out:
+                    f_snap_out.write(timelapse_data)
+            except Exception as snap_write_err:
+                print(f"[!] Error writing local snapshot timelapse: {snap_write_err}")
+
+            s3_timelapse_key = f"snapshots_timelapse/{canvas_uuid}/{snapshot_uuid}.jsonl"
+            try:
+                s3.put_object(
+                    Bucket=S3_BUCKET,
+                    Key=s3_timelapse_key,
+                    Body=timelapse_data.encode('utf-8'),
+                    ContentType="application/x-ndjson"
+                )
+                timelapse_path_s3 = s3_timelapse_key
+                print(f"[+] Snapshot timelapse saved to S3: {s3_timelapse_key}")
+            except Exception as s3_snap_tl_err:
+                print(f"[!] Error uploading snapshot timelapse to S3: {s3_snap_tl_err}")
+
             try:
                 cursor = db_conn.cursor()
                 insert_query = """
-                    INSERT INTO canvas_snapshots_history (canvas_id, snapshot_uuid, file_path)
-                    VALUES (%s, %s, %s)
+                    INSERT INTO canvas_snapshots_history (canvas_id, snapshot_uuid, file_path, timelapse_path)
+                    VALUES (%s, %s, %s, %s)
                 """
-                cursor.execute(insert_query, (canvas_id, snapshot_uuid, public_filepath))
+                cursor.execute(insert_query, (canvas_id, snapshot_uuid, public_filepath, timelapse_path_s3))
                 db_conn.commit()
                 cursor.close()
                 print(f"[+] Historical record saved in DB with UUID: {snapshot_uuid}")

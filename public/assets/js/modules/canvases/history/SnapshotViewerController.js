@@ -32,6 +32,26 @@ class SnapshotViewerController {
         this.initialPinchDistance = 0;
         this.initialScale = 1;
 
+        this.isTimelapseActive = false;
+        this.isTimelapsePlaying = false;
+        this.timelapseEvents = [];
+        this.timelapseTotal = 0;
+        this.timelapseCurrentIndex = 0;
+        this.timelapseSpeed = 5;
+        this.timelapseSelectedModalSpeed = 5;
+        this.timelapseAnimId = null;
+        this.timelapseLastTimestamp = 0;
+        this.savedSnapshotImage = null;
+        this.savedBoardDimensions = { width: 2000, height: 1000 };
+
+        this.timelapsePlayerEl = null;
+        this.timelapseStatusText = null;
+        this.timelapsePulse = null;
+        this.timelapsePixelCount = null;
+        this.timelapseScrubber = null;
+        this.timelapsePlayIcon = null;
+        this.timelapseSpeedText = null;
+
         this.handleWheelBound = this.handleWheel.bind(this);
         this.handleMouseDownBound = this.handleMouseDown.bind(this);
         this.handleMouseMoveBound = this.handleMouseMove.bind(this);
@@ -42,6 +62,9 @@ class SnapshotViewerController {
         this.handleTouchStartBound = this.handleTouchStart.bind(this);
         this.handleTouchMoveBound = this.handleTouchMove.bind(this);
         this.handleTouchEndBound = this.handleTouchEnd.bind(this);
+
+        this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
+        this.handleScrubberInputBound = this.handleScrubberInput.bind(this);
     }
 
     async init() {
@@ -50,8 +73,19 @@ class SnapshotViewerController {
             this.animationFrameId = null;
         }
 
+        if (this.timelapseAnimId) {
+            cancelAnimationFrame(this.timelapseAnimId);
+            this.timelapseAnimId = null;
+        }
+
         this.offscreenCanvas = null;
         this.offscreenCtx = null;
+        this.savedSnapshotImage = null;
+        this.timelapseEvents = [];
+        this.timelapseTotal = 0;
+        this.timelapseCurrentIndex = 0;
+        this.isTimelapseActive = false;
+        this.isTimelapsePlaying = false;
 
         const wrapper = document.querySelector('[data-ref="snapshot-wrapper"]');
         if (wrapper) {
@@ -72,6 +106,14 @@ class SnapshotViewerController {
         this.canvas = document.querySelector('[data-ref="snapshot-canvas"]');
         this.coordsText = document.querySelector('[data-ref="coords-text"]');
         
+        this.timelapsePlayerEl = document.querySelector('[data-ref="timelapse-player"]');
+        this.timelapseStatusText = document.querySelector('[data-ref="timelapse-status-text"]');
+        this.timelapsePulse = document.querySelector('[data-ref="timelapse-pulse"]');
+        this.timelapsePixelCount = document.querySelector('[data-ref="timelapse-pixel-count"]');
+        this.timelapseScrubber = document.querySelector('[data-ref="timelapse-scrubber"]');
+        this.timelapsePlayIcon = document.querySelector('[data-ref="timelapse-play-icon"]');
+        this.timelapseSpeedText = document.querySelector('[data-ref="timelapse-speed-text"]');
+
         if (this.canvas) {
             this.ctx = this.canvas.getContext('2d', { alpha: false });
             this.canvas.classList.add('component-pixelated');
@@ -99,7 +141,14 @@ class SnapshotViewerController {
         document.removeEventListener('touchmove', this.handleTouchMoveBound);
         document.removeEventListener('touchend', this.handleTouchEndBound);
 
+        document.removeEventListener('click', this.handleGlobalClickBound);
+
+        if (this.timelapseScrubber) {
+            this.timelapseScrubber.removeEventListener('input', this.handleScrubberInputBound);
+        }
+
         if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
+        if (this.timelapseAnimId) cancelAnimationFrame(this.timelapseAnimId);
     }
 
     bindEvents() {
@@ -112,6 +161,12 @@ class SnapshotViewerController {
         document.addEventListener('touchstart', this.handleTouchStartBound, { passive: false });
         document.addEventListener('touchmove', this.handleTouchMoveBound, { passive: false });
         document.addEventListener('touchend', this.handleTouchEndBound);
+
+        document.addEventListener('click', this.handleGlobalClickBound);
+
+        if (this.timelapseScrubber) {
+            this.timelapseScrubber.addEventListener('input', this.handleScrubberInputBound);
+        }
 
         this.bindActionTools();
     }
@@ -136,6 +191,438 @@ class SnapshotViewerController {
                 this.downloadSnapshot();
             });
         }
+    }
+
+    handleGlobalClick(e) {
+        const btnOpenModal = e.target.closest('[data-action="openTimelapseModal"]');
+        if (btnOpenModal) {
+            this.openTimelapseModal(btnOpenModal);
+            return;
+        }
+
+        const btnSpeedSelect = e.target.closest('[data-action="selectTimelapseSpeed"]');
+        if (btnSpeedSelect) {
+            this.handleSpeedSelectionInModal(btnSpeedSelect);
+            return;
+        }
+
+        const btnConfirmStart = e.target.closest('[data-action="confirmStartTimelapse"]');
+        if (btnConfirmStart) {
+            this.confirmStartTimelapse();
+            return;
+        }
+
+        const btnTogglePlay = e.target.closest('[data-action="togglePlayTimelapse"]');
+        if (btnTogglePlay) {
+            this.togglePlayTimelapse();
+            return;
+        }
+
+        const btnStepBack = e.target.closest('[data-action="stepBackwardTimelapse"]');
+        if (btnStepBack) {
+            this.stepBackwardTimelapse();
+            return;
+        }
+
+        const btnStepForward = e.target.closest('[data-action="stepForwardTimelapse"]');
+        if (btnStepForward) {
+            this.stepForwardTimelapse();
+            return;
+        }
+
+        const btnRestart = e.target.closest('[data-action="restartTimelapse"]');
+        if (btnRestart) {
+            this.restartTimelapse();
+            return;
+        }
+
+        const btnCloseTimelapse = e.target.closest('[data-action="closeTimelapse"]');
+        if (btnCloseTimelapse) {
+            this.closeTimelapse();
+            return;
+        }
+
+        const btnSpeedPill = e.target.closest('[data-action="openTimelapseSpeedMenu"]');
+        if (btnSpeedPill) {
+            this.cyclePlaybackSpeed();
+            return;
+        }
+    }
+
+    handleScrubberInput(e) {
+        if (!this.isTimelapseActive || this.timelapseTotal <= 0) return;
+        const percent = parseFloat(e.target.value);
+        const targetIndex = Math.min(this.timelapseTotal, Math.max(0, Math.floor((percent / 100) * this.timelapseTotal)));
+        this.seekTimelapse(targetIndex);
+    }
+
+    async openTimelapseModal(btnTrigger = null) {
+        if (this.isTimelapseActive) {
+            this.togglePlayTimelapse();
+            return;
+        }
+
+        this.timelapseSelectedModalSpeed = this.timelapseSpeed;
+
+        if (window.modalSystem) {
+            window.modalSystem.show('timelapseSettingsModal', { speed: this.timelapseSpeed });
+        } else {
+            await this.startTimelapse(this.timelapseSpeed, btnTrigger);
+        }
+    }
+
+    handleSpeedSelectionInModal(btn) {
+        const speedVal = parseFloat(btn.getAttribute('data-speed'));
+        if (isNaN(speedVal)) return;
+
+        this.timelapseSelectedModalSpeed = speedVal;
+
+        const container = document.querySelector('[data-ref="timelapse-speeds-container"]');
+        if (container) {
+            container.querySelectorAll('[data-action="selectTimelapseSpeed"]').forEach(b => {
+                b.classList.remove('active');
+            });
+            btn.classList.add('active');
+        }
+    }
+
+    async confirmStartTimelapse() {
+        if (window.modalSystem) {
+            window.modalSystem.closeCurrent();
+        }
+
+        const btnTrigger = document.querySelector('[data-ref="btn-timelapse-modal"]');
+        await this.startTimelapse(this.timelapseSelectedModalSpeed, btnTrigger);
+    }
+
+    async startTimelapse(speed = 5, btnTrigger = null) {
+        this.timelapseSpeed = speed;
+
+        if (this.timelapseEvents.length === 0) {
+            if (btnTrigger) setButtonLoading(btnTrigger);
+
+            try {
+                const endpoint = ApiRoutes.Canvases?.GetSnapshotTimelapse || 'canvases.get_snapshot_timelapse';
+                const response = await this.api.post(endpoint, { id: this.snapshotId });
+
+                if (btnTrigger) restoreButton(btnTrigger);
+
+                if (response && response.success && response.data && response.data.events && response.data.events.length > 0) {
+                    this.timelapseEvents = response.data.events;
+                    this.timelapseTotal = this.timelapseEvents.length;
+                } else {
+                    const fallbackMsg = window.__ ? window.__('msg_no_timelapse_data') : 'No timelapse data recorded for this snapshot.';
+                    showMessage((response && response.message) ? response.message : fallbackMsg, 'info');
+                    return;
+                }
+            } catch (error) {
+                if (btnTrigger) restoreButton(btnTrigger);
+                const errGeneral = window.__ ? window.__('err_connection') : 'Connection error';
+                showMessage(errGeneral, 'error');
+                return;
+            }
+        }
+
+        this.savedBoardDimensions = { width: this.boardWidth, height: this.boardHeight };
+
+        if (!this.savedSnapshotImage && this.offscreenCanvas) {
+            this.savedSnapshotImage = document.createElement('canvas');
+            this.savedSnapshotImage.width = this.offscreenCanvas.width;
+            this.savedSnapshotImage.height = this.offscreenCanvas.height;
+            const savedCtx = this.savedSnapshotImage.getContext('2d');
+            savedCtx.drawImage(this.offscreenCanvas, 0, 0);
+        }
+
+        this.isTimelapseActive = true;
+
+        if (this.timelapsePlayerEl) {
+            this.timelapsePlayerEl.classList.add('active');
+        }
+
+        this.updateSpeedUI();
+
+        const firstEvt = this.timelapseEvents[0];
+        if (firstEvt && firstEvt.type === 'init' && firstEvt.w && firstEvt.h) {
+            this.boardWidth = firstEvt.w;
+            this.boardHeight = firstEvt.h;
+        }
+
+        this.setupCanvas();
+        this.resetCanvasToBlank();
+        this.centerBoard();
+
+        this.timelapseCurrentIndex = 0;
+        this.updateTimelapseUI();
+
+        this.playTimelapse();
+    }
+
+    resetCanvasToBlank() {
+        if (!this.offscreenCanvas || !this.offscreenCtx) return;
+        this.offscreenCanvas.width = this.boardWidth;
+        this.offscreenCanvas.height = this.boardHeight;
+        this.offscreenCtx.imageSmoothingEnabled = false;
+        this.offscreenCtx.fillStyle = '#FFFFFF';
+        this.offscreenCtx.fillRect(0, 0, this.boardWidth, this.boardHeight);
+        this.requestRender();
+    }
+
+    playTimelapse() {
+        if (!this.isTimelapseActive) return;
+        this.isTimelapsePlaying = true;
+        this.timelapseLastTimestamp = performance.now();
+
+        if (this.timelapsePlayIcon) {
+            this.timelapsePlayIcon.textContent = 'pause';
+        }
+        if (this.timelapseStatusText) {
+            this.timelapseStatusText.textContent = window.__ ? window.__('lbl_timelapse_playing') : 'Playing';
+        }
+        if (this.timelapsePulse) {
+            this.timelapsePulse.classList.remove('paused', 'finished');
+        }
+
+        if (this.timelapseAnimId) cancelAnimationFrame(this.timelapseAnimId);
+        this.timelapseAnimId = requestAnimationFrame(this.timelapseLoop.bind(this));
+    }
+
+    pauseTimelapse() {
+        this.isTimelapsePlaying = false;
+        if (this.timelapseAnimId) {
+            cancelAnimationFrame(this.timelapseAnimId);
+            this.timelapseAnimId = null;
+        }
+
+        if (this.timelapsePlayIcon) {
+            this.timelapsePlayIcon.textContent = 'play_arrow';
+        }
+        if (this.timelapseStatusText) {
+            this.timelapseStatusText.textContent = window.__ ? window.__('lbl_timelapse_paused') : 'Paused';
+        }
+        if (this.timelapsePulse) {
+            this.timelapsePulse.classList.remove('finished');
+            this.timelapsePulse.classList.add('paused');
+        }
+    }
+
+    togglePlayTimelapse() {
+        if (!this.isTimelapseActive) return;
+
+        if (this.isTimelapsePlaying) {
+            this.pauseTimelapse();
+        } else {
+            if (this.timelapseCurrentIndex >= this.timelapseTotal) {
+                this.seekTimelapse(0);
+            }
+            this.playTimelapse();
+        }
+    }
+
+    restartTimelapse() {
+        if (!this.isTimelapseActive) return;
+        this.seekTimelapse(0);
+        this.playTimelapse();
+    }
+
+    stepForwardTimelapse() {
+        if (!this.isTimelapseActive) return;
+        this.pauseTimelapse();
+        if (this.timelapseCurrentIndex < this.timelapseTotal) {
+            this.applyEvent(this.timelapseEvents[this.timelapseCurrentIndex]);
+            this.timelapseCurrentIndex++;
+            this.updateTimelapseUI();
+            this.requestRender();
+        }
+    }
+
+    stepBackwardTimelapse() {
+        if (!this.isTimelapseActive) return;
+        this.pauseTimelapse();
+        if (this.timelapseCurrentIndex > 0) {
+            this.seekTimelapse(this.timelapseCurrentIndex - 1);
+        }
+    }
+
+    cyclePlaybackSpeed() {
+        const speeds = [0.5, 1, 2, 5, 10, 25, 50, 100, 500];
+        let nextIndex = 0;
+        const curIdx = speeds.indexOf(this.timelapseSpeed);
+        if (curIdx !== -1 && curIdx < speeds.length - 1) {
+            nextIndex = curIdx + 1;
+        }
+        this.timelapseSpeed = speeds[nextIndex];
+        this.updateSpeedUI();
+    }
+
+    updateSpeedUI() {
+        if (this.timelapseSpeedText) {
+            this.timelapseSpeedText.textContent = this.timelapseSpeed >= 500 ? 'Max' : `${this.timelapseSpeed}x`;
+        }
+    }
+
+    seekTimelapse(targetIndex) {
+        targetIndex = Math.max(0, Math.min(this.timelapseTotal, targetIndex));
+
+        if (targetIndex < this.timelapseCurrentIndex) {
+            const firstEvt = this.timelapseEvents[0];
+            if (firstEvt && firstEvt.type === 'init' && firstEvt.w && firstEvt.h) {
+                this.boardWidth = firstEvt.w;
+                this.boardHeight = firstEvt.h;
+            }
+            this.setupCanvas();
+            this.resetCanvasToBlank();
+
+            for (let i = 0; i < targetIndex; i++) {
+                this.applyEvent(this.timelapseEvents[i]);
+            }
+        } else {
+            for (let i = this.timelapseCurrentIndex; i < targetIndex; i++) {
+                this.applyEvent(this.timelapseEvents[i]);
+            }
+        }
+
+        this.timelapseCurrentIndex = targetIndex;
+        this.updateTimelapseUI();
+        this.requestRender();
+    }
+
+    timelapseLoop(now) {
+        if (!this.isTimelapsePlaying || !this.isTimelapseActive) return;
+
+        const dt = Math.min(0.1, (now - this.timelapseLastTimestamp) / 1000);
+        this.timelapseLastTimestamp = now;
+
+        const baseEventsPerSec = 80;
+        let eventsToProcess = Math.max(1, Math.round(baseEventsPerSec * this.timelapseSpeed * dt));
+
+        if (this.timelapseSpeed >= 500) {
+            eventsToProcess = 600;
+        }
+
+        const targetIndex = Math.min(this.timelapseTotal, this.timelapseCurrentIndex + eventsToProcess);
+
+        for (let i = this.timelapseCurrentIndex; i < targetIndex; i++) {
+            this.applyEvent(this.timelapseEvents[i]);
+        }
+
+        this.timelapseCurrentIndex = targetIndex;
+        this.updateTimelapseUI();
+        this.requestRender();
+
+        if (this.timelapseCurrentIndex >= this.timelapseTotal) {
+            this.pauseTimelapse();
+            if (this.timelapseStatusText) {
+                this.timelapseStatusText.textContent = window.__ ? window.__('lbl_timelapse_finished') : 'Finished';
+            }
+            if (this.timelapsePulse) {
+                this.timelapsePulse.classList.remove('paused');
+                this.timelapsePulse.classList.add('finished');
+            }
+        } else {
+            this.timelapseAnimId = requestAnimationFrame(this.timelapseLoop.bind(this));
+        }
+    }
+
+    applyEvent(evt) {
+        if (!evt || !this.offscreenCtx) return;
+
+        const type = evt.type || (evt.x !== undefined ? 'pixel' : null);
+
+        if (type === 'init') {
+            if (evt.w && evt.h) {
+                this.boardWidth = evt.w;
+                this.boardHeight = evt.h;
+                this.offscreenCanvas.width = this.boardWidth;
+                this.offscreenCanvas.height = this.boardHeight;
+                this.offscreenCtx.fillStyle = '#FFFFFF';
+                this.offscreenCtx.fillRect(0, 0, this.boardWidth, this.boardHeight);
+            }
+        } else if (type === 'pixel') {
+            const x = parseInt(evt.x, 10);
+            const y = parseInt(evt.y, 10);
+            const color = evt.c || '#000000';
+
+            if (color === 'transparent') {
+                this.offscreenCtx.fillStyle = '#FFFFFF';
+            } else {
+                this.offscreenCtx.fillStyle = color;
+            }
+            this.offscreenCtx.fillRect(x, y, 1, 1);
+        } else if (type === 'clear') {
+            const x1 = parseInt(evt.x1, 10);
+            const y1 = parseInt(evt.y1, 10);
+            const x2 = parseInt(evt.x2, 10);
+            const y2 = parseInt(evt.y2, 10);
+            const w = Math.max(1, x2 - x1 + 1);
+            const h = Math.max(1, y2 - y1 + 1);
+
+            this.offscreenCtx.fillStyle = '#FFFFFF';
+            this.offscreenCtx.fillRect(x1, y1, w, h);
+        } else if (type === 'resize') {
+            const newW = parseInt(evt.w, 10);
+            const newH = parseInt(evt.h, 10);
+            if (newW > 0 && newH > 0 && (newW !== this.boardWidth || newH !== this.boardHeight)) {
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = this.boardWidth;
+                tempCanvas.height = this.boardHeight;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(this.offscreenCanvas, 0, 0);
+
+                this.boardWidth = newW;
+                this.boardHeight = newH;
+                this.offscreenCanvas.width = newW;
+                this.offscreenCanvas.height = newH;
+                this.offscreenCtx.fillStyle = '#FFFFFF';
+                this.offscreenCtx.fillRect(0, 0, newW, newH);
+                this.offscreenCtx.drawImage(tempCanvas, 0, 0);
+            }
+        } else if (type === 'reset') {
+            const rW = parseInt(evt.w, 10) || this.boardWidth;
+            const rH = parseInt(evt.h, 10) || this.boardHeight;
+            this.boardWidth = rW;
+            this.boardHeight = rH;
+            this.offscreenCanvas.width = rW;
+            this.offscreenCanvas.height = rH;
+            this.offscreenCtx.fillStyle = '#FFFFFF';
+            this.offscreenCtx.fillRect(0, 0, rW, rH);
+        }
+    }
+
+    updateTimelapseUI() {
+        if (this.timelapsePixelCount) {
+            const formattedCurrent = this.timelapseCurrentIndex.toLocaleString();
+            const formattedTotal = this.timelapseTotal.toLocaleString();
+            this.timelapsePixelCount.textContent = `${formattedCurrent} / ${formattedTotal} px`;
+        }
+
+        if (this.timelapseScrubber && this.timelapseTotal > 0) {
+            const percent = (this.timelapseCurrentIndex / this.timelapseTotal) * 100;
+            this.timelapseScrubber.value = percent.toFixed(1);
+        }
+    }
+
+    closeTimelapse() {
+        this.pauseTimelapse();
+        this.isTimelapseActive = false;
+
+        if (this.timelapsePlayerEl) {
+            this.timelapsePlayerEl.classList.remove('active');
+        }
+
+        this.boardWidth = this.savedBoardDimensions.width;
+        this.boardHeight = this.savedBoardDimensions.height;
+
+        this.setupCanvas();
+
+        if (this.savedSnapshotImage && this.offscreenCtx) {
+            this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
+            this.offscreenCtx.drawImage(this.savedSnapshotImage, 0, 0, this.boardWidth, this.boardHeight);
+        } else if (this.originalImageUrl) {
+            this.drawImageOnCanvas(this.originalImageUrl);
+        }
+
+        this.centerBoard();
+        this.requestRender();
     }
 
     async downloadSnapshot() {
@@ -265,6 +752,15 @@ class SnapshotViewerController {
                 this.offscreenCtx.imageSmoothingEnabled = false; 
                 this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
                 this.offscreenCtx.drawImage(img, 0, 0, this.boardWidth, this.boardHeight);
+                
+                if (!this.savedSnapshotImage && !this.isTimelapseActive) {
+                    this.savedSnapshotImage = document.createElement('canvas');
+                    this.savedSnapshotImage.width = this.boardWidth;
+                    this.savedSnapshotImage.height = this.boardHeight;
+                    const sCtx = this.savedSnapshotImage.getContext('2d');
+                    sCtx.drawImage(this.offscreenCanvas, 0, 0);
+                }
+
                 this.requestRender();
             }
         };

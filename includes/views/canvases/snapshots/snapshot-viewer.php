@@ -44,6 +44,9 @@ $canvasSize = $viewerData['canvasSize'];
             
             <div class="component-top-right">
                 <div class="component-actions active">
+                    <button class="component-button component-button--icon component-button--h40" data-action="openTimelapseModal" data-ref="btn-timelapse-modal" data-tooltip="<?php echo __('btn_timelapse'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">timelapse</span>
+                    </button>
                     <button class="component-button component-button--icon component-button--h40" data-action="downloadSnapshotHighRes" data-tooltip="<?php echo __('btn_download'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">high_quality</span>
                     </button>
@@ -55,7 +58,7 @@ $canvasSize = $viewerData['canvasSize'];
         </div>
 
         <div class="component-bottom">
-            <canvas data-ref="snapshot-canvas" class="component-canvas-surface"></canvas>
+            <canvas class="component-canvas-surface" data-ref="snapshot-canvas"></canvas>
             
             <div class="canvas-badges-left" data-ref="badges-left">
                 <div class="component-badge" data-badge-id="coords">
@@ -65,6 +68,51 @@ $canvasSize = $viewerData['canvasSize'];
                 
                 <div class="component-badge component-badge--warning">
                     <span class="material-symbols-rounded">history</span> <?php echo __('lbl_historical_mode'); ?>
+                </div>
+            </div>
+
+            <div class="component-timelapse-player" data-ref="timelapse-player">
+                <div class="component-timelapse-player-top">
+                    <div class="component-timelapse-status">
+                        <span class="component-timelapse-pulse" data-ref="timelapse-pulse"></span>
+                        <span class="component-timelapse-status-text" data-ref="timelapse-status-text"><?php echo __('lbl_timelapse_playing'); ?></span>
+                    </div>
+                    
+                    <div class="component-timelapse-stats">
+                        <span class="component-badge" data-ref="timelapse-pixel-count">0 / 0 px</span>
+                    </div>
+
+                    <button class="component-button component-button--icon component-button--h30" data-action="closeTimelapse" data-tooltip="<?php echo __('btn_exit_timelapse'); ?>" data-position="top">
+                        <span class="material-symbols-rounded">close</span>
+                    </button>
+                </div>
+
+                <div class="component-timelapse-timeline">
+                    <input class="component-timelapse-scrubber" data-ref="timelapse-scrubber" data-action="scrubTimelapse" type="range" min="0" max="100" value="0" step="0.1">
+                </div>
+
+                <div class="component-timelapse-controls">
+                    <div class="component-timelapse-controls-left">
+                        <button class="component-button component-button--icon component-button--h35" data-action="stepBackwardTimelapse" data-tooltip="<?php echo __('lbl_timelapse_step'); ?>" data-position="top">
+                            <span class="material-symbols-rounded">skip_previous</span>
+                        </button>
+                        <button class="component-button component-button--icon component-button--primary component-button--h35" data-action="togglePlayTimelapse" data-ref="btn-timelapse-play" data-position="top">
+                            <span class="material-symbols-rounded" data-ref="timelapse-play-icon">play_arrow</span>
+                        </button>
+                        <button class="component-button component-button--icon component-button--h35" data-action="stepForwardTimelapse" data-tooltip="<?php echo __('lbl_timelapse_step'); ?>" data-position="top">
+                            <span class="material-symbols-rounded">skip_next</span>
+                        </button>
+                        <button class="component-button component-button--icon component-button--h35" data-action="restartTimelapse" data-position="top">
+                            <span class="material-symbols-rounded">restart_alt</span>
+                        </button>
+                    </div>
+
+                    <div class="component-timelapse-controls-right">
+                        <button class="component-button component-button--h35 component-timelapse-speed-pill" data-action="openTimelapseSpeedMenu" data-ref="timelapse-speed-indicator" type="button">
+                            <span class="material-symbols-rounded">speed</span>
+                            <span data-ref="timelapse-speed-text">5x</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

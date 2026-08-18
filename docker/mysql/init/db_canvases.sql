@@ -197,6 +197,7 @@ CREATE TABLE IF NOT EXISTS `canvas_snapshots_history` (
   `canvas_id` int(11) NOT NULL,
   `snapshot_uuid` varchar(36) NOT NULL,
   `file_path` varchar(255) NOT NULL,
+  `timelapse_path` varchar(255) DEFAULT NULL,
   `privacy` ENUM('public', 'private') NOT NULL DEFAULT 'public',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),

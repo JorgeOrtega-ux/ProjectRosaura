@@ -158,6 +158,8 @@ export const ApiRoutes = {
         SnapshotStatus: 'canvases.snapshot_status',
 
         GetSnapshotsGallery: 'canvases.get_snapshots_gallery',
+        GetSnapshotDetail: 'canvases.get_snapshot_detail',
+        GetSnapshotTimelapse: 'canvases.get_snapshot_timelapse',
         ToggleSnapshotLike: 'canvases.toggle_snapshot_like',
         ToggleSnapshotPrivacy: 'canvases.toggle_snapshot_privacy',
         DeleteSnapshot: 'canvases.delete_snapshot',

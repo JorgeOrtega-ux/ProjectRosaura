@@ -87,7 +87,7 @@ class CanvasMediaService {
             $pdo = $db->getConnection(DB::CONN_CANVASES);
 
             $stmt = $pdo->prepare("
-                SELECT s.file_path, s.snapshot_uuid, s.privacy as snapshot_privacy, c.id as canvas_id, c.size, c.privacy as canvas_privacy, c.owner_id, c.palette_id 
+                SELECT s.file_path, s.timelapse_path, s.snapshot_uuid, s.privacy as snapshot_privacy, c.id as canvas_id, c.size, c.privacy as canvas_privacy, c.owner_id, c.palette_id 
                 FROM canvas_snapshots_history s
                 JOIN " . DB::TBL_CANVASES . " c ON s.canvas_id = c.id
                 WHERE s.snapshot_uuid = :snapshot_id 
@@ -135,12 +135,130 @@ class CanvasMediaService {
                     'width' => $width,
                     'height' => $height,
                     'size' => $data['size'],
-                    'palette_id' => $data['palette_id']
+                    'palette_id' => $data['palette_id'],
+                    'has_timelapse' => !empty($data['timelapse_path']),
+                    'timelapse_path' => $data['timelapse_path'] ?? null
                 ]
             ];
 
         } catch (Exception $e) {
             Logger::error('Error getting snapshot detail.', ['snapshot_id' => $snapshotId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function getSnapshotTimelapse(string $snapshotId, ?int $userId = null): array {
+        try {
+            $db = new DatabaseManager();
+            $pdo = $db->getConnection(DB::CONN_CANVASES);
+
+            $stmt = $pdo->prepare("
+                SELECT s.file_path, s.timelapse_path, s.snapshot_uuid, s.privacy as snapshot_privacy, c.id as canvas_id, c.size, c.privacy as canvas_privacy, c.owner_id, c.palette_id, c.uuid as canvas_uuid
+                FROM canvas_snapshots_history s
+                JOIN " . DB::TBL_CANVASES . " c ON s.canvas_id = c.id
+                WHERE s.snapshot_uuid = :snapshot_id 
+                LIMIT 1
+            ");
+            $stmt->execute([':snapshot_id' => $snapshotId]);
+            $data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$data) {
+                return ['success' => false, 'message' => __('err_captura_not_found')];
+            }
+
+            $hasRole = false;
+            if ($userId !== null) {
+                $roles = $this->canvasRepository->getMemberRoles($data['canvas_id'], $userId);
+                $hasRole = !empty($roles);
+            }
+
+            $isOwner = ($data['owner_id'] === $userId);
+
+            if ($data['snapshot_privacy'] === DB::PRIVACY_PRIVATE && !$isOwner) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
+            if ($data['canvas_privacy'] === DB::PRIVACY_PRIVATE && !$hasRole && !$isOwner) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
+            $sizeStr = strtolower($data['size']);
+            if (strpos($sizeStr, 'x') !== false) {
+                $parts = explode('x', $sizeStr);
+                $width = (int)$parts[0];
+                $height = isset($parts[1]) ? (int)$parts[1] : $width;
+            } else {
+                $width = (int)$sizeStr;
+                $height = $width;
+            }
+
+            $jsonlContent = null;
+            $timelapsePath = $data['timelapse_path'] ?? null;
+            
+            if (!$timelapsePath) {
+                $timelapsePath = "snapshots_timelapse/{$data['canvas_uuid']}/{$data['snapshot_uuid']}.jsonl";
+            }
+
+            $localPath = __DIR__ . '/../../../../storage/timelapses/snapshots/' . $data['snapshot_uuid'] . '.jsonl';
+            if (file_exists($localPath)) {
+                $jsonlContent = file_get_contents($localPath);
+            }
+
+            if (!$jsonlContent && !empty($timelapsePath)) {
+                try {
+                    $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+                    $s3Client = Utils::getS3Client();
+                    $s3Obj = $s3Client->getObject([
+                        'Bucket' => $bucket,
+                        'Key' => ltrim($timelapsePath, '/')
+                    ]);
+                    if ($s3Obj && isset($s3Obj['Body'])) {
+                        $jsonlContent = (string)$s3Obj['Body'];
+                    }
+                } catch (\Throwable $s3Err) {
+                    Logger::warning("Could not fetch timelapse from S3: " . $s3Err->getMessage(), ['key' => $timelapsePath]);
+                }
+            }
+
+            if (!$jsonlContent) {
+                return [
+                    'success' => false,
+                    'message' => __('msg_no_timelapse_data')
+                ];
+            }
+
+            $events = [];
+            $lines = explode("\n", $jsonlContent);
+            foreach ($lines as $line) {
+                $trimmed = trim($line);
+                if (empty($trimmed)) continue;
+                $decoded = json_decode($trimmed, true);
+                if ($decoded && is_array($decoded)) {
+                    $events[] = $decoded;
+                }
+            }
+
+            if (empty($events)) {
+                return [
+                    'success' => false,
+                    'message' => __('msg_no_timelapse_data')
+                ];
+            }
+
+            return [
+                'success' => true,
+                'data' => [
+                    'snapshot_id' => $snapshotId,
+                    'events' => $events,
+                    'total' => count($events),
+                    'width' => $width,
+                    'height' => $height,
+                    'size' => $data['size']
+                ]
+            ];
+
+        } catch (Exception $e) {
+            Logger::error('Error getting snapshot timelapse.', ['snapshot_id' => $snapshotId, 'error' => $e->getMessage()]);
             return ['success' => false, 'message' => __('err_database')];
         }
     }
@@ -230,7 +348,7 @@ class CanvasMediaService {
             $pdo = $db->getConnection(DB::CONN_CANVASES);
 
             $stmt = $pdo->prepare("
-                SELECT s.id, s.file_path, s.canvas_id, c.owner_id 
+                SELECT s.id, s.file_path, s.timelapse_path, s.snapshot_uuid, s.canvas_id, c.owner_id 
                 FROM canvas_snapshots_history s
                 JOIN " . DB::TBL_CANVASES . " c ON s.canvas_id = c.id
                 WHERE s.snapshot_uuid = :uuid 
@@ -267,6 +385,20 @@ class CanvasMediaService {
                 } catch (\Exception $e) {
                     Logger::warning("Failed deleting S3 object for snapshot", ['key' => $s3Key, 'exception' => $e]);
                 }
+            }
+
+            if (!empty($data['timelapse_path'])) {
+                $s3TlKey = ltrim($data['timelapse_path'], '/');
+                try {
+                    $s3Client->deleteObject(['Bucket' => $bucket, 'Key' => $s3TlKey]);
+                } catch (\Exception $e) {
+                    Logger::warning("Failed deleting S3 timelapse object for snapshot", ['key' => $s3TlKey, 'exception' => $e]);
+                }
+            }
+
+            $localTlPath = __DIR__ . '/../../../../storage/timelapses/snapshots/' . $data['snapshot_uuid'] . '.jsonl';
+            if (file_exists($localTlPath)) {
+                @unlink($localTlPath);
             }
 
             return ['success' => true, 'message' => __('msg_captura_deleted')];

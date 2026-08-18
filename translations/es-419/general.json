@@ -1864,7 +1864,23 @@
     "region_blocked_title": "Servicio no disponible en tu región",
     "region_blocked_desc": "Este servicio o función no se encuentra disponible actualmente para tu país o región.",
     "err_service_unavailable_in_country": "Esta funcionalidad no está disponible actualmente en {country}.",
-    "lbl_your_country": "tu país"
+    "lbl_your_country": "tu país",
+    "btn_timelapse": "Timelapse",
+    "btn_start_timelapse": "Iniciar timelapse",
+    "lbl_timelapse_title": "Timelapse de la captura",
+    "lbl_timelapse_desc": "Configura la velocidad y reproduce la creación paso a paso de esta captura.",
+    "lbl_timelapse_speed": "Velocidad de reproducción",
+    "lbl_timelapse_playing": "Reproduciendo",
+    "lbl_timelapse_paused": "Pausado",
+    "lbl_timelapse_finished": "Completado",
+    "lbl_timelapse_step": "Paso a paso",
+    "lbl_timelapse_pixels": "Píxeles",
+    "btn_exit_timelapse": "Salir del timelapse",
+    "msg_no_timelapse_data": "No hay datos de timelapse grabados para esta captura.",
+    "msg_loading_timelapse": "Cargando datos del timelapse...",
+    "lbl_timelapse_frame": "Píxel :current de :total",
+    "lbl_timelapse_start_playback": "Iniciar reproducción",
+    "lbl_timelapse_settings": "Opciones del timelapse"
 }
 
 

@@ -781,6 +781,22 @@ return [
             ],
         ],
     ],
+    'canvases.get_snapshot_timelapse' => [
+        'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasMediaController',
+        'action' => 'get_snapshot_timelapse',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'canvas_get_snap_timelapse',
+                'max' => 30,
+                'time' => 1,
+                'identifier' => 'ip',
+            ],
+        ],
+    ],
     'canvases.toggle_snapshot_like' => [
         'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasMediaController',
         'action' => 'toggle_snapshot_like',

@@ -58,6 +58,21 @@ CASSANDRA_KEYSPACE = os.getenv("CASSANDRA_KEYSPACE") or "db_canvases_nosql"
 CANVAS_SYNC_INTERVAL = int(os.getenv("WORKER_CANVAS_SYNC_INTERVAL") or 5)
 CANVAS_BATCH_SIZE = int(os.getenv("WORKER_CANVAS_BATCH_SIZE") or 5000)
 
+TIMELAPSE_DIR = os.path.join(BASE_DIR, 'storage', 'timelapses')
+os.makedirs(TIMELAPSE_DIR, exist_ok=True)
+os.makedirs(os.path.join(TIMELAPSE_DIR, 'snapshots'), exist_ok=True)
+
+def parse_size_str(size_val):
+    try:
+        s = str(size_val).lower().strip()
+        if 'x' in s:
+            parts = s.split('x')
+            return int(parts[0]), int(parts[1])
+        v = int(s)
+        return v, v
+    except Exception:
+        return 64, 64
+
 CONSUMER_GROUP = "canvas_workers"
 CONSUMER_NAME = "worker-1"
 
@@ -180,8 +195,16 @@ def canvas_persistence_thread():
                         print(f"[!] Could not resolve UUID for canvas {canvas_id}. Skipping.")
                         continue
 
-                    # Batch insert pixel history to Cassandra
+                    # Batch insert pixel history to Cassandra & append JSONL timelapse events
                     if msgs:
+                        timelapse_lines = []
+                        active_timelapse_file = os.path.join(TIMELAPSE_DIR, f"canvas_{canvas_id}_active.jsonl")
+
+                        if not os.path.exists(active_timelapse_file):
+                            init_w, init_h = parse_size_str(canvas_size)
+                            init_t = int(time.time() * 1000)
+                            timelapse_lines.append(json.dumps({"t": init_t, "type": "init", "w": init_w, "h": init_h}) + "\n")
+
                         if not cassandra_session:
                             connect_cassandra()
                         
@@ -193,13 +216,31 @@ def canvas_persistence_thread():
                                     VALUES (?, ?, ?, ?, ?, ?)
                                 """)
                                 for msg_id, field_dict in msgs:
-                                    if b'u' in field_dict and b'x' in field_dict and b'y' in field_dict:
-                                        try:
-                                            msg_ts_ms = int(msg_id.decode('utf-8').split('-')[0])
-                                            placed_at = datetime.fromtimestamp(msg_ts_ms / 1000.0)
-                                        except Exception:
-                                            placed_at = datetime.now()
-                                        
+                                    try:
+                                        msg_ts_ms = int(msg_id.decode('utf-8').split('-')[0])
+                                        placed_at = datetime.fromtimestamp(msg_ts_ms / 1000.0)
+                                    except Exception:
+                                        msg_ts_ms = int(time.time() * 1000)
+                                        placed_at = datetime.now()
+
+                                    # Check for special canvas events
+                                    if b'type' in field_dict:
+                                        evt_type = field_dict[b'type'].decode('utf-8')
+                                        if evt_type == 'canvas_clear_area':
+                                            x1 = int(field_dict.get(b'x1', b'0'))
+                                            y1 = int(field_dict.get(b'y1', b'0'))
+                                            x2 = int(field_dict.get(b'x2', b'0'))
+                                            y2 = int(field_dict.get(b'y2', b'0'))
+                                            timelapse_lines.append(json.dumps({"t": msg_ts_ms, "type": "clear", "x1": x1, "y1": y1, "x2": x2, "y2": y2}) + "\n")
+                                        elif evt_type == 'canvas_resize':
+                                            w_val = int(field_dict[b'w']) if b'w' in field_dict else 64
+                                            h_val = int(field_dict[b'h']) if b'h' in field_dict else w_val
+                                            timelapse_lines.append(json.dumps({"t": msg_ts_ms, "type": "resize", "w": w_val, "h": h_val}) + "\n")
+                                        elif evt_type == 'canvas_reset':
+                                            size_str = field_dict[b'size'].decode('utf-8') if b'size' in field_dict else '64x64'
+                                            w_val, h_val = parse_size_str(size_str)
+                                            timelapse_lines.append(json.dumps({"t": msg_ts_ms, "type": "reset", "w": w_val, "h": h_val}) + "\n")
+                                    elif b'u' in field_dict and b'x' in field_dict and b'y' in field_dict:
                                         try:
                                             u_val = int(field_dict[b'u'])
                                             x_val = int(field_dict[b'x'])
@@ -214,6 +255,7 @@ def canvas_persistence_thread():
                                                 u_val,
                                                 c_val
                                             ))
+                                            timelapse_lines.append(json.dumps({"t": msg_ts_ms, "type": "pixel", "x": x_val, "y": y_val, "c": c_val, "u": u_val}) + "\n")
                                         except Exception as item_err:
                                             print(f"[!] Error parsing pixel history item: {item_err}")
                                 
@@ -224,6 +266,13 @@ def canvas_persistence_thread():
                                 print(f"[!] Error bulk inserting pixel history to Cassandra: {cass_err}")
                                 cassandra_session = None
                                 cassandra_cluster = None
+
+                        if timelapse_lines:
+                            try:
+                                with open(active_timelapse_file, "a", encoding="utf-8") as f_tl:
+                                    f_tl.writelines(timelapse_lines)
+                            except Exception as tl_err:
+                                print(f"[!] Error writing timelapse JSONL for canvas {canvas_id}: {tl_err}")
                     
                     msg_ids = [msg_id_b for msg_id_b, _ in msgs]
                     r.xack(stream_name, CONSUMER_GROUP, *msg_ids)
@@ -273,6 +322,20 @@ def canvas_persistence_thread():
                                 print(f"[+] Active snapshot uploaded to S3 and DB updated for canvas {canvas_id_str}")
                             except Exception as s3_err:
                                 print(f"[!] Error uploading snapshot to S3 for canvas {canvas_id_str}: {s3_err}")
+
+                        # Upload active timelapse file to S3
+                        active_tl = os.path.join(TIMELAPSE_DIR, f"canvas_{canvas_id_str}_active.jsonl")
+                        if os.path.exists(active_tl):
+                            try:
+                                with open(active_tl, "rb") as f_tl_s3:
+                                    s3.put_object(
+                                        Bucket=S3_BUCKET,
+                                        Key=f"timelapses/canvas_{canvas_id_str}_active.jsonl",
+                                        Body=f_tl_s3.read(),
+                                        ContentType="application/x-ndjson"
+                                    )
+                            except Exception as s3_tl_err:
+                                print(f"[!] Error uploading active timelapse to S3: {s3_tl_err}")
                 conn.commit()
             except Exception as e:
                 print(f"[!] Error saving Snapshots to DB/S3: {e}")

@@ -2050,9 +2050,66 @@ export const ModalTemplates = {
                     </div>
                 </div>
 
-                <div class="component-modal-actions">
+                    <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
                     <button class="component-button component-button--primary component-button--h40" data-action="saveCanvasMemberRoleSubmit">${__('btn_save_changes')}</button>
+                </div>
+            `;
+        }
+    },
+    timelapseSettingsModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const currentSpeed = data.speed || 5;
+
+            const speeds = [
+                { val: 0.5, label: '0.5x' },
+                { val: 1, label: '1x' },
+                { val: 2, label: '2x' },
+                { val: 5, label: '5x' },
+                { val: 10, label: '10x' },
+                { val: 25, label: '25x' },
+                { val: 50, label: '50x' },
+                { val: 100, label: '100x' },
+                { val: 500, label: 'Max' }
+            ];
+
+            const speedsHtml = speeds.map(s => {
+                const isActive = (s.val === currentSpeed) ? 'active' : '';
+                return `
+                    <button class="component-button component-button--h35 component-timelapse-speed-btn ${isActive}" 
+                            data-action="selectTimelapseSpeed" 
+                            data-speed="${s.val}" 
+                            type="button">
+                        ${s.label}
+                    </button>
+                `;
+            }).join('');
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header component-modal-header--with-icon">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                        <span class="material-symbols-rounded">timelapse</span>
+                    </div>
+                    <div class="component-modal-header-text">
+                        <h3 class="component-modal-title">${__('lbl_timelapse_title')}</h3>
+                        <p class="component-modal-desc">${__('lbl_timelapse_desc')}</p>
+                    </div>
+                </div>
+
+                <div class="component-modal-content">
+                    <div class="component-form-group">
+                        <label class="component-label">${__('lbl_timelapse_speed')}</label>
+                        <div class="component-timelapse-speeds-grid" data-ref="timelapse-speeds-container">
+                            ${speedsHtml}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button class="component-button component-button--primary component-button--h40" data-action="confirmStartTimelapse">${__('lbl_timelapse_start_playback')}</button>
                 </div>
             `;
         }
