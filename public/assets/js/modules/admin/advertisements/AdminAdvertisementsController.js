@@ -17,6 +17,7 @@ class AdminAdvertisementsController extends BaseListController {
         this.selectedProviderType = 'network';
         this.selectedExpirationType = 0;
         this.providerExpirationDate = '';
+        this.inlineCalendar = null;
         this.activeFilters = {
             type: 'all',
             status: 'all'
@@ -155,7 +156,7 @@ class AdminAdvertisementsController extends BaseListController {
         const stepExpBtn = e.target.closest('[data-action="selectExpirationType"]');
         const stepNextBtn = e.target.closest('[data-action="providerNextStep"]');
         const stepPrevBtn = e.target.closest('[data-action="providerPrevStep"]');
-        const calPickerBtn = e.target.closest('[data-action="openProviderCalendarPicker"]');
+        const calPickerBtn = e.target.closest('[data-action="openProviderDateStep"]');
         const submitProviderBtn = e.target.closest('[data-action="submitProvider"], [data-action="submitCreateProvider"], [data-action="submitEditProvider"]');
 
         const openSubMenuBtn = e.target.closest('[data-action="openFilterSubMenu"]');
@@ -178,7 +179,7 @@ class AdminAdvertisementsController extends BaseListController {
         if (stepExpBtn) this.handleExpirationDropdownSelection(stepExpBtn);
         if (stepNextBtn) this.handleProviderNextStep(stepNextBtn);
         if (stepPrevBtn) this.handleProviderPrevStep(stepPrevBtn);
-        if (calPickerBtn) this.openProviderCalendarPicker(calPickerBtn);
+        if (calPickerBtn) this.openProviderDateStep(calPickerBtn);
         if (submitProviderBtn) this.submitProvider(submitProviderBtn);
 
         if (openSubMenuBtn) openFilterSubMenu(openSubMenuBtn);
@@ -225,6 +226,7 @@ class AdminAdvertisementsController extends BaseListController {
         this.selectedProviderType = 'network';
         this.selectedExpirationType = 0;
         this.providerExpirationDate = '';
+        if (this.inlineCalendar) { this.inlineCalendar.destroy(); this.inlineCalendar = null; }
         window.modalSystem.show('providerModal');
     }
 
@@ -240,6 +242,7 @@ class AdminAdvertisementsController extends BaseListController {
                 this.selectedProviderType = p.provider_type || 'direct';
                 this.selectedExpirationType = parseInt(p.has_expiration, 10) || 0;
                 this.providerExpirationDate = p.expiration_date || '';
+                if (this.inlineCalendar) { this.inlineCalendar.destroy(); this.inlineCalendar = null; }
 
                 window.modalSystem.show('providerModal', { provider: p });
             } else {
@@ -337,12 +340,18 @@ class AdminAdvertisementsController extends BaseListController {
             }
 
             this._setModalStep(2, modal);
+        } else if (this.currentModalStep === 3) {
+            // Confirmar fecha desde el step 3 y regresar al 2
+            this.confirmProviderDate(modal);
         }
     }
 
     handleProviderPrevStep(btn = null) {
         const modal = btn ? btn.closest('.component-modal-box') : this._getActiveModal();
-        if (this.currentModalStep > 1) {
+        if (this.currentModalStep === 3) {
+            // Desde el calendar step, volver al 2 sin confirmar
+            this._setModalStep(2, modal);
+        } else if (this.currentModalStep > 1) {
             this._setModalStep(this.currentModalStep - 1, modal);
         }
     }
@@ -364,39 +373,115 @@ class AdminAdvertisementsController extends BaseListController {
         const btnFinish = targetModal.querySelector('[data-ref="btn-modal-finish"]');
         const descEl = targetModal.querySelector('[data-ref="provider-step-desc"]');
 
-        if (btnPrev) btnPrev.classList.toggle('disabled', step === 1);
-
-        if (step === 2) {
+        if (step === 1) {
+            if (btnPrev) btnPrev.classList.add('disabled');
+            if (btnNext) btnNext.classList.remove('disabled');
+            if (btnNext) btnNext.textContent = _t('btn_next');
+            if (btnFinish) btnFinish.classList.add('disabled');
+            if (descEl) descEl.textContent = _t('step_provider_details_desc');
+        } else if (step === 2) {
+            if (btnPrev) btnPrev.classList.remove('disabled');
             if (btnNext) btnNext.classList.add('disabled');
             if (btnFinish) btnFinish.classList.remove('disabled');
             if (descEl) descEl.textContent = _t('step_expiration_desc');
-        } else {
+        } else if (step === 3) {
+            if (btnPrev) btnPrev.classList.remove('disabled');
             if (btnNext) btnNext.classList.remove('disabled');
+            if (btnNext) btnNext.textContent = _t('btn_accept');
             if (btnFinish) btnFinish.classList.add('disabled');
-            if (descEl) descEl.textContent = _t('step_provider_details_desc');
+            if (descEl) descEl.textContent = _t('lbl_select_expiration_date');
         }
     }
 
-    async openProviderCalendarPicker(triggerBtn) {
-        if (!window.modalSystem) return;
-        const currentVal = triggerBtn.getAttribute('data-value') || '';
+    openProviderDateStep(triggerBtn) {
+        const modal = triggerBtn ? triggerBtn.closest('.component-modal-box') : this._getActiveModal();
+        if (!modal) return;
 
-        const res = await window.modalSystem.show('calendarModal', {
-            isoDate: currentVal,
-            title: _t('lbl_select_expiration_date')
-        });
+        const calendarStep = modal.querySelector('.step-modal-step[data-step="3"]');
+        if (!calendarStep) return;
 
-        if (res && res.confirmed) {
-            const data = res.data || {};
-            const iso = data.isoString || '';
-            const display = data.displayString || (iso ? iso.split('T')[0] : '');
+        this._setModalStep(3, modal);
 
-            triggerBtn.setAttribute('data-value', iso);
-            this.providerExpirationDate = iso;
+        // Inicializar o reutilizar el CalendarSystem con el step como container
+        if (!this.inlineCalendar) {
+            const { CalendarSystem } = window._CalendarSystemClass
+                ? { CalendarSystem: window._CalendarSystemClass }
+                : { CalendarSystem: null };
 
-            const textEl = triggerBtn.querySelector('[data-ref="provider-expiration-text"]');
-            if (textEl) textEl.textContent = display || _t('lbl_select_expiration_date');
+            // Importamos dinámicamente si no está disponible globalmente
+            import('../../../core/components/CalendarSystem.js').then(({ CalendarSystem: CS }) => {
+                this.inlineCalendar = new CS(calendarStep);
+                this.inlineCalendar.init();
+                this._setupInlineCalendar(triggerBtn, modal);
+            });
+            return;
         }
+
+        this.inlineCalendar = Object.assign(this.inlineCalendar, { containerSelector: calendarStep });
+        this._setupInlineCalendar(triggerBtn, modal);
+    }
+
+    _setupInlineCalendar(triggerBtn, modal) {
+        const currentVal = triggerBtn ? triggerBtn.getAttribute('data-value') || '' : '';
+
+        this.inlineCalendar.containerSelector = modal.querySelector('.step-modal-step[data-step="3"]');
+
+        this.inlineCalendar.setup(
+            currentVal,
+            (isoString, displayString) => {
+                // Guardamos la fecha y actualizamos el trigger del step 2
+                this.providerExpirationDate = isoString;
+                const expTrigger = modal.querySelector('[data-ref="provider-expiration-trigger"]');
+                if (expTrigger) expTrigger.setAttribute('data-value', isoString);
+                const textEl = modal.querySelector('[data-ref="provider-expiration-text"]');
+                if (textEl) textEl.textContent = displayString ? displayString.split(',')[0] : isoString.split('T')[0];
+                // Volver al step 2 automáticamente al seleccionar día
+            },
+            () => {
+                // Clear — borramos la fecha
+                this.providerExpirationDate = '';
+                const expTrigger = modal.querySelector('[data-ref="provider-expiration-trigger"]');
+                if (expTrigger) expTrigger.setAttribute('data-value', '');
+                const textEl = modal.querySelector('[data-ref="provider-expiration-text"]');
+                if (textEl) textEl.textContent = _t('lbl_select_expiration_date');
+                this._setModalStep(2, modal);
+            }
+        );
+    }
+
+    confirmProviderDate(modal) {
+        if (!this.inlineCalendar) {
+            this._setModalStep(2, modal);
+            return;
+        }
+        if (!this.inlineCalendar.selectedDate) {
+            showMessage(_t('err_select_day'), 'error');
+            return;
+        }
+
+        const calendarStep = modal.querySelector('.step-modal-step[data-step="3"]');
+        const hoursEl = calendarStep ? calendarStep.querySelector('[data-ref="calendar-modal-hours-val"]') : null;
+        const minutesEl = calendarStep ? calendarStep.querySelector('[data-ref="calendar-modal-minutes-val"]') : null;
+        const h = hoursEl ? String(parseInt(hoursEl.getAttribute('data-value') || '0')).padStart(2, '0') : '00';
+        const m = minutesEl ? String(parseInt(minutesEl.getAttribute('data-value') || '0')).padStart(2, '0') : '00';
+
+        const d = this.inlineCalendar.selectedDate;
+        const y = d.getFullYear();
+        const mo = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const isoString = `${y}-${mo}-${day}T${h}:${m}`;
+
+        const displayString = this.inlineCalendar.getFormattedDisplayDate
+            ? this.inlineCalendar.getFormattedDisplayDate(d, h, m)
+            : `${day}/${mo}/${y} ${h}:${m}`;
+
+        this.providerExpirationDate = isoString;
+        const expTrigger = modal.querySelector('[data-ref="provider-expiration-trigger"]');
+        if (expTrigger) expTrigger.setAttribute('data-value', isoString);
+        const textEl = modal.querySelector('[data-ref="provider-expiration-text"]');
+        if (textEl) textEl.textContent = displayString ? displayString.split(',')[0] : `${day}/${mo}/${y}`;
+
+        this._setModalStep(2, modal);
     }
 
     async submitProvider(btn = null) {

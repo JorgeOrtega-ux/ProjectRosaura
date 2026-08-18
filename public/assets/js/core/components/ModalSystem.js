@@ -283,6 +283,12 @@ export class ModalSystem {
             const target = toggleModuleBtn.getAttribute('data-target');
 
             if (target === 'modalCalendarDateOnly' && this.activeBox) {
+                // Guard: si es sanción permanente, no abrir el calendario
+                const typeTrigger = this.activeBox.querySelector('[data-ref="suspension_type"]');
+                if (typeTrigger && typeTrigger.getAttribute('data-value') === 'permanent') {
+                    return;
+                }
+
                 if (!this.calendarSystem) {
                     this.calendarSystem = new CalendarSystem(this.activeBox);
                     this.calendarSystem.disablePastDates = true;
@@ -308,50 +314,6 @@ export class ModalSystem {
             }
         }
 
-        const btnOpenSanctionCalendar = e.target.closest('[data-action="openSanctionCalendarModal"]');
-        if (btnOpenSanctionCalendar) {
-            e.preventDefault();
-            const currentVal = btnOpenSanctionCalendar.getAttribute('data-value') || '';
-            const typeTrigger = this.activeBox.querySelector('[data-ref="suspension_type"]');
-            const sanctionType = typeTrigger ? typeTrigger.getAttribute('data-value') : 'temporary';
-            if (sanctionType === 'permanent') {
-                return;
-            }
-
-            let hours = '00';
-            let minutes = '00';
-            if (currentVal) {
-                const parts = currentVal.split('T');
-                if (parts[1]) {
-                    const timeParts = parts[1].split(':');
-                    hours = (timeParts[0] || '00').padStart(2, '0');
-                    minutes = (timeParts[1] || '00').padStart(2, '0');
-                }
-            }
-
-            this.show('calendarModal', {
-                isoDate: currentVal,
-                hours: hours,
-                minutes: minutes
-            }).then(res => {
-                if (res && res.confirmed) {
-                    const data = res.data || {};
-                    if (data.isoString) {
-                        btnOpenSanctionCalendar.setAttribute('data-value', data.isoString);
-                        const textEl = this.activeBox.querySelector('[data-ref="sanction-endDate-text"]');
-                        if (textEl) {
-                            textEl.textContent = data.displayString;
-                        }
-                    } else {
-                        btnOpenSanctionCalendar.setAttribute('data-value', '');
-                        const textEl = this.activeBox.querySelector('[data-ref="sanction-endDate-text"]');
-                        if (textEl) {
-                            textEl.textContent = typeof window.__ === 'function' ? window.__('lbl_select_expiration_date') : 'Seleccionar fecha de expiración';
-                        }
-                    }
-                }
-            });
-        }
         const stepTargetBtn = e.target.closest('[data-step-target]');
         if (stepTargetBtn) {
             const targetStepId = stepTargetBtn.getAttribute('data-step-target');
@@ -363,6 +325,97 @@ export class ModalSystem {
             }
             return;
         }
+
+        // ── Sanction modal step navigation ─────────────────────────────────────
+        const sanctionNextBtn = e.target.closest('[data-action="sanctionNextStep"]');
+        if (sanctionNextBtn && this.activeBox) {
+            // Guard: no abrir el paso de fecha si la sanción es permanente
+            const typeTrigger = this.activeBox.querySelector('[data-ref="suspension_type"]');
+            if (typeTrigger && typeTrigger.getAttribute('data-value') === 'permanent') return;
+
+            this._setSanctionStep(2);
+
+            // Inicializar el CalendarSystem inline (lazy, una sola vez por apertura)
+            if (!this.calendarSystem) {
+                this.calendarSystem = new CalendarSystem(this.activeBox);
+                this.calendarSystem.disablePastDates = true;
+                this.calendarSystem.init();
+            }
+            const initialVal = sanctionNextBtn.getAttribute('data-value') || '';
+            this.calendarSystem.setup(initialVal, null, null);
+            return;
+        }
+
+        const sanctionPrevBtn = e.target.closest('[data-action="sanctionPrevStep"]');
+        if (sanctionPrevBtn && this.activeBox) {
+            this._setSanctionStep(1);
+            return;
+        }
+
+        const sanctionConfirmBtn = e.target.closest('[data-action="sanctionConfirmDate"]');
+        if (sanctionConfirmBtn && this.activeBox) {
+            if (!this.calendarSystem || !this.calendarSystem.selectedDate) {
+                const __ = typeof window.__ === 'function' ? window.__ : k => k;
+                if (window.showMessage) showMessage(__('err_select_day') || 'Selecciona un día', 'error');
+                return;
+            }
+            const step2 = this.activeBox.querySelector('.step-modal-step[data-step="2"]');
+            const hoursEl   = step2 ? step2.querySelector('[data-ref="calendar-modal-hours-val"]')   : null;
+            const minutesEl = step2 ? step2.querySelector('[data-ref="calendar-modal-minutes-val"]') : null;
+            const h = hoursEl   ? String(parseInt(hoursEl.getAttribute('data-value')   || '0')).padStart(2, '0') : '00';
+            const m = minutesEl ? String(parseInt(minutesEl.getAttribute('data-value') || '0')).padStart(2, '0') : '00';
+
+            const d   = this.calendarSystem.selectedDate;
+            const y   = d.getFullYear();
+            const mo  = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const isoString = `${y}-${mo}-${day}T${h}:${m}`;
+            const displayString = this.calendarSystem.getFormattedDisplayDate
+                ? this.calendarSystem.getFormattedDisplayDate(d, h, m).split(',')[0]
+                : `${day}/${mo}/${y}`;
+
+            const endDateTrigger = this.activeBox.querySelector('[data-ref="end_date"]');
+            if (endDateTrigger) endDateTrigger.setAttribute('data-value', isoString);
+            const textEl = this.activeBox.querySelector('[data-ref="sanction-endDate-text"]');
+            if (textEl) textEl.textContent = displayString;
+
+            this._setSanctionStep(1);
+            return;
+        }
+        // ── /Sanction modal step navigation ────────────────────────────────────
+
+        // ── calendarModal step navigation ───────────────────────────────────────
+        const calModalNextBtn = e.target.closest('[data-action="calendarModalNextStep"]');
+        if (calModalNextBtn && this.activeBox) {
+            this._setCalendarModalStep(2);
+            if (!this.calendarSystem) {
+                this.calendarSystem = new CalendarSystem(this.activeBox);
+                this.calendarSystem.disablePastDates = true;
+                this.calendarSystem.init();
+            }
+            const initialVal = calModalNextBtn.getAttribute('data-value') || '';
+            this.calendarSystem.setup(initialVal, null, null);
+            // Pre-seleccionar la fecha inicial para que Aceptar funcione sin re-clickar el día
+            if (initialVal) {
+                const datePart = initialVal.split('T')[0];
+                const parts = datePart.split('-');
+                if (parts.length === 3) {
+                    this.calendarSystem.selectedDate = new Date(
+                        parseInt(parts[0], 10),
+                        parseInt(parts[1], 10) - 1,
+                        parseInt(parts[2], 10)
+                    );
+                }
+            }
+            return;
+        }
+
+        const calModalPrevBtn = e.target.closest('[data-action="calendarModalPrevStep"]');
+        if (calModalPrevBtn && this.activeBox) {
+            this._setCalendarModalStep(1);
+            return;
+        }
+        // ── /calendarModal step navigation ──────────────────────────────────────
 
         const selectReasonBtn = e.target.closest('[data-action="selectReportReason"]');
         if (selectReasonBtn) {
@@ -607,16 +660,65 @@ export class ModalSystem {
         }, 300); 
     }
 
+    _setSanctionStep(step) {
+        if (!this.activeBox) return;
+        const steps = this.activeBox.querySelectorAll('.step-modal-step');
+        steps.forEach(s => {
+            const n = parseInt(s.getAttribute('data-step'), 10);
+            s.classList.toggle('active', n === step);
+            s.classList.toggle('disabled', n !== step);
+        });
+        const prevBtn    = this.activeBox.querySelector('[data-ref="btn-sanction-prev"]');
+        const confirmBtn = this.activeBox.querySelector('[data-ref="btn-sanction-confirm"]');
+        const acceptBtn  = this.activeBox.querySelector('[data-ref="btn-sanction-accept"]');
+        if (step === 1) {
+            if (prevBtn)    prevBtn.classList.add('disabled');
+            if (confirmBtn) confirmBtn.classList.remove('disabled');
+            if (acceptBtn)  acceptBtn.classList.add('disabled');
+        } else {
+            if (prevBtn)    prevBtn.classList.remove('disabled');
+            if (confirmBtn) confirmBtn.classList.add('disabled');
+            if (acceptBtn)  acceptBtn.classList.remove('disabled');
+        }
+    }
+
+    _setCalendarModalStep(step) {
+        if (!this.activeBox) return;
+        this.activeBox.querySelectorAll('.step-modal-step').forEach(s => {
+            const n = parseInt(s.getAttribute('data-step'), 10);
+            s.classList.toggle('active', n === step);
+            s.classList.toggle('disabled', n !== step);
+        });
+        const prevBtn    = this.activeBox.querySelector('[data-ref="btn-calmodal-prev"]');
+        const confirmBtn = this.activeBox.querySelector('[data-ref="btn-calmodal-confirm"]');
+        if (step === 1) {
+            if (prevBtn)    prevBtn.classList.add('disabled');
+            if (confirmBtn) confirmBtn.classList.add('disabled');
+        } else {
+            if (prevBtn)    prevBtn.classList.remove('disabled');
+            if (confirmBtn) confirmBtn.classList.remove('disabled');
+        }
+    }
+
     _getFormData() {
         let formData = {};
         if (!this.activeBox) return formData;
 
         if (this.activeTemplateName === 'calendarModal') {
-            const trigger = this.activeBox.querySelector('[data-target="modalCalendarDateOnly"]');
-            const isoDateVal = trigger ? trigger.getAttribute('data-value') : '';
-            const hoursEl = this.activeBox.querySelector('[data-ref="calendar-modal-hours-val"]');
+            // Fuente primaria: selectedDate del CalendarSystem (cubre re-selección y pre-población)
+            let isoDateVal = '';
+            if (this.calendarSystem && this.calendarSystem.selectedDate) {
+                const d = this.calendarSystem.selectedDate;
+                isoDateVal = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            } else {
+                // Fallback: data-value del trigger (valor inicial, si no se ha navegado al step 2)
+                const trigger = this.activeBox.querySelector('[data-ref="modal_selected_iso_date"]');
+                isoDateVal = trigger ? (trigger.getAttribute('data-value') || '').split('T')[0] : '';
+            }
+            const hoursEl   = this.activeBox.querySelector('[data-ref="calendar-modal-hours-val"]');
             const minutesEl = this.activeBox.querySelector('[data-ref="calendar-modal-minutes-val"]');
-            
+
+
             if (isoDateVal) {
                 const datePart = isoDateVal.split('T')[0];
                 const h = hoursEl ? hoursEl.getAttribute('data-value').padStart(2, '0') : '00';

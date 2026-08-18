@@ -1626,78 +1626,151 @@ export const ModalTemplates = {
                 `;
             }).join('');
 
-            const endDateDisplay = endDate ? endDate.replace('T', ' ') : (__('lbl_select_expiration_date'));
+            const endDateDisplay = endDate ? endDate.split('T')[0] : __('lbl_select_expiration_date');
+            const isPermanent = suspensionType === 'permanent';
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
-                    <h2 class="component-modal-title">${__('canvases_sanctions_title') || 'Gestionar SanciÃ³n'}: ${username}</h2>
-                    <p class="component-modal-desc">${__('desc_chat_restriction')}</p>
+                    <h2 class="component-modal-title">${__('canvases_sanctions_title') || 'Gestionar Sanción'}: ${username}</h2>
+                    <p class="component-modal-desc" data-ref="sanction-step-desc">${__('desc_chat_restriction')}</p>
                 </div>
                 <div class="component-modal-body">
-                    <!-- Alcance de la Sanción -->
-                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSanctionScope" data-ref="sanction_scope" data-value="${activeScope.key}">
-                            <span class="material-symbols-rounded" data-ref="sanction_scope_trigger_icon">${activeScope.icon}</span>
-                            <span class="component-dropdown-text" data-ref="sanction_scope_trigger_text">${activeScope.label}</span>
-                            <span class="material-symbols-rounded">expand_more</span>
-                        </div>
-                        <div class="component-module component-module--dropdown disabled" data-module="moduleSanctionScope">
-                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
-                                <div class="pill-container"><div class="drag-handle"></div></div>
-                                <div class="component-menu-list">
-                                    ${scopeOptionsHtml}
+                    <div class="step-modal-content">
+
+                        <!-- Step 1: Formulario -->
+                        <div class="step-modal-step active" data-step="1">
+
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                                <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSanctionScope" data-ref="sanction_scope" data-value="${activeScope.key}">
+                                    <span class="material-symbols-rounded" data-ref="sanction_scope_trigger_icon">${activeScope.icon}</span>
+                                    <span class="component-dropdown-text" data-ref="sanction_scope_trigger_text">${activeScope.label}</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown disabled" data-module="moduleSanctionScope">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list">${scopeOptionsHtml}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                                <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSuspensionType" data-ref="suspension_type" data-value="${activeType.key}">
+                                    <span class="material-symbols-rounded" data-ref="suspension_type_trigger_icon">${activeType.icon}</span>
+                                    <span class="component-dropdown-text" data-ref="suspension_type_trigger_text">${activeType.label}</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown disabled" data-module="moduleSuspensionType">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list">${typeOptionsHtml}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                                <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSuspensionReason" data-ref="suspension_reason" data-value="${activeReasonKey}">
+                                    <span class="material-symbols-rounded" data-ref="suspension_reason_trigger_icon">${activeReasonIcon}</span>
+                                    <span class="component-dropdown-text" data-ref="suspension_reason_trigger_text">${activeReasonLabel}</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown disabled" data-module="moduleSuspensionReason">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list">${reasonOptionsHtml}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--full modal-end-date-group ${isPermanent ? 'disabled' : ''}">
+                                <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="sanctionNextStep" data-ref="end_date" data-value="${endDate}">
+                                    <span class="material-symbols-rounded">calendar_month</span>
+                                    <span class="component-dropdown-text" data-ref="sanction-endDate-text">${endDateDisplay}</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Duración -->
-                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSuspensionType" data-ref="suspension_type" data-value="${activeType.key}">
-                            <span class="material-symbols-rounded" data-ref="suspension_type_trigger_icon">${activeType.icon}</span>
-                            <span class="component-dropdown-text" data-ref="suspension_type_trigger_text">${activeType.label}</span>
-                            <span class="material-symbols-rounded">expand_more</span>
-                        </div>
-                        <div class="component-module component-module--dropdown disabled" data-module="moduleSuspensionType">
-                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
-                                <div class="pill-container"><div class="drag-handle"></div></div>
-                                <div class="component-menu-list">
-                                    ${typeOptionsHtml}
+                        <!-- Step 2: Calendario inline + H:MM -->
+                        <div class="step-modal-step disabled" data-step="2">
+                            <div class="component-calendar">
+                                <div class="component-calendar-header">
+                                    <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarPrevMonth">
+                                        <span class="material-symbols-rounded">chevron_left</span>
+                                    </button>
+                                    <div class="component-calendar-title" data-ref="calendar-title">${__('calendar_month_year')}</div>
+                                    <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarNextMonth">
+                                        <span class="material-symbols-rounded">chevron_right</span>
+                                    </button>
+                                </div>
+                                <div class="component-calendar-weekdays">
+                                    <span>${__('cal_su')}</span>
+                                    <span>${__('cal_mo')}</span>
+                                    <span>${__('cal_tu')}</span>
+                                    <span>${__('cal_we')}</span>
+                                    <span>${__('cal_th')}</span>
+                                    <span>${__('cal_fr')}</span>
+                                    <span>${__('cal_sa')}</span>
+                                </div>
+                                <div class="component-calendar-days" data-ref="calendar-days"></div>
+                            </div>
+
+                            <div class="calendar-modal-controls">
+                                <div>
+                                    <div class="calendar-control-label">${__('lbl_hours')}</div>
+                                    <div class="component-inline-control component-inline-control--full">
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-5">
+                                                <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                            </button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-1">
+                                                <span class="material-symbols-rounded">chevron_left</span>
+                                            </button>
+                                        </div>
+                                        <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-value="${parseInt(sanctionHours) || 0}">${sanctionHours}</div>
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="1">
+                                                <span class="material-symbols-rounded">chevron_right</span>
+                                            </button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="5">
+                                                <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="calendar-control-label">${__('lbl_minutes')}</div>
+                                    <div class="component-inline-control component-inline-control--full">
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-5">
+                                                <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                            </button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-1">
+                                                <span class="material-symbols-rounded">chevron_left</span>
+                                            </button>
+                                        </div>
+                                        <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-value="${parseInt(sanctionMinutes) || 0}">${sanctionMinutes}</div>
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="1">
+                                                <span class="material-symbols-rounded">chevron_right</span>
+                                            </button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="5">
+                                                <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Motivo -->
-                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSuspensionReason" data-ref="suspension_reason" data-value="${activeReasonKey}">
-                            <span class="material-symbols-rounded" data-ref="suspension_reason_trigger_icon">${activeReasonIcon}</span>
-                            <span class="component-dropdown-text" data-ref="suspension_reason_trigger_text">${activeReasonLabel}</span>
-                            <span class="material-symbols-rounded">expand_more</span>
-                        </div>
-                        <div class="component-module component-module--dropdown disabled" data-module="moduleSuspensionReason">
-                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
-                                <div class="pill-container"><div class="drag-handle"></div></div>
-                                <div class="component-menu-list">
-                                    ${reasonOptionsHtml}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Fecha de ExpiraciÃ³n -->
-                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full modal-end-date-group">
-                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="openSanctionCalendarModal" data-ref="end_date" data-value="${endDate}">
-                            <span class="material-symbols-rounded">calendar_month</span>
-                            <span class="component-dropdown-text" data-ref="sanction-endDate-text">${endDateDisplay}</span>
-                            <span class="material-symbols-rounded">expand_more</span>
-                        </div>
                     </div>
                 </div>
                 <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${__('lbl_save_changes')}</button>
+                    <button type="button" class="component-button component-button--h40 disabled" data-action="sanctionPrevStep" data-ref="btn-sanction-prev">${__('btn_prev')}</button>
+                    <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="confirm" data-ref="btn-sanction-confirm">${__('lbl_save_changes')}</button>
+                    <button type="button" class="component-button component-button--primary component-button--h40 disabled" data-action="sanctionConfirmDate" data-ref="btn-sanction-accept">${__('btn_accept')}</button>
                 </div>
             `;
         },
@@ -1788,100 +1861,98 @@ export const ModalTemplates = {
                     ${descHtml}
                 </div>
                 <div class="component-modal-body">
-                    <!-- Date Selector Trigger inside Modal -->
-                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="modalCalendarDateOnly" data-ref="modal_selected_iso_date" data-value="${isoDate}">
-                            <span class="material-symbols-rounded">calendar_month</span>
-                            <span class="component-dropdown-text" data-ref="modal-calendar-date-text">${dateDisplay}</span>
-                            <span class="material-symbols-rounded">expand_more</span>
+                    <div class="step-modal-content">
+
+                        <!-- Step 1: Trigger de fecha -->
+                        <div class="step-modal-step active" data-step="1">
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                                <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="calendarModalNextStep" data-ref="modal_selected_iso_date" data-value="${isoDate}">
+                                    <span class="material-symbols-rounded">calendar_month</span>
+                                    <span class="component-dropdown-text" data-ref="modal-calendar-date-text">${dateDisplay}</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="component-module component-module--dropdown disabled" data-module="modalCalendarDateOnly">
-                            <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding">
-                                <div class="pill-container"><div class="drag-handle"></div></div>
-                                <div class="component-calendar">
-                                    <div class="component-calendar-header">
-                                        <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarPrevMonth">
-                                            <span class="material-symbols-rounded">chevron_left</span>
-                                        </button>
-                                        <div class="component-calendar-title" data-ref="calendar-title">${__('calendar_month_year')}</div>
-                                        <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarNextMonth">
-                                            <span class="material-symbols-rounded">chevron_right</span>
-                                        </button>
+
+                        <!-- Step 2: Calendario + H:MM -->
+                        <div class="step-modal-step disabled" data-step="2">
+                            <div class="component-calendar">
+                                <div class="component-calendar-header">
+                                    <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarPrevMonth">
+                                        <span class="material-symbols-rounded">chevron_left</span>
+                                    </button>
+                                    <div class="component-calendar-title" data-ref="calendar-title">${__('calendar_month_year')}</div>
+                                    <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarNextMonth">
+                                        <span class="material-symbols-rounded">chevron_right</span>
+                                    </button>
+                                </div>
+                                <div class="component-calendar-weekdays">
+                                    <span>${__('cal_su')}</span>
+                                    <span>${__('cal_mo')}</span>
+                                    <span>${__('cal_tu')}</span>
+                                    <span>${__('cal_we')}</span>
+                                    <span>${__('cal_th')}</span>
+                                    <span>${__('cal_fr')}</span>
+                                    <span>${__('cal_sa')}</span>
+                                </div>
+                                <div class="component-calendar-days" data-ref="calendar-days"></div>
+                            </div>
+
+                            <!-- Hours and Minutes -->
+                            <div class="calendar-modal-controls">
+                                <div>
+                                    <div class="calendar-control-label">${__('lbl_hours')}</div>
+                                    <div class="component-inline-control component-inline-control--full">
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-5">
+                                                <span class="material-symbols-rounded msr-keyboard_double_arrow_left">keyboard_double_arrow_left</span>
+                                            </button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-1">
+                                                <span class="material-symbols-rounded msr-chevron_left">chevron_left</span>
+                                            </button>
+                                        </div>
+                                        <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-value="${parseInt(hours) || 0}">${hours}</div>
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="1">
+                                                <span class="material-symbols-rounded msr-chevron_right">chevron_right</span>
+                                            </button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="5">
+                                                <span class="material-symbols-rounded msr-keyboard_double_arrow_right">keyboard_double_arrow_right</span>
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div class="component-calendar-weekdays">
-                                        <span>${__('cal_su')}</span>
-                                        <span>${__('cal_mo')}</span>
-                                        <span>${__('cal_tu')}</span>
-                                        <span>${__('cal_we')}</span>
-                                        <span>${__('cal_th')}</span>
-                                        <span>${__('cal_fr')}</span>
-                                        <span>${__('cal_sa')}</span>
-                                    </div>
-                                    <div class="component-calendar-days" data-ref="calendar-days"></div>
-                                    <div class="component-calendar-actions">
-                                        <button type="button" class="component-button component-button--h30" data-action="calendarClear">${__('btn_clear')}</button>
-                                        <div>
-                                            <button type="button" class="component-button component-button--h30" data-action="calendarCancel">${btnCancel}</button>
-                                            <button type="button" class="component-button component-button--primary component-button--h30" data-action="calendarConfirm">${btnConfirm}</button>
+                                </div>
+                                <div>
+                                    <div class="calendar-control-label">${__('lbl_minutes')}</div>
+                                    <div class="component-inline-control component-inline-control--full">
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-5">
+                                                <span class="material-symbols-rounded msr-keyboard_double_arrow_left">keyboard_double_arrow_left</span>
+                                            </button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-1">
+                                                <span class="material-symbols-rounded msr-chevron_left">chevron_left</span>
+                                            </button>
+                                        </div>
+                                        <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-value="${parseInt(minutes) || 0}">${minutes}</div>
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="1">
+                                                <span class="material-symbols-rounded msr-chevron_right">chevron_right</span>
+                                            </button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="5">
+                                                <span class="material-symbols-rounded msr-keyboard_double_arrow_right">keyboard_double_arrow_right</span>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Hours and Minutes Inline Controls -->
-                    <div class="calendar-modal-controls">
-                        <div>
-                            <div class="calendar-control-label">${__('lbl_hours')}</div>
-                            <div class="component-inline-control component-inline-control--full">
-                                <div class="component-inline-control__group">
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-5">
-                                        <span class="material-symbols-rounded msr-keyboard_double_arrow_left">keyboard_double_arrow_left</span>
-                                    </button>
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-1">
-                                        <span class="material-symbols-rounded msr-chevron_left">chevron_left</span>
-                                    </button>
-                                </div>
-                                <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-value="${parseInt(hours) || 0}">${hours}</div>
-                                <div class="component-inline-control__group">
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="1">
-                                        <span class="material-symbols-rounded msr-chevron_right">chevron_right</span>
-                                    </button>
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="5">
-                                        <span class="material-symbols-rounded msr-keyboard_double_arrow_right">keyboard_double_arrow_right</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div class="calendar-control-label">${__('lbl_minutes')}</div>
-                            <div class="component-inline-control component-inline-control--full">
-                                <div class="component-inline-control__group">
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-5">
-                                        <span class="material-symbols-rounded msr-keyboard_double_arrow_left">keyboard_double_arrow_left</span>
-                                    </button>
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-1">
-                                        <span class="material-symbols-rounded msr-chevron_left">chevron_left</span>
-                                    </button>
-                                </div>
-                                <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-value="${parseInt(minutes) || 0}">${minutes}</div>
-                                <div class="component-inline-control__group">
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="1">
-                                        <span class="material-symbols-rounded msr-chevron_right">chevron_right</span>
-                                    </button>
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="5">
-                                        <span class="material-symbols-rounded msr-keyboard_double_arrow_right">keyboard_double_arrow_right</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
                 <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
-                    <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${btnConfirm}</button>
+                    <button type="button" class="component-button component-button--h40 disabled" data-action="calendarModalPrevStep" data-ref="btn-calmodal-prev">${__('btn_prev')}</button>
+                    <button type="button" class="component-button component-button--primary component-button--h40 disabled" data-modal-action="confirm" data-ref="btn-calmodal-confirm">${btnConfirm}</button>
                 </div>
             `;
         }

@@ -790,7 +790,7 @@ html.dark-theme .component-top.shadow {
     display: flex;
     align-items: center;
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: 12px;
     background-color: var(--bg-input);
     transition: border-color 0.2s ease;
 }
@@ -1073,6 +1073,7 @@ textarea.component-input-field::placeholder {
 .step-modal-step {
     display: none;
     flex-direction: column;
+    gap: 8px;
     flex: 1;
 }
 
@@ -1820,6 +1821,10 @@ html.dark-theme .component-avatar__overlay {
 .component-menu--no-padding {
     padding: 0;
     overflow: auto;
+}
+
+.component-menu--no-padding > .component-menu-list:not(.component-menu-list--scrollable) {
+    padding: 8px;
 }
 
 .component-menu--w265 {
@@ -8732,4 +8737,4 @@ html.dark-theme .component-skeleton-design-bottom {
     background: var(--bg-brand-light, rgba(99, 102, 241, 0.1)) !important;
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
 }
-
+

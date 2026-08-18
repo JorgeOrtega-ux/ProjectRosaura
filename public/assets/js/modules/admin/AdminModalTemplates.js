@@ -189,15 +189,13 @@ export const AdminModalTemplates = {
                             </div>
                         </div>
 
-                        <div class="component-card--grouped">
-                            <div class="component-input-group">
-                                <input class="component-input-field" data-ref="provider-name" type="text" placeholder=" " value="${providerName}" required>
-                                <label class="component-input-label" data-ref="provider-name-label">${isNetwork ? __('lbl_network_name') : __('lbl_advertiser_name')}</label>
-                            </div>
-                            <div class="component-input-group ${isNetwork ? '' : 'disabled'}" data-ref="provider-network-id-group">
-                                <input class="component-input-field" data-ref="provider-network-id" type="text" placeholder=" " value="${networkId}">
-                                <label class="component-input-label">${__('lbl_network_id')}</label>
-                            </div>
+                        <div class="component-input-group">
+                            <input class="component-input-field" data-ref="provider-name" type="text" placeholder=" " value="${providerName}" required>
+                            <label class="component-input-label" data-ref="provider-name-label">${isNetwork ? __('lbl_network_name') : __('lbl_advertiser_name')}</label>
+                        </div>
+                        <div class="component-input-group ${isNetwork ? '' : 'disabled'}" data-ref="provider-network-id-group">
+                            <input class="component-input-field" data-ref="provider-network-id" type="text" placeholder=" " value="${networkId}">
+                            <label class="component-input-label">${__('lbl_network_id')}</label>
                         </div>
                     </div>
 
@@ -226,10 +224,82 @@ export const AdminModalTemplates = {
                         </div>
 
                         <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full ${hasExp ? '' : 'disabled'}" data-ref="provider-calendar-picker-group">
-                            <div class="component-dropdown-trigger" data-action="openProviderCalendarPicker" data-ref="provider-expiration-trigger" data-value="${expDate}">
+                            <div class="component-dropdown-trigger" data-action="openProviderDateStep" data-ref="provider-expiration-trigger" data-value="${expDate}">
                                 <span class="material-symbols-rounded">calendar_month</span>
                                 <span class="component-dropdown-text" data-ref="provider-expiration-text">${expDate ? expDate.split(' ')[0] : __('lbl_select_expiration_date')}</span>
                                 <span class="material-symbols-rounded">expand_more</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-modal-step disabled" data-step="3">
+                        <div class="component-calendar" data-ref="provider-inline-calendar">
+                            <div class="component-calendar-header">
+                                <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarPrevMonth">
+                                    <span class="material-symbols-rounded">chevron_left</span>
+                                </button>
+                                <div class="component-calendar-title" data-ref="calendar-title">${__('calendar_month_year')}</div>
+                                <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarNextMonth">
+                                    <span class="material-symbols-rounded">chevron_right</span>
+                                </button>
+                            </div>
+                            <div class="component-calendar-weekdays">
+                                <span>${__('cal_su')}</span>
+                                <span>${__('cal_mo')}</span>
+                                <span>${__('cal_tu')}</span>
+                                <span>${__('cal_we')}</span>
+                                <span>${__('cal_th')}</span>
+                                <span>${__('cal_fr')}</span>
+                                <span>${__('cal_sa')}</span>
+                            </div>
+                            <div class="component-calendar-days" data-ref="calendar-days"></div>
+                        </div>
+
+                        <div class="calendar-modal-controls">
+                            <div>
+                                <div class="calendar-control-label">${__('lbl_hours')}</div>
+                                <div class="component-inline-control component-inline-control--full">
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-5">
+                                            <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                        </button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-1">
+                                            <span class="material-symbols-rounded">chevron_left</span>
+                                        </button>
+                                    </div>
+                                    <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-value="${expDate ? String(parseInt((expDate.split('T')[1] || '00:00').split(':')[0]) || 0) : '0'}">${expDate ? (expDate.split('T')[1] || '00:00').split(':')[0].padStart(2,'0') : '00'}</div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="1">
+                                            <span class="material-symbols-rounded">chevron_right</span>
+                                        </button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="5">
+                                            <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="calendar-control-label">${__('lbl_minutes')}</div>
+                                <div class="component-inline-control component-inline-control--full">
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-5">
+                                            <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                        </button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-1">
+                                            <span class="material-symbols-rounded">chevron_left</span>
+                                        </button>
+                                    </div>
+                                    <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-value="${expDate ? String(parseInt((expDate.split('T')[1] || '00:00').split(':')[1]) || 0) : '0'}">${expDate ? (expDate.split('T')[1] || '00:00').split(':')[1].padStart(2,'0') : '00'}</div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="1">
+                                            <span class="material-symbols-rounded">chevron_right</span>
+                                        </button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="5">
+                                            <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -376,20 +446,18 @@ export const AdminModalTemplates = {
                     </div>
 
                     <div class="step-modal-step disabled" data-ad-step="4">
-                        <div class="component-card--grouped">
-                            <div class="component-input-group">
-                                <input class="component-input-field" data-ref="ad-target-url" type="text" placeholder=" " value="${ad ? (ad.target_url || '/upgrade') : '/upgrade'}" required>
-                                <label class="component-input-label">${__('lbl_ad_target_url')}</label>
-                            </div>
-                            <div class="component-input-group">
-                                <input class="component-input-field" data-ref="ad-sponsor-label" type="text" placeholder=" " value="${ad ? (ad.sponsor_label || '') : ''}">
-                                <label class="component-input-label">${__('lbl_ad_sponsor_label')}</label>
-                            </div>
+                        <div class="component-input-group">
+                            <input class="component-input-field" data-ref="ad-target-url" type="text" placeholder=" " value="${ad ? (ad.target_url || '/upgrade') : '/upgrade'}" required>
+                            <label class="component-input-label">${__('lbl_ad_target_url')}</label>
+                        </div>
+                        <div class="component-input-group">
+                            <input class="component-input-field" data-ref="ad-sponsor-label" type="text" placeholder=" " value="${ad ? (ad.sponsor_label || '') : ''}">
+                            <label class="component-input-label">${__('lbl_ad_sponsor_label')}</label>
                         </div>
                     </div>
 
                     <div class="step-modal-step disabled" data-ad-step="5">
-                        <div class="component-card--grouped" data-ref="resources-builder-container">
+                        <div data-ref="resources-builder-container">
                             ${resourcesHtml}
                         </div>
 
@@ -402,72 +470,70 @@ export const AdminModalTemplates = {
                     </div>
 
                     <div class="step-modal-step disabled" data-ad-step="6">
-                        <div class="component-card--grouped">
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownAdGeoMode">
+                                <span class="material-symbols-rounded" data-ref="geo-mode-icon">${geoModeIcon}</span>
+                                <span class="component-dropdown-text" data-ref="geo-mode-text" data-value="${geoMode}">${geoModeLabel}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
+                            </div>
+                            <div class="component-module component-module--dropdown disabled" data-module="dropdownAdGeoMode">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list">
+                                        <div class="component-menu-link ${geoMode === 'all' ? 'active' : ''}" data-action="selectGeoMode" data-mode="all" data-label="${__('geo_mode_all')}" data-icon="public">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">public</span></div>
+                                            <div class="component-menu-link-text"><span>${__('geo_mode_all')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link ${geoMode === 'allow' ? 'active' : ''}" data-action="selectGeoMode" data-mode="allow" data-label="${__('geo_mode_allow')}" data-icon="travel_explore">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">travel_explore</span></div>
+                                            <div class="component-menu-link-text"><span>${__('geo_mode_allow')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link ${geoMode === 'block' ? 'active' : ''}" data-action="selectGeoMode" data-mode="block" data-label="${__('geo_mode_block')}" data-icon="block">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">block</span></div>
+                                            <div class="component-menu-link-text"><span>${__('geo_mode_block')}</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="component-targeting-countries ${geoMode === 'all' ? 'disabled' : ''}" data-ref="geo-countries-container">
                             <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
-                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownAdGeoMode">
-                                    <span class="material-symbols-rounded" data-ref="geo-mode-icon">${geoModeIcon}</span>
-                                    <span class="component-dropdown-text" data-ref="geo-mode-text" data-value="${geoMode}">${geoModeLabel}</span>
+                                <div class="component-dropdown-trigger component-dropdown-trigger--space-between" data-action="toggleModule" data-target="dropdownTargetCountries">
+                                    <div class="component-dropdown-trigger-title">
+                                        <span class="material-symbols-rounded">flag</span>
+                                        <span class="component-dropdown-text" data-ref="target-countries-text">${selectedCountriesText}</span>
+                                    </div>
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
-                                <div class="component-module component-module--dropdown disabled" data-module="dropdownAdGeoMode">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                <div class="component-module component-module--dropdown disabled" data-module="dropdownTargetCountries">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list">
-                                            <div class="component-menu-link ${geoMode === 'all' ? 'active' : ''}" data-action="selectGeoMode" data-mode="all" data-label="${__('geo_mode_all')}" data-icon="public">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">public</span></div>
-                                                <div class="component-menu-link-text"><span>${__('geo_mode_all')}</span></div>
-                                            </div>
-                                            <div class="component-menu-link ${geoMode === 'allow' ? 'active' : ''}" data-action="selectGeoMode" data-mode="allow" data-label="${__('geo_mode_allow')}" data-icon="travel_explore">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">travel_explore</span></div>
-                                                <div class="component-menu-link-text"><span>${__('geo_mode_allow')}</span></div>
-                                            </div>
-                                            <div class="component-menu-link ${geoMode === 'block' ? 'active' : ''}" data-action="selectGeoMode" data-mode="block" data-label="${__('geo_mode_block')}" data-icon="block">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">block</span></div>
-                                                <div class="component-menu-link-text"><span>${__('geo_mode_block')}</span></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="component-targeting-countries ${geoMode === 'all' ? 'disabled' : ''}" data-ref="geo-countries-container">
-                                <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
-                                    <div class="component-dropdown-trigger component-dropdown-trigger--space-between" data-action="toggleModule" data-target="dropdownTargetCountries">
-                                        <div class="component-dropdown-trigger-title">
-                                            <span class="material-symbols-rounded">flag</span>
-                                            <span class="component-dropdown-text" data-ref="target-countries-text">${selectedCountriesText}</span>
-                                        </div>
-                                        <span class="material-symbols-rounded">expand_more</span>
-                                    </div>
-                                    <div class="component-module component-module--dropdown disabled" data-module="dropdownTargetCountries">
-                                        <div class="component-menu component-menu--w-full component-menu--h-auto">
-                                            <div class="pill-container"><div class="drag-handle"></div></div>
-                                            <div class="component-menu-header">
-                                                <div class="component-search">
-                                                    <div class="component-search-icon"><span class="material-symbols-rounded">search</span></div>
-                                                    <div class="component-search-input">
-                                                        <input type="text" class="search-input" data-ref="search-country-input" data-action="filterCountryList" placeholder="${__('lbl_search_country')}">
-                                                    </div>
+                                        <div class="component-menu-header">
+                                            <div class="component-search">
+                                                <div class="component-search-icon"><span class="material-symbols-rounded">search</span></div>
+                                                <div class="component-search-input">
+                                                    <input type="text" class="search-input" data-ref="search-country-input" data-action="filterCountryList" placeholder="${__('lbl_search_country')}">
                                                 </div>
                                             </div>
-                                            <div class="component-menu-list component-menu-list--max-h200 component-menu-list--scrollable" data-ref="countries-checkbox-list">
-                                                ${countriesListHtml}
-                                            </div>
+                                        </div>
+                                        <div class="component-menu-list component-menu-list--max-h200 component-menu-list--scrollable" data-ref="countries-checkbox-list">
+                                            ${countriesListHtml}
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
-                            <label class="component-menu-link component-menu-link--bordered nav-item">
-                                <div class="component-menu-link-icon">
-                                    <input type="checkbox" data-ref="block-datacenters-checkbox" ${blockDatacenters ? 'checked' : ''}>
-                                </div>
-                                <div class="component-menu-link-text">
-                                    <span>${__('lbl_block_datacenters')}</span>
-                                    <p class="component-menu-link-subtext">${__('lbl_block_datacenters_desc')}</p>
-                                </div>
-                            </label>
                         </div>
+
+                        <label class="component-menu-link component-menu-link--bordered nav-item">
+                            <div class="component-menu-link-icon">
+                                <input type="checkbox" data-ref="block-datacenters-checkbox" ${blockDatacenters ? 'checked' : ''}>
+                            </div>
+                            <div class="component-menu-link-text">
+                                <span>${__('lbl_block_datacenters')}</span>
+                                <p class="component-menu-link-subtext">${__('lbl_block_datacenters_desc')}</p>
+                            </div>
+                        </label>
                     </div>
                 </div>
 
@@ -606,72 +672,70 @@ export const AdminModalTemplates = {
                     </div>
 
                     <div class="step-modal-step disabled" data-slot-step="5">
-                        <div class="component-card--grouped">
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownSlotGeoMode">
+                                <span class="material-symbols-rounded" data-ref="slot-geo-mode-icon">${geoModeIcon}</span>
+                                <span class="component-dropdown-text" data-ref="slot-geo-mode-text" data-value="${geoMode}">${geoModeLabel}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
+                            </div>
+                            <div class="component-module component-module--dropdown disabled" data-module="dropdownSlotGeoMode">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list">
+                                        <div class="component-menu-link ${geoMode === 'all' ? 'active' : ''}" data-action="selectSlotGeoMode" data-mode="all" data-label="${__('geo_mode_all')}" data-icon="public">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">public</span></div>
+                                            <div class="component-menu-link-text"><span>${__('geo_mode_all')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link ${geoMode === 'allow' ? 'active' : ''}" data-action="selectSlotGeoMode" data-mode="allow" data-label="${__('geo_mode_allow')}" data-icon="travel_explore">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">travel_explore</span></div>
+                                            <div class="component-menu-link-text"><span>${__('geo_mode_allow')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link ${geoMode === 'block' ? 'active' : ''}" data-action="selectSlotGeoMode" data-mode="block" data-label="${__('geo_mode_block')}" data-icon="block">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">block</span></div>
+                                            <div class="component-menu-link-text"><span>${__('geo_mode_block')}</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="component-targeting-countries ${geoMode === 'all' ? 'disabled' : ''}" data-ref="slot-geo-countries-container">
                             <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
-                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownSlotGeoMode">
-                                    <span class="material-symbols-rounded" data-ref="slot-geo-mode-icon">${geoModeIcon}</span>
-                                    <span class="component-dropdown-text" data-ref="slot-geo-mode-text" data-value="${geoMode}">${geoModeLabel}</span>
+                                <div class="component-dropdown-trigger component-dropdown-trigger--space-between" data-action="toggleModule" data-target="dropdownSlotTargetCountries">
+                                    <div class="component-dropdown-trigger-title">
+                                        <span class="material-symbols-rounded">flag</span>
+                                        <span class="component-dropdown-text" data-ref="slot-target-countries-text">${selectedCountriesText}</span>
+                                    </div>
                                     <span class="material-symbols-rounded">expand_more</span>
                                 </div>
-                                <div class="component-module component-module--dropdown disabled" data-module="dropdownSlotGeoMode">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                <div class="component-module component-module--dropdown disabled" data-module="dropdownSlotTargetCountries">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto">
                                         <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list">
-                                            <div class="component-menu-link ${geoMode === 'all' ? 'active' : ''}" data-action="selectSlotGeoMode" data-mode="all" data-label="${__('geo_mode_all')}" data-icon="public">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">public</span></div>
-                                                <div class="component-menu-link-text"><span>${__('geo_mode_all')}</span></div>
-                                            </div>
-                                            <div class="component-menu-link ${geoMode === 'allow' ? 'active' : ''}" data-action="selectSlotGeoMode" data-mode="allow" data-label="${__('geo_mode_allow')}" data-icon="travel_explore">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">travel_explore</span></div>
-                                                <div class="component-menu-link-text"><span>${__('geo_mode_allow')}</span></div>
-                                            </div>
-                                            <div class="component-menu-link ${geoMode === 'block' ? 'active' : ''}" data-action="selectSlotGeoMode" data-mode="block" data-label="${__('geo_mode_block')}" data-icon="block">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">block</span></div>
-                                                <div class="component-menu-link-text"><span>${__('geo_mode_block')}</span></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="component-targeting-countries ${geoMode === 'all' ? 'disabled' : ''}" data-ref="slot-geo-countries-container">
-                                <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
-                                    <div class="component-dropdown-trigger component-dropdown-trigger--space-between" data-action="toggleModule" data-target="dropdownSlotTargetCountries">
-                                        <div class="component-dropdown-trigger-title">
-                                            <span class="material-symbols-rounded">flag</span>
-                                            <span class="component-dropdown-text" data-ref="slot-target-countries-text">${selectedCountriesText}</span>
-                                        </div>
-                                        <span class="material-symbols-rounded">expand_more</span>
-                                    </div>
-                                    <div class="component-module component-module--dropdown disabled" data-module="dropdownSlotTargetCountries">
-                                        <div class="component-menu component-menu--w-full component-menu--h-auto">
-                                            <div class="pill-container"><div class="drag-handle"></div></div>
-                                            <div class="component-menu-header">
-                                                <div class="component-search">
-                                                    <div class="component-search-icon"><span class="material-symbols-rounded">search</span></div>
-                                                    <div class="component-search-input">
-                                                        <input type="text" class="search-input" data-ref="search-slot-country-input" data-action="filterCountryList" placeholder="${__('lbl_search_country')}">
-                                                    </div>
+                                        <div class="component-menu-header">
+                                            <div class="component-search">
+                                                <div class="component-search-icon"><span class="material-symbols-rounded">search</span></div>
+                                                <div class="component-search-input">
+                                                    <input type="text" class="search-input" data-ref="search-slot-country-input" data-action="filterCountryList" placeholder="${__('lbl_search_country')}">
                                                 </div>
                                             </div>
-                                            <div class="component-menu-list component-menu-list--max-h200 component-menu-list--scrollable" data-ref="slot-countries-checkbox-list">
-                                                ${countriesListHtml}
-                                            </div>
+                                        </div>
+                                        <div class="component-menu-list component-menu-list--max-h200 component-menu-list--scrollable" data-ref="slot-countries-checkbox-list">
+                                            ${countriesListHtml}
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
-                            <label class="component-menu-link component-menu-link--bordered nav-item">
-                                <div class="component-menu-link-icon">
-                                    <input type="checkbox" data-ref="slot-block-datacenters-checkbox" ${blockDatacenters ? 'checked' : ''}>
-                                </div>
-                                <div class="component-menu-link-text">
-                                    <span>${__('lbl_block_datacenters')}</span>
-                                    <p class="component-menu-link-subtext">${__('lbl_block_datacenters_desc')}</p>
-                                </div>
-                            </label>
                         </div>
+
+                        <label class="component-menu-link component-menu-link--bordered nav-item">
+                            <div class="component-menu-link-icon">
+                                <input type="checkbox" data-ref="slot-block-datacenters-checkbox" ${blockDatacenters ? 'checked' : ''}>
+                            </div>
+                            <div class="component-menu-link-text">
+                                <span>${__('lbl_block_datacenters')}</span>
+                                <p class="component-menu-link-subtext">${__('lbl_block_datacenters_desc')}</p>
+                            </div>
+                        </label>
                     </div>
                 </div>
 

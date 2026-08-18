@@ -36,6 +36,7 @@ export class PreferenceManager {
         if (window.AppUserPrefs && window.AppUserPrefs[key] !== undefined && window.AppUserPrefs[key] !== null) {
             return window.AppUserPrefs[key];
         }
+        const local = localStorage.getItem('pr_' + key);
         if (local !== null) return local;
         return null;
     }
