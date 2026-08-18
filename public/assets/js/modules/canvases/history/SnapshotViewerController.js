@@ -45,12 +45,16 @@ class SnapshotViewerController {
         this.savedBoardDimensions = { width: 2000, height: 1000 };
 
         this.timelapsePlayerEl = null;
+        this.btnTimelapseModal = null;
+        this.timelapseControlsGroup = null;
+        this.timelapseStatusBadge = null;
+        this.timelapseProgressBadge = null;
         this.timelapseStatusText = null;
         this.timelapsePulse = null;
         this.timelapsePixelCount = null;
-        this.timelapseScrubber = null;
         this.timelapsePlayIcon = null;
         this.timelapseSpeedText = null;
+        this.timelapseLoadPromise = null;
 
         this.handleWheelBound = this.handleWheel.bind(this);
         this.handleMouseDownBound = this.handleMouseDown.bind(this);
@@ -64,7 +68,7 @@ class SnapshotViewerController {
         this.handleTouchEndBound = this.handleTouchEnd.bind(this);
 
         this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
-        this.handleScrubberInputBound = this.handleScrubberInput.bind(this);
+        this.handleKeyDownBound = this.handleKeyDown.bind(this);
     }
 
     async init() {
@@ -86,6 +90,7 @@ class SnapshotViewerController {
         this.timelapseCurrentIndex = 0;
         this.isTimelapseActive = false;
         this.isTimelapsePlaying = false;
+        this.timelapseLoadPromise = null;
 
         const wrapper = document.querySelector('[data-ref="snapshot-wrapper"]');
         if (wrapper) {
@@ -106,11 +111,14 @@ class SnapshotViewerController {
         this.canvas = document.querySelector('[data-ref="snapshot-canvas"]');
         this.coordsText = document.querySelector('[data-ref="coords-text"]');
         
-        this.timelapsePlayerEl = document.querySelector('[data-ref="timelapse-player"]');
+        this.btnTimelapseModal = document.querySelector('[data-ref="btn-timelapse-modal"]');
+        this.timelapseControlsGroup = document.querySelector('[data-ref="timelapse-controls-group"]');
+        this.timelapseStatusBadge = document.querySelector('[data-ref="timelapse-status-badge"]');
+        this.timelapseProgressBadge = document.querySelector('[data-ref="timelapse-progress-badge"]');
+
         this.timelapseStatusText = document.querySelector('[data-ref="timelapse-status-text"]');
         this.timelapsePulse = document.querySelector('[data-ref="timelapse-pulse"]');
         this.timelapsePixelCount = document.querySelector('[data-ref="timelapse-pixel-count"]');
-        this.timelapseScrubber = document.querySelector('[data-ref="timelapse-scrubber"]');
         this.timelapsePlayIcon = document.querySelector('[data-ref="timelapse-play-icon"]');
         this.timelapseSpeedText = document.querySelector('[data-ref="timelapse-speed-text"]');
 
@@ -128,6 +136,7 @@ class SnapshotViewerController {
 
         this.bindEvents();
         await this.loadSnapshotData();
+        this.preloadTimelapse();
     }
 
     destroy() {
@@ -142,10 +151,7 @@ class SnapshotViewerController {
         document.removeEventListener('touchend', this.handleTouchEndBound);
 
         document.removeEventListener('click', this.handleGlobalClickBound);
-
-        if (this.timelapseScrubber) {
-            this.timelapseScrubber.removeEventListener('input', this.handleScrubberInputBound);
-        }
+        document.removeEventListener('keydown', this.handleKeyDownBound);
 
         if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
         if (this.timelapseAnimId) cancelAnimationFrame(this.timelapseAnimId);
@@ -163,10 +169,7 @@ class SnapshotViewerController {
         document.addEventListener('touchend', this.handleTouchEndBound);
 
         document.addEventListener('click', this.handleGlobalClickBound);
-
-        if (this.timelapseScrubber) {
-            this.timelapseScrubber.addEventListener('input', this.handleScrubberInputBound);
-        }
+        document.addEventListener('keydown', this.handleKeyDownBound);
 
         this.bindActionTools();
     }
@@ -249,11 +252,26 @@ class SnapshotViewerController {
         }
     }
 
-    handleScrubberInput(e) {
-        if (!this.isTimelapseActive || this.timelapseTotal <= 0) return;
-        const percent = parseFloat(e.target.value);
-        const targetIndex = Math.min(this.timelapseTotal, Math.max(0, Math.floor((percent / 100) * this.timelapseTotal)));
-        this.seekTimelapse(targetIndex);
+    handleKeyDown(e) {
+        if (!this.isTimelapseActive) return;
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+
+        if (e.key === ' ' || e.code === 'Space') {
+            e.preventDefault();
+            this.togglePlayTimelapse();
+        } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            this.stepForwardTimelapse();
+        } else if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            this.stepBackwardTimelapse();
+        } else if (e.key === 'r' || e.key === 'R') {
+            e.preventDefault();
+            this.restartTimelapse();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            this.closeTimelapse();
+        }
     }
 
     async openTimelapseModal(btnTrigger = null) {
@@ -295,30 +313,47 @@ class SnapshotViewerController {
         await this.startTimelapse(this.timelapseSelectedModalSpeed, btnTrigger);
     }
 
+    preloadTimelapse() {
+        if (this.timelapseEvents.length > 0 || this.timelapseLoadPromise) return;
+
+        this.timelapseLoadPromise = (async () => {
+            try {
+                const endpoint = ApiRoutes.Canvases?.GetSnapshotTimelapse || 'canvases.get_snapshot_timelapse';
+                const response = await this.api.post(endpoint, { id: this.snapshotId });
+                if (response && response.success && response.data && response.data.events && response.data.events.length > 0) {
+                    this.timelapseEvents = response.data.events;
+                    this.timelapseTotal = this.timelapseEvents.length;
+                    return true;
+                }
+                return false;
+            } catch (e) {
+                return false;
+            } finally {
+                this.timelapseLoadPromise = null;
+            }
+        })();
+    }
+
     async startTimelapse(speed = 5, btnTrigger = null) {
         this.timelapseSpeed = speed;
 
         if (this.timelapseEvents.length === 0) {
             if (btnTrigger) setButtonLoading(btnTrigger);
 
-            try {
-                const endpoint = ApiRoutes.Canvases?.GetSnapshotTimelapse || 'canvases.get_snapshot_timelapse';
-                const response = await this.api.post(endpoint, { id: this.snapshotId });
-
-                if (btnTrigger) restoreButton(btnTrigger);
-
-                if (response && response.success && response.data && response.data.events && response.data.events.length > 0) {
-                    this.timelapseEvents = response.data.events;
-                    this.timelapseTotal = this.timelapseEvents.length;
-                } else {
-                    const fallbackMsg = window.__ ? window.__('msg_no_timelapse_data') : 'No timelapse data recorded for this snapshot.';
-                    showMessage((response && response.message) ? response.message : fallbackMsg, 'info');
-                    return;
+            if (this.timelapseLoadPromise) {
+                await this.timelapseLoadPromise;
+            } else {
+                this.preloadTimelapse();
+                if (this.timelapseLoadPromise) {
+                    await this.timelapseLoadPromise;
                 }
-            } catch (error) {
-                if (btnTrigger) restoreButton(btnTrigger);
-                const errGeneral = window.__ ? window.__('err_connection') : 'Connection error';
-                showMessage(errGeneral, 'error');
+            }
+
+            if (btnTrigger) restoreButton(btnTrigger);
+
+            if (this.timelapseEvents.length === 0) {
+                const fallbackMsg = window.__ ? window.__('msg_no_timelapse_data') : 'No timelapse data recorded for this snapshot.';
+                showMessage(fallbackMsg, 'info');
                 return;
             }
         }
@@ -335,8 +370,17 @@ class SnapshotViewerController {
 
         this.isTimelapseActive = true;
 
-        if (this.timelapsePlayerEl) {
-            this.timelapsePlayerEl.classList.add('active');
+        if (this.btnTimelapseModal) {
+            this.btnTimelapseModal.classList.add('disabled');
+        }
+        if (this.timelapseControlsGroup) {
+            this.timelapseControlsGroup.classList.remove('disabled');
+        }
+        if (this.timelapseStatusBadge) {
+            this.timelapseStatusBadge.classList.remove('disabled');
+        }
+        if (this.timelapseProgressBadge) {
+            this.timelapseProgressBadge.classList.remove('disabled');
         }
 
         this.updateSpeedUI();
@@ -376,10 +420,15 @@ class SnapshotViewerController {
             this.timelapsePlayIcon.textContent = 'pause';
         }
         if (this.timelapseStatusText) {
-            this.timelapseStatusText.textContent = window.__ ? window.__('lbl_timelapse_playing') : 'Playing';
+            this.timelapseStatusText.textContent = window.__ ? window.__('lbl_timelapse_playing') : 'Reproduciendo';
         }
         if (this.timelapsePulse) {
             this.timelapsePulse.classList.remove('paused', 'finished');
+        }
+
+        const btnPlay = document.querySelector('[data-ref="btn-timelapse-play"]');
+        if (btnPlay) {
+            btnPlay.setAttribute('data-tooltip', window.__ ? window.__('lbl_timelapse_pause') : 'Pausar');
         }
 
         if (this.timelapseAnimId) cancelAnimationFrame(this.timelapseAnimId);
@@ -397,11 +446,16 @@ class SnapshotViewerController {
             this.timelapsePlayIcon.textContent = 'play_arrow';
         }
         if (this.timelapseStatusText) {
-            this.timelapseStatusText.textContent = window.__ ? window.__('lbl_timelapse_paused') : 'Paused';
+            this.timelapseStatusText.textContent = window.__ ? window.__('lbl_timelapse_paused') : 'Pausado';
         }
         if (this.timelapsePulse) {
             this.timelapsePulse.classList.remove('finished');
             this.timelapsePulse.classList.add('paused');
+        }
+
+        const btnPlay = document.querySelector('[data-ref="btn-timelapse-play"]');
+        if (btnPlay) {
+            btnPlay.setAttribute('data-tooltip', window.__ ? window.__('lbl_timelapse_play') : 'Reproducir');
         }
     }
 
@@ -512,7 +566,7 @@ class SnapshotViewerController {
         if (this.timelapseCurrentIndex >= this.timelapseTotal) {
             this.pauseTimelapse();
             if (this.timelapseStatusText) {
-                this.timelapseStatusText.textContent = window.__ ? window.__('lbl_timelapse_finished') : 'Finished';
+                this.timelapseStatusText.textContent = window.__ ? window.__('lbl_timelapse_finished') : 'Completado';
             }
             if (this.timelapsePulse) {
                 this.timelapsePulse.classList.remove('paused');
@@ -532,8 +586,8 @@ class SnapshotViewerController {
             if (evt.w && evt.h) {
                 this.boardWidth = evt.w;
                 this.boardHeight = evt.h;
-                this.offscreenCanvas.width = this.boardWidth;
-                this.offscreenCanvas.height = this.boardHeight;
+                this.offscreenCanvas.width = evt.w;
+                this.offscreenCanvas.height = evt.h;
                 this.offscreenCtx.fillStyle = '#FFFFFF';
                 this.offscreenCtx.fillRect(0, 0, this.boardWidth, this.boardHeight);
             }
@@ -592,12 +646,8 @@ class SnapshotViewerController {
         if (this.timelapsePixelCount) {
             const formattedCurrent = this.timelapseCurrentIndex.toLocaleString();
             const formattedTotal = this.timelapseTotal.toLocaleString();
-            this.timelapsePixelCount.textContent = `${formattedCurrent} / ${formattedTotal} px`;
-        }
-
-        if (this.timelapseScrubber && this.timelapseTotal > 0) {
-            const percent = (this.timelapseCurrentIndex / this.timelapseTotal) * 100;
-            this.timelapseScrubber.value = percent.toFixed(1);
+            const percent = this.timelapseTotal > 0 ? Math.round((this.timelapseCurrentIndex / this.timelapseTotal) * 100) : 0;
+            this.timelapsePixelCount.textContent = `${formattedCurrent} / ${formattedTotal} px (${percent}%)`;
         }
     }
 
@@ -605,8 +655,17 @@ class SnapshotViewerController {
         this.pauseTimelapse();
         this.isTimelapseActive = false;
 
-        if (this.timelapsePlayerEl) {
-            this.timelapsePlayerEl.classList.remove('active');
+        if (this.timelapseControlsGroup) {
+            this.timelapseControlsGroup.classList.add('disabled');
+        }
+        if (this.btnTimelapseModal) {
+            this.btnTimelapseModal.classList.remove('disabled');
+        }
+        if (this.timelapseStatusBadge) {
+            this.timelapseStatusBadge.classList.add('disabled');
+        }
+        if (this.timelapseProgressBadge) {
+            this.timelapseProgressBadge.classList.add('disabled');
         }
 
         this.boardWidth = this.savedBoardDimensions.width;
@@ -627,7 +686,7 @@ class SnapshotViewerController {
 
     async downloadSnapshot() {
         const executeDownload = () => {
-            const btnDownload = document.getElementById('tl-btn-download');
+            const btnDownload = document.querySelector('[data-action="downloadSnapshotHighRes"]');
             if (btnDownload) setButtonLoading(btnDownload);
 
             if (!this.offscreenCanvas || this.boardWidth <= 0 || this.boardHeight <= 0) {

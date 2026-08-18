@@ -1880,7 +1880,12 @@
     "msg_loading_timelapse": "Cargando datos del timelapse...",
     "lbl_timelapse_frame": "Píxel :current de :total",
     "lbl_timelapse_start_playback": "Iniciar reproducción",
-    "lbl_timelapse_settings": "Opciones del timelapse"
+    "lbl_timelapse_settings": "Opciones del timelapse",
+    "lbl_timelapse_play": "Reproducir",
+    "lbl_timelapse_pause": "Pausar",
+    "lbl_timelapse_restart": "Reiniciar",
+    "lbl_timelapse_step_back": "Paso anterior",
+    "lbl_timelapse_step_forward": "Paso siguiente"
 }
 
 

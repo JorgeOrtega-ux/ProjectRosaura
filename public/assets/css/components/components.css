@@ -5348,7 +5348,7 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
 }
 
 .canvas-design-toolbar.disabled {
-    display: none;
+    display: none !important;
 }
 
 .canvas-design-toolbar .component-button--icon {
@@ -5366,9 +5366,61 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     border-color: rgba(255, 255, 255, 0.45);
 }
 
+.canvas-design-toolbar .component-button--icon.active {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+.canvas-design-toolbar .component-button--primary {
+    background: var(--color-primary, #6366f1);
+    border-color: var(--color-primary, #6366f1);
+    color: #ffffff;
+}
+
+.canvas-design-toolbar .component-button--primary:hover {
+    background: var(--color-primary-hover, #4f46e5);
+    border-color: var(--color-primary-hover, #4f46e5);
+}
+
 .canvas-design-toolbar .material-symbols-rounded {
     font-size: 1.1rem;
     color: #ffffff;
+}
+
+.snapshot-timelapse-group {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.snapshot-timelapse-group.disabled {
+    display: none !important;
+}
+
+.canvas-design-toolbar .component-timelapse-speed-pill {
+    height: 32px;
+    min-height: 32px;
+    padding: 0 10px;
+    border-radius: 9999px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.canvas-design-toolbar .component-timelapse-speed-pill:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.45);
+}
+
+.canvas-design-toolbar .component-timelapse-speed-pill .material-symbols-rounded {
+    font-size: 1.05rem;
 }
 
 /* Mobile: push badges below the toolbar */
@@ -5383,51 +5435,7 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     }
 }
 
-/* ── Snapshot Timelapse Player ── */
-.component-timelapse-player {
-    position: absolute;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.25s;
-    z-index: 60;
-    width: min(520px, calc(100% - 32px));
-    padding: 12px 16px;
-    background: var(--bg-surface, #1e1e24);
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.25);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    pointer-events: auto;
-    backdrop-filter: blur(16px);
-}
-
-.component-timelapse-player.active {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(-50%) translateY(0);
-}
-
-.component-timelapse-player-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-}
-
-.component-timelapse-status {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--text-primary, #ffffff);
-}
-
+/* ── Timelapse Status & Pulse ── */
 .component-timelapse-pulse {
     width: 8px;
     height: 8px;
@@ -5435,15 +5443,19 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     background-color: var(--color-success, #10b981);
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
     animation: timelapsePulse 1.8s infinite;
+    display: inline-block;
+    flex-shrink: 0;
 }
 
 .component-timelapse-pulse.paused {
     background-color: var(--color-warning, #f59e0b);
+    box-shadow: none;
     animation: none;
 }
 
 .component-timelapse-pulse.finished {
     background-color: var(--color-info, #3b82f6);
+    box-shadow: none;
     animation: none;
 }
 
@@ -5460,97 +5472,6 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
         transform: scale(0.95);
         box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
     }
-}
-
-.component-timelapse-stats {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.component-timelapse-stats .component-badge {
-    margin: 0;
-    font-family: var(--sl-font-mono, monospace);
-    font-size: 0.75rem;
-    padding: 3px 8px;
-}
-
-.component-timelapse-timeline {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    position: relative;
-}
-
-.component-timelapse-scrubber {
-    width: 100%;
-    height: 6px;
-    -webkit-appearance: none;
-    appearance: none;
-    background: var(--bg-hover, rgba(255, 255, 255, 0.15));
-    border-radius: 9999px;
-    outline: none;
-    cursor: pointer;
-    transition: height 0.15s ease;
-}
-
-.component-timelapse-scrubber:hover {
-    height: 8px;
-}
-
-.component-timelapse-scrubber::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: var(--color-primary, #6366f1);
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-    transition: transform 0.15s ease;
-}
-
-.component-timelapse-scrubber::-webkit-slider-thumb:hover {
-    transform: scale(1.3);
-}
-
-.component-timelapse-scrubber::-moz-range-thumb {
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: var(--color-primary, #6366f1);
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-}
-
-.component-timelapse-controls {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-}
-
-.component-timelapse-controls-left {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.component-timelapse-controls-right {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.component-timelapse-speed-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-weight: 600;
-    font-size: 0.82rem;
-    padding: 0 10px;
-    border-radius: 9999px;
 }
 
 .component-timelapse-speeds-grid {
@@ -5571,14 +5492,6 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     background-color: var(--color-primary, #6366f1);
     border-color: var(--color-primary, #6366f1);
     color: #ffffff;
-}
-
-@media (max-width: 600px) {
-    .component-timelapse-player {
-        bottom: 12px;
-        width: calc(100% - 24px);
-        padding: 10px 12px;
-    }
 }
 
 .icon-spin-slow {
