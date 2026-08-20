@@ -2060,32 +2060,6 @@ export const ModalTemplates = {
     timelapseSettingsModal: {
         build: (data = {}) => {
             const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
-            const currentSpeed = data.speed || 5;
-
-            const speeds = [
-                { val: 0.5, label: '0.5x' },
-                { val: 1, label: '1x' },
-                { val: 2, label: '2x' },
-                { val: 5, label: '5x' },
-                { val: 10, label: '10x' },
-                { val: 25, label: '25x' },
-                { val: 50, label: '50x' },
-                { val: 100, label: '100x' },
-                { val: 500, label: 'Max' }
-            ];
-
-            const speedsHtml = speeds.map(s => {
-                const isActive = (s.val === currentSpeed) ? 'active' : '';
-                return `
-                    <button class="component-button component-button--h35 component-timelapse-speed-btn ${isActive}" 
-                            data-action="selectTimelapseSpeed" 
-                            data-speed="${s.val}" 
-                            type="button">
-                        ${s.label}
-                    </button>
-                `;
-            }).join('');
-
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header component-modal-header--with-icon">
@@ -2098,18 +2072,60 @@ export const ModalTemplates = {
                     </div>
                 </div>
 
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button class="component-button component-button--primary component-button--h40" data-action="confirmStartTimelapse">${__('lbl_timelapse_start_playback')}</button>
+                </div>
+            `;
+        }
+    },
+    timelapseExportVideoModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const selectedDuration = data.duration || 30;
+
+            const durations = [
+                { val: 15, label: __('lbl_timelapse_video_duration_15') || '15s (Rápido)' },
+                { val: 30, label: __('lbl_timelapse_video_duration_30') || '30s (Recomendado)' },
+                { val: 60, label: __('lbl_timelapse_video_duration_60') || '60s (Detallado)' }
+            ];
+
+            const durationsHtml = durations.map(d => {
+                const isActive = (d.val === selectedDuration) ? 'active' : '';
+                return `
+                    <button class="component-button component-button--h35 component-timelapse-speed-btn ${isActive}" 
+                            data-action="selectTimelapseVideoDuration" 
+                            data-duration="${d.val}" 
+                            type="button">
+                        ${d.label}
+                    </button>
+                `;
+            }).join('');
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header component-modal-header--with-icon">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                        <span class="material-symbols-rounded">movie</span>
+                    </div>
+                    <div class="component-modal-header-text">
+                        <h3 class="component-modal-title">${__('lbl_export_timelapse_video_title')}</h3>
+                        <p class="component-modal-desc">${__('lbl_export_timelapse_video_desc')}</p>
+                    </div>
+                </div>
+
                 <div class="component-modal-content">
                     <div class="component-form-group">
-                        <label class="component-label">${__('lbl_timelapse_speed')}</label>
-                        <div class="component-timelapse-speeds-grid" data-ref="timelapse-speeds-container">
-                            ${speedsHtml}
+                        <label class="component-label">${__('lbl_timelapse_video_duration')}</label>
+                        <div class="component-timelapse-speeds-grid" data-ref="timelapse-video-durations-container">
+                            ${durationsHtml}
                         </div>
                     </div>
                 </div>
 
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button class="component-button component-button--primary component-button--h40" data-action="confirmStartTimelapse">${__('lbl_timelapse_start_playback')}</button>
+                    <button class="component-button component-button--primary component-button--h40" data-action="confirmExportTimelapseVideo" data-ref="btn-confirm-export-video">${__('btn_generate_mp4')}</button>
                 </div>
             `;
         }

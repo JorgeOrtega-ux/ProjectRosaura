@@ -37,12 +37,13 @@ class SnapshotViewerController {
         this.timelapseEvents = [];
         this.timelapseTotal = 0;
         this.timelapseCurrentIndex = 0;
-        this.timelapseSpeed = 5;
-        this.timelapseSelectedModalSpeed = 5;
+        this.timelapseSpeed = 1;
+        this.timelapseSelectedModalSpeed = 1;
         this.timelapseAnimId = null;
         this.timelapseLastTimestamp = 0;
         this.savedSnapshotImage = null;
         this.savedBoardDimensions = { width: 2000, height: 1000 };
+        this.selectedVideoDuration = 30;
 
         this.timelapsePlayerEl = null;
         this.btnTimelapseModal = null;
@@ -250,6 +251,24 @@ class SnapshotViewerController {
             this.cyclePlaybackSpeed();
             return;
         }
+
+        const btnOpenVideoModal = e.target.closest('[data-action="openTimelapseVideoExportModal"]');
+        if (btnOpenVideoModal) {
+            this.openTimelapseVideoExportModal(btnOpenVideoModal);
+            return;
+        }
+
+        const btnSelectVideoDur = e.target.closest('[data-action="selectTimelapseVideoDuration"]');
+        if (btnSelectVideoDur) {
+            this.selectTimelapseVideoDuration(btnSelectVideoDur);
+            return;
+        }
+
+        const btnConfirmExportVideo = e.target.closest('[data-action="confirmExportTimelapseVideo"]');
+        if (btnConfirmExportVideo) {
+            this.confirmExportTimelapseVideo(btnConfirmExportVideo);
+            return;
+        }
     }
 
     handleKeyDown(e) {
@@ -280,10 +299,8 @@ class SnapshotViewerController {
             return;
         }
 
-        this.timelapseSelectedModalSpeed = this.timelapseSpeed;
-
         if (window.modalSystem) {
-            window.modalSystem.show('timelapseSettingsModal', { speed: this.timelapseSpeed });
+            window.modalSystem.show('timelapseSettingsModal');
         } else {
             await this.startTimelapse(this.timelapseSpeed, btnTrigger);
         }
@@ -294,14 +311,6 @@ class SnapshotViewerController {
         if (isNaN(speedVal)) return;
 
         this.timelapseSelectedModalSpeed = speedVal;
-
-        const container = document.querySelector('[data-ref="timelapse-speeds-container"]');
-        if (container) {
-            container.querySelectorAll('[data-action="selectTimelapseSpeed"]').forEach(b => {
-                b.classList.remove('active');
-            });
-            btn.classList.add('active');
-        }
     }
 
     async confirmStartTimelapse() {
@@ -310,7 +319,133 @@ class SnapshotViewerController {
         }
 
         const btnTrigger = document.querySelector('[data-ref="btn-timelapse-modal"]');
-        await this.startTimelapse(this.timelapseSelectedModalSpeed, btnTrigger);
+        await this.startTimelapse(this.timelapseSpeed, btnTrigger);
+    }
+
+    openTimelapseVideoExportModal(btnTrigger = null) {
+        this.selectedVideoDuration = 30;
+        if (window.modalSystem) {
+            window.modalSystem.show('timelapseExportVideoModal', { duration: this.selectedVideoDuration });
+        } else {
+            this.exportTimelapseVideo(this.selectedVideoDuration);
+        }
+    }
+
+    selectTimelapseVideoDuration(btn) {
+        const dur = parseInt(btn.getAttribute('data-duration'), 10);
+        if (!dur) return;
+        this.selectedVideoDuration = dur;
+
+        const container = document.querySelector('[data-ref="timelapse-video-durations-container"]');
+        if (container) {
+            container.querySelectorAll('[data-action="selectTimelapseVideoDuration"]').forEach(b => {
+                b.classList.remove('active');
+            });
+            btn.classList.add('active');
+        }
+    }
+
+    async confirmExportTimelapseVideo(btn = null) {
+        if (btn) setButtonLoading(btn);
+
+        const duration = this.selectedVideoDuration || 30;
+        await this.exportTimelapseVideo(duration, btn);
+    }
+
+    async exportTimelapseVideo(duration = 30, btn = null) {
+        const loadingMsg = window.__ ? window.__('msg_generating_timelapse_video') : 'Generando video MP4 en alta calidad...';
+        showMessage(loadingMsg, 'info');
+
+        try {
+            const endpoint = ApiRoutes.Canvases?.ExportSnapshotTimelapseVideo || 'canvases.export_snapshot_timelapse_video';
+            const response = await this.api.post(endpoint, {
+                id: this.snapshotId,
+                duration: duration
+            });
+
+            if (response && response.success && response.data && response.data.url) {
+                if (window.modalSystem) {
+                    window.modalSystem.closeCurrent();
+                }
+
+                const filename = response.data.filename || `timelapse_${this.snapshotId}_${duration}s.mp4`;
+                await this.triggerFileDownload(response.data.url, filename);
+
+                const successMsg = window.__ ? window.__('msg_timelapse_video_ready') : '¡Video generado correctamente!';
+                showMessage(successMsg, 'success');
+            } else if (response && response.status === 'processing') {
+                await this.pollVideoReadiness(duration, btn);
+                return; // Do not restore button yet, pollVideoReadiness will handle it
+            } else {
+                const errMsg = response?.message || (window.__ ? window.__('err_server') : 'Error al exportar video');
+                showMessage(errMsg, 'error');
+            }
+        } catch (e) {
+            showMessage(window.__ ? window.__('err_server') : 'Error de conexión al exportar video', 'error');
+        } finally {
+            if (btn) restoreButton(btn);
+        }
+    }
+
+    async pollVideoReadiness(duration, btn = null) {
+        const endpoint = ApiRoutes.Canvases?.ExportSnapshotTimelapseVideo || 'canvases.export_snapshot_timelapse_video';
+        let attempts = 0;
+        const maxAttempts = 35;
+
+        const interval = setInterval(async () => {
+            attempts++;
+            try {
+                const response = await this.api.post(endpoint, {
+                    id: this.snapshotId,
+                    duration: duration
+                });
+
+                if (response && response.success && response.data && response.data.url) {
+                    clearInterval(interval);
+                    if (window.modalSystem) {
+                        window.modalSystem.closeCurrent();
+                    }
+                    if (btn) restoreButton(btn);
+
+                    const filename = response.data.filename || `timelapse_${this.snapshotId}_${duration}s.mp4`;
+                    await this.triggerFileDownload(response.data.url, filename);
+
+                    showMessage(window.__ ? window.__('msg_timelapse_video_ready') : '¡Video generado correctamente!', 'success');
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(interval);
+                    if (btn) restoreButton(btn);
+                    showMessage(window.__ ? window.__('err_server') : 'El video tardó más de lo esperado. Intenta descargarlo en unos momentos.', 'warning');
+                }
+            } catch (err) {
+                if (attempts >= maxAttempts) {
+                    clearInterval(interval);
+                    if (btn) restoreButton(btn);
+                }
+            }
+        }, 2000);
+    }
+
+    async triggerFileDownload(url, filename) {
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('Fetch failed');
+            const blob = await res.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
+        } catch (e) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
     }
 
     preloadTimelapse() {
@@ -334,7 +469,7 @@ class SnapshotViewerController {
         })();
     }
 
-    async startTimelapse(speed = 5, btnTrigger = null) {
+    async startTimelapse(speed = 1, btnTrigger = null) {
         this.timelapseSpeed = speed;
 
         if (this.timelapseEvents.length === 0) {
@@ -428,6 +563,7 @@ class SnapshotViewerController {
 
         const btnPlay = document.querySelector('[data-ref="btn-timelapse-play"]');
         if (btnPlay) {
+            btnPlay.classList.add('active');
             btnPlay.setAttribute('data-tooltip', window.__ ? window.__('lbl_timelapse_pause') : 'Pausar');
         }
 
@@ -455,6 +591,7 @@ class SnapshotViewerController {
 
         const btnPlay = document.querySelector('[data-ref="btn-timelapse-play"]');
         if (btnPlay) {
+            btnPlay.classList.remove('active');
             btnPlay.setAttribute('data-tooltip', window.__ ? window.__('lbl_timelapse_play') : 'Reproducir');
         }
     }

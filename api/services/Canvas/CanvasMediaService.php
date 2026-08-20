@@ -199,7 +199,8 @@ class CanvasMediaService {
                 $timelapsePath = "snapshots_timelapse/{$data['canvas_uuid']}/{$data['snapshot_uuid']}.jsonl";
             }
 
-            $localPath = __DIR__ . '/../../../../storage/timelapses/snapshots/' . $data['snapshot_uuid'] . '.jsonl';
+            $rootDir = defined('ROOT_PATH') ? ROOT_PATH : dirname(__DIR__, 3);
+            $localPath = $rootDir . '/storage/timelapses/snapshots/' . $data['snapshot_uuid'] . '.jsonl';
             if (file_exists($localPath)) {
                 $jsonlContent = file_get_contents($localPath);
             }
@@ -418,7 +419,8 @@ class CanvasMediaService {
                 }
             }
 
-            $localTlPath = __DIR__ . '/../../../../storage/timelapses/snapshots/' . $data['snapshot_uuid'] . '.jsonl';
+            $rootDir = defined('ROOT_PATH') ? ROOT_PATH : dirname(__DIR__, 3);
+            $localTlPath = $rootDir . '/storage/timelapses/snapshots/' . $data['snapshot_uuid'] . '.jsonl';
             if (file_exists($localTlPath)) {
                 @unlink($localTlPath);
             }
@@ -427,6 +429,186 @@ class CanvasMediaService {
 
         } catch (Exception $e) {
             Logger::error('Error deleting snapshot.', ['snapshot_uuid' => $snapshotId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function exportSnapshotTimelapseVideo(string $snapshotId, int $duration = 15, ?int $userId = null): array {
+        try {
+            if (!in_array($duration, [15, 30, 60])) {
+                $duration = 15;
+            }
+
+            $db = new DatabaseManager();
+            $pdo = $db->getConnection(DB::CONN_CANVASES);
+
+            $stmt = $pdo->prepare("
+                SELECT s.file_path, s.timelapse_path, s.snapshot_uuid, s.privacy as snapshot_privacy, c.id as canvas_id, c.size, c.privacy as canvas_privacy, c.owner_id, c.palette_id, c.uuid as canvas_uuid
+                FROM canvas_snapshots_history s
+                JOIN " . DB::TBL_CANVASES . " c ON s.canvas_id = c.id
+                WHERE s.snapshot_uuid = :snapshot_id 
+                LIMIT 1
+            ");
+            $stmt->execute([':snapshot_id' => $snapshotId]);
+            $data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$data) {
+                return ['success' => false, 'message' => __('err_captura_not_found')];
+            }
+
+            $hasRole = false;
+            if ($userId !== null) {
+                $roles = $this->canvasRepository->getMemberRoles($data['canvas_id'], $userId);
+                $hasRole = !empty($roles);
+            }
+
+            $isOwner = ($data['owner_id'] === $userId);
+
+            if ($data['snapshot_privacy'] === DB::PRIVACY_PRIVATE && !$isOwner) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
+            if ($data['canvas_privacy'] === DB::PRIVACY_PRIVATE && !$hasRole && !$isOwner) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
+            $rootDir = defined('ROOT_PATH') ? ROOT_PATH : dirname(__DIR__, 3);
+            $s3VideoKey = "snapshots_videos/{$data['canvas_uuid']}/{$data['snapshot_uuid']}_{$duration}s.mp4";
+            $localVideoDir = $rootDir . '/storage/timelapses/videos';
+            if (!is_dir($localVideoDir)) {
+                @mkdir($localVideoDir, 0755, true);
+            }
+            $localVideoPath = "{$localVideoDir}/{$data['snapshot_uuid']}_{$duration}s.mp4";
+            $publicUrl = \App\Core\Helpers\Utils::getS3PublicUrl($s3VideoKey);
+
+            $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+            $s3Client = Utils::getS3Client();
+
+            // 1. Check S3 if already exists
+            try {
+                if ($s3Client->doesObjectExist($bucket, $s3VideoKey)) {
+                    return [
+                        'success' => true,
+                        'status' => 'ready',
+                        'data' => [
+                            'url' => $publicUrl,
+                            'duration' => $duration,
+                            'filename' => "timelapse_{$snapshotId}_{$duration}s.mp4"
+                        ]
+                    ];
+                }
+            } catch (\Throwable $e) {}
+
+            // 2. Check if local video already exists and upload to S3 if complete
+            if (file_exists($localVideoPath) && filesize($localVideoPath) > 1000) {
+                try {
+                    $s3Client->putObject([
+                        'Bucket' => $bucket,
+                        'Key' => $s3VideoKey,
+                        'SourceFile' => $localVideoPath,
+                        'ContentType' => 'video/mp4',
+                        'ContentDisposition' => 'attachment; filename="timelapse_' . $snapshotId . '_' . $duration . 's.mp4"'
+                    ]);
+                    return [
+                        'success' => true,
+                        'status' => 'ready',
+                        'data' => [
+                            'url' => $publicUrl,
+                            'duration' => $duration,
+                            'filename' => "timelapse_{$snapshotId}_{$duration}s.mp4"
+                        ]
+                    ];
+                } catch (\Throwable $e) {
+                    Logger::warning("Could not sync local video to S3: " . $e->getMessage());
+                }
+            }
+
+            // 3. Ensure JSONL timelapse file is available locally
+            $localJsonlPath = $rootDir . '/storage/timelapses/snapshots/' . $data['snapshot_uuid'] . '.jsonl';
+            $timelapsePath = $data['timelapse_path'] ?? "snapshots_timelapse/{$data['canvas_uuid']}/{$data['snapshot_uuid']}.jsonl";
+            
+            if (!file_exists($localJsonlPath)) {
+                try {
+                    $s3Obj = $s3Client->getObject([
+                        'Bucket' => $bucket,
+                        'Key' => ltrim($timelapsePath, '/')
+                    ]);
+                    if ($s3Obj && isset($s3Obj['Body'])) {
+                        $dir = dirname($localJsonlPath);
+                        if (!is_dir($dir)) @mkdir($dir, 0755, true);
+                        @file_put_contents($localJsonlPath, (string)$s3Obj['Body']);
+                    }
+                } catch (\Throwable $s3Err) {
+                    Logger::warning("Could not fetch timelapse from S3: " . $s3Err->getMessage());
+                }
+            }
+
+            if (!file_exists($localJsonlPath)) {
+                return [
+                    'success' => false,
+                    'message' => __('msg_no_timelapse_data')
+                ];
+            }
+
+            // 4. Try rendering directly with Python renderer or push to queue
+            $rendered = false;
+            $rendererScript = realpath($rootDir . '/scripts/workers/timelapse_video_renderer.py');
+            if ($rendererScript && file_exists($rendererScript)) {
+                $pyCandidates = ['python3', 'python', 'C:\\Users\\jorge\\AppData\\Local\\Python\\bin\\python.exe'];
+                foreach ($pyCandidates as $py) {
+                    $cmd = escapeshellcmd($py) . ' ' . escapeshellarg($rendererScript) . ' ' . escapeshellarg($localJsonlPath) . ' ' . escapeshellarg($localVideoPath) . ' ' . (int)$duration;
+                    @exec($cmd, $out, $retCode);
+                    if ($retCode === 0 && file_exists($localVideoPath) && filesize($localVideoPath) > 0) {
+                        $rendered = true;
+                        break;
+                    }
+                }
+            }
+
+            if ($rendered) {
+                // Upload rendered video to S3
+                try {
+                    $s3Client->putObject([
+                        'Bucket' => $bucket,
+                        'Key' => $s3VideoKey,
+                        'SourceFile' => $localVideoPath,
+                        'ContentType' => 'video/mp4'
+                    ]);
+                } catch (\Throwable $s3UploadErr) {
+                    Logger::warning("Could not upload generated video to S3: " . $s3UploadErr->getMessage());
+                }
+
+                return [
+                    'success' => true,
+                    'status' => 'ready',
+                    'data' => [
+                        'url' => $publicUrl,
+                        'duration' => $duration,
+                        'filename' => "timelapse_{$snapshotId}_{$duration}s.mp4"
+                    ]
+                ];
+            }
+
+            // Fallback to Redis Queue
+            try {
+                $redis = (new \App\Config\Database\RedisCache())->getClient();
+                $redis->rpush('queue:canvas_timelapse_video', json_encode([
+                    'snapshot_uuid' => $data['snapshot_uuid'],
+                    'canvas_uuid' => $data['canvas_uuid'],
+                    'duration' => $duration,
+                    'fps' => 30
+                ]));
+                return [
+                    'success' => true,
+                    'status' => 'processing',
+                    'message' => __('msg_generating_timelapse_video')
+                ];
+            } catch (\Throwable $e) {
+                return ['success' => false, 'message' => __('err_server')];
+            }
+
+        } catch (Exception $e) {
+            Logger::error('Error exporting snapshot timelapse video.', ['snapshot_id' => $snapshotId, 'error' => $e->getMessage()]);
             return ['success' => false, 'message' => __('err_database')];
         }
     }

@@ -5371,17 +5371,6 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     border-color: rgba(255, 255, 255, 0.6);
 }
 
-.canvas-design-toolbar .component-button--primary {
-    background: var(--color-primary, #6366f1);
-    border-color: var(--color-primary, #6366f1);
-    color: #ffffff;
-}
-
-.canvas-design-toolbar .component-button--primary:hover {
-    background: var(--color-primary-hover, #4f46e5);
-    border-color: var(--color-primary-hover, #4f46e5);
-}
-
 .canvas-design-toolbar .material-symbols-rounded {
     font-size: 1.1rem;
     color: #ffffff;

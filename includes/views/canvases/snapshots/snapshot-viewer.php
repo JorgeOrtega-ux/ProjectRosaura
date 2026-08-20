@@ -52,7 +52,7 @@ $canvasSize = $viewerData['canvasSize'];
                 </button>
 
                 <div class="snapshot-timelapse-group disabled" data-ref="timelapse-controls-group">
-                    <button class="component-button component-button--icon component-button--primary component-button--h32" data-action="togglePlayTimelapse" data-ref="btn-timelapse-play" data-tooltip="<?php echo __('lbl_timelapse_pause'); ?>" data-position="bottom">
+                    <button class="component-button component-button--icon component-button--h32 active" data-action="togglePlayTimelapse" data-ref="btn-timelapse-play" data-tooltip="<?php echo __('lbl_timelapse_pause'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded" data-ref="timelapse-play-icon">pause</span>
                     </button>
                     <button class="component-button component-button--icon component-button--h32" data-action="stepBackwardTimelapse" data-tooltip="<?php echo __('lbl_timelapse_step_back'); ?>" data-position="bottom">
@@ -66,13 +66,16 @@ $canvasSize = $viewerData['canvasSize'];
                     </button>
                     <button class="component-button component-button--h32 component-timelapse-speed-pill" data-action="openTimelapseSpeedMenu" data-ref="timelapse-speed-indicator" data-tooltip="<?php echo __('lbl_timelapse_speed'); ?>" data-position="bottom" type="button">
                         <span class="material-symbols-rounded">speed</span>
-                        <span data-ref="timelapse-speed-text">5x</span>
+                        <span data-ref="timelapse-speed-text">1x</span>
                     </button>
                     <button class="component-button component-button--icon component-button--h32" data-action="closeTimelapse" data-tooltip="<?php echo __('btn_exit_timelapse'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">close</span>
                     </button>
                 </div>
 
+                <button class="component-button component-button--icon component-button--h32" data-action="openTimelapseVideoExportModal" data-ref="btn-timelapse-export-video" data-tooltip="<?php echo __('btn_download_timelapse_video'); ?>" data-position="bottom">
+                    <span class="material-symbols-rounded">movie</span>
+                </button>
                 <button class="component-button component-button--icon component-button--h32" data-action="downloadSnapshotHighRes" data-tooltip="<?php echo __('btn_download'); ?>" data-position="bottom">
                     <span class="material-symbols-rounded">high_quality</span>
                 </button>

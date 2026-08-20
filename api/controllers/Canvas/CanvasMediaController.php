@@ -71,6 +71,24 @@ class CanvasMediaController extends BaseController {
             return $this->handleException($e, __FUNCTION__);
         }
     }
+
+    public function export_snapshot_timelapse_video($input) {
+        try {
+            $id = $input['id'] ?? null;
+            if (!$id) {
+                return $this->respond(['success' => false, 'message' => __('err_captura_id_missing')]);
+            }
+            
+            $duration = isset($input['duration']) ? (int)$input['duration'] : 15;
+            $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
+
+            $result = $this->canvasServices->exportSnapshotTimelapseVideo($id, $duration, $userId);
+            return $this->respond($result);
+
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
     public function toggle_snapshot_like($input) {
         try {
             $id = $input['id'] ?? null;

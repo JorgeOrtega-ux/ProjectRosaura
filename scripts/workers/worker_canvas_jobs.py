@@ -3,6 +3,7 @@ import time
 import json
 from dotenv import load_dotenv
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ENV_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
 load_dotenv(dotenv_path=ENV_PATH)
 
@@ -21,6 +22,14 @@ from PIL import Image
 from datetime import datetime
 import boto3
 import io
+
+try:
+    from scripts.workers.timelapse_video_renderer import render_timelapse_to_mp4
+except ImportError:
+    try:
+        from timelapse_video_renderer import render_timelapse_to_mp4
+    except ImportError:
+        render_timelapse_to_mp4 = None
 
 S3_ENDPOINT = os.getenv("AWS_ENDPOINT")
 if S3_ENDPOINT and not S3_ENDPOINT.startswith("http"):
@@ -1024,14 +1033,94 @@ def draw_image_listener_thread():
             logging.error(f"Error in Draw Image listener: {e}")
             time.sleep(1)
 
+def timelapse_video_listener_thread():
+    logging.info("Starting Timelapse Video Export listener thread...")
+    r = get_redis_client()
+    while True:
+        try:
+            item = r.blpop("queue:canvas_timelapse_video", timeout=30)
+            if item:
+                _, task_json = item
+                task_data = json.loads(task_json)
+                snapshot_uuid = task_data.get('snapshot_uuid')
+                canvas_uuid = task_data.get('canvas_uuid', 'default')
+                duration = float(task_data.get('duration', 15))
+                fps = int(task_data.get('fps', 30))
+                
+                logging.info(f"Received timelapse MP4 export task for snapshot {snapshot_uuid} (duration: {duration}s)")
+                
+                if not render_timelapse_to_mp4:
+                    logging.error("render_timelapse_to_mp4 function not available.")
+                    continue
+
+                local_jsonl = os.path.join(BASE_DIR, 'storage', 'timelapses', 'snapshots', f"{snapshot_uuid}.jsonl")
+                s3_key_jsonl = f"snapshots_timelapse/{canvas_uuid}/{snapshot_uuid}.jsonl"
+                
+                s3 = get_s3_client()
+                if not os.path.exists(local_jsonl):
+                    try:
+                        os.makedirs(os.path.dirname(local_jsonl), exist_ok=True)
+                        s3.download_file(S3_BUCKET, s3_key_jsonl, local_jsonl)
+                    except Exception as dl_err:
+                        logging.error(f"Could not download snapshot JSONL {s3_key_jsonl}: {dl_err}")
+                
+                if not os.path.exists(local_jsonl):
+                    r.setex(f"video:snapshot:{snapshot_uuid}:{int(duration)}", 60, json.dumps({
+                        "status": "error", "message": "Timelapse data not found"
+                    }))
+                    continue
+                
+                local_video_dir = os.path.join(BASE_DIR, 'storage', 'timelapses', 'videos')
+                os.makedirs(local_video_dir, exist_ok=True)
+                local_video_path = os.path.join(local_video_dir, f"{snapshot_uuid}_{int(duration)}s.mp4")
+                
+                render_res = render_timelapse_to_mp4(local_jsonl, local_video_path, duration_seconds=duration, fps=fps)
+                
+                s3_video_key = f"snapshots_videos/{canvas_uuid}/{snapshot_uuid}_{int(duration)}s.mp4"
+                try:
+                    with open(local_video_path, 'rb') as f_vid:
+                        s3.put_object(
+                            Bucket=S3_BUCKET,
+                            Key=s3_video_key,
+                            Body=f_vid,
+                            ContentType='video/mp4'
+                        )
+                    logging.info(f"[+] Timelapse MP4 uploaded to S3: {s3_video_key}")
+                except Exception as s3_vid_err:
+                    logging.warning(f"[!] Could not upload timelapse MP4 to S3: {s3_vid_err}")
+                
+                public_url = os.getenv('AWS_PUBLIC_URL', '').rstrip('/')
+                if public_url:
+                    full_url = f"{public_url}/{S3_BUCKET}/{s3_video_key}"
+                else:
+                    full_url = f"/storage/timelapses/videos/{snapshot_uuid}_{int(duration)}s.mp4"
+                
+                res_payload = {
+                    "status": "ready",
+                    "url": full_url,
+                    "s3_key": s3_video_key,
+                    "duration": render_res["duration"],
+                    "width": render_res["width"],
+                    "height": render_res["height"],
+                    "size_bytes": render_res["size_bytes"]
+                }
+                r.setex(f"video:snapshot:{snapshot_uuid}:{int(duration)}", 86400 * 7, json.dumps(res_payload))
+                r.publish(f"timelapse:video_ready:{snapshot_uuid}:{int(duration)}", json.dumps(res_payload))
+                logging.info(f"[+] Timelapse video task completed for snapshot {snapshot_uuid}")
+                
+        except Exception as e:
+            logging.error(f"Error in Timelapse Video listener: {e}")
+            time.sleep(1)
+
 if __name__ == "__main__":
-    logging.info("INICIANDO WORKER UNIFICADO DE CANVAS (RESETS, RESIZES, THUMBNAILS)...")
+    logging.info("INICIANDO WORKER UNIFICADO DE CANVAS (RESETS, RESIZES, THUMBNAILS, VIDEOS)...")
     
     threading.Thread(target=resize_listener_thread, daemon=True, name="Thread-Resize").start()
     threading.Thread(target=reset_listener_thread, daemon=True, name="Thread-Reset").start()
     threading.Thread(target=scheduler_thread, daemon=True, name="Thread-Scheduler").start()
     threading.Thread(target=thumbnails_thread, daemon=True, name="Thread-Thumbnails").start()
     threading.Thread(target=draw_image_listener_thread, daemon=True, name="Thread-DrawImage").start()
+    threading.Thread(target=timelapse_video_listener_thread, daemon=True, name="Thread-TimelapseVideo").start()
     
     while True:
         time.sleep(1)

@@ -797,6 +797,22 @@ return [
             ],
         ],
     ],
+    'canvases.export_snapshot_timelapse_video' => [
+        'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasMediaController',
+        'action' => 'export_snapshot_timelapse_video',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'canvas_export_snap_video',
+                'max' => 10,
+                'time' => 1,
+                'identifier' => 'ip',
+            ],
+        ],
+    ],
     'canvases.toggle_snapshot_like' => [
         'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasMediaController',
         'action' => 'toggle_snapshot_like',

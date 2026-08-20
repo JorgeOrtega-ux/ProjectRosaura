@@ -1868,7 +1868,7 @@
     "btn_timelapse": "Timelapse",
     "btn_start_timelapse": "Iniciar timelapse",
     "lbl_timelapse_title": "Timelapse de la captura",
-    "lbl_timelapse_desc": "Configura la velocidad y reproduce la creación paso a paso de esta captura.",
+    "lbl_timelapse_desc": "Reproduce la creación paso a paso de esta captura.",
     "lbl_timelapse_speed": "Velocidad de reproducción",
     "lbl_timelapse_playing": "Reproduciendo",
     "lbl_timelapse_paused": "Pausado",
@@ -1885,7 +1885,17 @@
     "lbl_timelapse_pause": "Pausar",
     "lbl_timelapse_restart": "Reiniciar",
     "lbl_timelapse_step_back": "Paso anterior",
-    "lbl_timelapse_step_forward": "Paso siguiente"
+    "lbl_timelapse_step_forward": "Paso siguiente",
+    "btn_download_timelapse_video": "Descargar video MP4",
+    "lbl_export_timelapse_video_title": "Descargar video timelapse",
+    "lbl_export_timelapse_video_desc": "Genera y descarga un video MP4 en alta definición con la creación paso a paso del lienzo.",
+    "lbl_timelapse_video_duration": "Duración del video",
+    "lbl_timelapse_video_duration_15": "15s (Rápido / Redes)",
+    "lbl_timelapse_video_duration_30": "30s (Recomendado)",
+    "lbl_timelapse_video_duration_60": "60s (Detallado)",
+    "btn_generate_mp4": "Descargar MP4",
+    "msg_generating_timelapse_video": "Generando video MP4 en alta calidad...",
+    "msg_timelapse_video_ready": "¡Video generado correctamente!"
 }
 
 
