@@ -264,12 +264,12 @@ class CanvasViewService {
         $sqlCount = "SELECT COUNT(DISTINCT c.id) FROM {$tblCanvases} c 
                          LEFT JOIN canvas_user_roles cur ON c.id = cur.canvas_id AND cur.user_id = :uid1
                          LEFT JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id AND crp.permission_id IN (2, 3, 4, 5, 6, 7)
-                         WHERE (c.owner_id = :uid2 OR crp.permission_id IS NOT NULL) AND c.deleted_at IS NULL";
+                         WHERE c.owner_id = :uid2 OR crp.permission_id IS NOT NULL";
         $sqlSelect = "SELECT DISTINCT c.id, c.uuid, c.name, c.privacy, c.size, c.max_participants, c.created_at, c.favorites_count, c.owner_id, c.is_subscription_locked, c.locked_reasons 
                       FROM {$tblCanvases} c 
                       LEFT JOIN canvas_user_roles cur ON c.id = cur.canvas_id AND cur.user_id = :uid1
                       LEFT JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id AND crp.permission_id IN (2, 3, 4, 5, 6, 7)
-                      WHERE (c.owner_id = :uid2 OR crp.permission_id IS NOT NULL) AND c.deleted_at IS NULL
+                      WHERE c.owner_id = :uid2 OR crp.permission_id IS NOT NULL
                       ORDER BY c.id DESC 
                       LIMIT $limit OFFSET $offset";
 
@@ -368,7 +368,7 @@ class CanvasViewService {
                 $tblCanvases = defined('\App\Core\System\DatabaseConstants::TBL_CANVASES') ? \App\Core\System\DatabaseConstants::TBL_CANVASES : 'canvases';
                 $db = (new DatabaseManager())->getConnection($dbConnName);
 
-                $stmt = $db->prepare('SELECT id, name, privacy, owner_id FROM ' . $tblCanvases . ' WHERE uuid = :uuid AND deleted_at IS NULL LIMIT 1');
+                $stmt = $db->prepare('SELECT id, name, privacy, owner_id FROM ' . $tblCanvases . ' WHERE uuid = :uuid LIMIT 1');
                 $stmt->execute([':uuid' => $uuid]);
                 $canvas = $stmt->fetch(\PDO::FETCH_ASSOC);
 
