@@ -1082,42 +1082,66 @@ def timelapse_video_listener_thread():
                 os.makedirs(local_video_dir, exist_ok=True)
                 local_video_path = os.path.join(local_video_dir, f"{snapshot_uuid}_{int(duration)}s_{quality}.mp4")
                 
-                render_res = render_timelapse_to_mp4(local_jsonl, local_video_path, duration_seconds=duration, target_max_dim=target_max_dim, fps=fps)
-                
-                s3_video_key = f"snapshots_videos/{canvas_uuid}/{snapshot_uuid}_{int(duration)}s_{quality}.mp4"
+                lock_key = f"lock:timelapse_job:{snapshot_uuid}_{int(duration)}s_{quality}"
+                max_timeout = 90 if quality != '4k' else 150
+
                 try:
-                    with open(local_video_path, 'rb') as f_vid:
-                        s3.put_object(
-                            Bucket=S3_BUCKET,
-                            Key=s3_video_key,
-                            Body=f_vid,
-                            ContentType='video/mp4'
-                        )
-                    logging.info(f"[+] Timelapse MP4 uploaded to S3: {s3_video_key}")
-                except Exception as s3_vid_err:
-                    logging.warning(f"[!] Could not upload timelapse MP4 to S3: {s3_vid_err}")
-                
-                public_url = os.getenv('AWS_PUBLIC_URL', '').rstrip('/')
-                if public_url:
-                    full_url = f"{public_url}/{S3_BUCKET}/{s3_video_key}?v={int(time.time())}"
-                else:
-                    full_url = f"/storage/timelapses/videos/{snapshot_uuid}_{int(duration)}s_{quality}.mp4?v={int(time.time())}"
-                
-                res_payload = {
-                    "status": "ready",
-                    "url": full_url,
-                    "s3_key": s3_video_key,
-                    "duration": render_res["duration"],
-                    "quality": quality,
-                    "width": render_res["width"],
-                    "height": render_res["height"],
-                    "size_bytes": render_res["size_bytes"]
-                }
-                r.setex(f"video:snapshot:{snapshot_uuid}:{int(duration)}:{quality}", 86400 * 7, json.dumps(res_payload))
-                r.setex(f"video:snapshot:{snapshot_uuid}:{int(duration)}", 86400 * 7, json.dumps(res_payload))
-                r.publish(f"timelapse:video_ready:{snapshot_uuid}:{int(duration)}:{quality}", json.dumps(res_payload))
-                r.publish(f"timelapse:video_ready:{snapshot_uuid}:{int(duration)}", json.dumps(res_payload))
-                logging.info(f"[+] Timelapse video task completed for snapshot {snapshot_uuid}")
+                    render_res = render_timelapse_to_mp4(
+                        local_jsonl, 
+                        local_video_path, 
+                        duration_seconds=duration, 
+                        target_max_dim=target_max_dim, 
+                        fps=fps,
+                        max_timeout_sec=max_timeout
+                    )
+                    
+                    s3_video_key = f"snapshots_videos/{canvas_uuid}/{snapshot_uuid}_{int(duration)}s_{quality}.mp4"
+                    try:
+                        with open(local_video_path, 'rb') as f_vid:
+                            s3.put_object(
+                                Bucket=S3_BUCKET,
+                                Key=s3_video_key,
+                                Body=f_vid,
+                                ContentType='video/mp4'
+                            )
+                        logging.info(f"[+] Timelapse MP4 uploaded to S3: {s3_video_key}")
+                    except Exception as s3_vid_err:
+                        logging.warning(f"[!] Could not upload timelapse MP4 to S3: {s3_vid_err}")
+                    
+                    public_url = os.getenv('AWS_PUBLIC_URL', '').rstrip('/')
+                    if public_url:
+                        full_url = f"{public_url}/{S3_BUCKET}/{s3_video_key}?v={int(time.time())}"
+                    else:
+                        full_url = f"/storage/timelapses/videos/{snapshot_uuid}_{int(duration)}s_{quality}.mp4?v={int(time.time())}"
+                    
+                    res_payload = {
+                        "status": "ready",
+                        "url": full_url,
+                        "s3_key": s3_video_key,
+                        "duration": render_res["duration"],
+                        "quality": quality,
+                        "width": render_res["width"],
+                        "height": render_res["height"],
+                        "size_bytes": render_res["size_bytes"]
+                    }
+                    r.setex(f"video:snapshot:{snapshot_uuid}:{int(duration)}:{quality}", 86400 * 7, json.dumps(res_payload))
+                    r.setex(f"video:snapshot:{snapshot_uuid}:{int(duration)}", 86400 * 7, json.dumps(res_payload))
+                    r.publish(f"timelapse:video_ready:{snapshot_uuid}:{int(duration)}:{quality}", json.dumps(res_payload))
+                    r.publish(f"timelapse:video_ready:{snapshot_uuid}:{int(duration)}", json.dumps(res_payload))
+                    logging.info(f"[+] Timelapse video task completed for snapshot {snapshot_uuid} in {render_res.get('elapsed_seconds', '?')}s")
+                except Exception as render_err:
+                    logging.error(f"[!] Timelapse render failed or timed out for {snapshot_uuid}: {render_err}")
+                    err_payload = {
+                        "status": "error",
+                        "message": f"Error al generar video timelapse ({str(render_err)})"
+                    }
+                    r.setex(f"video:snapshot:{snapshot_uuid}:{int(duration)}:{quality}", 60, json.dumps(err_payload))
+                    r.publish(f"timelapse:video_ready:{snapshot_uuid}:{int(duration)}:{quality}", json.dumps(err_payload))
+                finally:
+                    try:
+                        r.delete(lock_key)
+                    except Exception:
+                        pass
                 
         except Exception as e:
             logging.error(f"Error in Timelapse Video listener: {e}")

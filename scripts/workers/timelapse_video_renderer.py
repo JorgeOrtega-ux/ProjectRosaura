@@ -4,7 +4,6 @@ import time
 import json
 import subprocess
 from PIL import Image
-import io
 
 # Colors cache for hex to RGB tuple
 _HEX_CACHE = {}
@@ -30,7 +29,29 @@ def hex_to_rgb(hex_str):
             pass
     return (0, 0, 0)
 
-def render_timelapse_to_mp4(jsonl_path, output_mp4_path, duration_seconds=15, target_max_dim=3840, fps=30, end_freeze_sec=2.0):
+def kill_process_safely(proc):
+    """Rescue helper: unconditionally terminate and kill subprocess to prevent zombies."""
+    if proc is None:
+        return
+    try:
+        if proc.poll() is None:
+            proc.terminate()
+            try:
+                proc.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait(timeout=2)
+    except Exception:
+        try:
+            proc.kill()
+        except Exception:
+            pass
+
+def render_timelapse_to_mp4(jsonl_path, output_mp4_path, duration_seconds=15, target_max_dim=1920, fps=30, end_freeze_sec=2.0, max_timeout_sec=120):
+    """
+    Renders a snapshot's JSONL event stream into an MP4 video with watchdog timeout and CPU rescue systems.
+    """
+    start_time = time.time()
     if not os.path.exists(jsonl_path):
         raise FileNotFoundError(f"Timelapse file not found: {jsonl_path}")
 
@@ -52,6 +73,7 @@ def render_timelapse_to_mp4(jsonl_path, output_mp4_path, duration_seconds=15, ta
     init_h = 64
     final_w = 64
     final_h = 64
+    has_resizes = False
 
     for ev in events:
         etype = ev.get('type')
@@ -59,6 +81,8 @@ def render_timelapse_to_mp4(jsonl_path, output_mp4_path, duration_seconds=15, ta
             nw = int(ev.get('w', final_w))
             nh = int(ev.get('h', final_h))
             if nw > 0 and nh > 0:
+                if (nw != final_w or nh != final_h) and final_w != 64:
+                    has_resizes = True
                 final_w = nw
                 final_h = nh
 
@@ -67,6 +91,9 @@ def render_timelapse_to_mp4(jsonl_path, output_mp4_path, duration_seconds=15, ta
             init_w = int(ev['w'])
             init_h = int(ev['h'])
             break
+
+    if init_w != final_w or init_h != final_h:
+        has_resizes = True
 
     max_side = max(final_w, final_h)
     if target_max_dim >= max_side:
@@ -99,13 +126,11 @@ def render_timelapse_to_mp4(jsonl_path, output_mp4_path, duration_seconds=15, ta
     def compute_target_camera(cw, ch):
         c_aspect = cw / ch
         if c_aspect < video_aspect:
-            # Canvas is narrower/taller than video (center horizontally)
             th = float(ch)
             tw = th * video_aspect
             tx = -(tw - cw) / 2.0
             ty = 0.0
         else:
-            # Canvas is wider than video (center vertically)
             tw = float(cw)
             th = tw / video_aspect
             tx = 0.0
@@ -172,9 +197,10 @@ def render_timelapse_to_mp4(jsonl_path, output_mp4_path, duration_seconds=15, ta
 
     os.makedirs(os.path.dirname(os.path.abspath(output_mp4_path)), exist_ok=True)
 
-    # Launch FFmpeg process
+    # Launch FFmpeg process with CPU thread capping and fast preset
     ffmpeg_cmd = [
         "ffmpeg", "-y",
+        "-threads", "2",
         "-f", "rawvideo",
         "-vcodec", "rawvideo",
         "-s", f"{out_w}x{out_h}",
@@ -183,72 +209,97 @@ def render_timelapse_to_mp4(jsonl_path, output_mp4_path, duration_seconds=15, ta
         "-i", "-",
         "-c:v", "libx264",
         "-pix_fmt", "yuv420p",
-        "-preset", "faster",
-        "-crf", "20",
+        "-preset", "veryfast",
+        "-crf", "22",
         "-movflags", "+faststart",
         output_mp4_path
     ]
 
-    proc = subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    proc = subprocess.Popen(
+        ffmpeg_cmd,
+        stdin=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        bufsize=10485760
+    )
 
     current_event_idx = 0
     last_frame_bytes = None
     zoom_smoothing = 0.15
+    deadline = start_time + max_timeout_sec
 
     try:
         for f_idx in range(active_frames):
+            if time.time() > deadline:
+                raise TimeoutError(f"Timelapse video rendering exceeded timeout limit ({max_timeout_sec}s).")
+
             target_event_idx = min(total_events, int(((f_idx + 1) / active_frames) * total_events))
             
             while current_event_idx < target_event_idx:
                 apply_event(events[current_event_idx])
                 current_event_idx += 1
 
-            # Smoothly interpolate camera towards target camera
-            cam_x += (target_cam_x - cam_x) * zoom_smoothing
-            cam_y += (target_cam_y - cam_y) * zoom_smoothing
-            cam_w += (target_cam_w - cam_w) * zoom_smoothing
-            cam_h += (target_cam_h - cam_h) * zoom_smoothing
+            if not has_resizes and canvas_w == out_w and canvas_h == out_h:
+                frame_bytes = bytes(board)
+            elif not has_resizes:
+                src_img = Image.frombuffer('RGB', (canvas_w, canvas_h), board, 'raw', 'RGB', 0, 1)
+                resized_img = src_img.resize((out_w, out_h), Image.NEAREST)
+                frame_bytes = resized_img.tobytes()
+            else:
+                cam_x += (target_cam_x - cam_x) * zoom_smoothing
+                cam_y += (target_cam_y - cam_y) * zoom_smoothing
+                cam_w += (target_cam_w - cam_w) * zoom_smoothing
+                cam_h += (target_cam_h - cam_h) * zoom_smoothing
 
-            # Convert board buffer to Pillow Image
-            current_img = Image.frombytes('RGB', (canvas_w, canvas_h), bytes(board))
-            
-            # Map canvas coordinates to video viewport
-            w_screen = max(1, int(round((canvas_w / cam_w) * out_w)))
-            h_screen = max(1, int(round((canvas_h / cam_h) * out_h)))
-            x_screen_0 = int(round((-cam_x / cam_w) * out_w))
-            y_screen_0 = int(round((-cam_y / cam_h) * out_h))
+                current_img = Image.frombuffer('RGB', (canvas_w, canvas_h), board, 'raw', 'RGB', 0, 1)
+                w_screen = max(1, int(round((canvas_w / cam_w) * out_w)))
+                h_screen = max(1, int(round((canvas_h / cam_h) * out_h)))
+                x_screen_0 = int(round((-cam_x / cam_w) * out_w))
+                y_screen_0 = int(round((-cam_y / cam_h) * out_h))
 
-            scaled_canvas = current_img.resize((w_screen, h_screen), Image.NEAREST)
+                scaled_canvas = current_img.resize((w_screen, h_screen), Image.NEAREST)
+                frame_img = Image.new('RGB', (out_w, out_h), (255, 255, 255))
+                frame_img.paste(scaled_canvas, (x_screen_0, y_screen_0))
+                frame_bytes = frame_img.tobytes()
 
-            frame_img = Image.new('RGB', (out_w, out_h), (255, 255, 255))
-            frame_img.paste(scaled_canvas, (x_screen_0, y_screen_0))
-
-            frame_bytes = frame_img.tobytes()
             last_frame_bytes = frame_bytes
             proc.stdin.write(frame_bytes)
 
-        # Freeze last frame for end_freeze_sec
         if last_frame_bytes and freeze_frames > 0:
             for _ in range(freeze_frames):
+                if time.time() > deadline:
+                    raise TimeoutError("Timeout exceeded during end freeze frames.")
                 proc.stdin.write(last_frame_bytes)
 
         proc.stdin.close()
-        proc.wait()
+        try:
+            proc.wait(timeout=15)
+        except subprocess.TimeoutExpired:
+            kill_process_safely(proc)
+            raise TimeoutError("FFmpeg encoding wait timed out.")
 
     except Exception as err:
-        if proc.poll() is None:
-            proc.kill()
+        kill_process_safely(proc)
+        if os.path.exists(output_mp4_path):
+            try:
+                os.remove(output_mp4_path)
+            except Exception:
+                pass
         raise err
+    finally:
+        kill_process_safely(proc)
 
     if not os.path.exists(output_mp4_path) or os.path.getsize(output_mp4_path) == 0:
         raise RuntimeError("FFmpeg failed to produce valid MP4 video.")
 
+    elapsed = round(time.time() - start_time, 2)
     return {
         "output_path": output_mp4_path,
         "width": out_w,
         "height": out_h,
         "duration": duration_seconds + end_freeze_sec,
-        "size_bytes": os.path.getsize(output_mp4_path)
+        "size_bytes": os.path.getsize(output_mp4_path),
+        "elapsed_seconds": elapsed
     }
 
 if __name__ == '__main__':
@@ -258,6 +309,6 @@ if __name__ == '__main__':
     in_file = sys.argv[1]
     out_file = sys.argv[2]
     dur = float(sys.argv[3]) if len(sys.argv) > 3 else 15
-    max_dim = int(sys.argv[4]) if len(sys.argv) > 4 else 3840
+    max_dim = int(sys.argv[4]) if len(sys.argv) > 4 else 1920
     res = render_timelapse_to_mp4(in_file, out_file, duration_seconds=dur, target_max_dim=max_dim)
     print(f"[+] Render complete: {res}")
