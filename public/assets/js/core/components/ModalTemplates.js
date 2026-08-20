@@ -1,4 +1,4 @@
-import { escapeHTML } from '../utils/uiUtils.js';
+import { escapeHTML, getLockDetails } from '../utils/uiUtils.js';
 
 const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
 
@@ -2075,6 +2075,182 @@ export const ModalTemplates = {
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
                     <button class="component-button component-button--primary component-button--h40" data-action="confirmStartTimelapse">${__('lbl_timelapse_start_playback')}</button>
+                </div>
+            `;
+        }
+    },
+    snapshotDownloadModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const exportType = data.type || 'image'; // 'image' or 'video'
+            const imageFormat = data.format || 'png';
+            const videoDuration = parseInt(data.duration, 10) || 30;
+            const videoQuality = data.quality || '1080p';
+
+            const formatLabels = {
+                png: __('lbl_image_format_png') || 'PNG (Sin compresión)',
+                jpg: __('lbl_image_format_jpg') || 'JPG (Estándar)',
+                webp: __('lbl_image_format_webp') || 'WEBP (Optimizado)',
+                pdf: __('lbl_image_format_pdf') || 'PDF (Documento)'
+            };
+
+            const durationLabels = {
+                15: __('lbl_video_speed_15') || '15s (Rápido)',
+                30: __('lbl_video_speed_30') || '30s (Recomendado)',
+                60: __('lbl_video_speed_60') || '60s (Detallado)'
+            };
+
+            const qualityLabels = {
+                '720p': __('lbl_video_quality_720') || '720p (HD)',
+                '1080p': __('lbl_video_quality_1080') || '1080p (Full HD)',
+                '4k': __('lbl_video_quality_4k') || '4K (Ultra HD)'
+            };
+
+            const qualityIcons = {
+                '720p': 'hd',
+                '1080p': 'high_quality',
+                '4k': 'video_file'
+            };
+
+            const lock4k = (typeof getLockDetails === 'function') 
+                ? getLockDetails('feat_download_4k', 'link') 
+                : { isLocked: false, classStr: '', attributesStr: '', badgeHtml: '' };
+
+            const is4kActive = (videoQuality === '4k');
+            const link4kClasses = ['component-menu-link', is4kActive ? 'active' : '', lock4k.classStr].filter(Boolean).join(' ');
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header component-modal-header--with-icon">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                        <span class="material-symbols-rounded" data-ref="snapshot-download-header-icon">${exportType === 'video' ? 'movie' : 'download'}</span>
+                    </div>
+                    <div class="component-modal-header-text">
+                        <h3 class="component-modal-title">${__('lbl_snapshot_download_title')}</h3>
+                        <p class="component-modal-desc">${__('lbl_snapshot_download_desc')}</p>
+                    </div>
+                </div>
+
+                <div class="component-modal-body">
+                    <!-- Trigger 1: Tipo de exportación (Imagen / Video) -->
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSnapshotExportType" data-ref="snapshot_export_type" data-value="${exportType}">
+                            <span class="material-symbols-rounded" data-ref="snapshot_export_type_icon">${exportType === 'video' ? 'movie' : 'image'}</span>
+                            <span class="component-dropdown-text" data-ref="snapshot_export_type_text">${exportType === 'video' ? __('lbl_export_type_video') : __('lbl_export_type_image')}</span>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+                        <div class="component-module component-module--dropdown disabled" data-module="moduleSnapshotExportType">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                <div class="component-menu-list">
+                                    <div class="component-menu-link ${exportType === 'image' ? 'active' : ''}" data-action="selectSnapshotExportType" data-value="image" data-icon="image" data-text="${__('lbl_export_type_image')}">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">image</span></div>
+                                        <div class="component-menu-link-text"><span>${__('lbl_export_type_image')}</span></div>
+                                    </div>
+                                    <div class="component-menu-link ${exportType === 'video' ? 'active' : ''}" data-action="selectSnapshotExportType" data-value="video" data-icon="movie" data-text="${__('lbl_export_type_video')}">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">movie</span></div>
+                                        <div class="component-menu-link-text"><span>${__('lbl_export_type_video')}</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trigger 2 (IMAGE): Formato de imagen (PNG, JPG, WEBP, PDF) -->
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full ${exportType === 'image' ? '' : 'disabled'}" data-ref="snapshot-image-options-group">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSnapshotImageFormat" data-ref="snapshot_image_format" data-value="${imageFormat}">
+                            <span class="material-symbols-rounded" data-ref="snapshot_image_format_icon">${imageFormat === 'pdf' ? 'picture_as_pdf' : (imageFormat === 'jpg' ? 'photo' : (imageFormat === 'webp' ? 'web_stories' : 'image'))}</span>
+                            <span class="component-dropdown-text" data-ref="snapshot_image_format_text">${formatLabels[imageFormat] || formatLabels.png}</span>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+                        <div class="component-module component-module--dropdown disabled" data-module="moduleSnapshotImageFormat">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                <div class="component-menu-list">
+                                    <div class="component-menu-link ${imageFormat === 'png' ? 'active' : ''}" data-action="selectSnapshotImageFormat" data-value="png" data-icon="image" data-text="${formatLabels.png}">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">image</span></div>
+                                        <div class="component-menu-link-text"><span>${formatLabels.png}</span></div>
+                                    </div>
+                                    <div class="component-menu-link ${imageFormat === 'jpg' ? 'active' : ''}" data-action="selectSnapshotImageFormat" data-value="jpg" data-icon="photo" data-text="${formatLabels.jpg}">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">photo</span></div>
+                                        <div class="component-menu-link-text"><span>${formatLabels.jpg}</span></div>
+                                    </div>
+                                    <div class="component-menu-link ${imageFormat === 'webp' ? 'active' : ''}" data-action="selectSnapshotImageFormat" data-value="webp" data-icon="web_stories" data-text="${formatLabels.webp}">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">web_stories</span></div>
+                                        <div class="component-menu-link-text"><span>${formatLabels.webp}</span></div>
+                                    </div>
+                                    <div class="component-menu-link ${imageFormat === 'pdf' ? 'active' : ''}" data-action="selectSnapshotImageFormat" data-value="pdf" data-icon="picture_as_pdf" data-text="${formatLabels.pdf}">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">picture_as_pdf</span></div>
+                                        <div class="component-menu-link-text"><span>${formatLabels.pdf}</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trigger 2 (VIDEO): Velocidad / Duración (15s, 30s, 60s) -->
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full ${exportType === 'video' ? '' : 'disabled'}" data-ref="snapshot-video-duration-group">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSnapshotVideoDuration" data-ref="snapshot_video_duration" data-value="${videoDuration}">
+                            <span class="material-symbols-rounded" data-ref="snapshot_video_duration_icon">${videoDuration === 15 ? 'speed' : (videoDuration === 60 ? 'hourglass_bottom' : 'timer')}</span>
+                            <span class="component-dropdown-text" data-ref="snapshot_video_duration_text">${durationLabels[videoDuration] || durationLabels[30]}</span>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+                        <div class="component-module component-module--dropdown disabled" data-module="moduleSnapshotVideoDuration">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                <div class="component-menu-list">
+                                    <div class="component-menu-link ${videoDuration === 15 ? 'active' : ''}" data-action="selectSnapshotVideoDuration" data-value="15" data-icon="speed" data-text="${durationLabels[15]}">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">speed</span></div>
+                                        <div class="component-menu-link-text"><span>${durationLabels[15]}</span></div>
+                                    </div>
+                                    <div class="component-menu-link ${videoDuration === 30 ? 'active' : ''}" data-action="selectSnapshotVideoDuration" data-value="30" data-icon="timer" data-text="${durationLabels[30]}">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">timer</span></div>
+                                        <div class="component-menu-link-text"><span>${durationLabels[30]}</span></div>
+                                    </div>
+                                    <div class="component-menu-link ${videoDuration === 60 ? 'active' : ''}" data-action="selectSnapshotVideoDuration" data-value="60" data-icon="hourglass_bottom" data-text="${durationLabels[60]}">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">hourglass_bottom</span></div>
+                                        <div class="component-menu-link-text"><span>${durationLabels[60]}</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trigger 3 (VIDEO): Calidad / Resolución (720p, 1080p, 4k) -->
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--full ${exportType === 'video' ? '' : 'disabled'}" data-ref="snapshot-video-quality-group">
+                        <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleSnapshotVideoQuality" data-ref="snapshot_video_quality" data-value="${videoQuality}">
+                            <span class="material-symbols-rounded" data-ref="snapshot_video_quality_icon">${qualityIcons[videoQuality] || 'high_quality'}</span>
+                            <span class="component-dropdown-text" data-ref="snapshot_video_quality_text">${qualityLabels[videoQuality] || qualityLabels['1080p']}</span>
+                            <span class="material-symbols-rounded">expand_more</span>
+                        </div>
+                        <div class="component-module component-module--dropdown disabled" data-module="moduleSnapshotVideoQuality">
+                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                <div class="component-menu-list">
+                                    <div class="component-menu-link ${videoQuality === '720p' ? 'active' : ''}" data-action="selectSnapshotVideoQuality" data-value="720p" data-icon="hd" data-text="${qualityLabels['720p']}">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">hd</span></div>
+                                        <div class="component-menu-link-text"><span>${qualityLabels['720p']}</span></div>
+                                    </div>
+                                    <div class="component-menu-link ${videoQuality === '1080p' ? 'active' : ''}" data-action="selectSnapshotVideoQuality" data-value="1080p" data-icon="high_quality" data-text="${qualityLabels['1080p']}">
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">high_quality</span></div>
+                                        <div class="component-menu-link-text"><span>${qualityLabels['1080p']}</span></div>
+                                    </div>
+                                    <div class="${link4kClasses}" data-action="selectSnapshotVideoQuality" data-value="4k" data-icon="video_file" data-text="${qualityLabels['4k']}"${lock4k.attributesStr}>
+                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">video_file</span></div>
+                                        <div class="component-menu-link-text"><span>${qualityLabels['4k']}</span>${lock4k.badgeHtml}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button class="component-button component-button--primary component-button--h40" data-action="confirmExecuteSnapshotDownload" data-ref="btn-confirm-snapshot-download">
+                        <span class="material-symbols-rounded">download</span>
+                        <span>${__('btn_download_snapshot')}</span>
+                    </button>
                 </div>
             `;
         }

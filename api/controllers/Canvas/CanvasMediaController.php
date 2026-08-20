@@ -79,10 +79,14 @@ class CanvasMediaController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_captura_id_missing')]);
             }
             
-            $duration = isset($input['duration']) ? (int)$input['duration'] : 15;
+            $duration = isset($input['duration']) ? (int)$input['duration'] : 30;
+            $quality = isset($input['quality']) ? strtolower(trim((string)$input['quality'])) : '1080p';
+            if (!in_array($quality, ['720p', '1080p', '4k'])) {
+                $quality = '1080p';
+            }
             $userId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
 
-            $result = $this->canvasServices->exportSnapshotTimelapseVideo($id, $duration, $userId);
+            $result = $this->canvasServices->exportSnapshotTimelapseVideo($id, $duration, $quality, $userId);
             return $this->respond($result);
 
         } catch (\Throwable $e) {

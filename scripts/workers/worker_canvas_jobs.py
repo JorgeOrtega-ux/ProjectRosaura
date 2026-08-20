@@ -1044,10 +1044,18 @@ def timelapse_video_listener_thread():
                 task_data = json.loads(task_json)
                 snapshot_uuid = task_data.get('snapshot_uuid')
                 canvas_uuid = task_data.get('canvas_uuid', 'default')
-                duration = float(task_data.get('duration', 15))
+                duration = float(task_data.get('duration', 30))
+                quality = str(task_data.get('quality', '1080p')).lower()
                 fps = int(task_data.get('fps', 30))
                 
-                logging.info(f"Received timelapse MP4 export task for snapshot {snapshot_uuid} (duration: {duration}s)")
+                quality_map = {
+                    '720p': 1280,
+                    '1080p': 1920,
+                    '4k': 3840
+                }
+                target_max_dim = int(task_data.get('target_max_dim', quality_map.get(quality, 1920)))
+                
+                logging.info(f"Received timelapse MP4 export task for snapshot {snapshot_uuid} (duration: {duration}s, quality: {quality}, target_max_dim: {target_max_dim})")
                 
                 if not render_timelapse_to_mp4:
                     logging.error("render_timelapse_to_mp4 function not available.")
@@ -1065,18 +1073,18 @@ def timelapse_video_listener_thread():
                         logging.error(f"Could not download snapshot JSONL {s3_key_jsonl}: {dl_err}")
                 
                 if not os.path.exists(local_jsonl):
-                    r.setex(f"video:snapshot:{snapshot_uuid}:{int(duration)}", 60, json.dumps({
+                    r.setex(f"video:snapshot:{snapshot_uuid}:{int(duration)}:{quality}", 60, json.dumps({
                         "status": "error", "message": "Timelapse data not found"
                     }))
                     continue
                 
                 local_video_dir = os.path.join(BASE_DIR, 'storage', 'timelapses', 'videos')
                 os.makedirs(local_video_dir, exist_ok=True)
-                local_video_path = os.path.join(local_video_dir, f"{snapshot_uuid}_{int(duration)}s.mp4")
+                local_video_path = os.path.join(local_video_dir, f"{snapshot_uuid}_{int(duration)}s_{quality}.mp4")
                 
-                render_res = render_timelapse_to_mp4(local_jsonl, local_video_path, duration_seconds=duration, fps=fps)
+                render_res = render_timelapse_to_mp4(local_jsonl, local_video_path, duration_seconds=duration, target_max_dim=target_max_dim, fps=fps)
                 
-                s3_video_key = f"snapshots_videos/{canvas_uuid}/{snapshot_uuid}_{int(duration)}s.mp4"
+                s3_video_key = f"snapshots_videos/{canvas_uuid}/{snapshot_uuid}_{int(duration)}s_{quality}.mp4"
                 try:
                     with open(local_video_path, 'rb') as f_vid:
                         s3.put_object(
@@ -1091,20 +1099,23 @@ def timelapse_video_listener_thread():
                 
                 public_url = os.getenv('AWS_PUBLIC_URL', '').rstrip('/')
                 if public_url:
-                    full_url = f"{public_url}/{S3_BUCKET}/{s3_video_key}"
+                    full_url = f"{public_url}/{S3_BUCKET}/{s3_video_key}?v={int(time.time())}"
                 else:
-                    full_url = f"/storage/timelapses/videos/{snapshot_uuid}_{int(duration)}s.mp4"
+                    full_url = f"/storage/timelapses/videos/{snapshot_uuid}_{int(duration)}s_{quality}.mp4?v={int(time.time())}"
                 
                 res_payload = {
                     "status": "ready",
                     "url": full_url,
                     "s3_key": s3_video_key,
                     "duration": render_res["duration"],
+                    "quality": quality,
                     "width": render_res["width"],
                     "height": render_res["height"],
                     "size_bytes": render_res["size_bytes"]
                 }
+                r.setex(f"video:snapshot:{snapshot_uuid}:{int(duration)}:{quality}", 86400 * 7, json.dumps(res_payload))
                 r.setex(f"video:snapshot:{snapshot_uuid}:{int(duration)}", 86400 * 7, json.dumps(res_payload))
+                r.publish(f"timelapse:video_ready:{snapshot_uuid}:{int(duration)}:{quality}", json.dumps(res_payload))
                 r.publish(f"timelapse:video_ready:{snapshot_uuid}:{int(duration)}", json.dumps(res_payload))
                 logging.info(f"[+] Timelapse video task completed for snapshot {snapshot_uuid}")
                 

@@ -56,6 +56,12 @@ class SubscriptionFeatureConfig {
                 'title_key'       => 'plan_feat_no_ads_title',
                 'title_short_key' => 'plan_feat_no_ads_short',
                 'desc_key'        => 'plan_feat_no_ads_desc'
+            ],
+            'feat_download_4k' => [
+                'icon'            => 'high_quality',
+                'title_key'       => 'plan_feat_download_4k_title',
+                'title_short_key' => 'plan_feat_download_4k_short',
+                'desc_key'        => 'plan_feat_download_4k_desc'
             ]
         ];
     }

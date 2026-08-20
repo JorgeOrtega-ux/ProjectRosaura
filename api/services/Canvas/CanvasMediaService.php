@@ -433,11 +433,47 @@ class CanvasMediaService {
         }
     }
 
-    public function exportSnapshotTimelapseVideo(string $snapshotId, int $duration = 15, ?int $userId = null): array {
+    public function exportSnapshotTimelapseVideo(string $snapshotId, int $duration = 30, string $quality = '1080p', ?int $userId = null): array {
         try {
             if (!in_array($duration, [15, 30, 60])) {
-                $duration = 15;
+                $duration = 30;
             }
+
+            if (!in_array($quality, ['720p', '1080p', '4k'])) {
+                $quality = '1080p';
+            }
+
+            if ($quality === '4k') {
+                $userTier = (int)($_SESSION['subscription_tier'] ?? 0);
+                if ($userTier === 0 && $userId !== null) {
+                    try {
+                        $userDb = (new DatabaseManager())->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+                        $uStmt = $userDb->prepare("SELECT subscription_tier, is_admin FROM users WHERE id = :uid LIMIT 1");
+                        $uStmt->execute([':uid' => $userId]);
+                        $uRow = $uStmt->fetch(\PDO::FETCH_ASSOC);
+                        if ($uRow) {
+                            $userTier = (int)($uRow['subscription_tier'] ?? 0);
+                            if (!empty($uRow['is_admin'])) {
+                                $userTier = 99;
+                            }
+                        }
+                    } catch (\Throwable $e) {}
+                }
+                $isAdmin = !empty($_SESSION['is_admin']) || ($userTier >= 99);
+                if (!$isAdmin && !SubscriptionPlanConstants::hasFeature($userTier, 'download_4k')) {
+                    return [
+                        'success' => false,
+                        'message' => __('err_4k_download_requires_premium')
+                    ];
+                }
+            }
+
+            $qualityMap = [
+                '720p' => 1280,
+                '1080p' => 1920,
+                '4k' => 3840
+            ];
+            $targetMaxDim = $qualityMap[$quality] ?? 1920;
 
             $db = new DatabaseManager();
             $pdo = $db->getConnection(DB::CONN_CANVASES);
@@ -473,13 +509,13 @@ class CanvasMediaService {
             }
 
             $rootDir = defined('ROOT_PATH') ? ROOT_PATH : dirname(__DIR__, 3);
-            $s3VideoKey = "snapshots_videos/{$data['canvas_uuid']}/{$data['snapshot_uuid']}_{$duration}s.mp4";
+            $s3VideoKey = "snapshots_videos/{$data['canvas_uuid']}/{$data['snapshot_uuid']}_{$duration}s_{$quality}.mp4";
             $localVideoDir = $rootDir . '/storage/timelapses/videos';
             if (!is_dir($localVideoDir)) {
                 @mkdir($localVideoDir, 0755, true);
             }
-            $localVideoPath = "{$localVideoDir}/{$data['snapshot_uuid']}_{$duration}s.mp4";
-            $publicUrl = \App\Core\Helpers\Utils::getS3PublicUrl($s3VideoKey);
+            $localVideoPath = "{$localVideoDir}/{$data['snapshot_uuid']}_{$duration}s_{$quality}.mp4";
+            $publicUrl = \App\Core\Helpers\Utils::getS3PublicUrl($s3VideoKey) . '?v=' . time();
 
             $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
             $s3Client = Utils::getS3Client();
@@ -493,7 +529,8 @@ class CanvasMediaService {
                         'data' => [
                             'url' => $publicUrl,
                             'duration' => $duration,
-                            'filename' => "timelapse_{$snapshotId}_{$duration}s.mp4"
+                            'quality' => $quality,
+                            'filename' => "timelapse_{$snapshotId}_{$duration}s_{$quality}.mp4"
                         ]
                     ];
                 }
@@ -507,7 +544,7 @@ class CanvasMediaService {
                         'Key' => $s3VideoKey,
                         'SourceFile' => $localVideoPath,
                         'ContentType' => 'video/mp4',
-                        'ContentDisposition' => 'attachment; filename="timelapse_' . $snapshotId . '_' . $duration . 's.mp4"'
+                        'ContentDisposition' => 'attachment; filename="timelapse_' . $snapshotId . '_' . $duration . 's_' . $quality . '.mp4"'
                     ]);
                     return [
                         'success' => true,
@@ -515,7 +552,8 @@ class CanvasMediaService {
                         'data' => [
                             'url' => $publicUrl,
                             'duration' => $duration,
-                            'filename' => "timelapse_{$snapshotId}_{$duration}s.mp4"
+                            'quality' => $quality,
+                            'filename' => "timelapse_{$snapshotId}_{$duration}s_{$quality}.mp4"
                         ]
                     ];
                 } catch (\Throwable $e) {
@@ -550,13 +588,12 @@ class CanvasMediaService {
                 ];
             }
 
-            // 4. Try rendering directly with Python renderer or push to queue
             $rendered = false;
             $rendererScript = realpath($rootDir . '/scripts/workers/timelapse_video_renderer.py');
             if ($rendererScript && file_exists($rendererScript)) {
-                $pyCandidates = ['python3', 'python', 'C:\\Users\\jorge\\AppData\\Local\\Python\\bin\\python.exe'];
+                $pyCandidates = ['C:\\Users\\jorge\\AppData\\Local\\Python\\bin\\python.exe', 'python3', 'python'];
                 foreach ($pyCandidates as $py) {
-                    $cmd = escapeshellcmd($py) . ' ' . escapeshellarg($rendererScript) . ' ' . escapeshellarg($localJsonlPath) . ' ' . escapeshellarg($localVideoPath) . ' ' . (int)$duration;
+                    $cmd = escapeshellcmd($py) . ' ' . escapeshellarg($rendererScript) . ' ' . escapeshellarg($localJsonlPath) . ' ' . escapeshellarg($localVideoPath) . ' ' . (int)$duration . ' ' . (int)$targetMaxDim;
                     @exec($cmd, $out, $retCode);
                     if ($retCode === 0 && file_exists($localVideoPath) && filesize($localVideoPath) > 0) {
                         $rendered = true;
@@ -566,7 +603,6 @@ class CanvasMediaService {
             }
 
             if ($rendered) {
-                // Upload rendered video to S3
                 try {
                     $s3Client->putObject([
                         'Bucket' => $bucket,
@@ -584,19 +620,21 @@ class CanvasMediaService {
                     'data' => [
                         'url' => $publicUrl,
                         'duration' => $duration,
-                        'filename' => "timelapse_{$snapshotId}_{$duration}s.mp4"
+                        'quality' => $quality,
+                        'filename' => "timelapse_{$snapshotId}_{$duration}s_{$quality}.mp4"
                     ]
                 ];
             }
 
-            // Fallback to Redis Queue
             try {
                 $redis = (new \App\Config\Database\RedisCache())->getClient();
                 $redis->rpush('queue:canvas_timelapse_video', json_encode([
                     'snapshot_uuid' => $data['snapshot_uuid'],
                     'canvas_uuid' => $data['canvas_uuid'],
                     'duration' => $duration,
-                    'fps' => 30
+                    'quality' => $quality,
+                    'fps' => 30,
+                    'target_max_dim' => $targetMaxDim
                 ]));
                 return [
                     'success' => true,

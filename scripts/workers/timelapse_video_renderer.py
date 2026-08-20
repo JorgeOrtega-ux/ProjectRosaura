@@ -30,15 +30,10 @@ def hex_to_rgb(hex_str):
             pass
     return (0, 0, 0)
 
-def render_timelapse_to_mp4(jsonl_path, output_mp4_path, duration_seconds=15, target_max_dim=1080, fps=30, end_freeze_sec=2.0):
-    """
-    Renders a JSONL timelapse events file into an MP4 video using Pillow and FFmpeg,
-    with full support for dynamic canvas expansions, resizes, and resets.
-    """
+def render_timelapse_to_mp4(jsonl_path, output_mp4_path, duration_seconds=15, target_max_dim=3840, fps=30, end_freeze_sec=2.0):
     if not os.path.exists(jsonl_path):
         raise FileNotFoundError(f"Timelapse file not found: {jsonl_path}")
 
-    # Read events
     events = []
     with open(jsonl_path, 'r', encoding='utf-8') as f:
         for line in f:
@@ -53,7 +48,6 @@ def render_timelapse_to_mp4(jsonl_path, output_mp4_path, duration_seconds=15, ta
     if not events:
         raise ValueError("No valid timelapse events found in file.")
 
-    # 1. Scan for final canvas dimensions and initial canvas dimensions
     init_w = 64
     init_h = 64
     final_w = 64
@@ -68,18 +62,21 @@ def render_timelapse_to_mp4(jsonl_path, output_mp4_path, duration_seconds=15, ta
                 final_w = nw
                 final_h = nh
 
-    # Find initial size from the first init/reset event
     for ev in events:
         if ev.get('type') in ('init', 'reset') and ev.get('w') and ev.get('h'):
             init_w = int(ev['w'])
             init_h = int(ev['h'])
             break
 
-    # 2. Calculate output video dimensions based on final canvas aspect ratio
     max_side = max(final_w, final_h)
-    scale = max(1, target_max_dim // max_side)
-    out_w = final_w * scale
-    out_h = final_h * scale
+    if target_max_dim >= max_side:
+        scale = max(1, round(target_max_dim / max_side))
+        out_w = final_w * scale
+        out_h = final_h * scale
+    else:
+        scale_float = target_max_dim / max_side
+        out_w = max(2, int(round(final_w * scale_float)))
+        out_h = max(2, int(round(final_h * scale_float)))
 
     # Ensure even dimensions for H.264 yuv420p encoding
     if out_w % 2 != 0:
@@ -256,10 +253,11 @@ def render_timelapse_to_mp4(jsonl_path, output_mp4_path, duration_seconds=15, ta
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        print("Usage: python timelapse_video_renderer.py <input.jsonl> <output.mp4> [duration_sec]")
+        print("Usage: python timelapse_video_renderer.py <input.jsonl> <output.mp4> [duration_sec] [target_max_dim]")
         sys.exit(1)
     in_file = sys.argv[1]
     out_file = sys.argv[2]
     dur = float(sys.argv[3]) if len(sys.argv) > 3 else 15
-    res = render_timelapse_to_mp4(in_file, out_file, duration_seconds=dur)
+    max_dim = int(sys.argv[4]) if len(sys.argv) > 4 else 3840
+    res = render_timelapse_to_mp4(in_file, out_file, duration_seconds=dur, target_max_dim=max_dim)
     print(f"[+] Render complete: {res}")

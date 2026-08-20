@@ -73,11 +73,8 @@ $canvasSize = $viewerData['canvasSize'];
                     </button>
                 </div>
 
-                <button class="component-button component-button--icon component-button--h32" data-action="openTimelapseVideoExportModal" data-ref="btn-timelapse-export-video" data-tooltip="<?php echo __('btn_download_timelapse_video'); ?>" data-position="bottom">
-                    <span class="material-symbols-rounded">movie</span>
-                </button>
-                <button class="component-button component-button--icon component-button--h32" data-action="downloadSnapshotHighRes" data-tooltip="<?php echo __('btn_download'); ?>" data-position="bottom">
-                    <span class="material-symbols-rounded">high_quality</span>
+                <button class="component-button component-button--icon component-button--h32" data-action="openSnapshotDownloadModal" data-ref="btn-snapshot-download" data-tooltip="<?php echo __('btn_download'); ?>" data-position="bottom">
+                    <span class="material-symbols-rounded">download</span>
                 </button>
                 <button class="component-button component-button--icon component-button--h32 active" data-action="toggleSnapshotGrid" data-tooltip="<?php echo __('dt_grid'); ?>" data-position="bottom">
                     <span class="material-symbols-rounded">grid_on</span>

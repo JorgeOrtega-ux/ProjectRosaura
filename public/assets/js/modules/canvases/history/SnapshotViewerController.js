@@ -1,6 +1,7 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
+import { ModalTemplates } from '../../../core/components/ModalTemplates.js';
 
 class SnapshotViewerController {
     constructor() {
@@ -43,7 +44,10 @@ class SnapshotViewerController {
         this.timelapseLastTimestamp = 0;
         this.savedSnapshotImage = null;
         this.savedBoardDimensions = { width: 2000, height: 1000 };
+        this.selectedExportType = 'image';
+        this.selectedImageFormat = 'png';
         this.selectedVideoDuration = 30;
+        this.selectedVideoQuality = '1080p';
 
         this.timelapsePlayerEl = null;
         this.btnTimelapseModal = null;
@@ -81,6 +85,10 @@ class SnapshotViewerController {
         if (this.timelapseAnimId) {
             cancelAnimationFrame(this.timelapseAnimId);
             this.timelapseAnimId = null;
+        }
+
+        if (window.modalSystem && typeof window.modalSystem.registerTemplates === 'function') {
+            window.modalSystem.registerTemplates(ModalTemplates);
         }
 
         this.offscreenCanvas = null;
@@ -171,33 +179,17 @@ class SnapshotViewerController {
 
         document.addEventListener('click', this.handleGlobalClickBound);
         document.addEventListener('keydown', this.handleKeyDownBound);
-
-        this.bindActionTools();
-    }
-
-    bindActionTools() {
-        const btnToggleGrid = document.querySelector('[data-action="toggleSnapshotGrid"]');
-        if (btnToggleGrid) {
-            btnToggleGrid.addEventListener('click', () => {
-                this.showGrid = !this.showGrid;
-                if (this.showGrid) {
-                    btnToggleGrid.classList.add('active');
-                } else {
-                    btnToggleGrid.classList.remove('active');
-                }
-                this.requestRender();
-            });
-        }
-
-        const btnDownload = document.querySelector('[data-action="downloadSnapshotHighRes"]');
-        if (btnDownload) {
-            btnDownload.addEventListener('click', () => {
-                this.downloadSnapshot();
-            });
-        }
     }
 
     handleGlobalClick(e) {
+        const btnToggleGrid = e.target.closest('[data-action="toggleSnapshotGrid"]');
+        if (btnToggleGrid) {
+            this.showGrid = !this.showGrid;
+            btnToggleGrid.classList.toggle('active', this.showGrid);
+            this.requestRender();
+            return;
+        }
+
         const btnOpenModal = e.target.closest('[data-action="openTimelapseModal"]');
         if (btnOpenModal) {
             this.openTimelapseModal(btnOpenModal);
@@ -252,21 +244,59 @@ class SnapshotViewerController {
             return;
         }
 
+        const btnOpenDownloadModal = e.target.closest('[data-action="openSnapshotDownloadModal"]');
+        if (btnOpenDownloadModal) {
+            this.openSnapshotDownloadModal(btnOpenDownloadModal);
+            return;
+        }
+
         const btnOpenVideoModal = e.target.closest('[data-action="openTimelapseVideoExportModal"]');
         if (btnOpenVideoModal) {
-            this.openTimelapseVideoExportModal(btnOpenVideoModal);
+            this.selectedExportType = 'video';
+            this.openSnapshotDownloadModal(btnOpenVideoModal);
             return;
         }
 
-        const btnSelectVideoDur = e.target.closest('[data-action="selectTimelapseVideoDuration"]');
+        const btnDownloadLegacy = e.target.closest('[data-action="downloadSnapshotHighRes"]');
+        if (btnDownloadLegacy) {
+            this.selectedExportType = 'image';
+            this.openSnapshotDownloadModal(btnDownloadLegacy);
+            return;
+        }
+
+        const btnSelectExportType = e.target.closest('[data-action="selectSnapshotExportType"]');
+        if (btnSelectExportType) {
+            this.handleSelectSnapshotExportType(btnSelectExportType);
+            return;
+        }
+
+        const btnSelectImgFormat = e.target.closest('[data-action="selectSnapshotImageFormat"]');
+        if (btnSelectImgFormat) {
+            this.handleSelectSnapshotImageFormat(btnSelectImgFormat);
+            return;
+        }
+
+        const btnSelectVideoDur = e.target.closest('[data-action="selectSnapshotVideoDuration"]');
         if (btnSelectVideoDur) {
-            this.selectTimelapseVideoDuration(btnSelectVideoDur);
+            this.handleSelectSnapshotVideoDuration(btnSelectVideoDur);
             return;
         }
 
-        const btnConfirmExportVideo = e.target.closest('[data-action="confirmExportTimelapseVideo"]');
-        if (btnConfirmExportVideo) {
-            this.confirmExportTimelapseVideo(btnConfirmExportVideo);
+        const btnSelectVideoQuality = e.target.closest('[data-action="selectSnapshotVideoQuality"]');
+        if (btnSelectVideoQuality) {
+            this.handleSelectSnapshotVideoQuality(btnSelectVideoQuality);
+            return;
+        }
+
+        const btnConfirmSnapshotDownload = e.target.closest('[data-action="confirmExecuteSnapshotDownload"]');
+        if (btnConfirmSnapshotDownload) {
+            this.confirmExecuteSnapshotDownload(btnConfirmSnapshotDownload);
+            return;
+        }
+
+        const btnLegacyConfirmExportVideo = e.target.closest('[data-action="confirmExportTimelapseVideo"]');
+        if (btnLegacyConfirmExportVideo) {
+            this.confirmExportTimelapseVideo(btnLegacyConfirmExportVideo);
             return;
         }
     }
@@ -322,37 +352,199 @@ class SnapshotViewerController {
         await this.startTimelapse(this.timelapseSpeed, btnTrigger);
     }
 
-    openTimelapseVideoExportModal(btnTrigger = null) {
-        this.selectedVideoDuration = 30;
+    openSnapshotDownloadModal(btnTrigger = null) {
         if (window.modalSystem) {
-            window.modalSystem.show('timelapseExportVideoModal', { duration: this.selectedVideoDuration });
+            if (typeof window.modalSystem.registerTemplates === 'function') {
+                window.modalSystem.registerTemplates(ModalTemplates);
+            }
+            window.modalSystem.show('snapshotDownloadModal', {
+                type: this.selectedExportType,
+                format: this.selectedImageFormat,
+                duration: this.selectedVideoDuration,
+                quality: this.selectedVideoQuality
+            });
         } else {
-            this.exportTimelapseVideo(this.selectedVideoDuration);
+            if (this.selectedExportType === 'image') {
+                this.downloadSnapshotImage(this.selectedImageFormat);
+            } else {
+                this.exportTimelapseVideo(this.selectedVideoDuration, this.selectedVideoQuality);
+            }
+        }
+    }
+
+    openTimelapseVideoExportModal(btnTrigger = null) {
+        this.selectedExportType = 'video';
+        this.openSnapshotDownloadModal(btnTrigger);
+    }
+
+    handleSelectSnapshotExportType(btn) {
+        const val = btn.getAttribute('data-value') || 'image';
+        const icon = btn.getAttribute('data-icon') || (val === 'video' ? 'movie' : 'image');
+        const text = btn.getAttribute('data-text') || (val === 'video' ? 'Video Timelapse' : 'Imagen');
+        this.selectedExportType = val;
+
+        const modal = btn.closest('.component-modal-container') || document;
+        const trigger = modal.querySelector('[data-ref="snapshot_export_type"]');
+        if (trigger) {
+            trigger.setAttribute('data-value', val);
+            const triggerText = trigger.querySelector('.component-dropdown-text');
+            if (triggerText) triggerText.textContent = text;
+            const triggerIcon = trigger.querySelector('.material-symbols-rounded:first-child');
+            if (triggerIcon) triggerIcon.textContent = icon;
+        }
+
+        const imageGroup = modal.querySelector('[data-ref="snapshot-image-options-group"]');
+        const videoDurGroup = modal.querySelector('[data-ref="snapshot-video-duration-group"]');
+        const videoQualGroup = modal.querySelector('[data-ref="snapshot-video-quality-group"]');
+
+        if (imageGroup) imageGroup.classList.toggle('disabled', val !== 'image');
+        if (videoDurGroup) videoDurGroup.classList.toggle('disabled', val !== 'video');
+        if (videoQualGroup) videoQualGroup.classList.toggle('disabled', val !== 'video');
+
+        const headerIcon = modal.querySelector('[data-ref="snapshot-download-header-icon"]');
+        if (headerIcon) {
+            headerIcon.textContent = (val === 'video') ? 'movie' : 'download';
+        }
+
+        const menuList = btn.closest('.component-menu-list');
+        if (menuList) {
+            menuList.querySelectorAll('[data-action="selectSnapshotExportType"]').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        this.closeModuleElement(btn);
+    }
+
+    handleSelectSnapshotImageFormat(btn) {
+        const val = btn.getAttribute('data-value') || 'png';
+        const icon = btn.getAttribute('data-icon') || 'image';
+        const text = btn.getAttribute('data-text') || 'PNG';
+        this.selectedImageFormat = val;
+
+        const modal = btn.closest('.component-modal-container') || document;
+        const trigger = modal.querySelector('[data-ref="snapshot_image_format"]');
+        if (trigger) {
+            trigger.setAttribute('data-value', val);
+            const triggerText = trigger.querySelector('.component-dropdown-text');
+            if (triggerText) triggerText.textContent = text;
+            const triggerIcon = trigger.querySelector('.material-symbols-rounded:first-child');
+            if (triggerIcon) triggerIcon.textContent = icon;
+        }
+
+        const menuList = btn.closest('.component-menu-list');
+        if (menuList) {
+            menuList.querySelectorAll('[data-action="selectSnapshotImageFormat"]').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        this.closeModuleElement(btn);
+    }
+
+    handleSelectSnapshotVideoDuration(btn) {
+        const val = parseInt(btn.getAttribute('data-value') || btn.getAttribute('data-duration'), 10) || 30;
+        const icon = btn.getAttribute('data-icon') || (val === 15 ? 'speed' : (val === 60 ? 'hourglass_bottom' : 'timer'));
+        const text = btn.getAttribute('data-text') || `${val}s`;
+        this.selectedVideoDuration = val;
+
+        const modal = btn.closest('.component-modal-container') || document;
+        const trigger = modal.querySelector('[data-ref="snapshot_video_duration"]');
+        if (trigger) {
+            trigger.setAttribute('data-value', String(val));
+            const triggerText = trigger.querySelector('.component-dropdown-text');
+            if (triggerText) triggerText.textContent = text;
+            const triggerIcon = trigger.querySelector('.material-symbols-rounded:first-child');
+            if (triggerIcon) triggerIcon.textContent = icon;
+        }
+
+        const menuList = btn.closest('.component-menu-list');
+        if (menuList) {
+            menuList.querySelectorAll('[data-action="selectSnapshotVideoDuration"]').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        this.closeModuleElement(btn);
+    }
+
+    handleSelectSnapshotVideoQuality(btn) {
+        if (btn.hasAttribute('data-requires-premium') || btn.classList.contains('premium-locked')) {
+            const premiumMsg = window.__ ? window.__('err_4k_download_requires_premium') : 'La exportación en calidad 4K Ultra HD requiere una suscripción premium.';
+            showMessage(premiumMsg, 'warning');
+            if (window.modalSystem) window.modalSystem.closeCurrent();
+            if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
+                window.spaRouter.navigate('/upgrade');
+            }
+            return;
+        }
+
+        const val = btn.getAttribute('data-value') || '1080p';
+        const icon = btn.getAttribute('data-icon') || (val === '720p' ? 'hd' : (val === '4k' ? 'video_file' : 'high_quality'));
+        const text = btn.getAttribute('data-text') || val;
+        this.selectedVideoQuality = val;
+
+        const modal = btn.closest('.component-modal-container') || document;
+        const trigger = modal.querySelector('[data-ref="snapshot_video_quality"]');
+        if (trigger) {
+            trigger.setAttribute('data-value', val);
+            const triggerText = trigger.querySelector('.component-dropdown-text');
+            if (triggerText) triggerText.textContent = text;
+            const triggerIcon = trigger.querySelector('.material-symbols-rounded:first-child');
+            if (triggerIcon) triggerIcon.textContent = icon;
+        }
+
+        const menuList = btn.closest('.component-menu-list');
+        if (menuList) {
+            menuList.querySelectorAll('[data-action="selectSnapshotVideoQuality"]').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        this.closeModuleElement(btn);
+    }
+
+    closeModuleElement(targetEl) {
+        const module = targetEl ? targetEl.closest('.component-module') : null;
+        if (module) {
+            if (window.appInstance && typeof window.appInstance.closeModule === 'function') {
+                window.appInstance.closeModule(module);
+            } else {
+                module.classList.replace('active', 'disabled');
+            }
         }
     }
 
     selectTimelapseVideoDuration(btn) {
-        const dur = parseInt(btn.getAttribute('data-duration'), 10);
-        if (!dur) return;
-        this.selectedVideoDuration = dur;
-
-        const container = document.querySelector('[data-ref="timelapse-video-durations-container"]');
-        if (container) {
-            container.querySelectorAll('[data-action="selectTimelapseVideoDuration"]').forEach(b => {
-                b.classList.remove('active');
-            });
-            btn.classList.add('active');
-        }
+        this.handleSelectSnapshotVideoDuration(btn);
     }
 
     async confirmExportTimelapseVideo(btn = null) {
         if (btn) setButtonLoading(btn);
-
         const duration = this.selectedVideoDuration || 30;
-        await this.exportTimelapseVideo(duration, btn);
+        const quality = this.selectedVideoQuality || '1080p';
+        await this.exportTimelapseVideo(duration, quality, btn);
     }
 
-    async exportTimelapseVideo(duration = 30, btn = null) {
+    async confirmExecuteSnapshotDownload(btn = null) {
+        if (btn) setButtonLoading(btn);
+
+        const modal = btn ? btn.closest('.component-modal-container') : document;
+        const typeTrigger = modal?.querySelector('[data-ref="snapshot_export_type"]');
+        const type = typeTrigger ? typeTrigger.getAttribute('data-value') : this.selectedExportType;
+
+        if (type === 'video') {
+            const durTrigger = modal?.querySelector('[data-ref="snapshot_video_duration"]');
+            const duration = durTrigger ? parseInt(durTrigger.getAttribute('data-value'), 10) : this.selectedVideoDuration;
+            const qualityTrigger = modal?.querySelector('[data-ref="snapshot_video_quality"]');
+            const quality = qualityTrigger ? qualityTrigger.getAttribute('data-value') : this.selectedVideoQuality;
+
+            await this.exportTimelapseVideo(duration, quality, btn);
+        } else {
+            const formatTrigger = modal?.querySelector('[data-ref="snapshot_image_format"]');
+            const format = formatTrigger ? formatTrigger.getAttribute('data-value') : this.selectedImageFormat;
+
+            await this.downloadSnapshotImage(format, btn);
+        }
+    }
+
+    async exportTimelapseVideo(duration = 30, quality = '1080p', btn = null) {
         const loadingMsg = window.__ ? window.__('msg_generating_timelapse_video') : 'Generando video MP4 en alta calidad...';
         showMessage(loadingMsg, 'info');
 
@@ -360,7 +552,8 @@ class SnapshotViewerController {
             const endpoint = ApiRoutes.Canvases?.ExportSnapshotTimelapseVideo || 'canvases.export_snapshot_timelapse_video';
             const response = await this.api.post(endpoint, {
                 id: this.snapshotId,
-                duration: duration
+                duration: duration,
+                quality: quality
             });
 
             if (response && response.success && response.data && response.data.url) {
@@ -368,13 +561,13 @@ class SnapshotViewerController {
                     window.modalSystem.closeCurrent();
                 }
 
-                const filename = response.data.filename || `timelapse_${this.snapshotId}_${duration}s.mp4`;
+                const filename = response.data.filename || `timelapse_${this.snapshotId}_${duration}s_${quality}.mp4`;
                 await this.triggerFileDownload(response.data.url, filename);
 
                 const successMsg = window.__ ? window.__('msg_timelapse_video_ready') : '¡Video generado correctamente!';
                 showMessage(successMsg, 'success');
             } else if (response && response.status === 'processing') {
-                await this.pollVideoReadiness(duration, btn);
+                await this.pollVideoReadiness(duration, quality, btn);
                 return; // Do not restore button yet, pollVideoReadiness will handle it
             } else {
                 const errMsg = response?.message || (window.__ ? window.__('err_server') : 'Error al exportar video');
@@ -387,17 +580,18 @@ class SnapshotViewerController {
         }
     }
 
-    async pollVideoReadiness(duration, btn = null) {
+    async pollVideoReadiness(duration, quality = '1080p', btn = null) {
         const endpoint = ApiRoutes.Canvases?.ExportSnapshotTimelapseVideo || 'canvases.export_snapshot_timelapse_video';
         let attempts = 0;
-        const maxAttempts = 35;
+        const maxAttempts = 40;
 
         const interval = setInterval(async () => {
             attempts++;
             try {
                 const response = await this.api.post(endpoint, {
                     id: this.snapshotId,
-                    duration: duration
+                    duration: duration,
+                    quality: quality
                 });
 
                 if (response && response.success && response.data && response.data.url) {
@@ -407,7 +601,7 @@ class SnapshotViewerController {
                     }
                     if (btn) restoreButton(btn);
 
-                    const filename = response.data.filename || `timelapse_${this.snapshotId}_${duration}s.mp4`;
+                    const filename = response.data.filename || `timelapse_${this.snapshotId}_${duration}s_${quality}.mp4`;
                     await this.triggerFileDownload(response.data.url, filename);
 
                     showMessage(window.__ ? window.__('msg_timelapse_video_ready') : '¡Video generado correctamente!', 'success');
@@ -427,7 +621,8 @@ class SnapshotViewerController {
 
     async triggerFileDownload(url, filename) {
         try {
-            const res = await fetch(url);
+            const fetchUrl = url.includes('?') ? `${url}&_t=${Date.now()}` : `${url}?_t=${Date.now()}`;
+            const res = await fetch(fetchUrl, { cache: 'no-store' });
             if (!res.ok) throw new Error('Fetch failed');
             const blob = await res.blob();
             const blobUrl = URL.createObjectURL(blob);
@@ -822,80 +1017,212 @@ class SnapshotViewerController {
     }
 
     async downloadSnapshot() {
-        const executeDownload = () => {
-            const btnDownload = document.querySelector('[data-action="downloadSnapshotHighRes"]');
-            if (btnDownload) setButtonLoading(btnDownload);
+        return this.openSnapshotDownloadModal();
+    }
 
-            if (!this.offscreenCanvas || this.boardWidth <= 0 || this.boardHeight <= 0) {
-                this.fallbackDownload(btnDownload);
-                return;
-            }
+    async downloadSnapshotImage(format = 'png', btn = null) {
+        const fmt = (format || 'png').toLowerCase();
+        const filename = `snapshot_${this.snapshotId || 'rosaura'}.${fmt}`;
 
-            try {
-                const exportCanvas = document.createElement('canvas');
-                exportCanvas.width = this.boardWidth;
-                exportCanvas.height = this.boardHeight;
-                const expCtx = exportCanvas.getContext('2d');
+        if (!this.offscreenCanvas || this.boardWidth <= 0 || this.boardHeight <= 0) {
+            await this.fallbackDownloadImage(fmt, filename, btn);
+            return;
+        }
 
-                expCtx.fillStyle = '#FFFFFF';
-                expCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-                expCtx.imageSmoothingEnabled = false;
-                expCtx.drawImage(this.offscreenCanvas, 0, 0);
+        try {
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = this.boardWidth;
+            exportCanvas.height = this.boardHeight;
+            const expCtx = exportCanvas.getContext('2d');
+
+            expCtx.fillStyle = '#FFFFFF';
+            expCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+            expCtx.imageSmoothingEnabled = false;
+            expCtx.drawImage(this.offscreenCanvas, 0, 0);
+
+            if (fmt === 'pdf') {
+                exportCanvas.toBlob(async (jpegBlob) => {
+                    if (btn) restoreButton(btn);
+                    if (window.modalSystem) window.modalSystem.closeCurrent();
+
+                    if (!jpegBlob) {
+                        await this.fallbackDownloadImage(fmt, filename, btn);
+                        return;
+                    }
+                    const arrayBuffer = await jpegBlob.arrayBuffer();
+                    const jpegBytes = new Uint8Array(arrayBuffer);
+                    const pdfBlob = this.buildPdfFromJpeg(jpegBytes, exportCanvas.width, exportCanvas.height);
+                    
+                    const blobUrl = URL.createObjectURL(pdfBlob);
+                    const a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+                    
+                    showMessage(window.__ ? window.__('msg_image_download_ready') : '¡Imagen descargada correctamente!', 'success');
+                }, 'image/jpeg', 0.98);
+            } else {
+                const mimeType = (fmt === 'jpg' || fmt === 'jpeg') ? 'image/jpeg' : (fmt === 'webp' ? 'image/webp' : 'image/png');
+                const quality = (mimeType === 'image/jpeg' || mimeType === 'image/webp') ? 0.95 : undefined;
 
                 exportCanvas.toBlob((blob) => {
-                    if (btnDownload) restoreButton(btnDownload);
+                    if (btn) restoreButton(btn);
+                    if (window.modalSystem) window.modalSystem.closeCurrent();
+
                     if (!blob) {
-                        this.fallbackDownload(btnDownload);
+                        this.fallbackDownloadImage(fmt, filename, btn);
                         return;
                     }
                     const blobUrl = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = blobUrl;
-                    a.download = `snapshot_${this.snapshotId || 'rosaura'}.png`;
+                    a.download = filename;
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
                     setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-                }, 'image/png');
-            } catch (e) {
-                if (btnDownload) restoreButton(btnDownload);
-                this.fallbackDownload(btnDownload);
-            }
-        };
 
-        executeDownload();
+                    showMessage(window.__ ? window.__('msg_image_download_ready') : '¡Imagen descargada correctamente!', 'success');
+                }, mimeType, quality);
+            }
+        } catch (e) {
+            if (btn) restoreButton(btn);
+            await this.fallbackDownloadImage(fmt, filename, btn);
+        }
     }
 
-    async fallbackDownload(btnDownload = null) {
-        if (!btnDownload) {
-            btnDownload = document.getElementById('tl-btn-download');
+    buildPdfFromJpeg(jpegBytes, widthPx, heightPx) {
+        const ptWidth = Number((widthPx * 0.75).toFixed(2));
+        const ptHeight = Number((heightPx * 0.75).toFixed(2));
+
+        let pdf = `%PDF-1.4\n`;
+        const offsets = [];
+
+        offsets[1] = pdf.length;
+        pdf += `1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n`;
+
+        offsets[2] = pdf.length;
+        pdf += `2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n`;
+
+        offsets[3] = pdf.length;
+        pdf += `3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${ptWidth} ${ptHeight}] /Contents 4 0 R /Resources << /XObject << /Im1 5 0 R >> >> >>\nendobj\n`;
+
+        const contentStream = `q\n${ptWidth} 0 0 ${ptHeight} 0 0 cm\n/Im1 Do\nQ\n`;
+        offsets[4] = pdf.length;
+        pdf += `4 0 obj\n<< /Length ${contentStream.length} >>\nstream\n${contentStream}endstream\nendobj\n`;
+
+        const imageHeader = `5 0 obj\n<< /Type /XObject /Subtype /Image /Width ${widthPx} /Height ${heightPx} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegBytes.length} >>\nstream\n`;
+        const imageFooter = `\nendstream\nendobj\n`;
+
+        const enc = new TextEncoder();
+        const part1 = enc.encode(pdf);
+        offsets[5] = part1.length;
+        const part2Header = enc.encode(imageHeader);
+        const part2Footer = enc.encode(imageFooter);
+
+        const endImageOffset = part1.length + part2Header.length + jpegBytes.length + part2Footer.length;
+        
+        let xref = `xref\n0 6\n0000000000 65535 f \n`;
+        for (let i = 1; i <= 5; i++) {
+            xref += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
         }
+
+        const trailer = `trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${endImageOffset}\n%%EOF\n`;
+        const trailerBytes = enc.encode(xref + trailer);
+
+        return new Blob([part1, part2Header, jpegBytes, part2Footer, trailerBytes], { type: 'application/pdf' });
+    }
+
+    async fallbackDownloadImage(format = 'png', filename = '', btnDownload = null) {
+        const fmt = (format || 'png').toLowerCase();
+        const fname = filename || `snapshot_${this.snapshotId || 'rosaura'}.${fmt}`;
         if (!this.originalImageUrl) {
             if (btnDownload) restoreButton(btnDownload);
             return;
         }
         try {
-            const response = await fetch(this.originalImageUrl);
-            const blob = await response.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = blobUrl;
-            a.download = `snapshot_${this.snapshotId || 'rosaura'}.png`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth || img.width;
+                    canvas.height = img.naturalHeight || img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+
+                    if (fmt === 'pdf') {
+                        canvas.toBlob(async (jpegBlob) => {
+                            if (btnDownload) restoreButton(btnDownload);
+                            if (window.modalSystem) window.modalSystem.closeCurrent();
+                            if (!jpegBlob) {
+                                this.directDownloadUrl(this.originalImageUrl, fname, btnDownload);
+                                return;
+                            }
+                            const arrayBuffer = await jpegBlob.arrayBuffer();
+                            const jpegBytes = new Uint8Array(arrayBuffer);
+                            const pdfBlob = this.buildPdfFromJpeg(jpegBytes, canvas.width, canvas.height);
+                            const blobUrl = URL.createObjectURL(pdfBlob);
+                            this.triggerBlobDownload(blobUrl, fname);
+                            showMessage(window.__ ? window.__('msg_image_download_ready') : '¡Imagen descargada correctamente!', 'success');
+                        }, 'image/jpeg', 0.98);
+                    } else {
+                        const mimeType = (fmt === 'jpg' || fmt === 'jpeg') ? 'image/jpeg' : (fmt === 'webp' ? 'image/webp' : 'image/png');
+                        const quality = (mimeType === 'image/jpeg' || mimeType === 'image/webp') ? 0.95 : undefined;
+                        canvas.toBlob((blob) => {
+                            if (btnDownload) restoreButton(btnDownload);
+                            if (window.modalSystem) window.modalSystem.closeCurrent();
+                            if (!blob) {
+                                this.directDownloadUrl(this.originalImageUrl, fname, btnDownload);
+                                return;
+                            }
+                            const blobUrl = URL.createObjectURL(blob);
+                            this.triggerBlobDownload(blobUrl, fname);
+                            showMessage(window.__ ? window.__('msg_image_download_ready') : '¡Imagen descargada correctamente!', 'success');
+                        }, mimeType, quality);
+                    }
+                } catch (err) {
+                    this.directDownloadUrl(this.originalImageUrl, fname, btnDownload);
+                }
+            };
+            img.onerror = () => {
+                this.directDownloadUrl(this.originalImageUrl, fname, btnDownload);
+            };
+            img.src = this.originalImageUrl;
         } catch (e) {
-            const a = document.createElement('a');
-            a.href = this.originalImageUrl;
-            a.target = '_blank';
-            a.download = `snapshot_${this.snapshotId || 'rosaura'}.png`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        } finally {
-            if (btnDownload) restoreButton(btnDownload);
+            this.directDownloadUrl(this.originalImageUrl, fname, btnDownload);
         }
+    }
+
+    triggerBlobDownload(blobUrl, filename) {
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    }
+
+    directDownloadUrl(url, filename, btn = null) {
+        if (btn) restoreButton(btn);
+        if (window.modalSystem) window.modalSystem.closeCurrent();
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    async fallbackDownload(btnDownload = null) {
+        await this.fallbackDownloadImage('png', `snapshot_${this.snapshotId || 'rosaura'}.png`, btnDownload);
     }
 
     async loadSnapshotData() {

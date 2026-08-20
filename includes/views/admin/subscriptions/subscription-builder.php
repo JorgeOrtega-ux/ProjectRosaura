@@ -173,6 +173,7 @@ $featuresData = [
     'feat_inject_templates' => $tierData['feat_inject_templates'] ?? 0,
     'feat_live_share' => $tierData['feat_live_share'] ?? 0,
     'feat_no_ads' => $tierData['feat_no_ads'] ?? 0,
+    'feat_download_4k' => $tierData['feat_download_4k'] ?? 0,
 ];
 
 ?>
