@@ -131,9 +131,32 @@ class CanvasAssetService {
 
     public function deleteTemplate(int $userId, int $templateId): array {
         try {
+            $templates = $this->canvasRepository->getUserTemplates($userId);
+            $filePath = null;
+            
+            foreach($templates as $t) {
+                if ((int)$t['id'] === $templateId) {
+                    $filePath = $t['file_path'];
+                    break;
+                }
+            }
+
             $deleted = $this->canvasRepository->deleteTemplate($templateId, $userId);
             
             if ($deleted) {
+                if ($filePath) {
+                    $s3Key = preg_replace('#^/?public/storage/#', '', ltrim($filePath, '/'));
+                    $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+                    $s3Client = Utils::getS3Client();
+                    try {
+                        $s3Client->deleteObject([
+                            'Bucket' => $bucket,
+                            'Key'    => ltrim($s3Key, '/')
+                        ]);
+                    } catch (Exception $e) {
+                        Logger::error('Failed to delete template file from S3.', ['user_id' => $userId, 'error' => $e->getMessage()]);
+                    }
+                }
                 return ['success' => true, 'message' => __('msg_template_deleted')];
             }
             return ['success' => false, 'message' => __('err_template_delete_failed')];

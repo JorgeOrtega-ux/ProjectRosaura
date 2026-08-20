@@ -27,21 +27,6 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
         </div>
 
 
-        <?php if ($isLoggedIn): ?>
-        <div class="component-menu-bottom">
-            <div class="component-menu-list">
-                <div class="component-menu-link nav-item" data-nav="/trash">
-                    <div class="component-menu-link-icon">
-                        <span class="material-symbols-rounded">delete</span>
-                    </div>
-                    <div class="component-menu-link-text">
-                        <span><?php echo __('menu_trash'); ?></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <?php endif; ?>
-
     </div>
 
     <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding <?php echo $isSitePolicyArea ? 'active' : 'disabled'; ?>" data-ref="sidebar-menu-site-policy">

@@ -503,9 +503,23 @@ export const DesignTemplates = {
         img.src = url;
     },
 
-    async deleteServerTemplate(id) {
+    async deleteServerTemplate(id, modalConfirmBtn) {
         const gridBtn = document.querySelector(`[data-ref="user-templates-grid"] [data-action="deleteServerTemplate"][data-id="${id}"]`);
         if (gridBtn) gridBtn.classList.add('disabled-interaction');
+
+        let cancelBtn = null;
+        let originalText = '';
+        if (modalConfirmBtn) {
+            modalConfirmBtn.classList.add('disabled-interaction');
+            cancelBtn = modalConfirmBtn.parentElement ? modalConfirmBtn.parentElement.querySelector('[data-modal-action="cancel"]') : null;
+            if (cancelBtn) cancelBtn.classList.add('disabled-interaction');
+            
+            const textSpan = modalConfirmBtn.querySelector('span');
+            if (textSpan) {
+                originalText = textSpan.textContent;
+                textSpan.textContent = typeof window.__ === 'function' ? window.__('lbl_deleting', [], 'Eliminando...') : 'Eliminando...';
+            }
+        }
 
         let templateFilePath = null;
         if (gridBtn && gridBtn.parentElement) {
@@ -514,11 +528,15 @@ export const DesignTemplates = {
         }
 
         try {
-            const response = await this.api.post(ApiRoutes.Canvases.DeleteTemplate, { id: id }, this.abortController ? this.abortController.signal : null);
+            const response = await this.api.post(ApiRoutes.Canvases.DeleteTemplate, { id: id }, this.abortController.signal);
             if (response.aborted) return;
             
             if (response.success) {
                 showMessage(response.message, 'success');
+
+                if (window.modalSystem) {
+                    window.modalSystem.closeCurrent(true);
+                }
 
                 if (templateFilePath) {
                     if (this.liveShareStatus === 'owner' && this.liveTemplateId === templateFilePath) {
@@ -540,13 +558,23 @@ export const DesignTemplates = {
                 await this.loadUserLibrary();
             } else {
                 showMessage(response.message, 'error');
+                if (gridBtn) gridBtn.classList.remove('disabled-interaction');
+                if (modalConfirmBtn) {
+                    modalConfirmBtn.classList.remove('disabled-interaction');
+                    const textSpan = modalConfirmBtn.querySelector('span');
+                    if (textSpan) textSpan.textContent = originalText;
+                }
+                if (cancelBtn) cancelBtn.classList.remove('disabled-interaction');
             }
         } catch (error) {
-            if (error.name !== 'AbortError') {
-                showMessage(window.__('err_template_delete_failed'), 'error');
-            }
-        } finally {
+            showMessage(__('err_connection'), 'error');
             if (gridBtn) gridBtn.classList.remove('disabled-interaction');
+            if (modalConfirmBtn) {
+                modalConfirmBtn.classList.remove('disabled-interaction');
+                const textSpan = modalConfirmBtn.querySelector('span');
+                if (textSpan) textSpan.textContent = originalText;
+            }
+            if (cancelBtn) cancelBtn.classList.remove('disabled-interaction');
         }
     },
 

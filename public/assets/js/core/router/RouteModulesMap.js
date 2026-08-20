@@ -103,9 +103,7 @@ export const RouteModulesMap = {
 
     '/design/s/:uuid': { path: './modules/canvases/history/CanvasSnapshotsGalleryController.js', className: 'CanvasSnapshotsGalleryController', skeletonType: 'layout-grid' },
 
-    '/snapshot/view/:id': { path: './modules/canvases/history/SnapshotViewerController.js', className: 'SnapshotViewerController', skeletonType: 'layout-grid' },
-
-    '/trash': { path: './modules/app/trash/TrashController.js', className: 'TrashController', skeletonType: 'layout-table' }
+    '/snapshot/view/:id': { path: './modules/canvases/history/SnapshotViewerController.js', className: 'SnapshotViewerController', skeletonType: 'layout-grid' }
 };
 
 

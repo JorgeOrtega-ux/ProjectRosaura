@@ -191,7 +191,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                     FROM " . DB::TBL_CANVASES . " c
                     LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :current_user_id
                     $joinMemberSql
-                    WHERE c.privacy = 'public' AND c.is_subscription_locked = 0 AND c.deleted_at IS NULL
+                    WHERE c.privacy = 'public' AND c.is_subscription_locked = 0
                     $orderClause 
                     LIMIT :limit OFFSET :offset";
             
@@ -261,10 +261,10 @@ class CanvasRepository implements CanvasRepositoryInterface {
                 // Feed shows all public canvases (like a YouTube-style feed).
                 // User's own private canvases are NOT force-included here;
                 // they appear only if they are public or the user is explicitly a member.
-                $whereConditions[] = "c.is_subscription_locked = 0 AND c.deleted_at IS NULL AND (c.privacy = 'public' OR EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_MEMBERS . " cm_feed WHERE cm_feed.canvas_id = c.id AND cm_feed.user_id = :current_user_id_member_where))";
+                $whereConditions[] = "c.is_subscription_locked = 0 AND (c.privacy = 'public' OR EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_MEMBERS . " cm_feed WHERE cm_feed.canvas_id = c.id AND cm_feed.user_id = :current_user_id_member_where))";
                 $params[':current_user_id_member_where'] = $userIdParam;
             } else {
-                $whereConditions[] = "c.is_subscription_locked = 0 AND c.deleted_at IS NULL AND c.privacy = 'public'";
+                $whereConditions[] = "c.is_subscription_locked = 0 AND c.privacy = 'public'";
             }
             
             $whereSql = implode(' AND ', $whereConditions);
@@ -347,13 +347,13 @@ class CanvasRepository implements CanvasRepositoryInterface {
         }
         $joinRolesSql = "LEFT JOIN (SELECT canvas_id, user_id FROM " . DB::TBL_CANVAS_MEMBERS . " UNION SELECT canvas_id, user_id FROM " . DB::TBL_CANVAS_USER_ROLES . ") cm2 ON c.id = cm2.canvas_id AND cm2.user_id = :uid4";
         
-        $whereClause = "WHERE c.deleted_at IS NULL AND (c.owner_id = :uid3 OR cm2.canvas_id IS NOT NULL)";
+        $whereClause = "WHERE (c.owner_id = :uid3 OR cm2.canvas_id IS NOT NULL)";
         if ($filter === 'mine') {
-            $whereClause = "WHERE c.deleted_at IS NULL AND c.owner_id = :uid3";
+            $whereClause = "WHERE c.owner_id = :uid3";
         } elseif ($filter === 'joined') {
-            $whereClause = "WHERE c.deleted_at IS NULL AND c.owner_id != :uid3 AND cm2.canvas_id IS NOT NULL";
+            $whereClause = "WHERE c.owner_id != :uid3 AND cm2.canvas_id IS NOT NULL";
         } elseif ($filter === 'favorites') {
-            $whereClause = "WHERE c.deleted_at IS NULL AND (c.owner_id = :uid3 OR cm2.canvas_id IS NOT NULL) AND f.canvas_id IS NOT NULL";
+            $whereClause = "WHERE (c.owner_id = :uid3 OR cm2.canvas_id IS NOT NULL) AND f.canvas_id IS NOT NULL";
         }
 
         $sql = "SELECT c.id, c.uuid, c.name, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.owner_id, c.is_subscription_locked, c.locked_reasons, c.favorites_count,
@@ -412,7 +412,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                        c.members_count
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :oid
-                WHERE c.owner_id = :oid AND c.deleted_at IS NULL 
+                WHERE c.owner_id = :oid 
                 ORDER BY c.id DESC 
                 LIMIT :limit OFFSET :offset";
         
@@ -448,7 +448,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             } catch (\Throwable $e) {}
         }
 
-        $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE owner_id = :oid AND deleted_at IS NULL";
+        $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE owner_id = :oid";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':oid' => $ownerId]);
         $count = (int)$stmt->fetchColumn();
@@ -480,7 +480,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         if (empty($tierSizes)) return 0;
 
         $placeholders = implode(',', array_fill(0, count($tierSizes), '?'));
-        $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE owner_id = ? AND deleted_at IS NULL AND size IN ($placeholders)";
+        $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE owner_id = ? AND size IN ($placeholders)";
         $stmt = $this->db->prepare($sql);
         $params = array_merge([$ownerId], $tierSizes);
         $stmt->execute($params);
@@ -494,7 +494,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function countOlderCanvases(int $canvasId, int $ownerId, string $createdAt): int {
-        $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE owner_id = :oid AND deleted_at IS NULL AND (created_at < :ca OR (created_at = :ca2 AND id < :id))";
+        $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE owner_id = :oid AND (created_at < :ca OR (created_at = :ca2 AND id < :id))";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':oid' => $ownerId, ':ca' => $createdAt, ':ca2' => $createdAt, ':id' => $canvasId]);
         return (int)$stmt->fetchColumn();
@@ -507,7 +507,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
         $placeholders = implode(',', array_fill(0, count($canvasIds), '?'));
         
-        $sql = "UPDATE " . DB::TBL_CANVASES . " SET deleted_at = NOW() WHERE id IN ($placeholders) AND owner_id = ? AND deleted_at IS NULL";
+        $sql = "DELETE FROM " . DB::TBL_CANVASES . " WHERE id IN ($placeholders) AND owner_id = ?";
         $stmt = $this->db->prepare($sql);
         
         $params = array_merge($canvasIds, [$ownerId]);
@@ -534,7 +534,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getByIdAndOwner(int $id, int $ownerId): ?array {
-        $sql = "SELECT * FROM " . DB::TBL_CANVASES . " WHERE id = :id AND owner_id = :owner_id AND deleted_at IS NULL LIMIT 1";
+        $sql = "SELECT * FROM " . DB::TBL_CANVASES . " WHERE id = :id AND owner_id = :owner_id LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             ':id' => $id, 
@@ -552,7 +552,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             if ($cached) return json_decode($cached, true);
         }
 
-        $sql = "SELECT * FROM " . DB::TBL_CANVASES . " WHERE id = :id AND deleted_at IS NULL LIMIT 1";
+        $sql = "SELECT * FROM " . DB::TBL_CANVASES . " WHERE id = :id LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':id' => $id]);
         
@@ -1036,7 +1036,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             } catch (\Throwable $e) {}
         }
 
-        $sql = "SELECT * FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid AND deleted_at IS NULL LIMIT 1";
+        $sql = "SELECT * FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':uuid' => $uuid]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -1054,15 +1054,11 @@ class CanvasRepository implements CanvasRepositoryInterface {
     public function deleteCanvasByUuid(string $uuid): bool {
         $canvas = $this->getCanvasByUuid($uuid); 
 
-        $sql = "UPDATE " . DB::TBL_CANVASES . " SET deleted_at = NOW() WHERE uuid = :uuid AND deleted_at IS NULL";
+        $sql = "DELETE FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid";
         $stmt = $this->db->prepare($sql);
         $success = $stmt->execute([':uuid' => $uuid]);
 
         if ($success && $canvas) {
-            $this->invalidateCanvasCache((int)$canvas['id']);
-            if (isset($canvas['owner_id'])) {
-                $this->invalidateUserCanvasListCaches((int)$canvas['owner_id']);
-            }
             $client = $this->typesenseManager->getClient();
             if ($client) {
                 try {
@@ -1413,9 +1409,9 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getUserTemplates(int $userId): array {
-        $sql = "SELECT id, user_id, file_path, file_size, created_at 
+        $sql = "SELECT id, user_id, file_path, created_at 
                 FROM " . DB::TBL_USER_TEMPLATES . " 
-                WHERE user_id = :user_id AND deleted_at IS NULL 
+                WHERE user_id = :user_id 
                 ORDER BY created_at DESC";
         
         $stmt = $this->db->prepare($sql);
@@ -1425,9 +1421,27 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function deleteTemplate(int $templateId, int $userId): bool {
-        $sql = "UPDATE " . DB::TBL_USER_TEMPLATES . " SET deleted_at = NOW() WHERE id = :id AND user_id = :user_id AND deleted_at IS NULL";
+        // Fetch file size first to decrement storage
+        $stmt = $this->db->prepare("SELECT file_size FROM " . DB::TBL_USER_TEMPLATES . " WHERE id = :id AND user_id = :user_id");
+        $stmt->execute([':id' => $templateId, ':user_id' => $userId]);
+        $fileSize = (int)$stmt->fetchColumn();
+
+        $sql = "DELETE FROM " . DB::TBL_USER_TEMPLATES . " WHERE id = :id AND user_id = :user_id";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([':id' => $templateId, ':user_id' => $userId]);
+        $result = $stmt->execute([':id' => $templateId, ':user_id' => $userId]);
+
+        if ($result && $fileSize > 0) {
+            try {
+                $identityDb = (new DatabaseManager())->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+                $stmtUpd = $identityDb->prepare("UPDATE users SET storage_used_bytes = GREATEST(0, storage_used_bytes - ?) WHERE id = ?");
+                $stmtUpd->execute([$fileSize, $userId]);
+                $this->cacheInvalidator->userStorage($userId);
+            } catch (\Throwable $e) {
+                Logger::error("deleteTemplate: failed to update storage", ['user_id' => $userId, 'error' => $e->getMessage()]);
+            }
+        }
+
+        return $result;
     }
 
     public function toggleFavorite(int $userId, int $canvasId): array {

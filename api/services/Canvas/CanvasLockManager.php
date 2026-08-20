@@ -52,7 +52,7 @@ class CanvasLockManager {
             // For now, let's inject DatabaseManager to update directly, which is faster and avoids N+1
             $canvasesDb = $this->dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_CANVASES);
             
-            $stmt = $canvasesDb->prepare("SELECT id, size, palette_id, max_participants, created_at FROM canvases WHERE owner_id = :owner_id AND deleted_at IS NULL ORDER BY created_at ASC");
+            $stmt = $canvasesDb->prepare("SELECT id, size, palette_id, max_participants, created_at FROM canvases WHERE owner_id = :owner_id ORDER BY created_at ASC");
             $stmt->execute(['owner_id' => $userId]);
             $canvases = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 

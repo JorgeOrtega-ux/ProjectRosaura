@@ -4537,7 +4537,6 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
 }
 
 .component-gallery-card:hover .component-gallery-actions-wrapper,
-.component-gallery-card--trash .component-gallery-actions-wrapper,
 .component-gallery-actions-wrapper:has(.component-module.active) {
     opacity: 1;
     visibility: visible;
