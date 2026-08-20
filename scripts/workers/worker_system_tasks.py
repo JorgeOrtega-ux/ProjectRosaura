@@ -1171,7 +1171,7 @@ def typesense_thread():
 
             with connection:
                 with connection.cursor() as cursor:
-                    cursor.execute("SELECT id, uuid, name, owner_id, privacy, UNIX_TIMESTAMP(created_at) as created_at FROM canvases")
+                    cursor.execute("SELECT id, uuid, name, owner_id, privacy, UNIX_TIMESTAMP(created_at) as created_at FROM canvases WHERE deleted_at IS NULL")
                     
                     total_synced = 0
                     while True:
@@ -1251,7 +1251,6 @@ def purge_expired_trash_task():
     while True:
         try:
             db_conn = get_canvases_db_connection()
-            id_db_name = os.getenv('DB_IDENTITY_NAME', 'db_identity')
             bucket = os.getenv("AWS_BUCKET", "rosaura-storage")
             if db_conn:
                 cursor = db_conn.cursor(dictionary=True)
@@ -1285,25 +1284,10 @@ def purge_expired_trash_task():
                 """)
                 expired_templates = cursor.fetchall()
                 for t in expired_templates:
-                    tid, uid, path, size = t['id'], t['user_id'], t['file_path'], t['file_size']
+                    tid, uid, path = t['id'], t['user_id'], t['file_path']
                     Logger.info(f"Purging expired template {tid} from user {uid}...")
                     try:
                         s3.delete_object(Bucket=bucket, Key=path.lstrip('/'))
-                    except Exception:
-                        pass
-
-                    # Restar almacenamiento al usuario en db_identity
-                    try:
-                        id_conn = get_db_connection()
-                        if id_conn:
-                            id_cursor = id_conn.cursor()
-                            id_cursor.execute(
-                                "UPDATE users SET storage_used_bytes = GREATEST(0, storage_used_bytes - %s) WHERE id = %s",
-                                (size, uid)
-                            )
-                            id_conn.commit()
-                            id_cursor.close()
-                            id_conn.close()
                     except Exception:
                         pass
 

@@ -1425,9 +1425,26 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function deleteTemplate(int $templateId, int $userId): bool {
+        $stmtFind = $this->db->prepare("SELECT file_size FROM " . DB::TBL_USER_TEMPLATES . " WHERE id = :id AND user_id = :uid AND deleted_at IS NULL LIMIT 1");
+        $stmtFind->execute([':id' => $templateId, ':uid' => $userId]);
+        $fileSize = (int)$stmtFind->fetchColumn();
+
         $sql = "UPDATE " . DB::TBL_USER_TEMPLATES . " SET deleted_at = NOW() WHERE id = :id AND user_id = :user_id AND deleted_at IS NULL";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([':id' => $templateId, ':user_id' => $userId]);
+        $res = $stmt->execute([':id' => $templateId, ':user_id' => $userId]);
+
+        if ($res && $fileSize > 0) {
+            try {
+                $identityDb = (new DatabaseManager())->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+                $stmtStorage = $identityDb->prepare("UPDATE users SET storage_used_bytes = GREATEST(0, storage_used_bytes - ?) WHERE id = ?");
+                $stmtStorage->execute([$fileSize, $userId]);
+                $this->cacheInvalidator->userStorage($userId);
+            } catch (\Throwable $e) {
+                Logger::error("deleteTemplate: failed to discount storage", ['user_id' => $userId, 'error' => $e->getMessage()]);
+            }
+        }
+
+        return $res;
     }
 
     public function toggleFavorite(int $userId, int $canvasId): array {
