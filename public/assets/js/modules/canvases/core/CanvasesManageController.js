@@ -225,7 +225,7 @@ class CanvasesManageController {
         const password = resultDialog.data['modal_verify_password'] ? resultDialog.data['modal_verify_password'].trim() : '';
         const credential = resultDialog.data['credential'] || resultDialog.data['google_token'] || '';
         if (!password && !credential) {
-            resultDialog.failure(window.__('err_identity_verification_required') || window.__('err_password_required'));
+            resultDialog.failure(window.__('err_identity_verification_required'));
             return;
         }
 

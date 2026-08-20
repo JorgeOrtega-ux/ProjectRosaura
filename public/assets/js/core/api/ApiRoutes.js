@@ -216,5 +216,11 @@ export const ApiRoutes = {
     },
     Telemetry: {
         Collect: 'telemetry.collect'
+    },
+    Trash: {
+        GetItems: 'trash.get_items',
+        RestoreItem: 'trash.restore_item',
+        DeletePermanently: 'trash.delete_permanently',
+        EmptyTrash: 'trash.empty_trash'
     }
 };

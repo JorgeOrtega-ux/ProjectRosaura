@@ -47,8 +47,8 @@ class CanvasViewService {
         $isNumeric = is_numeric($canvasUuid);
         $stmt = $pdoCanvases->prepare(
             $isNumeric 
-                ? "SELECT * FROM canvases WHERE id = :id LIMIT 1"
-                : "SELECT * FROM canvases WHERE uuid = :uuid LIMIT 1"
+                ? "SELECT * FROM canvases WHERE id = :id AND deleted_at IS NULL LIMIT 1"
+                : "SELECT * FROM canvases WHERE uuid = :uuid AND deleted_at IS NULL LIMIT 1"
         );
         $stmt->execute($isNumeric ? ['id' => (int)$canvasUuid] : ['uuid' => $canvasUuid]);
         $canvas = $stmt->fetch(\PDO::FETCH_ASSOC);

@@ -81,6 +81,7 @@ return [
     '/admin/backup-restore/:uuid' => ['view' => 'admin/backups/backups-restore.php', 'auth' => true, 'permissions' => [PC::RESTORE_BACKUPS], 'requires_2fa' => false],
     '/admin/system-settings' => ['view' => 'admin/system/server-config.php', 'auth' => true, 'permissions' => [PC::MANAGE_SERVER_CONFIG], 'requires_2fa' => false],
     '/admin/logs' => ['view' => 'admin/logs/logs.php', 'auth' => true, 'permissions' => [PC::VIEW_LOGS], 'requires_2fa' => false],
-    '/admin/logs/viewer' => ['view' => 'admin/logs/logs-viewer.php', 'auth' => true, 'permissions' => [PC::VIEW_LOGS], 'requires_2fa' => false]
+    '/admin/logs/viewer' => ['view' => 'admin/logs/logs-viewer.php', 'auth' => true, 'permissions' => [PC::VIEW_LOGS], 'requires_2fa' => false],
+    '/trash' => ['view' => 'app/trash.php', 'auth' => true],
 ];
 ?>

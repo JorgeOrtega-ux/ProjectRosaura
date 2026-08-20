@@ -399,5 +399,89 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                 </div>
             </div>
         `;
+    },
+
+    trashCanvasCard: (canvas, config = {}) => {
+        const name = escapeHTML(canvas.name);
+        const size = escapeHTML(canvas.size || '');
+        const uuid = escapeHTML(canvas.uuid || '');
+        const basePath = config.basePath || '';
+        const fallbackImg = basePath + '/assets/img/fallbacks/canvas-default.png';
+        const srcUrl = canvas.thumbnail_url ? escapeHTML(canvas.thumbnail_url) : fallbackImg;
+        const daysLeft = parseInt(canvas.days_left || 0, 10);
+        const daysText = `${daysLeft} ${daysLeft === 1 ? window.__('day_remaining') : window.__('days_remaining')}`;
+
+        return `
+            <div class="component-gallery-card component-gallery-card--trash" data-card-id="${canvas.id}" data-type="canvas" data-uuid="${uuid}">
+                <img src="${srcUrl}" 
+                     alt="${name}" 
+                     class="component-gallery-card__image image-lazy-fade" 
+                     loading="lazy" 
+                     decoding="async" 
+                     onload="this.classList.add('image-loaded')"
+                     onerror="this.onerror=null; this.src='${fallbackImg}'; this.classList.add('image-loaded');">
+
+                <div class="component-badge component-badge--warning component-badge--absolute-tl">
+                    <span class="material-symbols-rounded">schedule</span>
+                    <span>${daysText}</span>
+                </div>
+
+                <div class="component-gallery-link">
+                    <h3 class="component-gallery-title">${name}${size ? ` (${size})` : ''}</h3>
+                </div>
+
+                <div class="component-gallery-actions-wrapper">
+                    <div class="component-gallery-actions">
+                        <button type="button" class="component-button component-button--icon component-button--h32 component-text-notice--success" data-action="restoreTrashItem" data-type="canvas" data-id="${uuid}" data-tooltip="${window.__('btn_restore')}" data-position="bottom">
+                            <span class="material-symbols-rounded">restore</span>
+                        </button>
+                        <button type="button" class="component-button component-button--icon component-button--h32 component-button--danger" data-action="deleteTrashItemPerm" data-type="canvas" data-id="${uuid}" data-tooltip="${window.__('btn_delete_permanently')}" data-position="bottom">
+                            <span class="material-symbols-rounded">delete_forever</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    trashTemplateCard: (template, config = {}) => {
+        const basePath = config.basePath || '';
+        const fallbackImg = basePath + '/assets/img/fallbacks/canvas-default.png';
+        const srcUrl = template.preview_url ? escapeHTML(template.preview_url) : fallbackImg;
+        const daysLeft = parseInt(template.days_left || 0, 10);
+        const daysText = `${daysLeft} ${daysLeft === 1 ? window.__('day_remaining') : window.__('days_remaining')}`;
+        const titleText = window.__('tab_templates');
+
+        return `
+            <div class="component-gallery-card component-gallery-card--trash" data-card-id="${template.id}" data-type="template" data-id="${template.id}">
+                <img src="${srcUrl}" 
+                     alt="${titleText}" 
+                     class="component-gallery-card__image image-lazy-fade" 
+                     loading="lazy" 
+                     decoding="async" 
+                     onload="this.classList.add('image-loaded')"
+                     onerror="this.onerror=null; this.src='${fallbackImg}'; this.classList.add('image-loaded');">
+
+                <div class="component-badge component-badge--warning component-badge--absolute-tl">
+                    <span class="material-symbols-rounded">schedule</span>
+                    <span>${daysText}</span>
+                </div>
+
+                <div class="component-gallery-link">
+                    <h3 class="component-gallery-title">${titleText}</h3>
+                </div>
+
+                <div class="component-gallery-actions-wrapper">
+                    <div class="component-gallery-actions">
+                        <button type="button" class="component-button component-button--icon component-button--h32 component-text-notice--success" data-action="restoreTrashItem" data-type="template" data-id="${template.id}" data-tooltip="${window.__('btn_restore')}" data-position="bottom">
+                            <span class="material-symbols-rounded">restore</span>
+                        </button>
+                        <button type="button" class="component-button component-button--icon component-button--h32 component-button--danger" data-action="deleteTrashItemPerm" data-type="template" data-id="${template.id}" data-tooltip="${window.__('btn_delete_permanently')}" data-position="bottom">
+                            <span class="material-symbols-rounded">delete_forever</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 };

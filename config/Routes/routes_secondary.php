@@ -1005,4 +1005,68 @@ return [
             ],
         ],
     ],
+    'trash.get_items' => [
+        'controller' => 'App\\Api\\Controllers\\App\\TrashController',
+        'action' => 'get_items',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'trash_get_items',
+                'max' => 60,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'trash.restore_item' => [
+        'controller' => 'App\\Api\\Controllers\\App\\TrashController',
+        'action' => 'restore_item',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'trash_restore_item',
+                'max' => 30,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'trash.delete_permanently' => [
+        'controller' => 'App\\Api\\Controllers\\App\\TrashController',
+        'action' => 'delete_permanently',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'trash_delete_perm',
+                'max' => 30,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'trash.empty_trash' => [
+        'controller' => 'App\\Api\\Controllers\\App\\TrashController',
+        'action' => 'empty_trash',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'trash_empty',
+                'max' => 5,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
 ];

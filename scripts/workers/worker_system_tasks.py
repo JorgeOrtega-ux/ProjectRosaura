@@ -1245,6 +1245,80 @@ def template_tokens_reset_thread():
 
         time.sleep(60)
 
+def purge_expired_trash_task():
+    """Purga física automática de lienzos y plantillas con más de 30 días en la papelera."""
+    Logger.info("Starting Daily Trash Purge Worker...")
+    while True:
+        try:
+            db_conn = get_canvases_db_connection()
+            id_db_name = os.getenv('DB_IDENTITY_NAME', 'db_identity')
+            bucket = os.getenv("AWS_BUCKET", "rosaura-storage")
+            if db_conn:
+                cursor = db_conn.cursor(dictionary=True)
+
+                # 1. Purga de lienzos expirados (> 30 días)
+                cursor.execute("""
+                    SELECT id, uuid 
+                    FROM canvases 
+                    WHERE deleted_at IS NOT NULL AND deleted_at <= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY)
+                """)
+                expired_canvases = cursor.fetchall()
+                for c in expired_canvases:
+                    cid, cuuid = c['id'], c['uuid']
+                    Logger.info(f"Purging expired canvas {cid} ({cuuid}) from S3 and DB...")
+                    try:
+                        s3.delete_object(Bucket=bucket, Key=f"thumbnails/canvas_{cuuid}.webp")
+                        s3.delete_object(Bucket=bucket, Key=f"active_snapshots/canvas_{cid}.bin")
+                    except Exception:
+                        pass
+
+                    cursor_del = db_conn.cursor()
+                    cursor_del.execute("DELETE FROM canvases WHERE id = %s", (cid,))
+                    db_conn.commit()
+                    cursor_del.close()
+
+                # 2. Purga de plantillas expiradas (> 30 días)
+                cursor.execute("""
+                    SELECT id, user_id, file_path, file_size 
+                    FROM user_templates 
+                    WHERE deleted_at IS NOT NULL AND deleted_at <= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 DAY)
+                """)
+                expired_templates = cursor.fetchall()
+                for t in expired_templates:
+                    tid, uid, path, size = t['id'], t['user_id'], t['file_path'], t['file_size']
+                    Logger.info(f"Purging expired template {tid} from user {uid}...")
+                    try:
+                        s3.delete_object(Bucket=bucket, Key=path.lstrip('/'))
+                    except Exception:
+                        pass
+
+                    # Restar almacenamiento al usuario en db_identity
+                    try:
+                        id_conn = get_db_connection()
+                        if id_conn:
+                            id_cursor = id_conn.cursor()
+                            id_cursor.execute(
+                                "UPDATE users SET storage_used_bytes = GREATEST(0, storage_used_bytes - %s) WHERE id = %s",
+                                (size, uid)
+                            )
+                            id_conn.commit()
+                            id_cursor.close()
+                            id_conn.close()
+                    except Exception:
+                        pass
+
+                    cursor_del = db_conn.cursor()
+                    cursor_del.execute("DELETE FROM user_templates WHERE id = %s", (tid,))
+                    db_conn.commit()
+                    cursor_del.close()
+
+                cursor.close()
+                db_conn.close()
+        except Exception as e:
+            Logger.error(f"Error in trash purge worker: {e}")
+        # Ejecutar una vez cada 24 horas (86400 segundos)
+        time.sleep(86400)
+
 if __name__ == "__main__":
     Logger.info("STARTING UNIFIED SYSTEM TASKS WORKER...")
     threading.Thread(target=scheduler_loop, daemon=True, name="Thread-Scheduler").start()
@@ -1252,6 +1326,8 @@ if __name__ == "__main__":
     threading.Thread(target=telemetry_thread, daemon=True, name="Thread-Telemetry").start()
     threading.Thread(target=typesense_thread, daemon=True, name="Thread-Typesense").start()
     threading.Thread(target=template_tokens_reset_thread, daemon=True, name="Thread-TemplateTokensReset").start()
+    threading.Thread(target=purge_expired_trash_task, daemon=True, name="Thread-TrashPurge").start()
     
     while True:
         time.sleep(1)
+

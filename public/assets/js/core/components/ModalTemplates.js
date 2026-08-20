@@ -1517,7 +1517,7 @@ export const ModalTemplates = {
     confirmDeleteTemplateModal: {
         build: (data = {}) => {
             const templateId = data.templateId || '';
-            const __ = (typeof window.__ === 'function') ? window.__ : ((k, p, f) => f || k);
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
             const titleStr = __('title_confirm_delete_template');
             const descStr = __('desc_confirm_delete_template');
             const btnCancel = __('btn_cancel');
@@ -1531,7 +1531,7 @@ export const ModalTemplates = {
                 </div>
                 <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
-                    <button type="button" class="component-button component-button--h40 component-button--danger" data-action="confirmDeleteTemplate" data-id="${templateId}">
+                    <button type="button" class="component-button component-button--h40 component-button--danger" data-modal-action="confirm" data-id="${templateId}">
                         <span>${btnConfirm}</span>
                     </button>
                 </div>

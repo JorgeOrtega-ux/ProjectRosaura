@@ -117,17 +117,12 @@ export const DesignInteractions = {
             e.stopPropagation(); 
             const id = btnDelServer.getAttribute('data-id');
             if (window.modalSystem) {
-                window.modalSystem.show('confirmDeleteTemplateModal', { templateId: id });
-            }
-            return;
-        }
-
-        const btnConfirmDel = e.target.closest('[data-action="confirmDeleteTemplate"]');
-        if (btnConfirmDel) {
-            e.preventDefault();
-            const id = btnConfirmDel.getAttribute('data-id');
-            if (typeof this.deleteServerTemplate === 'function') {
-                this.deleteServerTemplate(id, btnConfirmDel);
+                const res = await window.modalSystem.show('confirmDeleteTemplateModal', { templateId: id });
+                if (res && res.confirmed) {
+                    if (typeof this.deleteServerTemplate === 'function') {
+                        await this.deleteServerTemplate(id);
+                    }
+                }
             }
             return;
         }
