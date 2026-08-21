@@ -865,6 +865,17 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
                         oldest_recs = cursor_del.fetchall()
                         cursor_del.close()
 
+                        owner_id = None
+                        try:
+                            cur_owner = db_conn.cursor()
+                            cur_owner.execute("SELECT owner_id FROM canvases WHERE id = %s", (canvas_id,))
+                            row_o = cur_owner.fetchone()
+                            if row_o:
+                                owner_id = row_o[0]
+                            cur_owner.close()
+                        except Exception:
+                            pass
+
                         for rec in oldest_recs:
                             old_id = rec['id'] if isinstance(rec, dict) else rec[0]
                             old_file = rec['file_path'] if isinstance(rec, dict) else rec[1]
@@ -876,6 +887,15 @@ def process_canvas_image(r, db_conn, canvas_id, compressed_data, size_str, palet
                             try:
                                 cursor_rm = db_conn.cursor()
                                 cursor_rm.execute("DELETE FROM canvas_snapshots_history WHERE id = %s", (old_id,))
+                                if owner_id:
+                                    try:
+                                        cursor_rm.execute("""
+                                            UPDATE db_identity.users 
+                                            SET storage_used_bytes = GREATEST(0, storage_used_bytes - 51200) 
+                                            WHERE id = %s
+                                        """, (owner_id,))
+                                    except Exception:
+                                        pass
                                 db_conn.commit()
                                 cursor_rm.close()
                             except Exception as e:

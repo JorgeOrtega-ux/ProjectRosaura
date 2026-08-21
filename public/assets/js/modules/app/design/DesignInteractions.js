@@ -3,6 +3,7 @@ import { showMessage, hexToHsv, hsvToHex, getEventCoords } from '../../../core/u
 import { PerksRegistry } from './PerksRegistry.js';
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { soundManager } from './SoundManager.js';
+import { CanvasSyncChannel } from '../../../core/services/CanvasSyncChannel.js';
 
 export const DesignInteractions = {
     bindEvents() {
@@ -1448,6 +1449,15 @@ export const DesignInteractions = {
 
         if (this.isOfflineMode) {
             console.info('%c[Rosaura Studio] %d píxeles colocados. Programando autoguardado...', 'color: #3b82f6; font-weight: bold;', validPixels.length);
+            try {
+                CanvasSyncChannel.broadcast({
+                    type: 'local_offline_stroke',
+                    canvasId: this.canvasIntId,
+                    canvasUuid: this.canvasId,
+                    pixels: validPixels,
+                    color: this.currentColor
+                });
+            } catch (e) {}
             if (typeof this.saveOfflineCanvasState === 'function') {
                 this.saveOfflineCanvasState(false);
             }

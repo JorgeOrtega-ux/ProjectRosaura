@@ -73,11 +73,16 @@ class CanvasCoreService {
 
     public function generateWsTicket(?int $userId, int $canvasId): array {
         try {
-            $canvas = $this->canvasRepository->getById($canvasId);
-            if (!$canvas) {
-                return ['success' => false, 'message' => __('err_canvas_not_found'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
+            $access = $this->validateCanvasAccess($userId, $canvasId);
+            if (!$access['success']) {
+                return [
+                    'success' => false,
+                    'message' => $access['message'] ?? __('err_unauthorized'),
+                    'http_code' => $access['http_code'] ?? \App\Core\System\HttpConstants::FORBIDDEN
+                ];
             }
 
+            $canvas = $access['canvas'] ?? $this->canvasRepository->getById($canvasId);
             $isOffline = (($canvas['mode'] ?? 'offline') === 'offline' || empty($canvas['is_online_active']));
             if ($isOffline) {
                 return ['success' => false, 'message' => __('err_canvas_offline') ?: 'Este lienzo está en modo estudio privado.', 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
@@ -538,9 +543,9 @@ class CanvasCoreService {
 
             $tEnd = microtime(true);
             $result = ['success' => true, 'data' => $canvas, 'debug_timing' => ['total' => $tEnd - $t0, 'check_perms' => isset($t1) ? ($t1 - $t0) : null, 'redis_init' => isset($t2) ? ($t2 - $t1) : null]];
-            if ($redis && $isOnline) {
+            if ($redis && !$isOnline) {
                 try {
-                    $redis->setex($cacheKey, CacheConstants::TTL_THIRTY_DAYS, json_encode($result)); // Cache permanente (invalidado al editar)
+                    $redis->setex($cacheKey, CacheConstants::TTL_THIRTY_DAYS, json_encode($result)); // Cache permanente para lienzos offline
                     error_log("[DEBUG getCanvas] Saved metadata cache for key: $cacheKey");
                 } catch (\Throwable $e) {
                     error_log("[DEBUG getCanvas] Exception saving cache: " . $e->getMessage());
@@ -1391,96 +1396,123 @@ LUA;
     }
 
     public function activateOnline(int $userId, int $canvasId): array {
-        try {
-            $canvas = $this->canvasRepository->getById($canvasId);
-            if (!$canvas) {
-                return ['success' => false, 'message' => __('err_canvas_not_found')];
-            }
-            if ((int)$canvas['owner_id'] !== $userId) {
-                return ['success' => false, 'message' => __('err_unauthorized')];
-            }
+        $redisCache = class_exists(RedisCache::class) ? new RedisCache() : null;
+        $lockKey = "user:{$userId}:online_activation_lock";
 
-            $user = $this->userRepository->findById($userId);
-            $tier = $user['subscription_tier'] ?? 0;
-            $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
-            $maxOnlineCanvases = $planLimits['max_online_canvases'] ?? $planLimits['max_canvases'] ?? 1;
-
-            if ($maxOnlineCanvases !== -1) {
-                $currentOnlineCount = $this->canvasRepository->countUserOnlineCanvases($userId);
-                if ($currentOnlineCount >= $maxOnlineCanvases && empty($canvas['is_online_active'])) {
-                    return [
-                        'success' => false,
-                        'message' => __('err_online_slots_exceeded') ?: 'Has alcanzado el límite de salas online de tu plan de suscripción.',
-                        'error_code' => 'ONLINE_LIMIT_EXCEEDED'
-                    ];
-                }
-            }
-
-            $stateRaw = $this->canvasRepository->getSnapshot($canvasId);
-            if (!$stateRaw) {
-                $sizeStr = strtolower($canvas['size']);
-                $parts = explode('x', $sizeStr);
-                $w = (int)$parts[0];
-                $h = isset($parts[1]) ? (int)$parts[1] : $w;
-                $stateRaw = str_repeat(chr(0).chr(0).chr(0).chr(0), $w * $h);
-            }
-
-            if (class_exists(RedisCache::class)) {
-                $redis = (new RedisCache())->getClient();
-                if ($redis) {
-                    $redis->set("canvas:{$canvasId}:state", $stateRaw);
-                    $redis->hMSet("canvas:{$canvasId}:config", [
-                        'cooldown_batch' => $canvas['cooldown_pixels_batch'] ?? 5,
-                        'cooldown_seconds' => $canvas['cooldown_seconds'] ?? 10,
-                        'is_subscription_locked' => $canvas['is_subscription_locked'] ? 1 : 0
-                    ]);
-                    $redis->publish("admin:canvas_events", json_encode([
-                        'type' => 'canvas_mode_changed',
-                        'canvas_id' => $canvasId,
-                        'mode' => 'online',
-                        'is_online_active' => 1
-                    ]));
-                }
-            }
-
+        $action = function() use ($userId, $canvasId, $redisCache) {
             $dbManager = new DatabaseManager();
             $db = $dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_CANVASES);
-            $stmt = $db->prepare("UPDATE canvases SET `mode` = 'online', `is_online_active` = 1, `last_online_at` = NOW() WHERE id = ?");
-            $stmt->execute([$canvasId]);
+            $db->beginTransaction();
 
             try {
-                if (class_exists(\App\Config\Search\TypesenseManager::class)) {
-                    $tsManager = new \App\Config\Search\TypesenseManager();
-                    $tsClient = $tsManager->getClient();
-                    if ($tsClient && ($canvas['privacy'] ?? '') === 'public') {
-                        $document = [
-                            'id'         => (string)$canvasId,
-                            'uuid'       => $canvas['uuid'],
-                            'name'       => $canvas['name'],
-                            'owner_id'   => (int)$userId,
-                            'privacy'    => 'public',
-                            'created_at' => !empty($canvas['created_at']) ? strtotime($canvas['created_at']) : time()
+                $stmt = $db->prepare("SELECT * FROM canvases WHERE id = ? FOR UPDATE");
+                $stmt->execute([$canvasId]);
+                $canvas = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+                if (!$canvas) {
+                    $db->rollBack();
+                    return ['success' => false, 'message' => __('err_canvas_not_found')];
+                }
+                if ((int)$canvas['owner_id'] !== $userId) {
+                    $db->rollBack();
+                    return ['success' => false, 'message' => __('err_unauthorized')];
+                }
+
+                $user = $this->userRepository->findById($userId);
+                $tier = $user['subscription_tier'] ?? 0;
+                $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
+                $maxOnlineCanvases = $planLimits['max_online_canvases'] ?? $planLimits['max_canvases'] ?? 1;
+
+                if ($maxOnlineCanvases !== -1) {
+                    $stmtCount = $db->prepare("SELECT COUNT(*) FROM canvases WHERE owner_id = ? AND is_online_active = 1 AND id != ?");
+                    $stmtCount->execute([$userId, $canvasId]);
+                    $currentOnlineCount = (int)$stmtCount->fetchColumn();
+
+                    if ($currentOnlineCount >= $maxOnlineCanvases && empty($canvas['is_online_active'])) {
+                        $db->rollBack();
+                        return [
+                            'success' => false,
+                            'message' => __('err_online_slots_exceeded') ?: 'Has alcanzado el límite de salas online de tu plan de suscripción.',
+                            'error_code' => 'ONLINE_LIMIT_EXCEEDED',
+                            'http_code' => \App\Core\System\HttpConstants::CONFLICT
                         ];
-                        $tsClient->collections['canvases']->documents->upsert($document);
                     }
                 }
-            } catch (\Throwable $tsEx) {}
 
-            try {
-                if (class_exists(RedisCache::class)) {
-                    $redis = (new RedisCache())->getClient();
+                $stateRaw = $this->canvasRepository->getSnapshot($canvasId);
+                if (!$stateRaw) {
+                    $sizeStr = strtolower($canvas['size'] ?? '64x64');
+                    $parts = explode('x', $sizeStr);
+                    $w = (int)$parts[0];
+                    $h = isset($parts[1]) ? (int)$parts[1] : $w;
+                    $stateRaw = str_repeat(chr(0).chr(0).chr(0).chr(0), $w * $h);
+                }
+
+                if ($redisCache) {
+                    $redis = $redisCache->getClient();
                     if ($redis) {
-                        (new \App\Core\System\CacheInvalidator($redis))->canvas($canvasId, $canvas['uuid'] ?? null);
-                        (new \App\Core\System\CacheInvalidator($redis))->userCanvasList($userId);
+                        $redis->set("canvas:{$canvasId}:state", $stateRaw);
+                        $redis->hMSet("canvas:{$canvasId}:config", [
+                            'cooldown_batch' => $canvas['cooldown_pixels_batch'] ?? 5,
+                            'cooldown_seconds' => $canvas['cooldown_seconds'] ?? 10,
+                            'is_subscription_locked' => !empty($canvas['is_subscription_locked']) ? 1 : 0
+                        ]);
+                        $redis->publish("admin:canvas_events", json_encode([
+                            'type' => 'canvas_mode_changed',
+                            'canvas_id' => $canvasId,
+                            'mode' => 'online',
+                            'is_online_active' => 1
+                        ]));
                     }
                 }
-            } catch (\Throwable $ex) {}
 
-            return ['success' => true, 'message' => __('msg_canvas_online_activated') ?: 'Lienzo activado en modo Online con éxito.'];
-        } catch (Exception $e) {
-            Logger::error('Error activating canvas online.', ['canvas_id' => $canvasId, 'user_id' => $userId, 'error' => $e->getMessage()]);
-            return ['success' => false, 'message' => __('err_database')];
+                $stmt = $db->prepare("UPDATE canvases SET `mode` = 'online', `is_online_active` = 1, `last_online_at` = NOW() WHERE id = ?");
+                $stmt->execute([$canvasId]);
+                $db->commit();
+
+                try {
+                    if (class_exists(\App\Config\Search\TypesenseManager::class)) {
+                        $tsManager = new \App\Config\Search\TypesenseManager();
+                        $tsClient = $tsManager->getClient();
+                        if ($tsClient && ($canvas['privacy'] ?? '') === 'public') {
+                            $document = [
+                                'id'         => (string)$canvasId,
+                                'uuid'       => $canvas['uuid'],
+                                'name'       => $canvas['name'],
+                                'owner_id'   => (int)$userId,
+                                'privacy'    => 'public',
+                                'created_at' => !empty($canvas['created_at']) ? strtotime($canvas['created_at']) : time()
+                            ];
+                            $tsClient->collections['canvases']->documents->upsert($document);
+                        }
+                    }
+                } catch (\Throwable $tsEx) {}
+
+                try {
+                    if ($redisCache) {
+                        $redis = $redisCache->getClient();
+                        if ($redis) {
+                            (new \App\Core\System\CacheInvalidator($redis))->canvas($canvasId, $canvas['uuid'] ?? null);
+                            (new \App\Core\System\CacheInvalidator($redis))->userCanvasList($userId);
+                        }
+                    }
+                } catch (\Throwable $ex) {}
+
+                return ['success' => true, 'message' => __('msg_canvas_online_activated') ?: 'Lienzo activado en modo Online con éxito.'];
+            } catch (\Throwable $e) {
+                if ($db->inTransaction()) {
+                    $db->rollBack();
+                }
+                Logger::error('Error activating canvas online.', ['canvas_id' => $canvasId, 'user_id' => $userId, 'error' => $e->getMessage()]);
+                return ['success' => false, 'message' => __('err_database')];
+            }
+        };
+
+        if ($redisCache && $redisCache->getClient()) {
+            return $redisCache->executeWithLock($lockKey, 5, $action);
         }
+
+        return $action();
     }
 
     public function deactivateOnline(int $userId, int $canvasId): array {
@@ -1499,6 +1531,11 @@ LUA;
             if (class_exists(RedisCache::class)) {
                 $redis = (new RedisCache())->getClient();
                 if ($redis) {
+                    $redis->publish("admin:canvas_events", json_encode([
+                        'type' => 'canvas_closing',
+                        'canvas_id' => $canvasId
+                    ]));
+
                     $stateRaw = $redis->get("canvas:{$canvasId}:state");
                     if ($stateRaw) {
                         $this->canvasRepository->saveSnapshot($canvasId, $stateRaw);
@@ -1562,6 +1599,16 @@ LUA;
             if (!$canvas) {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
             }
+
+            if (($canvas['mode'] ?? 'offline') === 'online' || !empty($canvas['is_online_active'])) {
+                return [
+                    'success' => false,
+                    'message' => __('err_canvas_is_online_mode') ?: 'El lienzo está activo en modo Online. No se pueden aplicar guardados offline.',
+                    'error_code' => 'CANVAS_ONLINE_CONFLICT',
+                    'http_code' => \App\Core\System\HttpConstants::CONFLICT
+                ];
+            }
+
             $isOwner = ((int)$canvas['owner_id'] === $userId);
             if (!$isOwner) {
                 $hasPerm = $this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::PLACE_PIXELS);
@@ -1575,10 +1622,18 @@ LUA;
                 return ['success' => false, 'message' => __('err_invalid_data')];
             }
 
-            if (strlen($rawBinary) >= 2 && substr($rawBinary, 0, 2) === "\x1f\x8b") {
-                $decompressed = @gzdecode($rawBinary);
-                if ($decompressed !== false) {
-                    $rawBinary = $decompressed;
+            if (strlen($rawBinary) >= 2) {
+                $magic = substr($rawBinary, 0, 2);
+                if ($magic === "\x1f\x8b") {
+                    $decompressed = @gzdecode($rawBinary);
+                    if ($decompressed !== false) {
+                        $rawBinary = $decompressed;
+                    }
+                } elseif ($magic === "\x78\x9c" || $magic === "\x78\x01" || $magic === "\x78\xda" || $magic === "\x78\x5e") {
+                    $decompressed = @gzuncompress($rawBinary);
+                    if ($decompressed !== false) {
+                        $rawBinary = $decompressed;
+                    }
                 }
             }
 

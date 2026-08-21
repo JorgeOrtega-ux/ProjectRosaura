@@ -1,4 +1,8 @@
 pub const PAINT_PIXEL_LUA: &str = r#"
+if redis.call('EXISTS', KEYS[1]) == 0 then
+    return {'CANVAS_INACTIVE_ERROR', '0', '0'}
+end
+
 local is_owner = ARGV[10] == "1"
 
 local protected_areas_json = redis.call('GET', KEYS[2])

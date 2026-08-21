@@ -101,7 +101,7 @@ class RedisCache {
 
     public function acquireLock(string $name, int $timeoutSeconds = 5) {
         if (!$this->client || defined('SYSTEM_DEGRADED')) {
-            return bin2hex(random_bytes(16)); 
+            return false; 
         }
 
         try {

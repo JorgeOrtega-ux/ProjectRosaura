@@ -170,7 +170,28 @@ def canvas_persistence_thread():
                 streams[stream_name] = '>'
             
             if streams:
-                messages = r.xreadgroup(CONSUMER_GROUP, CONSUMER_NAME, streams, count=CANVAS_BATCH_SIZE, block=1000)
+                messages = []
+                # Check for un-acked pending messages (PEL) and orphaned messages from dead workers
+                for stream_name in list(streams.keys()):
+                    try:
+                        pending = r.xreadgroup(CONSUMER_GROUP, CONSUMER_NAME, {stream_name: '0'}, count=CANVAS_BATCH_SIZE)
+                        if pending:
+                            for s_b, msgs in pending:
+                                if msgs:
+                                    messages.append((s_b, msgs))
+                    except Exception:
+                        pass
+                    try:
+                        claimed = r.xautoclaim(stream_name, CONSUMER_GROUP, CONSUMER_NAME, min_idle_time=60000, start_id='0-0', count=CANVAS_BATCH_SIZE)
+                        if claimed and len(claimed) > 1 and claimed[1]:
+                            messages.append((stream_name.encode('utf-8'), claimed[1]))
+                    except Exception:
+                        pass
+
+                new_messages = r.xreadgroup(CONSUMER_GROUP, CONSUMER_NAME, streams, count=CANVAS_BATCH_SIZE, block=1000)
+                if new_messages:
+                    messages.extend(new_messages)
+
                 for stream_name_b, msgs in messages:
                     if not msgs: continue
                     stream_name = stream_name_b.decode('utf-8')
@@ -299,9 +320,15 @@ def canvas_persistence_thread():
         if conn:
             cursor = conn.cursor()
             try:
-                dirty_canvases_bytes = r.smembers("canvases:dirty_states")
+                proc_key = f"canvases:dirty_states_proc_{os.getpid()}"
+                try:
+                    r.rename("canvases:dirty_states", proc_key)
+                    dirty_canvases_bytes = r.smembers(proc_key)
+                    r.delete(proc_key)
+                except redis.exceptions.ResponseError:
+                    dirty_canvases_bytes = set()
+
                 if dirty_canvases_bytes:
-                    r.delete("canvases:dirty_states")
                     s3 = get_s3_client()
                     for canvas_id_bytes in dirty_canvases_bytes:
                         canvas_id_str = canvas_id_bytes.decode('utf-8')

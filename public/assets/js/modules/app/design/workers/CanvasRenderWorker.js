@@ -1949,6 +1949,18 @@ self.onmessage = function (e) {
             break;
         }
 
+        case 'RESET_BUFFER': {
+            if (pixelBuffer) {
+                pixelBuffer.fill(0);
+                if (offscreenCtx && mainImageData) {
+                    offscreenCtx.putImageData(mainImageData, 0, 0);
+                }
+                resetDirtyRect();
+                requestRender();
+            }
+            break;
+        }
+
         case 'PUSH_PIXELS': {
             const pixels = e.data.payload.pixels;
             if (isProgressive) {

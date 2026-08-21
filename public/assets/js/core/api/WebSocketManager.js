@@ -9,8 +9,11 @@ export class WebSocketManager {
         this.canvasId = null;
         this.callbacks = {};
         this.isIntentionalDisconnect = false;
+        this.outboxQueue = [];
+        this.maxOutboxSize = 500;
 
         this.heartbeatIntervalId = null;
+        this.reconnectTimeoutId = null;
         this.visibilityHandler = this.handleVisibilityChange.bind(this);
         document.addEventListener('visibilitychange', this.visibilityHandler);
     }
@@ -19,6 +22,20 @@ export class WebSocketManager {
         this.canvasId = canvasId;
         this.ticket = ticket;
         this.isIntentionalDisconnect = false;
+
+        if (this.reconnectTimeoutId) {
+            clearTimeout(this.reconnectTimeoutId);
+            this.reconnectTimeoutId = null;
+        }
+
+        if (this.ws) {
+            this.ws.onopen = null;
+            this.ws.onmessage = null;
+            this.ws.onclose = null;
+            this.ws.onerror = null;
+            try { this.ws.close(); } catch (e) {}
+            this.ws = null;
+        }
         
         let url = `${WsConfig.getBaseUrl()}/canvas/${this.canvasId}`;
         
@@ -30,10 +47,10 @@ export class WebSocketManager {
         this.ws.binaryType = "arraybuffer";
 
         this.ws.onopen = () => {
-            
             this.reconnectAttempts = 0; 
             this.trigger('open'); 
             this.startHeartbeat();
+            this.flushOutbox();
         };
 
         this.ws.onmessage = (event) => {
@@ -118,7 +135,8 @@ export class WebSocketManager {
             const jitter = Math.floor(Math.random() * 2000); // 0 to 2 seconds of random jitter
             const delay = baseDelayCalc + jitter;
 
-            this.reconnectTimeoutId = setTimeout(() => {  // Fix: store ID so disconnect() can cancel it
+            if (this.reconnectTimeoutId) clearTimeout(this.reconnectTimeoutId);
+            this.reconnectTimeoutId = setTimeout(() => {
                 this.reconnectAttempts++;
                 this.connect(this.canvasId, this.ticket);
             }, delay);
@@ -133,7 +151,24 @@ export class WebSocketManager {
                 this.ws.send(JSON.stringify(payload));
             }
         } else {
-            
+            if (this.outboxQueue.length < this.maxOutboxSize) {
+                this.outboxQueue.push(payload);
+            }
+        }
+    }
+
+    flushOutbox() {
+        while (this.outboxQueue.length > 0 && this.ws && this.ws.readyState === WebSocket.OPEN) {
+            const payload = this.outboxQueue.shift();
+            try {
+                if (payload instanceof ArrayBuffer || ArrayBuffer.isView(payload)) {
+                    this.ws.send(payload);
+                } else {
+                    this.ws.send(JSON.stringify(payload));
+                }
+            } catch (e) {
+                console.warn('[WebSocketManager] Error flushing outbox payload:', e);
+            }
         }
     }
 
@@ -142,6 +177,15 @@ export class WebSocketManager {
             this.callbacks[event] = [];
         }
         this.callbacks[event].push(callback);
+    }
+
+    off(event, callback) {
+        if (!this.callbacks[event]) return;
+        if (!callback) {
+            delete this.callbacks[event];
+        } else {
+            this.callbacks[event] = this.callbacks[event].filter(cb => cb !== callback);
+        }
     }
 
     trigger(event, data) {
@@ -159,9 +203,15 @@ export class WebSocketManager {
         }
         document.removeEventListener('visibilitychange', this.visibilityHandler);
         if (this.ws) {
-            this.ws.close();
+            this.ws.onopen = null;
+            this.ws.onmessage = null;
+            this.ws.onclose = null;
+            this.ws.onerror = null;
+            try { this.ws.close(); } catch (e) {}
             this.ws = null;
         }
+        this.outboxQueue = [];
+        this.callbacks = {};
     }
 
     startHeartbeat() {
@@ -183,8 +233,11 @@ export class WebSocketManager {
     handleVisibilityChange() {
         if (document.visibilityState === 'visible') {
             if (!this.isIntentionalDisconnect && (!this.ws || this.ws.readyState !== WebSocket.OPEN)) {
-                
                 this.reconnectAttempts = 0;
+                if (this.reconnectTimeoutId) {
+                    clearTimeout(this.reconnectTimeoutId);
+                    this.reconnectTimeoutId = null;
+                }
                 this.handleReconnect();
             }
         }

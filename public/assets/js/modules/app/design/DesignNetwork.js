@@ -43,6 +43,24 @@ export const DesignNetwork = {
                 if (typeof this.handleCanvasModeChanged === 'function') {
                     this.handleCanvasModeChanged(data);
                 }
+            } else if (data.type === 'local_offline_stroke') {
+                if (this.isOfflineMode && data.pixels && data.pixels.length > 0) {
+                    if (this.renderWorker) {
+                        const pixelsToPush = data.pixels.map(p => ({
+                            x: p.x,
+                            y: p.y,
+                            color: data.color
+                        }));
+                        this.renderWorker.postMessage({ type: 'PUSH_PIXELS', payload: { pixels: pixelsToPush } });
+                    } else if (this.offscreenCtx) {
+                        data.pixels.forEach(p => {
+                            this.offscreenCtx.fillStyle = data.color;
+                            this.offscreenCtx.clearRect(p.x, p.y, 1, 1);
+                            this.offscreenCtx.fillRect(p.x, p.y, 1, 1);
+                        });
+                        this.requestRender();
+                    }
+                }
             }
         });
     },
@@ -408,6 +426,9 @@ export const DesignNetwork = {
                 }
                 else if (data.type === 'lagged_desync') {
                     console.warn('[DesignNetwork] WebSocket lagged and lost sync. Re-fetching chunks...');
+                    if (this.renderWorker) {
+                        this.renderWorker.postMessage({ type: 'RESET_BUFFER' });
+                    }
                     if (this.loadedChunks) {
                         this.loadedChunks.clear();
                     }
@@ -598,6 +619,7 @@ export const DesignNetwork = {
             this.wsManager.connect(this.canvasIntId, wsTicket);
 
             this.wsManager.handleReconnect = async () => {
+                if (this._isReconnecting) return;
                 if (this.wsManager.reconnectAttempts < this.wsManager.maxReconnectAttempts) {
                     const baseDelayCalc = this.wsManager.baseDelay * Math.pow(2, this.wsManager.reconnectAttempts);
                     const jitter = Math.floor(Math.random() * 2000); // 0 to 2 seconds of random jitter
@@ -606,23 +628,29 @@ export const DesignNetwork = {
                     if (this.wsReconnectTimeout) clearTimeout(this.wsReconnectTimeout);
                     this.wsReconnectTimeout = setTimeout(async () => {
                         if (this._destroyed || (this.wsManager && this.wsManager.isIntentionalDisconnect)) return;
+                        if (this._isReconnecting) return;
+                        this._isReconnecting = true;
                         
-                        this.wsManager.reconnectAttempts++;
-                        let newToken = null;
-                        if (!uid) {
-                            try { newToken = await this.getTurnstileToken(); } catch(e){}
-                        }
-                        
-                        const p = { canvas_id: this.canvasIntId };
-                        if (newToken) p['cf-turnstile-response'] = newToken;
+                        try {
+                            this.wsManager.reconnectAttempts++;
+                            let newToken = null;
+                            if (!uid) {
+                                try { newToken = await this.getTurnstileToken(); } catch(e){}
+                            }
+                            
+                            const p = { canvas_id: this.canvasIntId };
+                            if (newToken) p['cf-turnstile-response'] = newToken;
 
-                        const res = await this.api.post(route, p, this.abortController.signal);
-                        if (res.aborted || this._destroyed || (this.wsManager && this.wsManager.isIntentionalDisconnect)) return;
-                        
-                        if (res.success && res.data?.ticket) {
-                            this.wsManager.connect(this.canvasIntId, res.data.ticket);
-                        } else {
-                            this.wsManager.handleReconnect();
+                            const res = await this.api.post(route, p, this.abortController.signal);
+                            if (res.aborted || this._destroyed || (this.wsManager && this.wsManager.isIntentionalDisconnect)) return;
+                            
+                            if (res.success && res.data?.ticket) {
+                                this.wsManager.connect(this.canvasIntId, res.data.ticket);
+                            } else {
+                                this.wsManager.handleReconnect();
+                            }
+                        } finally {
+                            this._isReconnecting = false;
                         }
                     }, delay);
                 } else {

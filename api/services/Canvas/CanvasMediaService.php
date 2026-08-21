@@ -588,43 +588,7 @@ class CanvasMediaService {
                 ];
             }
 
-            $rendered = false;
-            $rendererScript = realpath($rootDir . '/scripts/workers/timelapse_video_renderer.py');
-            if ($rendererScript && file_exists($rendererScript)) {
-                $pyCandidates = ['C:\\Users\\jorge\\AppData\\Local\\Python\\bin\\python.exe', 'python3', 'python'];
-                foreach ($pyCandidates as $py) {
-                    $cmd = escapeshellcmd($py) . ' ' . escapeshellarg($rendererScript) . ' ' . escapeshellarg($localJsonlPath) . ' ' . escapeshellarg($localVideoPath) . ' ' . (int)$duration . ' ' . (int)$targetMaxDim;
-                    @exec($cmd, $out, $retCode);
-                    if ($retCode === 0 && file_exists($localVideoPath) && filesize($localVideoPath) > 0) {
-                        $rendered = true;
-                        break;
-                    }
-                }
-            }
 
-            if ($rendered) {
-                try {
-                    $s3Client->putObject([
-                        'Bucket' => $bucket,
-                        'Key' => $s3VideoKey,
-                        'SourceFile' => $localVideoPath,
-                        'ContentType' => 'video/mp4'
-                    ]);
-                } catch (\Throwable $s3UploadErr) {
-                    Logger::warning("Could not upload generated video to S3: " . $s3UploadErr->getMessage());
-                }
-
-                return [
-                    'success' => true,
-                    'status' => 'ready',
-                    'data' => [
-                        'url' => $publicUrl,
-                        'duration' => $duration,
-                        'quality' => $quality,
-                        'filename' => "timelapse_{$snapshotId}_{$duration}s_{$quality}.mp4"
-                    ]
-                ];
-            }
 
             try {
                 $redis = (new \App\Config\Database\RedisCache())->getClient();
