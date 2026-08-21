@@ -1614,6 +1614,7 @@ LUA;
             if (class_exists(RedisCache::class)) {
                 $redis = (new RedisCache())->getClient();
                 if ($redis) {
+                    $redis->del("canvas:{$canvasId}:state");
                     $redis->sAdd('canvases:pending_snapshots', (string)$canvasId);
                     (new \App\Core\System\CacheInvalidator($redis))->canvas($canvasId, $canvas['uuid'] ?? null);
                 }

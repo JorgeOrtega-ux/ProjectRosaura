@@ -276,7 +276,12 @@ class CanvasAssetController extends BaseController {
                 'angle' => (float)($input['angle'] ?? 0),
                 'timestamp' => time()
             ];
-            $redis->rpush('queue:canvas_draw_image', json_encode($taskData));
+            $jsonPayload = json_encode($taskData);
+            try {
+                $redis->executeRaw(['XADD', 'stream:canvas_draw_image', '*', 'payload', $jsonPayload]);
+            } catch (\Throwable $eStream) {
+                $redis->rpush('queue:canvas_draw_image', $jsonPayload);
+            }
             
             return $this->respond(['success' => true, 'message' => __('msg_template_queued')]);
             

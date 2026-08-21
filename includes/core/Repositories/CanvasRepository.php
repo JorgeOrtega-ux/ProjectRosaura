@@ -1154,20 +1154,20 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getSnapshot(int $canvasId): ?string {
-        $redisKey = "canvas:{$canvasId}:state";
-        if ($this->redisClient) {
-            try {
-                $cached = $this->redisClient->get($redisKey);
-                if ($cached) return $cached;
-            } catch (\Throwable $e) {}
-        }
-
         $sql = "SELECT s3_key, snapshot_data FROM " . DB::TBL_CANVAS_SNAPSHOTS . " WHERE canvas_id = :canvas_id LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':canvas_id' => $canvasId]);
         
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) {
+            // Fallback a Redis si no hay fila en canvas_snapshots
+            $redisKey = "canvas:{$canvasId}:state";
+            if ($this->redisClient) {
+                try {
+                    $cached = $this->redisClient->get($redisKey);
+                    if ($cached) return $cached;
+                } catch (\Throwable $e) {}
+            }
             return null;
         }
 
@@ -1175,20 +1175,29 @@ class CanvasRepository implements CanvasRepositoryInterface {
         if (!empty($row['s3_key'])) {
             try {
                 $s3 = \App\Core\Helpers\Utils::getS3Client();
-                $bucket = $_ENV['AWS_BUCKET'] ?? 'rosaura-storage';
+                $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
                 $result = $s3->getObject([
                     'Bucket' => $bucket,
                     'Key'    => $row['s3_key']
                 ]);
                 $body = (string)$result['Body'];
-                $data = $body ? @gzuncompress($body) : null;
+                if ($body) {
+                    $decompressed = @gzuncompress($body);
+                    if ($decompressed === false) $decompressed = @gzdecode($body);
+                    if ($decompressed === false) $decompressed = @gzinflate($body);
+                    $data = ($decompressed !== false) ? $decompressed : $body;
+                }
             } catch (\Throwable $e) {
                 Logger::error("Failed to fetch active snapshot from S3 for canvas {$canvasId}: " . $e->getMessage());
             }
         }
 
         if ($data === null && !empty($row['snapshot_data'])) {
-            $data = @gzuncompress($row['snapshot_data']);
+            $raw = $row['snapshot_data'];
+            $decompressed = @gzuncompress($raw);
+            if ($decompressed === false) $decompressed = @gzdecode($raw);
+            if ($decompressed === false) $decompressed = @gzinflate($raw);
+            $data = ($decompressed !== false) ? $decompressed : $raw;
         }
 
         return $data;
@@ -1200,7 +1209,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         
         try {
             $s3 = \App\Core\Helpers\Utils::getS3Client();
-            $bucket = $_ENV['AWS_BUCKET'] ?? 'rosaura-storage';
+            $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
             $s3->putObject([
                 'Bucket' => $bucket,
                 'Key'    => $s3_key,

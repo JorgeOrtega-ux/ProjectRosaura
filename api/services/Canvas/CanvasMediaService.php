@@ -631,14 +631,19 @@ class CanvasMediaService {
                 $lockKey = "lock:timelapse_job:{$data['snapshot_uuid']}_{$duration}s_{$quality}";
                 $acquired = $redis->set($lockKey, (string)time(), ['NX', 'EX' => 180]);
                 if ($acquired) {
-                    $redis->rpush('queue:canvas_timelapse_video', json_encode([
+                    $taskPayload = json_encode([
                         'snapshot_uuid' => $data['snapshot_uuid'],
                         'canvas_uuid' => $data['canvas_uuid'],
                         'duration' => $duration,
                         'quality' => $quality,
                         'fps' => 30,
                         'target_max_dim' => $targetMaxDim
-                    ]));
+                    ]);
+                    try {
+                        $redis->executeRaw(['XADD', 'stream:canvas_timelapse_video', '*', 'payload', $taskPayload]);
+                    } catch (\Throwable $eStream) {
+                        $redis->rpush('queue:canvas_timelapse_video', $taskPayload);
+                    }
                 }
                 return [
                     'success' => true,

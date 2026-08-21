@@ -22,6 +22,7 @@ from PIL import Image
 from datetime import datetime
 import boto3
 import io
+import numpy as np
 
 try:
     from scripts.workers.timelapse_video_renderer import render_timelapse_to_mp4
@@ -75,7 +76,7 @@ SCALE_FACTOR = int(os.getenv("SNAPSHOT_SCALE_FACTOR") or 2)
 def get_redis_client():
     r = redis.Redis(
         host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASS,
-        socket_keepalive=True, retry_on_timeout=True,
+        socket_keepalive=True,
         health_check_interval=60, socket_timeout=60
     )
     r.ping()
@@ -97,6 +98,213 @@ def parse_size(size_val):
     else:
         v = int(size_str)
         return v, v
+
+def compute_chunk_crc_map(canvas_arr, affected_chunks, chunk_size=512):
+    """Calcula firmas CRC32 para los cuadrantes afectados."""
+    h, w, _ = canvas_arr.shape
+    crc_map = {}
+    for chunk_key in affected_chunks:
+        try:
+            cx_str, cy_str = chunk_key.split(',')
+            cx, cy = int(cx_str), int(cy_str)
+            start_x = cx * chunk_size
+            start_y = cy * chunk_size
+            end_x = min(w, start_x + chunk_size)
+            end_y = min(h, start_y + chunk_size)
+            if start_x < w and start_y < h:
+                chunk_slice = canvas_arr[start_y:end_y, start_x:end_x]
+                crc_val = zlib.crc32(chunk_slice.tobytes()) & 0xffffffff
+                crc_map[chunk_key] = format(crc_val, '08x')
+        except Exception as e:
+            logging.warning(f"Error computing CRC for chunk {chunk_key}: {e}")
+    return crc_map
+
+class ResilientStreamConsumer:
+    """
+    Consumer resiliente para Redis Streams con:
+    - Consumer Groups (XREADGROUP)
+    - Confirmación transaccional (XACK)
+    - Detección y recuperación de tareas huérfanas (XAUTOCLAIM / XPENDING)
+    - Dead Letter Queue (DLQ tras max_retries)
+    - Drenado de colas legacy (BLPOP / RPOP fallback) para retrocompatibilidad total
+    """
+    def __init__(self, r, stream_key, group_name, legacy_queue_key=None, max_retries=3, claim_idle_ms=120000):
+        self.r = r
+        self.stream_key = stream_key
+        self.group_name = group_name
+        self.legacy_queue_key = legacy_queue_key
+        self.max_retries = max_retries
+        self.claim_idle_ms = claim_idle_ms
+        self.consumer_name = f"worker-{uuid.uuid4().hex[:8]}"
+        self._ensure_group()
+        self._last_claim_time = 0
+
+    def _ensure_group(self):
+        try:
+            self.r.xgroup_create(self.stream_key, self.group_name, id='0', mkstream=True)
+            logging.info(f"Consumer group '{self.group_name}' ready on stream '{self.stream_key}'.")
+        except redis.exceptions.ResponseError as e:
+            if "BUSYGROUP" not in str(e):
+                logging.warning(f"Note on xgroup_create for {self.stream_key}: {e}")
+
+    def fetch_task(self, block_ms=2000):
+        """
+        Obtiene la siguiente tarea disponible:
+        1. Mensajes pendientes en PEL propio (reintentos)
+        2. Auto-claim de tareas abandonadas por otros workers (stalled)
+        3. Nuevos mensajes del Stream ('>')
+        4. Fallback a colas legacy si no hay tareas en el stream
+        Retorna (task_data, ack_callback, fail_callback) o (None, None, None)
+        """
+        # 1. Verificar si hay mensajes pendientes no confirmados en el PEL de este consumidor
+        try:
+            pending_entries = self.r.xreadgroup(
+                self.group_name, self.consumer_name,
+                {self.stream_key: '0'}, count=1
+            )
+            if pending_entries:
+                for s_key, msgs in pending_entries:
+                    if msgs:
+                        msg_id, fields = msgs[0]
+                        item = self._build_stream_item(msg_id, fields)
+                        if item[0] is not None:
+                            return item
+        except Exception as p_err:
+            pass
+
+        now = time.time()
+        # 2. Periódicamente revisar y reclamar tareas pendientes huérfanas de otros workers
+        if now - self._last_claim_time > 30:
+            self._last_claim_time = now
+            try:
+                claimed = self.r.xautoclaim(
+                    self.stream_key, self.group_name, self.consumer_name,
+                    min_idle_time=self.claim_idle_ms, start_id='0-0', count=10
+                )
+                if claimed and len(claimed) > 1 and claimed[1]:
+                    for msg_id, fields in claimed[1]:
+                        item = self._build_stream_item(msg_id, fields)
+                        if item[0] is not None:
+                            return item
+            except Exception:
+                pass
+
+        # 3. Leer nuevos mensajes del grupo
+        try:
+            entries = self.r.xreadgroup(
+                self.group_name, self.consumer_name,
+                {self.stream_key: '>'}, count=1, block=block_ms
+            )
+            if entries:
+                for s_key, msgs in entries:
+                    if msgs:
+                        msg_id, fields = msgs[0]
+                        item = self._build_stream_item(msg_id, fields)
+                        if item[0] is not None:
+                            return item
+        except redis.exceptions.ResponseError as err:
+            if "NOGROUP" in str(err):
+                self._ensure_group()
+            else:
+                logging.error(f"Error reading from stream {self.stream_key}: {err}")
+        except Exception as e:
+            logging.error(f"Error reading from stream {self.stream_key}: {e}")
+
+        # Fallback a cola legacy si está configurada
+        if self.legacy_queue_key:
+            try:
+                legacy_item = self.r.rpop(self.legacy_queue_key)
+                if legacy_item:
+                    task_json = legacy_item.decode('utf-8') if isinstance(legacy_item, bytes) else legacy_item
+                    task_data = json.loads(task_json)
+                    
+                    def legacy_ack():
+                        pass
+                    
+                    def legacy_fail(err):
+                        self._route_to_dlq(task_data, err, is_legacy=True)
+                        
+                    return task_data, legacy_ack, legacy_fail
+            except Exception as leg_err:
+                logging.error(f"Error reading from legacy queue {self.legacy_queue_key}: {leg_err}")
+
+        return None, None, None
+
+    def _build_stream_item(self, msg_id, fields):
+        msg_id_str = msg_id.decode('utf-8') if isinstance(msg_id, bytes) else str(msg_id)
+        task_data = {}
+        try:
+            if b'payload' in fields:
+                raw_p = fields[b'payload']
+                task_data = json.loads(raw_p.decode('utf-8') if isinstance(raw_p, bytes) else raw_p)
+            elif 'payload' in fields:
+                raw_p = fields['payload']
+                task_data = json.loads(raw_p if isinstance(raw_p, str) else raw_p.decode('utf-8'))
+            else:
+                for k, v in fields.items():
+                    k_str = k.decode('utf-8') if isinstance(k, bytes) else str(k)
+                    v_str = v.decode('utf-8') if isinstance(v, bytes) else str(v)
+                    try:
+                        task_data[k_str] = json.loads(v_str)
+                    except Exception:
+                        task_data[k_str] = v_str
+        except Exception as p_err:
+            logging.error(f"Error decoding stream payload {msg_id_str}: {p_err}")
+            self._route_to_dlq({"raw_fields": str(fields)}, p_err)
+            try:
+                self.r.xack(self.stream_key, self.group_name, msg_id)
+                self.r.xdel(self.stream_key, msg_id)
+            except Exception:
+                pass
+            return None, None, None
+
+        def ack_cb():
+            try:
+                self.r.xack(self.stream_key, self.group_name, msg_id)
+                self.r.xdel(self.stream_key, msg_id)
+            except Exception as ack_err:
+                logging.warning(f"Error executing XACK for {msg_id_str}: {ack_err}")
+
+        def fail_cb(err):
+            try:
+                pending = self.r.xpending_range(self.stream_key, self.group_name, min=msg_id, max=msg_id, count=1)
+                delivery_count = 1
+                if pending and len(pending) > 0:
+                    delivery_count = pending[0].get('times_delivered', 1)
+
+                if delivery_count >= self.max_retries:
+                    logging.error(f"Job {msg_id_str} en {self.stream_key} superó max retries ({delivery_count}). Moviendo a DLQ.")
+                    self._route_to_dlq(task_data, err, msg_id=msg_id_str)
+                    self.r.xack(self.stream_key, self.group_name, msg_id)
+                    self.r.xdel(self.stream_key, msg_id)
+                else:
+                    logging.warning(f"Job {msg_id_str} en {self.stream_key} falló (intento {delivery_count}/{self.max_retries}): {err}.")
+            except Exception as f_err:
+                logging.error(f"Error handling task failure for {msg_id_str}: {f_err}")
+
+        return task_data, ack_cb, fail_cb
+
+    def _route_to_dlq(self, task_data, error, msg_id=None, is_legacy=False):
+        try:
+            dlq_entry = {
+                "stream": self.stream_key,
+                "msg_id": str(msg_id or "legacy"),
+                "error": str(error),
+                "payload": json.dumps(task_data),
+                "traceback": traceback.format_exc(),
+                "failed_at": datetime.utcnow().isoformat()
+            }
+            self.r.xadd("stream:dead_letter", {"data": json.dumps(dlq_entry)})
+            self.r.rpush("queue:dead_letter", json.dumps(dlq_entry))
+            self.r.publish("admin:canvas_events", json.dumps({
+                "type": "job_dlq_alert",
+                "stream": self.stream_key,
+                "error": str(error),
+                "timestamp": int(time.time())
+            }))
+            logging.info(f"Task successfully routed to Dead Letter Queue (DLQ).")
+        except Exception as dlq_err:
+            logging.error(f"Critical error sending to DLQ: {dlq_err}")
 
 def process_resize_task(r, db, task_data):
     try:
@@ -138,26 +346,23 @@ def process_resize_task(r, db, task_data):
         expected_size = old_w * old_h * 4
 
         if actual_len != expected_size:
-            logging.warning(f"DesincronizaciÃ³n detectada. Metadata esperaba {expected_size} bytes, Redis tiene {actual_len} bytes.")
-            real_old_size = int(math.sqrt(actual_len // 4))
+            logging.warning(f"Desincronización detectada. Metadata esperaba {expected_size} bytes, Redis tiene {actual_len} bytes.")
+            real_old_size = int(math.sqrt(actual_len // 4)) if actual_len >= 4 else 64
             logging.warning(f"Auto-correcting base size to {real_old_size}x{real_old_size} for correct processing.")
             old_w, old_h = real_old_size, real_old_size
+            if actual_len < old_w * old_h * 4:
+                old_state = old_state + (b'\x00\x00\x00\x00' * ((old_w * old_h * 4 - actual_len) // 4))
 
-        new_state = bytearray([0, 0, 0, 0] * (new_w * new_h))
+        # Vectorized array copy with NumPy (SIMD accelerated, zero Python loop overhead)
+        old_arr = np.frombuffer(old_state, dtype=np.uint8).reshape((old_h, old_w, 4))
+        new_arr = np.zeros((new_h, new_w, 4), dtype=np.uint8)
+        
         limit_x = min(old_w, new_w)
         limit_y = min(old_h, new_h)
         
-        for y in range(limit_y):
-            for x in range(limit_x):
-                old_idx = ((y * old_w) + x) * 4
-                new_idx = ((y * new_w) + x) * 4
-                if old_idx + 3 < len(old_state) and new_idx + 3 < len(new_state):
-                    new_state[new_idx] = old_state[old_idx]
-                    new_state[new_idx+1] = old_state[old_idx+1]
-                    new_state[new_idx+2] = old_state[old_idx+2]
-                    new_state[new_idx+3] = old_state[old_idx+3]
+        new_arr[:limit_y, :limit_x] = old_arr[:limit_y, :limit_x]
+        new_state_bytes = new_arr.tobytes()
 
-        new_state_bytes = bytes(new_state)
         r.set(state_key, new_state_bytes)
 
         new_size_db_str = f"{new_w}x{new_h}"
@@ -193,38 +398,53 @@ def process_resize_task(r, db, task_data):
         logging.info(f"Canvas resize for {canvas_id} completed successfully.")
 
     except Exception as e:
-        logging.error(f"Error crÃ­tico en Resize: {str(e)}")
+        logging.error(f"Error crítico en Resize: {str(e)}")
         if 'canvas_id' in locals():
             r.delete(f"canvas:{canvas_id}:resize_lock")
             r.publish("admin:canvas_events", json.dumps({
                 "type": "canvas_resize_error", "canvas_id": canvas_id, "error": str(e)
             }))
+        raise e
 
 def resize_listener_thread():
-    logging.info("Iniciando Hilo Listener de Resizes...")
+    logging.info("Iniciando Hilo Listener de Resizes (Redis Streams + DLQ)...")
     r = None
     db = None
+    consumer = None
     
     while True:
         try:
             if r is None: r = get_redis_client()
             if db is None: db = get_db_connection()
+            if consumer is None:
+                consumer = ResilientStreamConsumer(
+                    r,
+                    stream_key="stream:canvas_resizes",
+                    group_name="group:canvas_resizes",
+                    legacy_queue_key="canvases:pending_resizes",
+                    max_retries=3,
+                    claim_idle_ms=60000
+                )
             
-            result = r.blpop("canvases:pending_resizes", timeout=30)
-            
-            if result:
-                _, task_json = result
-                task_data = json.loads(task_json.decode('utf-8') if isinstance(task_json, bytes) else task_json)
+            task_data, ack_cb, fail_cb = consumer.fetch_task(block_ms=2000)
+            if task_data is not None:
                 try:
                     db.ping(reconnect=False)
                 except Exception:
                     db = get_db_connection()
-                process_resize_task(r, db, task_data)
+                
+                try:
+                    process_resize_task(r, db, task_data)
+                    ack_cb()
+                except Exception as proc_err:
+                    logging.error(f"Error en process_resize_task: {proc_err}")
+                    fail_cb(proc_err)
                 
         except Exception as e:
             logging.error(f"Fallo en bucle de Resize Listener: {e}")
             db = None
             r = None
+            consumer = None
             time.sleep(5)
 
 def process_reset_task(r, db, task_data):
@@ -326,30 +546,44 @@ def process_reset_task(r, db, task_data):
         r.delete(f"canvas:{canvas_id}:reset_lock")
 
 def reset_listener_thread():
-    logging.info("Iniciando Hilo Listener de Resets...")
+    logging.info("Iniciando Hilo Listener de Resets (Redis Streams + DLQ)...")
     r = None
     db = None
+    consumer = None
     
     while True:
         try:
             if r is None: r = get_redis_client()
             if db is None: db = get_db_connection()
+            if consumer is None:
+                consumer = ResilientStreamConsumer(
+                    r,
+                    stream_key="stream:canvas_resets",
+                    group_name="group:canvas_resets",
+                    legacy_queue_key="canvases:pending_resets",
+                    max_retries=3,
+                    claim_idle_ms=60000
+                )
             
-            result = r.blpop("canvases:pending_resets", timeout=30)
-            
-            if result:
-                _, task_json = result
-                task_data = json.loads(task_json.decode('utf-8') if isinstance(task_json, bytes) else task_json)
+            task_data, ack_cb, fail_cb = consumer.fetch_task(block_ms=2000)
+            if task_data is not None:
                 try:
                     db.ping(reconnect=False)
                 except Exception:
                     db = get_db_connection()
-                process_reset_task(r, db, task_data)
+                
+                try:
+                    process_reset_task(r, db, task_data)
+                    ack_cb()
+                except Exception as proc_err:
+                    logging.error(f"Error en process_reset_task: {proc_err}")
+                    fail_cb(proc_err)
                 
         except Exception as e:
             logging.error(f"Fallo en bucle de Reset Listener: {e}")
             db = None
             r = None
+            consumer = None
             time.sleep(5)
 
 def scheduler_thread():
@@ -377,9 +611,10 @@ def scheduler_thread():
                     canvas_id = pr['canvas_id']
                     logging.info(f"Scheduler: Triggering Resize for canvas {canvas_id}")
                     
-                    r.lpush("canvases:pending_resizes", json.dumps({
+                    resize_payload = {
                         'canvas_id': canvas_id, 'old_size': str(pr['old_size']), 'new_size': str(pr['target_size'])
-                    }))
+                    }
+                    r.xadd("stream:canvas_resizes", {"payload": json.dumps(resize_payload)})
                     r.setex(f"canvas:{canvas_id}:resize_lock", 60, "1")
                     r.publish("admin:canvas_events", json.dumps({
                         'type': 'canvas_locked_resize', 'canvas_id': canvas_id, 'new_size': pr['target_size']
@@ -396,9 +631,10 @@ def scheduler_thread():
                     canvas_id = pr['canvas_id']
                     logging.info(f"Scheduler: Triggering Reset for canvas {canvas_id}")
                     
-                    r.lpush("canvases:pending_resets", json.dumps({
+                    reset_payload = {
                         'canvas_id': canvas_id, 'take_snapshot': pr['take_snapshot'], 'canvas_size': str(pr['canvas_size'])
-                    }))
+                    }
+                    r.xadd("stream:canvas_resets", {"payload": json.dumps(reset_payload)})
                     r.setex(f"canvas:{canvas_id}:reset_lock", 300, "1")
                     r.publish("admin:canvas_events", json.dumps({"type": "canvas_locked", "canvas_id": canvas_id}))
                     cursor.execute("UPDATE canvas_reset_settings SET is_active = 0 WHERE canvas_id = %s", (canvas_id,))
@@ -418,9 +654,10 @@ def scheduler_thread():
                         take_snapshot = int(opts.get('take_snapshot', 1))
                         r.hdel("canvases:force_resets_options", b_canvas_id)
                     
-                    r.lpush("canvases:pending_resets", json.dumps({
+                    forced_reset_payload = {
                         'canvas_id': canvas_id, 'take_snapshot': take_snapshot, 'canvas_size': str(res['size']) if res else '64x64'
-                    }))
+                    }
+                    r.xadd("stream:canvas_resets", {"payload": json.dumps(forced_reset_payload)})
                     r.setex(f"canvas:{canvas_id}:reset_lock", 300, "1")
                     r.publish("admin:canvas_events", json.dumps({"type": "canvas_locked", "canvas_id": canvas_id}))
                     r.srem("canvases:force_resets", b_canvas_id)
@@ -884,8 +1121,9 @@ def execute_canvas_draw_image(r, canvas_id, image_path, start_x, start_y, target
     expected_size = width * height * 4
     if not raw_state or len(raw_state) != expected_size:
         logging.warning(f"Redis state for canvas {canvas_id} size mismatch or missing. Checking cold storage snapshot.")
+        db_conn_snap = get_db_connection()
         try:
-            with db_conn.cursor() as cursor:
+            with db_conn_snap.cursor() as cursor:
                 cursor.execute("SELECT snapshot_data, s3_key FROM canvas_snapshots WHERE canvas_id = %s LIMIT 1", (canvas_id,))
                 snap_row = cursor.fetchone()
                 if snap_row:
@@ -903,41 +1141,76 @@ def execute_canvas_draw_image(r, canvas_id, image_path, start_x, start_y, target
                             raw_state = None
         except Exception as snap_fetch_err:
             logging.error(f"Error fetching snapshot for canvas {canvas_id}: {snap_fetch_err}")
+        finally:
+            db_conn_snap.close()
 
         if not raw_state or len(raw_state) != expected_size:
             logging.warning(f"Snapshot not found or size mismatch. Resetting buffer.")
             raw_state = b'\x00\x00\x00\x00' * (width * height)
 
-    state = bytearray(raw_state)
-    original_pixels = img.load()
+    # 1. High performance NumPy vectorization for blending
+    canvas_arr = np.frombuffer(raw_state, dtype=np.uint8).reshape((height, width, 4)).copy()
+    img_arr = np.array(img, dtype=np.uint8) # Shape: (img_height, img_width, 4)
+    
+    # Calculate clipping boundaries
+    c_x1 = max(0, start_x)
+    c_y1 = max(0, start_y)
+    c_x2 = min(width, start_x + img_width)
+    c_y2 = min(height, start_y + img_height)
+    
     changed = 0
     pixels_to_persist = []
-
-    logging.info("Injecting pixels into Redis state buffer...")
-    for iy in range(img_height):
-        for ix in range(img_width):
-            cx = start_x + ix
-            cy = start_y + iy
+    affected_chunks = []
+    chunk_crc_map = {}
+    CHUNK_SIZE = 512
+    
+    if c_x1 < c_x2 and c_y1 < c_y2:
+        img_x1 = c_x1 - start_x
+        img_y1 = c_y1 - start_y
+        img_x2 = img_x1 + (c_x2 - c_x1)
+        img_y2 = img_y1 + (c_y2 - c_y1)
+        
+        img_sub = img_arr[img_y1:img_y2, img_x1:img_x2]
+        canvas_sub = canvas_arr[c_y1:c_y2, c_x1:c_x2]
+        
+        # Alpha mask (alpha >= 128)
+        alpha_mask = img_sub[..., 3] >= 128
+        
+        if np.any(alpha_mask):
+            # Opaque replacement: set alpha to 255
+            replacement = img_sub.copy()
+            replacement[..., 3] = 255
             
-            if cx < 0 or cx >= width or cy < 0 or cy >= height:
-                continue
+            # Vectorized assignment
+            canvas_sub[alpha_mask] = replacement[alpha_mask]
+            canvas_arr[c_y1:c_y2, c_x1:c_x2] = canvas_sub
+            changed = int(np.count_nonzero(alpha_mask))
+            
+            # Calculate affected chunks
+            min_chunk_x = c_x1 // CHUNK_SIZE
+            max_chunk_x = (c_x2 - 1) // CHUNK_SIZE
+            min_chunk_y = c_y1 // CHUNK_SIZE
+            max_chunk_y = (c_y2 - 1) // CHUNK_SIZE
+            
+            chunk_set = set()
+            for cy in range(min_chunk_y, max_chunk_y + 1):
+                for cx in range(min_chunk_x, max_chunk_x + 1):
+                    chunk_set.add(f"{cx},{cy}")
+            affected_chunks = sorted(list(chunk_set))
+            chunk_crc_map = compute_chunk_crc_map(canvas_arr, affected_chunks, CHUNK_SIZE)
+            
+            # Extract coordinates for Cassandra persistence in batch
+            if user_id is not None:
+                ys, xs = np.where(alpha_mask)
+                global_xs = c_x1 + xs
+                global_ys = c_y1 + ys
+                colors = img_sub[alpha_mask]
+                for gx, gy, col in zip(global_xs, global_ys, colors):
+                    c_hex = f"#{col[0]:02x}{col[1]:02x}{col[2]:02x}"
+                    pixels_to_persist.append((int(gx), int(gy), c_hex))
 
-            orig_rgba = original_pixels[ix, iy]
-            if orig_rgba[3] < 128:
-                continue
-
-            offset = ((cy * width) + cx) * 4
-            if offset + 3 < len(state):
-                state[offset] = orig_rgba[0]
-                state[offset+1] = orig_rgba[1]
-                state[offset+2] = orig_rgba[2]
-                state[offset+3] = 255
-                changed += 1
-                c_hex = f"#{orig_rgba[0]:02x}{orig_rgba[1]:02x}{orig_rgba[2]:02x}"
-                pixels_to_persist.append((cx, cy, c_hex))
-
-    logging.info(f"Saving new state to Redis ({changed} new pixels)...")
-    r.set(state_key, bytes(state))
+    logging.info(f"Saving new state to Redis ({changed} new pixels in {len(affected_chunks)} chunks)...")
+    r.set(state_key, canvas_arr.tobytes())
     r.sadd("canvases:dirty_states", canvas_id)
     logging.info("Image drawing successfully completed.")
 
@@ -973,7 +1246,6 @@ def execute_canvas_draw_image(r, canvas_id, image_path, start_x, start_y, target
                 logging.error("Unable to persist to Cassandra: no cached session available.")
         except Exception as cass_err:
             logging.error(f"Error persisting template pixels to Cassandra: {cass_err}")
-            # Reset connection state on error so it reconnects on next task
             global _cassandra_cluster, _cassandra_session
             _cassandra_cluster = None
             _cassandra_session = None
@@ -991,37 +1263,52 @@ def execute_canvas_draw_image(r, canvas_id, image_path, start_x, start_y, target
             finally:
                 db_conn.close()
 
+    return {
+        "changed": changed,
+        "affected_chunks": affected_chunks,
+        "chunk_crc_map": chunk_crc_map
+    }
+
 def draw_image_listener_thread():
-    logging.info("Starting Draw Image listener thread...")
-    r = get_redis_client()
+    logging.info("Starting Draw Image listener thread (Redis Streams + DLQ)...")
+    r = None
+    consumer = None
     while True:
         try:
-            item = r.blpop("queue:canvas_draw_image", timeout=30)
-            if item:
-                _, task_json = item
-                task_data = json.loads(task_json)
+            if r is None:
+                r = get_redis_client()
+                consumer = ResilientStreamConsumer(
+                    r,
+                    stream_key="stream:canvas_draw_image",
+                    group_name="group:canvas_draw_image",
+                    legacy_queue_key="queue:canvas_draw_image",
+                    max_retries=3,
+                    claim_idle_ms=60000
+                )
+            
+            task_data, ack_cb, fail_cb = consumer.fetch_task(block_ms=2000)
+            if task_data is not None:
                 url = task_data.get('url')
                 canvas_id = task_data.get('canvas_id')
                 user_id = task_data.get('user_id')
-                x = task_data.get('x', 0)
-                y = task_data.get('y', 0)
-                w = task_data.get('w', 0)
-                h = task_data.get('h', 0)
-                angle = task_data.get('angle', 0)
+                x = int(task_data.get('x', 0))
+                y = int(task_data.get('y', 0))
+                w = int(task_data.get('w', 0))
+                h = int(task_data.get('h', 0))
+                angle = float(task_data.get('angle', 0))
                 
                 logging.info(f"Received draw_image task for canvas {canvas_id} at {x},{y} w={w} h={h} a={angle} user={user_id}")
                 
-                # Broadcast lock event so frontend blocks the canvas & set Redis inject lock
                 inject_lock_key = f"canvas:{canvas_id}:inject_lock"
                 r.setex(inject_lock_key, 60, "1")
                 r.publish("admin:canvas_events", json.dumps({
                     "type": "canvas_locked_inject", "canvas_id": canvas_id
                 }))
                 
+                temp_path = None
                 try:
-                    # S3 setup
                     bucket = os.getenv('AWS_BUCKET')
-                    public_url = os.getenv('AWS_PUBLIC_URL').rstrip('/') if os.getenv('AWS_PUBLIC_URL') else ''
+                    public_url = os.getenv('AWS_PUBLIC_URL', '').rstrip('/')
                     key = url.replace(f"{public_url}/{bucket}/", "")
                     key = urllib.parse.urlparse(key).path.lstrip('/')
                     
@@ -1033,15 +1320,15 @@ def draw_image_listener_thread():
                         s3_client.download_file(bucket, key, temp_path)
                     
                     logging.info(f"Drawing template image in-process for canvas {canvas_id}...")
-                    execute_canvas_draw_image(r, canvas_id, temp_path, x, y, w, h, angle, user_id=user_id)
+                    draw_res = execute_canvas_draw_image(r, canvas_id, temp_path, x, y, w, h, angle, user_id=user_id)
+                    affected_chunks = draw_res.get('affected_chunks', [])
+                    chunk_crc_map = draw_res.get('chunk_crc_map', {})
                     
-                    os.remove(temp_path)
-                    affected_chunks = []
-                    
-                    # Broadcast completed event so frontend reloads the canvas state
+                    # Broadcast completed event so frontend reloads only dirty chunks
                     r.publish("admin:canvas_events", json.dumps({
                         "type": "canvas_inject_completed", "canvas_id": canvas_id,
                         "affected_chunks": affected_chunks,
+                        "chunk_crc_map": chunk_crc_map,
                         "x": x,
                         "y": y,
                         "w": w,
@@ -1061,28 +1348,47 @@ def draw_image_listener_thread():
                         "image_url": str(url)
                     })
                     logging.info(f"Canvas inject for {canvas_id} completed successfully. Affected chunks: {len(affected_chunks)}")
+                    ack_cb()
                     
                 except Exception as draw_err:
                     logging.error(f"Error in draw_image processing: {draw_err}")
                     r.publish("admin:canvas_events", json.dumps({
                         "type": "canvas_inject_error", "canvas_id": canvas_id, "error": str(draw_err)
                     }))
+                    fail_cb(draw_err)
                 finally:
+                    if temp_path and os.path.exists(temp_path):
+                        try:
+                            os.remove(temp_path)
+                        except Exception:
+                            pass
                     r.delete(inject_lock_key)
-                
+                    
         except Exception as e:
             logging.error(f"Error in Draw Image listener: {e}")
-            time.sleep(1)
+            r = None
+            consumer = None
+            time.sleep(2)
 
 def timelapse_video_listener_thread():
-    logging.info("Starting Timelapse Video Export listener thread...")
-    r = get_redis_client()
+    logging.info("Starting Timelapse Video Export listener thread (Redis Streams + DLQ)...")
+    r = None
+    consumer = None
     while True:
         try:
-            item = r.blpop("queue:canvas_timelapse_video", timeout=30)
-            if item:
-                _, task_json = item
-                task_data = json.loads(task_json)
+            if r is None:
+                r = get_redis_client()
+                consumer = ResilientStreamConsumer(
+                    r,
+                    stream_key="stream:canvas_timelapse_video",
+                    group_name="group:canvas_timelapse_video",
+                    legacy_queue_key="queue:canvas_timelapse_video",
+                    max_retries=3,
+                    claim_idle_ms=300000
+                )
+            
+            task_data, ack_cb, fail_cb = consumer.fetch_task(block_ms=2000)
+            if task_data is not None:
                 snapshot_uuid = task_data.get('snapshot_uuid')
                 canvas_uuid = task_data.get('canvas_uuid', 'default')
                 duration = float(task_data.get('duration', 30))
@@ -1099,7 +1405,9 @@ def timelapse_video_listener_thread():
                 logging.info(f"Received timelapse MP4 export task for snapshot {snapshot_uuid} (duration: {duration}s, quality: {quality}, target_max_dim: {target_max_dim})")
                 
                 if not render_timelapse_to_mp4:
-                    logging.error("render_timelapse_to_mp4 function not available.")
+                    err_msg = "render_timelapse_to_mp4 function not available"
+                    logging.error(err_msg)
+                    fail_cb(Exception(err_msg))
                     continue
 
                 local_jsonl = os.path.join(BASE_DIR, 'storage', 'timelapses', 'snapshots', f"{snapshot_uuid}.jsonl")
@@ -1117,6 +1425,7 @@ def timelapse_video_listener_thread():
                     r.setex(f"video:snapshot:{snapshot_uuid}:{int(duration)}:{quality}", 60, json.dumps({
                         "status": "error", "message": "Timelapse data not found"
                     }))
+                    fail_cb(Exception(f"Timelapse data not found for snapshot {snapshot_uuid}"))
                     continue
                 
                 local_video_dir = os.path.join(BASE_DIR, 'storage', 'timelapses', 'videos')
@@ -1170,6 +1479,7 @@ def timelapse_video_listener_thread():
                     r.publish(f"timelapse:video_ready:{snapshot_uuid}:{int(duration)}:{quality}", json.dumps(res_payload))
                     r.publish(f"timelapse:video_ready:{snapshot_uuid}:{int(duration)}", json.dumps(res_payload))
                     logging.info(f"[+] Timelapse video task completed for snapshot {snapshot_uuid} in {render_res.get('elapsed_seconds', '?')}s")
+                    ack_cb()
                 except Exception as render_err:
                     logging.error(f"[!] Timelapse render failed or timed out for {snapshot_uuid}: {render_err}")
                     err_payload = {
@@ -1178,15 +1488,18 @@ def timelapse_video_listener_thread():
                     }
                     r.setex(f"video:snapshot:{snapshot_uuid}:{int(duration)}:{quality}", 60, json.dumps(err_payload))
                     r.publish(f"timelapse:video_ready:{snapshot_uuid}:{int(duration)}:{quality}", json.dumps(err_payload))
+                    fail_cb(render_err)
                 finally:
                     try:
                         r.delete(lock_key)
                     except Exception:
                         pass
-                
+                    
         except Exception as e:
             logging.error(f"Error in Timelapse Video listener: {e}")
-            time.sleep(1)
+            r = None
+            consumer = None
+            time.sleep(2)
 
 if __name__ == "__main__":
     logging.info("INICIANDO WORKER UNIFICADO DE CANVAS (RESETS, RESIZES, THUMBNAILS, VIDEOS)...")
