@@ -140,12 +140,10 @@ export class BillingController {
                     renewalBtn.textContent = actionText;
                     renewalBtn.dataset.cancelState = !cancelAtEnd;
                     if (cancelAtEnd) {
-                        renewalBtn.classList.remove('component-button--primary');
-                        renewalBtn.classList.add('component-button--brand');
+                                                renewalBtn.classList.add('component-button--brand');
                     } else {
                         renewalBtn.classList.remove('component-button--brand');
-                        renewalBtn.classList.add('component-button--primary');
-                    }
+                                            }
                 }
             } else {
                 renewalContainer.classList.add('disabled');

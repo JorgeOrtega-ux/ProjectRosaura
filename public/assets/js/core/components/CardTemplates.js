@@ -330,7 +330,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
             statusText = window.__('will_cancel_soon');
         }
 
-        const btnClass = cancelAtEnd ? 'component-button--brand' : 'component-button--primary';
+        const btnClass = cancelAtEnd ? 'component-button--brand' : '';
         
         let renewText = cancelAtEnd ? window.__('status_canceled') : window.__('status_active');
 

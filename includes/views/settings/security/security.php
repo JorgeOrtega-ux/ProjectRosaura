@@ -28,7 +28,7 @@ $text2FA = $securityData['text2FA'];
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
-                        <button type="button" class="component-button component-button--primary component-button--h36" data-action="promptChangePassword"><?php echo __('btn_change_password'); ?></button>
+                        <button type="button" class="component-button component-button--h36" data-action="promptChangePassword"><?php echo __('btn_change_password'); ?></button>
                     </div>
                 </div>
 
@@ -45,7 +45,7 @@ $text2FA = $securityData['text2FA'];
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
-                        <button type="button" class="component-button component-button--primary component-button--h36" data-nav="<?php echo APP_URL; ?>/settings/2fa">
+                        <button type="button" class="component-button component-button--h36" data-nav="<?php echo APP_URL; ?>/settings/2fa">
                             <?php echo $is2FAActive ? __('btn_manage') : __('btn_configure'); ?>
                         </button>
                     </div>

@@ -1174,8 +1174,7 @@ export const DesignInteractions = {
         if (!this.btnPlacePixels || !this.txtPlacePixels) return;
 
         if (this.interactionMode === 'owner_erasing' || this.interactionMode === 'owner_protecting') {
-            this.btnPlacePixels.classList.replace('component-button--primary', 'component-button--danger');
-            this.btnPlacePixels.classList.replace('component-button--success', 'component-button--danger');
+                        this.btnPlacePixels.classList.replace('component-button--success', 'component-button--danger');
             if (this.interactionMode === 'owner_protecting') {
                 this.btnPlacePixels.classList.replace('component-button--danger', 'component-button--success');
             }
@@ -1199,8 +1198,7 @@ export const DesignInteractions = {
         }
 
         if (this.interactionMode === 'placing_mines') {
-            this.btnPlacePixels.classList.replace('component-button--primary', 'component-button--success');
-            this.btnPlacePixels.classList.replace('component-button--danger', 'component-button--success');
+                        this.btnPlacePixels.classList.replace('component-button--danger', 'component-button--success');
 
             const count = this.selectedPixels.size;
             if (count > 0 && count <= 10) {
@@ -1219,11 +1217,10 @@ export const DesignInteractions = {
         let maxBalance = this.getMaxBalance();
         
         if (this.interactionMode === 'bombing') {
-            this.btnPlacePixels.classList.replace('component-button--primary', 'component-button--danger');
-            this.btnPlacePixels.classList.replace('component-button--success', 'component-button--danger');
+                        this.btnPlacePixels.classList.replace('component-button--success', 'component-button--danger');
         } else {
-            this.btnPlacePixels.classList.replace('component-button--success', 'component-button--primary');
-            this.btnPlacePixels.classList.replace('component-button--danger', 'component-button--primary');
+            this.btnPlacePixels.classList.remove('component-button--success');
+            this.btnPlacePixels.classList.remove('component-button--danger');
         }
 
         if (this.selectedPixels.size > 0 && this.selectedPixels.size <= maxBalance) {

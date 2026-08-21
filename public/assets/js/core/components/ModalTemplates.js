@@ -978,6 +978,7 @@ export const ModalTemplates = {
         build: () => ModalTemplates.confirmAction.build({
             titleKey: 'title_confirm_create_canvas',
             descKey: 'desc_confirm_create_canvas',
+            confirmClass: '',
             confirmClass: 'component-button--primary',
             confirmKey: 'btn_create_canvas'
         })

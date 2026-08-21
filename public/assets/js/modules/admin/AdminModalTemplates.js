@@ -869,6 +869,128 @@ export const AdminModalTemplates = {
                 </div>
             `;
         }
+    },
+    createNetworkSlotModal: {
+        build: (data = {}) => AdminModalTemplates.networkSlotModal.build(data)
+    },
+    editNetworkSlotModal: {
+        build: (data = {}) => AdminModalTemplates.networkSlotModal.build(data)
+    },
+    confirmDeleteProviderModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const providerName = data.providerName || __('unknown_provider');
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${__('modal_delete_provider_title')}</h2>
+                        <p class="component-modal-desc">${__('modal_delete_provider_desc')} <b>${providerName}</b>. ${__('modal_delete_provider_warning')}</p>
+                    </div>
+                </div>
+
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_delete')}</button>
+                </div>
+            `;
+        }
+    },
+    confirmDeleteAdModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const adName = data.adName || __('unknown_ad');
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${__('modal_delete_ad_title')}</h2>
+                        <p class="component-modal-desc">${__('modal_delete_ad_desc')} <b>${adName}</b>. ${__('modal_delete_ad_warning')}</p>
+                    </div>
+                </div>
+
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_delete')}</button>
+                </div>
+            `;
+        }
+    },
+    downloadMetricsPeriodModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const targetName = data.targetName || '';
+            const isGlobal = !!data.isGlobal;
+            const targetUuid = data.targetUuid || '';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${__('modal_download_metrics_title')}</h2>
+                        <p class="component-modal-desc">${__('modal_download_metrics_desc')} <b>${targetName}</b>.</p>
+                    </div>
+                </div>
+
+                <div class="component-modal-body" data-ref="download-metrics-form" data-target-uuid="${targetUuid}" data-target-name="${targetName}" data-is-global="${isGlobal ? '1' : '0'}">
+                    <div class="component-input-group">
+                        <label class="component-input-label component-input-label--static">${__('lbl_metrics_period')}</label>
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownMetricsPeriod">
+                                <span class="material-symbols-rounded" data-ref="period-icon">calendar_month</span>
+                                <span class="component-dropdown-text" data-ref="period-text" data-value="30">${__('metrics_period_30')}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
+                            </div>
+                            <div class="component-module component-module--dropdown disabled" data-module="dropdownMetricsPeriod">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list component-menu-list--max-h250">
+                                        <div class="component-menu-link" data-action="selectMetricsPeriod" data-value="7" data-label="${__('metrics_period_7')}">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">date_range</span></div>
+                                            <div class="component-menu-link-text"><span>${__('metrics_period_7')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link active" data-action="selectMetricsPeriod" data-value="30" data-label="${__('metrics_period_30')}">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">calendar_month</span></div>
+                                            <div class="component-menu-link-text"><span>${__('metrics_period_30')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectMetricsPeriod" data-value="60" data-label="${__('metrics_period_60')}">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">calendar_today</span></div>
+                                            <div class="component-menu-link-text"><span>${__('metrics_period_60')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectMetricsPeriod" data-value="90" data-label="${__('metrics_period_90')}">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">event_repeat</span></div>
+                                            <div class="component-menu-link-text"><span>${__('metrics_period_90')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectMetricsPeriod" data-value="180" data-label="${__('metrics_period_180')}">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">history</span></div>
+                                            <div class="component-menu-link-text"><span>${__('metrics_period_180')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectMetricsPeriod" data-value="365" data-label="${__('metrics_period_365')}">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">calendar_add_on</span></div>
+                                            <div class="component-menu-link-text"><span>${__('metrics_period_365')}</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectMetricsPeriod" data-value="all" data-label="${__('metrics_period_all')}">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">all_inclusive</span></div>
+                                            <div class="component-menu-link-text"><span>${__('metrics_period_all')}</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button class="component-button component-button--h40" data-action="confirmDownloadMetrics" data-ref="btn-confirm-download-pdf">
+                        <span class="material-symbols-rounded">download</span>
+                        <span>${__('btn_download_pdf')}</span>
+                    </button>
+                </div>
+            `;
+        }
     }
 };
 

@@ -9,7 +9,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             <h1 class="component-top-title"><?php echo __('billing_title'); ?></h1>
         </div>
         <div class="component-top-right">
-            <button type="button" class="component-button component-button--primary component-button--h40 disabled-interaction" data-action="addNewCard" data-tooltip="<?php echo __('tooltip_add_card'); ?>" data-position="bottom">
+            <button type="button" class="component-button component-button--h40 disabled-interaction" data-action="addNewCard" data-tooltip="<?php echo __('tooltip_add_card'); ?>" data-position="bottom">
                 <span class="material-symbols-rounded">add</span>
                 <span><?php echo __('btn_add_card'); ?></span>
             </button>
@@ -52,7 +52,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--end">
-                                    <button type="button" class="component-button component-button--primary component-button--h36" data-nav="/upgrade">
+                                    <button type="button" class="component-button component-button--h36" data-nav="/upgrade">
                                         <?php echo __('btn_change_plan'); ?>
                                     </button>
                                 </div>
@@ -72,7 +72,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                         </div>
                                     </div>
                                     <div class="component-card__actions component-card__actions--end">
-                                        <button type="button" class="component-button component-button--primary component-button--h36" data-action="cancelOrReactivateSubscription" data-ref="sub-renewal-btn">
+                                        <button type="button" class="component-button component-button--h36" data-action="cancelOrReactivateSubscription" data-ref="sub-renewal-btn">
                                             <?php echo __('btn_cancel_sub'); ?>
                                         </button>
                                     </div>
