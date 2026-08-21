@@ -257,34 +257,38 @@ class CanvasesManageController {
 
     async createSnapshotSelected(btn) {
         if (this.selectedCanvasIds.size !== 1) return;
+        if (btn.classList.contains('disabled-interaction') || btn.dataset.loading === 'true') return;
         const canvasId = Array.from(this.selectedCanvasIds)[0];
 
-        const executeSnapshot = async () => {
-            setButtonLoading(btn);
-            closeAllDropdowns();
+        btn.dataset.loading = 'true';
+        btn.classList.add('disabled-interaction');
 
-            try {
-                const route = (ApiRoutes.Canvases && ApiRoutes.Canvases.CreateSnapshot) ? ApiRoutes.Canvases.CreateSnapshot : 'canvases.create_snapshot';
-                const result = await this.api.post(route, { id: parseInt(canvasId, 10) }, this.abortController.signal);
+        const spinnerDiv = document.createElement('div');
+        spinnerDiv.className = 'component-menu-link-icon';
+        spinnerDiv.innerHTML = '<div class="component-spinner"></div>';
+        btn.appendChild(spinnerDiv);
 
-                if (result.aborted) return;
+        try {
+            const route = (ApiRoutes.Canvases && ApiRoutes.Canvases.CreateSnapshot) ? ApiRoutes.Canvases.CreateSnapshot : 'canvases.create_snapshot';
+            const result = await this.api.post(route, { id: parseInt(canvasId, 10) }, this.abortController ? this.abortController.signal : null);
 
-                if (result.success) {
-                    showMessage(result.message, 'success');
-                    this.pollSnapshotStatus(canvasId);
-                } else {
-                    showMessage(result.message, 'error');
-                }
-            } catch (error) {
-                if (error.name !== 'AbortError') {
-                    showMessage(window.__('general_save_network_error'), 'error');
-                }
-            } finally {
-                restoreButton(btn);
+            if (result.aborted) return;
+
+            if (result.success) {
+                showMessage(result.message, 'success');
+                this.pollSnapshotStatus(canvasId);
+            } else {
+                showMessage(result.message, 'error');
             }
-        };
-
-        await executeSnapshot();
+        } catch (error) {
+            if (error && error.name !== 'AbortError') {
+                showMessage(window.__('general_save_network_error'), 'error');
+            }
+        } finally {
+            spinnerDiv.remove();
+            btn.classList.remove('disabled-interaction');
+            btn.dataset.loading = 'false';
+        }
     }
 
     async pollSnapshotStatus(canvasId) {

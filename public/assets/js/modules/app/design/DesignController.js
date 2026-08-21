@@ -461,6 +461,11 @@ class DesignController {
             this.renderWorker = null;
         }
 
+        if (typeof this._syncUnsubscribe === 'function') {
+            this._syncUnsubscribe();
+            this._syncUnsubscribe = null;
+        }
+
         this.canvas = null;
         this.ctx = null;
         this.offscreenCanvas = null;

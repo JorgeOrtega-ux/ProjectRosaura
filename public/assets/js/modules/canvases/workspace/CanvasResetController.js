@@ -2,6 +2,7 @@ import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { CalendarSystem } from '../../../core/components/CalendarSystem.js';
 import { showMessage, setButtonLoading, restoreButton, localInputFormatToUtcString, closeDropdown } from '../../../core/utils/uiUtils.js';
+import { CanvasSyncChannel } from '../../../core/services/CanvasSyncChannel.js';
 
 class CanvasResetController {
     constructor() {
@@ -211,6 +212,12 @@ class CanvasResetController {
 
         if (result.success) {
             showMessage(result.message, 'success');
+            CanvasSyncChannel.broadcast({
+                type: 'canvas_reset_settings_updated',
+                canvasId: canvasId,
+                is_active: isActive,
+                next_reset_at: utcNextReset
+            });
         } else {
             showMessage(result.message, 'error');
         }
@@ -239,6 +246,10 @@ class CanvasResetController {
 
             if (result.success) {
                 showMessage(result.message, 'success');
+                CanvasSyncChannel.broadcast({
+                    type: 'canvas_clear_completed',
+                    canvasId: canvasId
+                });
             } else {
                 showMessage(result.message, 'error');
             }

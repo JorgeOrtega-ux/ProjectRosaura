@@ -113,7 +113,26 @@ def process_resize_task(r, db, task_data):
         old_state = r.get(state_key)
 
         if not old_state:
-            raise ValueError(f"Binary state not found for canvas {canvas_id}.")
+            logging.info(f"Binary state for canvas {canvas_id} not found in Redis. Attempting to load from DB/S3...")
+            with db.cursor() as cursor:
+                cursor.execute("SELECT snapshot_data, s3_key FROM canvas_snapshots WHERE canvas_id = %s LIMIT 1", (canvas_id,))
+                snap_row = cursor.fetchone()
+                if snap_row:
+                    if snap_row.get('snapshot_data'):
+                        try:
+                            old_state = zlib.decompress(snap_row['snapshot_data'])
+                        except Exception:
+                            old_state = snap_row['snapshot_data']
+                    elif snap_row.get('s3_key'):
+                        try:
+                            s3 = get_s3_client()
+                            obj = s3.get_object(Bucket=S3_BUCKET, Key=snap_row['s3_key'])
+                            old_state = zlib.decompress(obj['Body'].read())
+                        except Exception as e:
+                            logging.warning(f"Could not load snapshot from S3: {e}")
+            if not old_state:
+                logging.info(f"No existing snapshot found for canvas {canvas_id}. Generating empty state.")
+                old_state = b'\x00\x00\x00\x00' * (old_w * old_h)
 
         actual_len = len(old_state)
         expected_size = old_w * old_h * 4

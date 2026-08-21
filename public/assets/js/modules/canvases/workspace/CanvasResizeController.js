@@ -2,6 +2,7 @@ import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { CalendarSystem } from '../../../core/components/CalendarSystem.js';
 import { showMessage, setButtonLoading, restoreButton, localInputFormatToUtcString, closeDropdown } from '../../../core/utils/uiUtils.js';
+import { CanvasSyncChannel } from '../../../core/services/CanvasSyncChannel.js';
 
 class CanvasResizeController {
     constructor() {
@@ -251,6 +252,11 @@ class CanvasResizeController {
 
             if (result.success) {
                 showMessage(result.message, 'success');
+                CanvasSyncChannel.broadcast({
+                    type: 'canvas_resize_completed',
+                    canvasId: this.canvasId,
+                    new_size: newSize
+                });
                 setTimeout(() => {
                     if (window.spaRouter) {
                         window.spaRouter.navigate(`${this.basePath}/canvases/manage`, { forceReload: true });
@@ -309,6 +315,13 @@ class CanvasResizeController {
 
         if (result.success) {
             showMessage(result.message, 'success');
+            CanvasSyncChannel.broadcast({
+                type: 'canvas_resize_settings_updated',
+                canvasId: this.canvasId,
+                is_active: isActive,
+                next_resize_at: nextResizeAt,
+                target_size: targetSize
+            });
         } else {
             showMessage(result.message, 'error');
         }

@@ -169,6 +169,9 @@ export const DesignSetup = {
             }
 
             this.updateLockBadges();
+            if (typeof this.initSyncChannel === 'function') {
+                this.initSyncChannel();
+            }
             if (!this.isOfflineMode) {
                 this.initWebSocket();
             }
@@ -213,10 +216,10 @@ export const DesignSetup = {
         }
 
         if (this.isOfflineMode) {
-            this.setCanvasBadge('mode-offline', 'palette', 'Estudio Personal', 'left');
+            this.setCanvasBadge('mode-offline', 'palette', (window.__ ? window.__('badge_studio') : null) || 'Estudio Personal', 'left');
             this.removeCanvasBadge('mode-online', 'left');
         } else {
-            this.setCanvasBadge('mode-online', 'sensors', 'Batalla En Vivo', 'left');
+            this.setCanvasBadge('mode-online', 'sensors', (window.__ ? window.__('badge_online_battle') : null) || 'Lienzo En Vivo', 'left');
             this.removeCanvasBadge('mode-offline', 'left');
         }
 

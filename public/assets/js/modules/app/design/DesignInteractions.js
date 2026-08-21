@@ -71,7 +71,7 @@ export const DesignInteractions = {
             e.preventDefault();
             const targetAction = this.isOfflineMode ? 'activate' : 'deactivate';
             if (typeof this.toggleOnlineMode === 'function') {
-                this.toggleOnlineMode(targetAction);
+                this.toggleOnlineMode(targetAction, btnToggleOnline);
             }
             return;
         }

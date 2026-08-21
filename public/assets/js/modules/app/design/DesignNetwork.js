@@ -3,8 +3,50 @@ import { showMessage, setButtonLoading, restoreButton } from '../../../core/util
 import { WebSocketManager } from '../../../core/api/WebSocketManager.js';
 import { getPaletteById } from './utils/DesignPaletteUtils.js';
 import { soundManager } from './SoundManager.js';
+import { CanvasSyncChannel } from '../../../core/services/CanvasSyncChannel.js';
 
 export const DesignNetwork = {
+    initSyncChannel() {
+        if (typeof this._syncUnsubscribe === 'function') {
+            this._syncUnsubscribe();
+            this._syncUnsubscribe = null;
+        }
+
+        this._syncUnsubscribe = CanvasSyncChannel.subscribe((data) => {
+            if (!data || !data.type) return;
+
+            const targetId = data.canvasId || data.id;
+            const targetUuid = data.canvasUuid || data.uuid;
+
+            const isCurrentCanvas = (
+                (targetId && (String(targetId) === String(this.canvasIntId) || String(targetId) === String(this.canvasId))) ||
+                (targetUuid && String(targetUuid) === String(this.canvasId))
+            );
+
+            if (!isCurrentCanvas) return;
+
+            if (data.type === 'canvas_resize_completed') {
+                this.handleCanvasLockedResize(data);
+                setTimeout(() => {
+                    this.handleCanvasResizeCompleted(data);
+                }, 350);
+            } else if (data.type === 'canvas_clear_completed' || data.type === 'canvas_reset') {
+                this.handleCanvasLockedClear(data);
+                setTimeout(() => {
+                    this.handleCanvasClearCompleted(data);
+                }, 350);
+            } else if (data.type === 'canvas_resize_settings_updated') {
+                this.handleResizeSettingsUpdated(data);
+            } else if (data.type === 'canvas_reset_settings_updated') {
+                this.handleResetSettingsUpdated(data);
+            } else if (data.type === 'canvas_mode_changed') {
+                if (typeof this.handleCanvasModeChanged === 'function') {
+                    this.handleCanvasModeChanged(data);
+                }
+            }
+        });
+    },
+
     async getTurnstileToken() {
         return new Promise(async (resolve, reject) => {
             const wrapper = document.querySelector('[data-ref="turnstile-container"]');
@@ -1995,7 +2037,7 @@ export const DesignNetwork = {
         const newMode = data.mode || (data.is_online_active ? 'online' : 'offline');
         if (newMode === 'offline') {
             if (!this.isOwner) {
-                showMessage(__('msg_canvas_mode_deactivated_by_owner') || 'El propietario ha guardado y cambiado este lienzo a modo estudio privado.', 'info');
+                showMessage((window.__ ? window.__('msg_canvas_mode_deactivated_by_owner') : null) || 'El propietario ha guardado y cambiado este lienzo a modo estudio privado.', 'info');
                 if (this.wsManager) {
                     this.wsManager.disconnect();
                 }
@@ -2003,16 +2045,24 @@ export const DesignNetwork = {
                     window.location.href = (window.AppBasePath || '') + '/explore';
                 }, 2000);
             } else {
-                showMessage(__('msg_canvas_offline_deactivated') || 'Lienzo en modo Estudio (Offline)', 'info');
-                setTimeout(() => window.location.reload(), 600);
+                if (!this._isChangingMode) {
+                    showMessage((window.__ ? window.__('msg_canvas_offline_deactivated') : null) || 'Lienzo en modo Estudio (Offline)', 'info');
+                    setTimeout(() => window.location.reload(), 600);
+                }
             }
         } else if (newMode === 'online') {
-            showMessage(__('msg_canvas_online_activated') || 'Lienzo activado en modo Online', 'success');
-            setTimeout(() => window.location.reload(), 600);
+            if (!this._isChangingMode) {
+                showMessage((window.__ ? window.__('msg_canvas_online_activated') : null) || 'Lienzo activado en modo Online', 'success');
+                setTimeout(() => window.location.reload(), 600);
+            }
         }
     },
 
-    async toggleOnlineMode(action = 'activate') {
+    async toggleOnlineMode(action = 'activate', btnElement = null) {
+        const btn = btnElement || document.querySelector('[data-action="toggleOnlineMode"]');
+        if (btn) setButtonLoading(btn);
+        this._isChangingMode = true;
+
         try {
             if (this.isOfflineMode && this._offlineDirty && typeof this.saveOfflineCanvasState === 'function') {
                 console.info('[Rosaura Studio] Guardando cambios locales pendientes antes de activar online...');
@@ -2020,50 +2070,48 @@ export const DesignNetwork = {
             }
 
             const route = action === 'activate' ? ApiRoutes.Canvases.ActivateOnline : ApiRoutes.Canvases.DeactivateOnline;
-            const resp = await this.api.post(route, { canvas_id: this.canvasIntId });
+            const minWait = new Promise(r => setTimeout(r, 450));
+            const [resp] = await Promise.all([
+                this.api.post(route, { canvas_id: this.canvasIntId }),
+                minWait
+            ]);
+
             if (resp && resp.success) {
-                showMessage(resp.message || 'Estado actualizado', 'success');
-                setTimeout(() => window.location.reload(), 600);
+                const successMsg = resp.message || (action === 'activate' 
+                    ? ((window.__ ? window.__('msg_canvas_online_activated') : null) || 'Lienzo activado en modo En Vivo con éxito.')
+                    : ((window.__ ? window.__('msg_canvas_offline_deactivated') : null) || 'Lienzo guardado y puesto en modo Estudio Offline.'));
+                showMessage(successMsg, 'success');
+                setTimeout(() => window.location.reload(), 500);
             } else {
+                if (btn) restoreButton(btn);
+                this._isChangingMode = false;
                 showMessage(resp?.message || 'Error al cambiar modo de lienzo', 'error');
             }
         } catch (e) {
-            showMessage(__('err_occurred') || 'Error al cambiar modo', 'error');
+            if (btn) restoreButton(btn);
+            this._isChangingMode = false;
+            showMessage((window.__ ? window.__('err_occurred') : null) || 'Error al cambiar modo', 'error');
         }
     },
 
     async manualSaveOffline(btnElement = null) {
         const btn = btnElement || document.querySelector('[data-action="manualSaveOffline"]');
-        const iconSpan = btn ? btn.querySelector('.material-symbols-rounded') : null;
-        const originalIcon = iconSpan ? iconSpan.textContent : 'save';
-
-        if (btn) {
-            btn.classList.add('disabled-interaction');
-            if (iconSpan) {
-                iconSpan.textContent = 'sync';
-                iconSpan.classList.add('component-icon-spin');
-            }
-        }
+        if (btn) setButtonLoading(btn);
 
         console.info('%c[Rosaura Studio] Guardado manual disparado...', 'color: #3b82f6; font-weight: bold;');
-        const success = await this.saveOfflineCanvasState(true);
+        const minWait = new Promise(r => setTimeout(r, 450));
+        const [success] = await Promise.all([
+            this.saveOfflineCanvasState(true),
+            minWait
+        ]);
 
-        if (btn && iconSpan) {
-            iconSpan.classList.remove('component-icon-spin');
+        if (btn) {
+            restoreButton(btn);
             if (success) {
-                iconSpan.textContent = 'check';
-                iconSpan.classList.add('component-text-success');
-                showMessage(__('msg_state_saved') || 'Lienzo guardado en tu Estudio', 'success');
+                showMessage((window.__ ? window.__('msg_state_saved') : null) || 'Lienzo guardado en tu Estudio', 'success');
             } else {
-                iconSpan.textContent = 'error';
-                iconSpan.classList.add('component-text-danger');
+                showMessage((window.__ ? window.__('err_occurred') : null) || 'Error al guardar estado', 'error');
             }
-
-            setTimeout(() => {
-                iconSpan.textContent = originalIcon;
-                iconSpan.classList.remove('component-text-success', 'component-text-danger');
-                btn.classList.remove('disabled-interaction');
-            }, 1200);
         }
     },
 

@@ -908,6 +908,45 @@ export class DesignChat {
         }
     }
 
+    parseSubscriptionColorCSS(colorData) {
+        if (!colorData) return '#808080';
+        try {
+            let data = colorData;
+            if (typeof data === 'string') {
+                const trimmed = data.trim();
+                if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+                    data = JSON.parse(trimmed);
+                } else {
+                    return trimmed;
+                }
+            }
+
+            if (data && typeof data === 'object') {
+                if (data.type === 'solid' && Array.isArray(data.colors) && data.colors[0]) {
+                    return typeof data.colors[0] === 'string' ? data.colors[0] : (data.colors[0].hex || '#808080');
+                } else if (data.type === 'gradient' && Array.isArray(data.colors) && data.colors.length > 0) {
+                    const angle = parseInt(data.angle || 0, 10);
+                    let prev = 0;
+                    const colorsCount = data.colors.length;
+                    const stops = data.colors.map((c, i) => {
+                        const hex = typeof c === 'string' ? c : (c.hex || '#808080');
+                        const percentage = (typeof c === 'object' && c.percentage !== undefined)
+                            ? parseInt(c.percentage, 10)
+                            : Math.floor(100 / colorsCount);
+                        const end = (i === colorsCount - 1) ? 100 : (prev + percentage);
+                        const str = `${hex} ${prev}% ${end}%`;
+                        prev = end;
+                        return str;
+                    });
+                    return `conic-gradient(from ${angle}deg, ${stops.join(', ')})`;
+                }
+            }
+        } catch (e) {
+            // Fallback gracefully
+        }
+        return typeof colorData === 'string' ? colorData : '#808080';
+    }
+
     createMessageElement(msg) {
         // Handle non-visible messages (deleted / under_review)
         const visibility = msg.visibility || 'visible';
@@ -915,18 +954,17 @@ export class DesignChat {
             return this.createStatusMessageElement(msg.id, null, visibility, msg.created_at);
         }
 
-        const el = document.createElement('div');
         const isMine = String(msg.user_id) === String(this.currentUserId);
+        const el = document.createElement('div');
         el.className = 'chat-message' + (isMine ? ' chat-message--mine' : '') + (msg.is_optimistic ? ' chat-message--optimistic' : '');
         el.dataset.messageId = msg.id;
+
         if (msg.client_id) el.dataset.clientId = msg.client_id;
-        
         if (msg.is_optimistic) el.style.opacity = '0.7';
-        
+
         const msgDate = new Date(msg.created_at);
         const now = new Date();
         const isToday = msgDate.getDate() === now.getDate() && msgDate.getMonth() === now.getMonth() && msgDate.getFullYear() === now.getFullYear();
-        
         const yesterday = new Date(now);
         yesterday.setDate(now.getDate() - 1);
         const isYesterday = msgDate.getDate() === yesterday.getDate() && msgDate.getMonth() === yesterday.getMonth() && msgDate.getFullYear() === yesterday.getFullYear();
@@ -952,31 +990,7 @@ export class DesignChat {
         
         const fallbackUrl = `${window.AppBasePath || ''}/public/assets/img/fallbacks/avatar-default.png`;
         
-        let subColorCSS = '#808080';
-        if (msg.subscription_color) {
-            try {
-                const parsed = typeof msg.subscription_color === 'string' ? JSON.parse(msg.subscription_color) : msg.subscription_color;
-                if (parsed && parsed.type === 'solid' && parsed.colors && parsed.colors[0]) {
-                    subColorCSS = typeof parsed.colors[0] === 'string' ? parsed.colors[0] : (parsed.colors[0].hex || '#808080');
-                } else if (parsed && parsed.type === 'gradient' && parsed.colors) {
-                    const angle = parsed.angle || 0;
-                    let prev = 0;
-                    const stops = parsed.colors.map(c => {
-                        const hex = c.hex || '#808080';
-                        const end = prev + (c.percentage || 0);
-                        const str = `${hex} ${prev}% ${end}%`;
-                        prev = end;
-                        return str;
-                    });
-                    subColorCSS = `conic-gradient(from ${angle}deg, ${stops.join(', ')})`;
-                } else if (typeof msg.subscription_color === 'string') {
-                    subColorCSS = msg.subscription_color;
-                }
-            } catch (e) {
-                console.error('[DesignChat] Error parsing subscription color:', e);
-                subColorCSS = '#808080';
-            }
-        }
+        const subColorCSS = this.parseSubscriptionColorCSS(msg.subscription_color);
 
         const avatarStr = `
             <div class="component-button--profile subscription-dynamic component-avatar--static-sm" data-sub-bg="${subColorCSS}" style="--active-subscription-bg: ${subColorCSS};">

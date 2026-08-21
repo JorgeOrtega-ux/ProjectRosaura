@@ -3,6 +3,7 @@ import { showMessage, renderSkeleton, getLockDetails, closeAllDropdowns, toggleD
 import { CanvasApiService } from '../api/CanvasApiService.js';
 import { CardTemplates } from './CardTemplates.js';
 import { PromoService } from '../services/PromoCardService.js';
+import { CanvasSyncChannel } from '../services/CanvasSyncChannel.js';
 
 export class CanvasCardInteractions {
     constructor(apiService, basePath, abortController) {
@@ -51,6 +52,9 @@ export class CanvasCardInteractions {
             return true;
         } else if (action === 'downgradeCanvas') {
             this.downgradeCanvas(btn);
+            return true;
+        } else if (action === 'toggleCardOnlineMode') {
+            this.toggleCardOnlineMode(btn);
             return true;
         }
         return false;
@@ -123,37 +127,38 @@ export class CanvasCardInteractions {
     }
 
     async createSnapshotSelected(btn) {
-        if (btn.classList.contains('disabled-interaction')) return;
+        if (btn.classList.contains('disabled-interaction') || btn.dataset.loading === 'true') return;
         const canvasId = btn.getAttribute('data-id');
         if (!canvasId) return;
 
-        const executeSnapshot = async () => {
-            btn.classList.add('disabled-interaction');
-            if (typeof setButtonLoading === 'function') setButtonLoading(btn);
+        btn.dataset.loading = 'true';
+        btn.classList.add('disabled-interaction');
 
-            try {
-                const route = (ApiRoutes.Canvases && ApiRoutes.Canvases.CreateSnapshot) ? ApiRoutes.Canvases.CreateSnapshot : 'canvases.create_snapshot';
-                const result = await this.api.post(route, { id: parseInt(canvasId, 10) }, this.abortController ? this.abortController.signal : null);
+        const spinnerDiv = document.createElement('div');
+        spinnerDiv.className = 'component-menu-link-icon';
+        spinnerDiv.innerHTML = '<div class="component-spinner"></div>';
+        btn.appendChild(spinnerDiv);
 
-                if (result.aborted) return;
+        try {
+            const route = (ApiRoutes.Canvases && ApiRoutes.Canvases.CreateSnapshot) ? ApiRoutes.Canvases.CreateSnapshot : 'canvases.create_snapshot';
+            const result = await this.api.post(route, { id: parseInt(canvasId, 10) }, this.abortController ? this.abortController.signal : null);
 
-                if (result.success) {
-                    showMessage(result.message, 'success');
-                    this.pollSnapshotStatus(canvasId);
-                } else {
-                    showMessage(result.message, 'error');
-                }
-            } catch (error) {
-                if (error && error.name === 'AbortError') return;
-                showMessage(window.__('general_save_network_error'), 'error');
-            } finally {
-                btn.classList.remove('disabled-interaction');
-                if (typeof restoreButton === 'function') restoreButton(btn);
-                this.closeDropdowns();
+            if (result.aborted) return;
+
+            if (result.success) {
+                showMessage(result.message, 'success');
+                this.pollSnapshotStatus(canvasId);
+            } else {
+                showMessage(result.message, 'error');
             }
-        };
-
-        await executeSnapshot();
+        } catch (error) {
+            if (error && error.name === 'AbortError') return;
+            showMessage(window.__('general_save_network_error'), 'error');
+        } finally {
+            spinnerDiv.remove();
+            btn.classList.remove('disabled-interaction');
+            btn.dataset.loading = 'false';
+        }
     }
 
     async pollSnapshotStatus(canvasId) {
@@ -403,6 +408,7 @@ export class CanvasCardInteractions {
         const isOwner = btn.getAttribute('data-owner') === '1';
         const isLocked = btn.getAttribute('data-locked') === '1';
         const isMember = btn.getAttribute('data-member') === '1';
+        const isOnline = btn.getAttribute('data-online') === '1';
 
         let actionButtonHtml = '';
         if (window.activeUserId) {
@@ -421,6 +427,25 @@ export class CanvasCardInteractions {
                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">login</span></div>
                         <div class="component-menu-link-text"><span>${window.__('join_canvas')}</span></div>
                    </button>`;
+            }
+        }
+
+        let onlineModeOption = '';
+        if (isOwner) {
+            if (isOnline) {
+                onlineModeOption = `
+                    <button type="button" class="component-menu-link" data-action="toggleCardOnlineMode" data-id="${id}" data-uuid="${uuid}" data-target-mode="offline">
+                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">cloud_off</span></div>
+                        <div class="component-menu-link-text"><span>${window.__('menu_change_to_studio') || 'Cambiar a modo Estudio'}</span></div>
+                    </button>
+                `;
+            } else {
+                onlineModeOption = `
+                    <button type="button" class="component-menu-link" data-action="toggleCardOnlineMode" data-id="${id}" data-uuid="${uuid}" data-target-mode="online">
+                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">sensors</span></div>
+                        <div class="component-menu-link-text"><span>${window.__('menu_activate_online') || 'Activar modo En Vivo'}</span></div>
+                    </button>
+                `;
             }
         }
 
@@ -515,6 +540,8 @@ export class CanvasCardInteractions {
                                 <div class="component-menu-link-text"><span>${window.__('view_capturas_gallery')}</span></div>
                             </button>
 
+                            ${onlineModeOption}
+
                             ${warningMenuOption}
 
                             ${isOwner ? `
@@ -554,6 +581,95 @@ export class CanvasCardInteractions {
         
         if (window.router && typeof window.router.bindLinks === 'function') {
             window.router.bindLinks(wrapper);
+        }
+    }
+
+    async toggleCardOnlineMode(btn) {
+        if (btn.dataset.loading === 'true' || btn.classList.contains('disabled-interaction')) return;
+        const id = btn.getAttribute('data-id');
+        const targetMode = btn.getAttribute('data-target-mode');
+        if (!id) return;
+
+        btn.dataset.loading = 'true';
+        btn.classList.add('disabled-interaction');
+
+        const spinnerDiv = document.createElement('div');
+        spinnerDiv.className = 'component-menu-link-icon';
+        spinnerDiv.innerHTML = '<div class="component-spinner"></div>';
+        btn.appendChild(spinnerDiv);
+
+        try {
+            const route = targetMode === 'online' ? ApiRoutes.Canvases.ActivateOnline : ApiRoutes.Canvases.DeactivateOnline;
+            const res = await this.api.post(route, { canvas_id: id }, this.abortController?.signal);
+
+            if (res && res.aborted) return;
+
+            if (res && res.success) {
+                const successMsg = res.message || (targetMode === 'online' 
+                    ? (window.__('msg_canvas_online_activated') || 'Lienzo activado en modo En Vivo con éxito.') 
+                    : (window.__('msg_canvas_offline_deactivated') || 'Lienzo guardado y puesto en modo Estudio Offline.'));
+                showMessage(successMsg, 'success');
+
+                const isNowOnline = targetMode === 'online';
+                const nextTargetMode = isNowOnline ? 'offline' : 'online';
+
+                btn.setAttribute('data-target-mode', nextTargetMode);
+                const iconEl = btn.querySelector('.component-menu-link-icon .material-symbols-rounded');
+                if (iconEl) {
+                    iconEl.textContent = isNowOnline ? 'cloud_off' : 'sensors';
+                }
+                const textEl = btn.querySelector('.component-menu-link-text span');
+                if (textEl) {
+                    textEl.textContent = isNowOnline 
+                        ? (window.__('menu_change_to_studio') || 'Cambiar a modo Estudio')
+                        : (window.__('menu_activate_online') || 'Activar modo En Vivo');
+                }
+
+                const card = document.querySelector(`.component-gallery-card[data-card-id="${id}"]`);
+                if (card) {
+                    const triggerBtn = card.querySelector(`button[data-action="toggleDynamicMenu"]`);
+                    if (triggerBtn) {
+                        triggerBtn.setAttribute('data-online', isNowOnline ? '1' : '0');
+                    }
+                    const badge = card.querySelector('.component-badge--glass');
+                    if (badge) {
+                        const modeSegment = isNowOnline
+                            ? `<span class="material-symbols-rounded">sensors</span><span>0 ${window.__('online') || 'online'}</span>`
+                            : `<span class="material-symbols-rounded component-text-accent">brush</span><span>${window.__('badge_studio') || 'Estudio'}</span>`;
+                        
+                        const memberEl = badge.querySelector('.member-count-val');
+                        const membersCount = memberEl ? memberEl.textContent : '0';
+                        const spans = badge.querySelectorAll('span');
+                        const likesCount = spans.length > 0 ? spans[spans.length - 1].textContent : '0';
+
+                        badge.innerHTML = `
+                            ${modeSegment}
+                            <span class="component-badge-divider">|</span>
+                            <span class="material-symbols-rounded">group</span>
+                            <span class="member-count-val">${membersCount}</span>
+                            <span class="component-badge-divider">|</span>
+                            <span class="material-symbols-rounded component-text-accent">favorite</span>
+                            <span>${likesCount}</span>
+                        `;
+                    }
+                }
+
+                CanvasSyncChannel.broadcast({
+                    type: 'canvas_mode_changed',
+                    canvasId: id,
+                    mode: isNowOnline ? 'online' : 'offline',
+                    is_online: isNowOnline ? 1 : 0
+                });
+            } else {
+                showMessage(res?.message || (window.__('err_occurred') || 'Error al cambiar modo de lienzo'), 'error');
+            }
+        } catch (error) {
+            if (error && error.name === 'AbortError') return;
+            showMessage(window.__('err_occurred') || 'Error al cambiar modo de lienzo', 'error');
+        } finally {
+            spinnerDiv.remove();
+            btn.classList.remove('disabled-interaction');
+            btn.dataset.loading = 'false';
         }
     }
 

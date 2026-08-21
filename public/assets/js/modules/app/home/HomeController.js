@@ -2,6 +2,7 @@ import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
 import { CardTemplates } from '../../../core/components/CardTemplates.js';
+import { PromoService } from '../../../core/services/PromoCardService.js';
 import { 
     appendInfiniteScrollSkeletons, 
     removeInfiniteScrollSkeletons, 
@@ -38,6 +39,9 @@ class HomeController {
         this.cardInteractions = new CanvasCardInteractions(this.api, this.basePath, this.abortController);
         
         this.virtualObserver = new VirtualGridObserver((item) => {
+            if (item && item.is_promo) {
+                return CardTemplates.promoCard(item, { basePath: this.basePath });
+            }
             return CardTemplates.canvasCard(item, { basePath: this.basePath });
         });
         
@@ -54,7 +58,7 @@ class HomeController {
                 } catch(e) {}
             }
 
-            if (!window.initialHomeCanvases && window.activeUserId) {
+            if (!window.initialHomeCanvases) {
                 this.contentArea.innerHTML = '<div class="component-grid" data-ref="home-user-canvases"></div>';
                 renderSkeleton(this.contentArea.querySelector('.component-grid'), 'homeCanvasGrid');
             }
@@ -99,17 +103,21 @@ class HomeController {
             }
             actionBtn.classList.add('active');
 
-            const labelEl = document.querySelector('[data-ref="selected-filter-label"]');
-            if (labelEl) {
-                const textSpan = actionBtn.querySelector('.component-menu-link-text span');
-                if (textSpan) {
-                    labelEl.textContent = textSpan.textContent.trim();
+            const filterBtn = document.querySelector('[data-ref="btn-toggle-filters"]');
+            if (filterBtn) {
+                if (selectedFilter !== 'all') {
+                    filterBtn.classList.add('has-active-filter');
+                } else {
+                    filterBtn.classList.remove('has-active-filter');
                 }
             }
 
             const moduleEl = actionBtn.closest('.component-module');
             if (moduleEl) {
                 moduleEl.classList.add('disabled');
+                if (window.appInstance?.moduleManager?.resetToMainMenu) {
+                    window.appInstance.moduleManager.resetToMainMenu(moduleEl);
+                }
             }
             
             this.currentFilter = selectedFilter;
@@ -124,6 +132,15 @@ class HomeController {
                 this._filterThrottle = null;
                 this.loadCanvases();
             }, 300);
+            return;
+        }
+
+        if (action === 'openExternalPromo') {
+            e.preventDefault();
+            const targetUrl = actionBtn.getAttribute('data-target-url');
+            if (targetUrl) {
+                window.open(targetUrl, '_blank', 'noopener,noreferrer');
+            }
             return;
         }
 
@@ -147,30 +164,7 @@ class HomeController {
 
         if (!this.hasMore || this.isLoadingMore) return;
 
-        if (!window.activeUserId) {
-            if (!isLoadMore && this.contentArea) {
-                const msgGuest = window.__('msg_home_guest');
-                const btnLogin = window.__('btn_login');
-                const btnExplore = window.__('btn_explore_canvases');
-                this.contentArea.innerHTML = `
-                    <div class="component-empty-state" data-ref="empty-state-rendered">
-                        <span class="material-symbols-rounded component-empty-state-icon">account_circle</span>
-                        <p class="component-empty-state-text">${msgGuest}</p>
-                        <div class="component-actions">
-                            <button class="component-button component-button--primary component-button--h40" data-nav="${this.basePath}/login">
-                                <span>${btnLogin}</span>
-                            </button>
-                            <button class="component-button component-button--secondary component-button--h40" data-nav="${this.basePath}/explore">
-                                <span class="material-symbols-rounded">explore</span>
-                                <span>${btnExplore}</span>
-                            </button>
-                        </div>
-                    </div>
-                `;
-                this.reinitializeUI();
-            }
-            return;
-        }
+        const isGuest = !window.activeUserId;
 
         this.isLoadingMore = true;
         if (isLoadMore && this.contentArea) {
@@ -180,14 +174,18 @@ class HomeController {
         let newCanvases = [];
         let isError = false;
         let res = null;
-        const limit = 50;
+        const limit = isGuest ? 20 : 50;
 
         if (window.initialHomeCanvases && this.currentFilter === 'all' && !isLoadMore) {
             newCanvases = window.initialHomeCanvases;
             window.initialHomeCanvases = null; 
         } else {
             const signal = this.feedAbortController ? this.feedAbortController.signal : this.abortController.signal;
-            res = await this.api.post(ApiRoutes.Canvases.GetMine, { limit: limit, offset: this.currentOffset, filter: this.currentFilter }, signal).catch(() => null);
+            if (isGuest) {
+                res = await this.api.post(ApiRoutes.Canvases.GetHomeFeed, { limit: limit, offset: this.currentOffset, tag: 'all' }, signal).catch(() => null);
+            } else {
+                res = await this.api.post(ApiRoutes.Canvases.GetMine, { limit: limit, offset: this.currentOffset, filter: this.currentFilter }, signal).catch(() => null);
+            }
             
             if (signal.aborted) {
                 this.isLoadingMore = false;
@@ -203,32 +201,41 @@ class HomeController {
 
         removeInfiniteScrollSkeletons(this.contentArea);
 
-        if (newCanvases.length > 0 || (this.allCanvases.length > 0 && isLoadMore)) {
-            renderVirtualGridItems(this.contentArea, isLoadMore ? newCanvases : (this.allCanvases.length ? this.allCanvases.concat(newCanvases) : newCanvases), this.virtualObserver, isLoadMore, 'home-user-canvases');
-            this.allCanvases = this.allCanvases.concat(newCanvases);
+        let finalItems = newCanvases;
+        if (isGuest) {
+            await PromoService.ensureLoaded();
+            finalItems = PromoService.injectFeedCards(newCanvases, this.currentOffset);
+        }
+
+        if (finalItems.length > 0 || (this.allCanvases.length > 0 && isLoadMore)) {
+            renderVirtualGridItems(this.contentArea, isLoadMore ? finalItems : (this.allCanvases.length ? this.allCanvases.concat(finalItems) : finalItems), this.virtualObserver, isLoadMore, 'home-user-canvases');
+            this.allCanvases = this.allCanvases.concat(finalItems);
         } else if (isError && !isLoadMore) {
-            this.showError(this.contentArea, (res && res.message) ? res.message : window.__('err_load_canvases'));
+            this.showError(this.contentArea, (res && res.message) ? res.message : (window.__ ? window.__('err_load_canvases') : 'Error al cargar lienzos'));
         } else if (!isLoadMore) {
-            let msgEmpty = window.__('msg_home_all_empty');
-            if (this.currentFilter === 'mine') {
-                msgEmpty = window.__('msg_home_mine_empty');
-            } else if (this.currentFilter === 'joined') {
-                msgEmpty = window.__('msg_home_joined_empty');
-            } else if (this.currentFilter === 'managed') {
-                msgEmpty = window.__('msg_home_managed_empty');
+            let msgEmpty = isGuest ? (window.__ ? window.__('msg_explore_empty') : 'No hay murales disponibles por el momento.') : (window.__ ? window.__('msg_home_all_empty') : 'No tienes lienzos propios ni colaboraciones activas.');
+            if (!isGuest) {
+                if (this.currentFilter === 'mine') {
+                    msgEmpty = window.__ ? window.__('msg_home_mine_empty') : 'Aún no has creado ningún lienzo.';
+                } else if (this.currentFilter === 'joined') {
+                    msgEmpty = window.__ ? window.__('msg_home_joined_empty') : 'No te has unido a ningún lienzo.';
+                } else if (this.currentFilter === 'managed') {
+                    msgEmpty = window.__ ? window.__('msg_home_managed_empty') : 'No administras ningún lienzo adicional.';
+                }
             }
             
-            const btnExplore = window.__('btn_explore_canvases');
+            const btnExplore = window.__ ? window.__('btn_explore_canvases') : 'Explorar murales';
             const emptyHtml = `
                 <div class="component-empty-state" data-ref="empty-state-rendered">
                     <span class="material-symbols-rounded component-empty-state-icon">palette</span>
                     <p class="component-empty-state-text">${msgEmpty}</p>
+                    ${!isGuest ? `
                     <div class="component-actions">
-                        <button class="component-button component-button--secondary component-button--h40" data-nav="${this.basePath}/explore">
+                        <a class="component-button component-button--secondary component-button--h40" data-nav="/explore">
                             <span class="material-symbols-rounded">explore</span>
                             <span>${btnExplore}</span>
-                        </button>
-                    </div>
+                        </a>
+                    </div>` : ''}
                 </div>
             `;
             this.contentArea.innerHTML = emptyHtml;

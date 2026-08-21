@@ -36,7 +36,11 @@ class CanvasSettingsService {
                 return ['success' => false, 'message' => __('err_canvas_locked')];
             }
 
-            $isOwner = ($canvas['owner_id'] === $userId);
+            $isOwner = ((int)$canvas['owner_id'] === (int)$userId);
+            if (!$isOwner) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
             $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
             if (!isset($allSizes[$newSize])) {
                 return ['success' => false, 'message' => __('err_invalid_canvas_size')];
@@ -60,6 +64,55 @@ class CanvasSettingsService {
                 }
             }
 
+            $oldSize = $canvas['size'] ?? '64x64';
+            $oldParts = explode('x', strtolower($oldSize));
+            $oldW = (int)$oldParts[0];
+            $oldH = isset($oldParts[1]) ? (int)$oldParts[1] : $oldW;
+
+            $newParts = explode('x', strtolower($newSize));
+            $newW = (int)$newParts[0];
+            $newH = isset($newParts[1]) ? (int)$newParts[1] : $newW;
+
+            // 1. Process binary matrix resize (preserves drawing in new bounds)
+            $oldBinary = $this->canvasRepository->getSnapshot($canvasId);
+            $newBinary = str_repeat("\x00\x00\x00\x00", $newW * $newH);
+
+            if ($oldBinary && strlen($oldBinary) > 0) {
+                $limitX = min($oldW, $newW);
+                $limitY = min($oldH, $newH);
+                for ($y = 0; $y < $limitY; $y++) {
+                    for ($x = 0; $x < $limitX; $x++) {
+                        $oldOffset = ($y * $oldW + $x) * 4;
+                        $newOffset = ($y * $newW + $x) * 4;
+                        if ($oldOffset + 3 < strlen($oldBinary)) {
+                            $newBinary[$newOffset]     = $oldBinary[$oldOffset];
+                            $newBinary[$newOffset + 1] = $oldBinary[$oldOffset + 1];
+                            $newBinary[$newOffset + 2] = $oldBinary[$oldOffset + 2];
+                            $newBinary[$newOffset + 3] = $oldBinary[$oldOffset + 3];
+                        }
+                    }
+                }
+            }
+
+            $this->canvasRepository->saveSnapshot($canvasId, $newBinary);
+
+            // 2. Update MySQL canvases table immediately
+            $newSizeBytes = strlen($newBinary);
+            $oldSizeBytes = (int)($canvas['storage_bytes'] ?? 0);
+            $diffBytes = $newSizeBytes - $oldSizeBytes;
+
+            $dbManager = new DatabaseManager();
+            $db = $dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_CANVASES);
+            $stmt = $db->prepare("UPDATE canvases SET `size` = ?, `storage_bytes` = ? WHERE id = ?");
+            $stmt->execute([$newSize, $newSizeBytes, $canvasId]);
+
+            if ($diffBytes !== 0 && !empty($canvas['owner_id'])) {
+                try {
+                    $this->userRepository->updateStorageUsed((int)$canvas['owner_id'], $diffBytes);
+                } catch (Exception $e) {}
+            }
+
+            // 3. Update Redis & notify WebSockets if Redis cache is present
             if (class_exists(RedisCache::class)) {
                 $redisInstance = new RedisCache();
                 $redis = $redisInstance->getClient();
@@ -68,25 +121,32 @@ class CanvasSettingsService {
                     $lockKey = "canvas:{$canvasId}:resize_lock";
                     $redis->setex($lockKey, 60, "1"); 
                     
-                    $task = [
-                        'canvas_id' => $canvasId,
-                        'old_size'  => $canvas['size'],
-                        'new_size'  => $newSize
-                    ];
-                    
-                    $redis->lpush("canvases:pending_resizes", json_encode($task));
-                    
+                    $stateKey = "canvas:{$canvasId}:state";
+                    if ($redis->exists($stateKey)) {
+                        $redis->set($stateKey, $newBinary);
+                    }
+
+                    (new \App\Core\System\CacheInvalidator($redis))->canvas($canvasId, $canvas['uuid'] ?? null);
+
                     $redis->publish("admin:canvas_events", json_encode([
-                        'type' => 'canvas_locked_resize',
+                        'type' => 'canvas_resize_completed',
                         'canvas_id' => $canvasId,
                         'new_size' => $newSize
                     ]));
 
-                    return ['success' => true, 'message' => __('msg_resize_started')];
+                    $redis->sAdd('canvases:pending_snapshots', (string)$canvasId);
                 }
             }
 
-            return ['success' => false, 'message' => __('err_queue_unavailable')];
+            return [
+                'success' => true, 
+                'message' => __('msg_resize_started'),
+                'data' => [
+                    'size' => $newSize,
+                    'width' => $newW,
+                    'height' => $newH
+                ]
+            ];
 
         } catch (Exception $e) {
             Logger::error('Error en resizeCanvas.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
@@ -364,20 +424,35 @@ class CanvasSettingsService {
                 $this->createSnapshot($userId, $canvasId);
             }
 
+            $sizeParts = explode('x', strtolower($canvas['size'] ?? '64x64'));
+            $w = (int)$sizeParts[0];
+            $h = isset($sizeParts[1]) ? (int)$sizeParts[1] : $w;
+
+            $emptyBinary = str_repeat("\x00\x00\x00\x00", $w * $h);
+            $this->canvasRepository->saveSnapshot($canvasId, $emptyBinary);
+
             try {
                 if (class_exists(RedisCache::class)) {
                     $redisInstance = new RedisCache();
                     $redis = $redisInstance->getClient();
                     
                     if ($redis) {
+                        $stateKey = "canvas:{$canvasId}:state";
+                        if ($redis->exists($stateKey)) {
+                            $redis->set($stateKey, $emptyBinary);
+                        }
+
                         $redis->hset("canvases:force_resets_options", (string)$canvasId, json_encode(['take_snapshot' => $takeSnapshot ? 1 : 0]));
                         $redis->sadd("canvases:force_resets", [$canvasId]);
                         
+                        (new \App\Core\System\CacheInvalidator($redis))->canvas($canvasId, $canvas['uuid'] ?? null);
+
                         $websocketMsg = [
-                            'type' => 'canvas_locked',
+                            'type' => 'canvas_cleared',
                             'canvas_id' => $canvasId
                         ];
                         $redis->publish("admin:canvas_events", json_encode($websocketMsg));
+                        $redis->sAdd('canvases:pending_snapshots', (string)$canvasId);
                     }
                 }
             } catch (Exception $e) {
