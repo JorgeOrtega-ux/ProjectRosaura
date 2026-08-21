@@ -146,6 +146,11 @@ class CanvasAccessService {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
 
+            $isOffline = (($canvas['mode'] ?? 'offline') === 'offline' || empty($canvas['is_online_active']));
+            if ($isOffline) {
+                return ['success' => false, 'message' => __('err_canvas_not_found')];
+            }
+
             if (!empty($canvas['is_subscription_locked'])) {
                 return ['success' => false, 'message' => __('err_canvas_locked')];
             }

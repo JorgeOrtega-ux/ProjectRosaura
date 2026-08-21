@@ -3935,6 +3935,11 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     box-sizing: border-box;
 }
 
+.component-icon-spin {
+    animation: component-spin 0.8s linear infinite;
+    display: inline-block;
+}
+
 .component-spinner--sm {
     width: 16px;
     height: 16px;

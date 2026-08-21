@@ -254,7 +254,10 @@ async function decompressIfNeeded(input) {
 
 async function hydrateState(base64String) {
     const bytes = await decompressIfNeeded(base64String);
-    if (!bytes || !offscreenCtx) return;
+    if (!bytes || !offscreenCtx) {
+        console.warn('[Worker] hydrateState no pudo descomprimir o contexto no listo', { hasBytes: !!bytes, hasCtx: !!offscreenCtx });
+        return;
+    }
 
     try {
         initMemoryEngine(boardWidth, boardHeight);
@@ -262,8 +265,10 @@ async function hydrateState(base64String) {
         mainImageData.data.set(bytes.subarray(0, totalBytes));
         
         offscreenCtx.putImageData(mainImageData, 0, 0);
+        console.info('[Worker] hydrateState aplicado exitosamente (%d bytes cargados en el lienzo).', totalBytes);
         requestRender();
     } catch (e) {
+        console.error('[Worker] Error en hydrateState:', e);
     }
 }
 
@@ -2060,6 +2065,68 @@ self.onmessage = function (e) {
                 requestRender();
             }
             break;
+
+        case 'EXPORT_OFFLINE_STATE': {
+            processPixelQueue();
+            if (mainImageData && mainImageData.data) {
+                const bytes = mainImageData.data;
+                (async () => {
+                    let exportBytes = bytes;
+                    if ('CompressionStream' in self) {
+                        try {
+                            const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip'));
+                            const compressedBuffer = await new Response(stream).arrayBuffer();
+                            exportBytes = new Uint8Array(compressedBuffer);
+                        } catch (compErr) {
+                            exportBytes = bytes;
+                        }
+                    }
+                    
+                    const outLen = exportBytes.byteLength;
+                    let binaryStr = '';
+                    const chunkSize = 0x8000;
+                    for (let i = 0; i < outLen; i += chunkSize) {
+                        binaryStr += String.fromCharCode.apply(null, exportBytes.subarray(i, Math.min(i + chunkSize, outLen)));
+                    }
+                    const base64 = btoa(binaryStr);
+                    self.postMessage({
+                        type: 'OFFLINE_STATE_EXPORTED',
+                        payload: { base64 }
+                    });
+                })();
+            } else {
+                self.postMessage({
+                    type: 'OFFLINE_STATE_EXPORTED',
+                    payload: { base64: null }
+                });
+            }
+            break;
+        }
+
+        case 'CLEAR_AREA': {
+            if (payload && offscreenCtx) {
+                const x1 = Math.max(0, Math.min(parseInt(payload.x1, 10), parseInt(payload.x2, 10)));
+                const y1 = Math.max(0, Math.min(parseInt(payload.y1, 10), parseInt(payload.y2, 10)));
+                const x2 = Math.min(boardWidth - 1, Math.max(parseInt(payload.x1, 10), parseInt(payload.x2, 10)));
+                const y2 = Math.min(boardHeight - 1, Math.max(parseInt(payload.y1, 10), parseInt(payload.y2, 10)));
+                
+                offscreenCtx.clearRect(x1, y1, x2 - x1 + 1, y2 - y1 + 1);
+                if (mainImageData) {
+                    const w = boardWidth;
+                    for (let y = y1; y <= y2; y++) {
+                        for (let x = x1; x <= x2; x++) {
+                            const idx = (y * w + x) * 4;
+                            mainImageData.data[idx] = 0;
+                            mainImageData.data[idx + 1] = 0;
+                            mainImageData.data[idx + 2] = 0;
+                            mainImageData.data[idx + 3] = 0;
+                        }
+                    }
+                }
+                requestRender();
+            }
+            break;
+        }
 
         case 'BOMB_WARNING':
         case 'NUCLEAR_WARNING':

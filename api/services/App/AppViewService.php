@@ -145,7 +145,20 @@ class AppViewService {
                     $cached = $redis->get($cacheKey);
                     if ($cached) {
                         $cachedData = json_decode($cached, true);
-                        if (is_array($cachedData)) return $cachedData;
+                        if (is_array($cachedData)) {
+                            $cachedMode = $cachedData['canvasMode'] ?? 'offline';
+                            $cachedOnline = !empty($cachedData['isOnlineActive']);
+                            $cachedIsOwner = !empty($cachedData['isOwner']);
+                            if (($cachedMode === 'offline' || !$cachedOnline) && !$cachedIsOwner) {
+                                return [
+                                    'isNotFound' => true,
+                                    'isBanned' => false,
+                                    'canvasIntId' => null,
+                                    'canvasUuid' => null
+                                ];
+                            }
+                            return $cachedData;
+                        }
                     }
                 }
             }
@@ -194,6 +207,7 @@ class AppViewService {
                 $dbManager = new DatabaseManager();
                 $db = $dbManager->getConnection(DB::CONN_CANVASES);
                 $sql = "SELECT c.id, c.name, c.size, c.palette_id, c.privacy, c.requires_approval, c.is_subscription_locked, 
+                               c.mode, c.is_online_active, c.storage_bytes,
                                c.cooldown_pixels_batch, c.cooldown_seconds, c.owner_id, c.created_at, c.max_participants, c.allow_chat, c.members_count,
                                r.is_active as reset_active, r.next_reset_at,
                                rs.is_active as resize_active, rs.next_resize_at, rs.target_size
@@ -212,6 +226,9 @@ class AppViewService {
                     $canvasSize = strtolower($canvas['size'] ?? '64');
                     $canvasPalette = $canvas['palette_id'] ?? 'default';
                     $canvasPrivacy = $canvas['privacy'] ?? 'private';
+                    $canvasMode = $canvas['mode'] ?? 'offline';
+                    $isOnlineActive = !empty($canvas['is_online_active']);
+                    $storageBytes = (int)($canvas['storage_bytes'] ?? 0);
                     $canvasApproval = $canvas['requires_approval'] ?? '0';
                     $canvasAllowChat = $canvas['allow_chat'] ?? '0';
                     $membersCount = $canvas['members_count'] ?? '0';
@@ -267,6 +284,18 @@ class AppViewService {
                             }
                         }
                     }
+                    
+                    // Offline Studio canvases are private to their creator.
+                    // Non-owners cannot view or access them.
+                    if (($canvasMode === 'offline' || !$isOnlineActive) && !$isOwner) {
+                        return [
+                            'isNotFound' => true,
+                            'isBanned' => false,
+                            'canvasIntId' => null,
+                            'canvasUuid' => null
+                        ];
+                    }
+
                     $isBlockedInit = ($canvasPrivacy === 'private' && !$isMember);
                     $isSpectatorInit = ($userRole === 'spectator' && !$isBlockedInit);
                     $isSubscriptionLockedInit = isset($canvas['is_subscription_locked']) ? (bool)$canvas['is_subscription_locked'] : false;
@@ -386,6 +415,9 @@ class AppViewService {
             'canvasSize' => $canvasSize,
             'canvasPalette' => $canvasPalette,
             'canvasPrivacy' => $canvasPrivacy,
+            'canvasMode' => $canvasMode ?? 'offline',
+            'isOnlineActive' => $isOnlineActive ?? false,
+            'storageBytes' => $storageBytes ?? 0,
             'canvasApproval' => $canvasApproval,
             'canvasAllowChat' => $canvasAllowChat,
             'canvasCooldownBatch' => $canvasCooldownBatch,

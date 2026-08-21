@@ -33,9 +33,18 @@ export const DesignInteractions = {
         if (this.fileInput) {
             this.fileInput.addEventListener('change', this.handleFileUploadBound);
         }
+
+        this.handleBeforeUnloadBound = () => {
+            if (this.isOfflineMode && this._offlineDirty && typeof this.saveOfflineCanvasState === 'function') {
+                this.saveOfflineCanvasState(true);
+            }
+        };
+        window.addEventListener('beforeunload', this.handleBeforeUnloadBound);
+        window.addEventListener('pagehide', this.handleBeforeUnloadBound);
     },
 
     getMaxBalance() {
+        if (this.isOfflineMode) return Infinity;
         if (this.interactionMode === 'owner_erasing') return Infinity;
         if (this.perkNoCooldown) return Infinity;
         if (this.interactionMode === 'placing_mines') return 10;
@@ -46,6 +55,27 @@ export const DesignInteractions = {
     },
 
     handleClick(e) {
+        const btnSaveOffline = e.target.closest('[data-action="manualSaveOffline"]');
+        if (btnSaveOffline) {
+            e.preventDefault();
+            if (typeof this.manualSaveOffline === 'function') {
+                this.manualSaveOffline(btnSaveOffline);
+            } else if (typeof this.saveOfflineCanvasState === 'function') {
+                this.saveOfflineCanvasState(true);
+            }
+            return;
+        }
+
+        const btnToggleOnline = e.target.closest('[data-action="toggleOnlineMode"]');
+        if (btnToggleOnline) {
+            e.preventDefault();
+            const targetAction = this.isOfflineMode ? 'activate' : 'deactivate';
+            if (typeof this.toggleOnlineMode === 'function') {
+                this.toggleOnlineMode(targetAction);
+            }
+            return;
+        }
+
         const btnExternalPromo = e.target.closest('[data-action="openExternalPromo"]');
         if (btnExternalPromo) {
             e.preventDefault();
@@ -59,8 +89,6 @@ export const DesignInteractions = {
         if (typeof this.handleTemplateModals === 'function' && this.handleTemplateModals(e)) {
             return; 
         }
-
-
 
         const btnOwnerTools = e.target.closest('[data-action="toggleOwnerTools"]');
         if (btnOwnerTools) {
@@ -236,6 +264,19 @@ export const DesignInteractions = {
 
         // Skip shortcuts if user is typing in inputs or textareas
         if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) || e.target.isContentEditable) return;
+
+        // Allow Ctrl+S / Cmd+S for offline saving
+        if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+            if (this.isOfflineMode) {
+                e.preventDefault();
+                if (typeof this.manualSaveOffline === 'function') {
+                    this.manualSaveOffline();
+                } else if (typeof this.saveOfflineCanvasState === 'function') {
+                    this.saveOfflineCanvasState(true);
+                }
+                return;
+            }
+        }
         
         if (e.ctrlKey || e.metaKey || e.altKey) return;
         
@@ -1405,6 +1446,18 @@ export const DesignInteractions = {
             }
         }
 
+        if (this.isOfflineMode) {
+            console.info('%c[Rosaura Studio] %d píxeles colocados. Programando autoguardado...', 'color: #3b82f6; font-weight: bold;', validPixels.length);
+            if (typeof this.saveOfflineCanvasState === 'function') {
+                this.saveOfflineCanvasState(false);
+            }
+            this.selectedPixels.clear();
+            this.updateSelectionUI();
+            if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+            this.requestRender();
+            return;
+        }
+
         if (this.interactionMode === 'normal') {
             if (!this.perkNoCooldown) {
                 this.cooldownBalance -= validPixels.length;
@@ -1772,8 +1825,23 @@ export const DesignInteractions = {
         const count = (maxX - minX + 1) * (maxY - minY + 1);
         const cooldownMs = Math.min(60000, 5000 + Math.floor(count / 100));
 
-        // 2. Broadcast via WebSocket server
-        if (this.wsManager) {
+        // 2. Broadcast via WebSocket server or clear locally in offline mode
+        if (this.isOfflineMode) {
+            if (this.renderWorker) {
+                this.renderWorker.postMessage({
+                    type: 'CLEAR_AREA',
+                    payload: { x1: minX, y1: minY, x2: maxX, y2: maxY }
+                });
+            }
+            if (this.offscreenCtx) {
+                const w = Math.max(1, maxX - minX + 1);
+                const h = Math.max(1, maxY - minY + 1);
+                this.offscreenCtx.clearRect(minX, minY, w, h);
+            }
+            if (typeof this.saveOfflineCanvasState === 'function') {
+                this.saveOfflineCanvasState(false);
+            }
+        } else if (this.wsManager) {
             this.wsManager.send({
                 type: 'clear_area',
                 x1: minX,

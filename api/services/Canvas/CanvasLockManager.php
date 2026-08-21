@@ -52,14 +52,17 @@ class CanvasLockManager {
             // For now, let's inject DatabaseManager to update directly, which is faster and avoids N+1
             $canvasesDb = $this->dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_CANVASES);
             
-            $stmt = $canvasesDb->prepare("SELECT id, size, palette_id, max_participants, created_at FROM canvases WHERE owner_id = :owner_id ORDER BY created_at ASC");
+            $stmt = $canvasesDb->prepare("SELECT id, size, palette_id, max_participants, mode, is_online_active, created_at FROM canvases WHERE owner_id = :owner_id ORDER BY created_at ASC");
             $stmt->execute(['owner_id' => $userId]);
             $canvases = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-            $totalOwned = count($canvases);
-            $maxCanvases = $planLimits['max_canvases'];
+            $onlineCanvases = array_filter($canvases, function($c) {
+                return ($c['mode'] === 'online' || !empty($c['is_online_active']));
+            });
+            $totalOnline = count($onlineCanvases);
+            $maxOnlineCanvases = $planLimits['max_online_canvases'] ?? $planLimits['max_canvases'] ?? 1;
             
-            $toLockCount = ($maxCanvases !== -1) ? max(0, $totalOwned - $maxCanvases) : 0;
+            $toLockOnlineCount = ($maxOnlineCanvases !== -1) ? max(0, $totalOnline - $maxOnlineCanvases) : 0;
             
             $updateStmt = $canvasesDb->prepare("UPDATE canvases SET is_subscription_locked = :is_subscription_locked, locked_reasons = :locked_reasons WHERE id = :id");
             $canvasesDb->beginTransaction();
@@ -68,10 +71,11 @@ class CanvasLockManager {
                 $isSubscriptionLocked = false;
                 $lockedReasons = [];
 
-                if ($toLockCount > 0) {
+                $isOnline = ($canvas['mode'] === 'online' || !empty($canvas['is_online_active']));
+                if ($isOnline && $toLockOnlineCount > 0) {
                     $isSubscriptionLocked = true;
-                    $lockedReasons[] = 'max_canvases';
-                    $toLockCount--;
+                    $lockedReasons[] = 'max_online_canvases';
+                    $toLockOnlineCount--;
                 }
 
                 $sizeStr = $canvas['size'];

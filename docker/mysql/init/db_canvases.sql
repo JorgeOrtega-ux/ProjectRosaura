@@ -24,6 +24,10 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   `total_pixels` bigint(20) NOT NULL DEFAULT 0,
   `total_messages` bigint(20) NOT NULL DEFAULT 0,
   `is_frozen` tinyint(1) NOT NULL DEFAULT 0,
+  `mode` enum('offline', 'online') NOT NULL DEFAULT 'offline',
+  `is_online_active` tinyint(1) NOT NULL DEFAULT 0,
+  `storage_bytes` bigint(20) NOT NULL DEFAULT 0,
+  `last_online_at` datetime DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -32,7 +36,8 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   INDEX `idx_canvases_privacy` (`privacy`),
   INDEX `idx_canvases_feed_opt` (`is_subscription_locked`, `privacy`, `created_at`),
   INDEX `idx_canvases_popular` (`favorites_count` DESC, `created_at` DESC),
-  INDEX `idx_canvases_tags` ((CAST(tags AS CHAR(32) ARRAY)))
+  INDEX `idx_canvases_tags` ((CAST(tags AS CHAR(32) ARRAY))),
+  INDEX `idx_canvases_mode_owner` (`owner_id`, `mode`, `is_online_active`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS `canvas_protections` (

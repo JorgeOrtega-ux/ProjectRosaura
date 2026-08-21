@@ -864,8 +864,30 @@ def execute_canvas_draw_image(r, canvas_id, image_path, start_x, start_y, target
     
     expected_size = width * height * 4
     if not raw_state or len(raw_state) != expected_size:
-        logging.warning(f"Redis state for canvas {canvas_id} size mismatch or missing. Resetting buffer.")
-        raw_state = b'\x00\x00\x00\x00' * (width * height)
+        logging.warning(f"Redis state for canvas {canvas_id} size mismatch or missing. Checking cold storage snapshot.")
+        try:
+            with db_conn.cursor() as cursor:
+                cursor.execute("SELECT snapshot_data, s3_key FROM canvas_snapshots WHERE canvas_id = %s LIMIT 1", (canvas_id,))
+                snap_row = cursor.fetchone()
+                if snap_row:
+                    if snap_row.get('s3_key'):
+                        try:
+                            s3_client = get_s3_client()
+                            s3_obj = s3_client.get_object(Bucket=S3_BUCKET, Key=snap_row['s3_key'])
+                            raw_state = zlib.decompress(s3_obj['Body'].read())
+                        except Exception:
+                            raw_state = None
+                    if not raw_state and snap_row.get('snapshot_data'):
+                        try:
+                            raw_state = zlib.decompress(snap_row['snapshot_data'])
+                        except Exception:
+                            raw_state = None
+        except Exception as snap_fetch_err:
+            logging.error(f"Error fetching snapshot for canvas {canvas_id}: {snap_fetch_err}")
+
+        if not raw_state or len(raw_state) != expected_size:
+            logging.warning(f"Snapshot not found or size mismatch. Resetting buffer.")
+            raw_state = b'\x00\x00\x00\x00' * (width * height)
 
     state = bytearray(raw_state)
     original_pixels = img.load()

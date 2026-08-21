@@ -324,6 +324,54 @@ return [
             ],
         ],
     ],
+    'canvases.activate_online' => [
+        'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasCoreController',
+        'action' => 'activate_online',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'canvas_activate_online',
+                'max' => 10,
+                'time' => 5,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'canvases.deactivate_online' => [
+        'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasCoreController',
+        'action' => 'deactivate_online',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'canvas_deactivate_online',
+                'max' => 10,
+                'time' => 5,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'canvases.save_offline_state' => [
+        'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasCoreController',
+        'action' => 'save_offline_state',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'canvas_save_offline',
+                'max' => 60,
+                'time' => 60,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
     'canvases.leave' => [
         'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasAccessController',
         'action' => 'leave',

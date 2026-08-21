@@ -548,6 +548,9 @@ export const DesignNetwork = {
                 else if (data.type === 'clear_area') {
                     this.handleClearAreaEvent(data);
                 }
+                else if (data.type === 'canvas_mode_changed') {
+                    this.handleCanvasModeChanged(data);
+                }
             });
 
             this.wsManager.connect(this.canvasIntId, wsTicket);
@@ -1985,5 +1988,180 @@ export const DesignNetwork = {
             this.updatePerkBadges();
         }
         this.requestRender();
+    },
+
+    handleCanvasModeChanged(data) {
+        if (!data) return;
+        const newMode = data.mode || (data.is_online_active ? 'online' : 'offline');
+        if (newMode === 'offline') {
+            if (!this.isOwner) {
+                showMessage(__('msg_canvas_mode_deactivated_by_owner') || 'El propietario ha guardado y cambiado este lienzo a modo estudio privado.', 'info');
+                if (this.wsManager) {
+                    this.wsManager.disconnect();
+                }
+                setTimeout(() => {
+                    window.location.href = (window.AppBasePath || '') + '/explore';
+                }, 2000);
+            } else {
+                showMessage(__('msg_canvas_offline_deactivated') || 'Lienzo en modo Estudio (Offline)', 'info');
+                setTimeout(() => window.location.reload(), 600);
+            }
+        } else if (newMode === 'online') {
+            showMessage(__('msg_canvas_online_activated') || 'Lienzo activado en modo Online', 'success');
+            setTimeout(() => window.location.reload(), 600);
+        }
+    },
+
+    async toggleOnlineMode(action = 'activate') {
+        try {
+            if (this.isOfflineMode && this._offlineDirty && typeof this.saveOfflineCanvasState === 'function') {
+                console.info('[Rosaura Studio] Guardando cambios locales pendientes antes de activar online...');
+                await this.saveOfflineCanvasState(true);
+            }
+
+            const route = action === 'activate' ? ApiRoutes.Canvases.ActivateOnline : ApiRoutes.Canvases.DeactivateOnline;
+            const resp = await this.api.post(route, { canvas_id: this.canvasIntId });
+            if (resp && resp.success) {
+                showMessage(resp.message || 'Estado actualizado', 'success');
+                setTimeout(() => window.location.reload(), 600);
+            } else {
+                showMessage(resp?.message || 'Error al cambiar modo de lienzo', 'error');
+            }
+        } catch (e) {
+            showMessage(__('err_occurred') || 'Error al cambiar modo', 'error');
+        }
+    },
+
+    async manualSaveOffline(btnElement = null) {
+        const btn = btnElement || document.querySelector('[data-action="manualSaveOffline"]');
+        const iconSpan = btn ? btn.querySelector('.material-symbols-rounded') : null;
+        const originalIcon = iconSpan ? iconSpan.textContent : 'save';
+
+        if (btn) {
+            btn.classList.add('disabled-interaction');
+            if (iconSpan) {
+                iconSpan.textContent = 'sync';
+                iconSpan.classList.add('component-icon-spin');
+            }
+        }
+
+        console.info('%c[Rosaura Studio] Guardado manual disparado...', 'color: #3b82f6; font-weight: bold;');
+        const success = await this.saveOfflineCanvasState(true);
+
+        if (btn && iconSpan) {
+            iconSpan.classList.remove('component-icon-spin');
+            if (success) {
+                iconSpan.textContent = 'check';
+                iconSpan.classList.add('component-text-success');
+                showMessage(__('msg_state_saved') || 'Lienzo guardado en tu Estudio', 'success');
+            } else {
+                iconSpan.textContent = 'error';
+                iconSpan.classList.add('component-text-danger');
+            }
+
+            setTimeout(() => {
+                iconSpan.textContent = originalIcon;
+                iconSpan.classList.remove('component-text-success', 'component-text-danger');
+                btn.classList.remove('disabled-interaction');
+            }, 1200);
+        }
+    },
+
+    async saveOfflineCanvasState(immediate = false) {
+        if (!this.isOfflineMode || !this.canvasIntId) {
+            return false;
+        }
+
+        this._offlineDirty = true;
+
+        if (this._offlineSavePromise) {
+            if (!immediate) {
+                this._offlineHasPendingChanges = true;
+                return this._offlineSavePromise;
+            }
+            try { await this._offlineSavePromise; } catch (e) {}
+            if (!this._offlineDirty) return true;
+        }
+
+        const performSave = async () => {
+            if (!this._offlineDirty && !this._offlineHasPendingChanges) return true;
+            this._offlineDirty = false;
+            this._offlineHasPendingChanges = false;
+            this._offlineSaving = true;
+
+            console.info('%c[Rosaura Studio] Iniciando exportación y guardado...', 'color: #f59e0b; font-weight: bold;');
+
+            try {
+                let base64Data = null;
+                if (this.renderWorker) {
+                    base64Data = await new Promise((resolve) => {
+                        let timeoutId = null;
+                        const handler = (e) => {
+                            if (e.data?.type === 'OFFLINE_STATE_EXPORTED') {
+                                if (timeoutId) clearTimeout(timeoutId);
+                                this.renderWorker.removeEventListener('message', handler);
+                                resolve(e.data.payload?.base64);
+                            }
+                        };
+                        this.renderWorker.addEventListener('message', handler);
+                        this.renderWorker.postMessage({ type: 'EXPORT_OFFLINE_STATE' });
+                        timeoutId = setTimeout(() => {
+                            this.renderWorker.removeEventListener('message', handler);
+                            console.warn('[Rosaura Studio] Timeout esperando respuesta de renderWorker (3000ms)');
+                            resolve(null);
+                        }, 3000);
+                    });
+                } else if (this.offscreenCtx) {
+                    const imgData = this.offscreenCtx.getImageData(0, 0, this.boardWidth, this.boardHeight);
+                    const bytes = imgData.data;
+                    const len = bytes.byteLength;
+                    let binaryStr = '';
+                    const chunkSize = 0x8000;
+                    for (let i = 0; i < len; i += chunkSize) {
+                        binaryStr += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(i + chunkSize, len)));
+                    }
+                    base64Data = btoa(binaryStr);
+                }
+
+                if (base64Data) {
+                    const resp = await this.api.post(ApiRoutes.Canvases.SaveOfflineState, {
+                        canvas_id: this.canvasIntId,
+                        state_base64: base64Data
+                    });
+                    if (resp && resp.success) {
+                        console.info('%c[Rosaura Studio] Guardado completado con éxito en base de datos.', 'color: #10b981; font-weight: bold;');
+                        return true;
+                    } else {
+                        console.error('%c[Rosaura Studio] Error de respuesta de API al guardar:', 'color: #ef4444;', resp);
+                        return false;
+                    }
+                } else {
+                    console.error('%c[Rosaura Studio] No se pudo obtener base64Data del Worker.', 'color: #ef4444;');
+                    return false;
+                }
+            } catch (err) {
+                console.error('%c[Rosaura Studio] Excepción al guardar estado:', 'color: #ef4444;', err);
+                return false;
+            } finally {
+                this._offlineSaving = false;
+                this._offlineSavePromise = null;
+                if (this._offlineHasPendingChanges) {
+                    this._offlineHasPendingChanges = false;
+                    this.saveOfflineCanvasState(false);
+                }
+            }
+        };
+
+        if (immediate) {
+            if (this._offlineSaveTimeout) clearTimeout(this._offlineSaveTimeout);
+            this._offlineSavePromise = performSave();
+            return await this._offlineSavePromise;
+        }
+
+        if (this._offlineSaveTimeout) clearTimeout(this._offlineSaveTimeout);
+        this._offlineSaveTimeout = setTimeout(() => {
+            this._offlineSavePromise = performSave();
+        }, 1200);
+        return true;
     }
 };

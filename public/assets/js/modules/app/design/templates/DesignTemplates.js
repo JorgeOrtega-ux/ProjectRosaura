@@ -876,11 +876,38 @@ export const DesignTemplates = {
             });
 
             if (res && res.success) {
-                // Success toast & canvas reload will come via WebSocket event
                 if (this.cachedTemplateTokens !== undefined) {
                     this.cachedTemplateTokens = Math.max(0, this.cachedTemplateTokens - cost);
                 }
                 this.fetchTemplateTokensBalance();
+
+                if (this.isOfflineMode || res.is_offline) {
+                    if (this.renderWorker && tpl.imageBitmap) {
+                        try {
+                            const bitmapClone = await createImageBitmap(tpl.imageBitmap);
+                            this.renderWorker.postMessage({
+                                type: 'TRIGGER_INJECT_ANIMATION',
+                                payload: {
+                                    templateCoords: {
+                                        x: Math.round(tpl.x),
+                                        y: Math.round(tpl.y),
+                                        w: Math.round(tpl.w),
+                                        h: Math.round(tpl.h)
+                                    },
+                                    imageBitmap: bitmapClone
+                                }
+                            }, [bitmapClone]);
+                        } catch (bmErr) {}
+                    }
+
+                    if (typeof this.saveOfflineCanvasState === 'function') {
+                        this.saveOfflineCanvasState(false);
+                    }
+
+                    this.deleteTemplate();
+                    this.requestRender();
+                    showMessage(res?.message || __('msg_template_stamped') || 'Plantilla estampada con éxito.', 'success');
+                }
             } else {
                 showMessage(res?.message || __('err_stamp_failed'), 'error');
             }

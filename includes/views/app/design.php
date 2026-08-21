@@ -5,7 +5,14 @@ use App\Core\Helpers\Utils;
 $viewService = new AppViewService();
 $designData = $viewService->getCanvasDesignData($_GET['id'] ?? '', isset($_GET['snapshot']));
 
-if ($designData['isBanned']) {
+if (!empty($designData['isNotFound']) || empty($designData['canvasIntId'])) {
+    global $systemMessageType;
+    $systemMessageType = '404';
+    require ROOT_PATH . '/includes/views/system/message.php';
+    return;
+}
+
+if (!empty($designData['isBanned'])) {
     global $systemMessageType;
     $systemMessageType = 'canvas_banned';
     require ROOT_PATH . '/includes/views/system/message.php';
@@ -27,6 +34,8 @@ extract($designData);
          data-canvas-uuid="<?php echo htmlspecialchars($canvasUuid); ?>"
          data-canvas-name="<?php echo htmlspecialchars($canvasName); ?>"
          data-size="<?php echo htmlspecialchars($canvasSize); ?>" 
+         data-mode="<?php echo htmlspecialchars($canvasMode ?? 'offline'); ?>"
+         data-online-active="<?php echo !empty($isOnlineActive) ? '1' : '0'; ?>"
          data-initial-zoom="<?php echo htmlspecialchars($canvasInitialZoom ?? '0.5'); ?>"
          data-palette="<?php echo htmlspecialchars($canvasPalette); ?>"
          data-privacy="<?php echo htmlspecialchars($canvasPrivacy); ?>"
@@ -109,8 +118,10 @@ extract($designData);
             <?php
                 $liveTierMin = \App\Core\System\SubscriptionPlanConstants::getLowestTierForFeature('live_share');
                 $liveTierLevel = $liveTierMin ? (int)$liveTierMin['tier_level'] : 1;
+                $isOnlineModeActive = !empty($isOnlineActive);
             ?>
             <div class="canvas-design-toolbar <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="design-tools-actions">
+                <?php if ($isOnlineModeActive): ?>
                 <button class="component-button component-button--icon component-button--h32" data-action="openJoinLiveModal" data-tooltip="<?php echo __('tooltip_join_live'); ?> [J]" data-position="bottom">
                     <span class="material-symbols-rounded">sensors</span>
                 </button>
@@ -121,6 +132,7 @@ extract($designData);
                 <button class="component-button component-button--icon component-button--h32 <?php echo $liveLock['class']; ?>" data-action="toggleLiveBroadcast" data-ref="btn-start-live" data-tooltip="<?php echo __('tooltip_stream_live'); ?> [S]" data-position="bottom" <?php echo $liveLock['attributes']; ?>>
                     <span class="material-symbols-rounded">stream</span>
                 </button>
+                <?php endif; ?>
 
                 <button class="component-button component-button--icon component-button--h32 component-color-indicator" data-ref="btn-color-palette" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-colors" data-tooltip="<?php echo __('tooltip_color_palette'); ?> [C]" data-position="bottom">
                     <span class="material-symbols-rounded">palette</span>
@@ -131,11 +143,22 @@ extract($designData);
                 </button>
 
                 <?php if (isset($isOwner) && $isOwner): ?>
+                <?php if (!$isOnlineModeActive): ?>
+                <button class="component-button component-button--icon component-button--h32" data-action="manualSaveOffline" data-ref="btn-save-offline" data-tooltip="<?php echo __('tooltip_save_offline'); ?> [Ctrl+S]" data-position="bottom">
+                    <span class="material-symbols-rounded">save</span>
+                </button>
+                <?php endif; ?>
+                <button class="component-button component-button--icon component-button--h32" data-action="toggleOnlineMode" data-tooltip="<?php echo ($isOnlineModeActive ? __('tooltip_deactivate_online') : __('tooltip_activate_online')); ?>" data-position="bottom">
+                    <span class="material-symbols-rounded <?php echo $isOnlineModeActive ? 'component-text-success' : ''; ?>"><?php echo $isOnlineModeActive ? 'sensors' : 'sensors_off'; ?></span>
+                </button>
+                <?php if ($isOnlineModeActive): ?>
                 <button class="component-button component-button--icon component-button--h32" data-action="toggleOwnerTools" data-ref="btn-owner-tools" data-tooltip="<?php echo __('tooltip_owner_tools'); ?> [O]" data-position="bottom">
                     <span class="material-symbols-rounded">construction</span>
                 </button>
                 <?php endif; ?>
+                <?php endif; ?>
 
+                <?php if ($isOnlineModeActive): ?>
                 <?php
                     $chatLock = ['class' => '', 'attributes' => ''];
                     if (isset($isOwner) && $isOwner) {
@@ -145,6 +168,7 @@ extract($designData);
                 <button class="component-button component-button--icon component-button--h32 <?php echo $chatLock['class']; ?>" data-action="toggleMenuInModule" data-module-target="moduleLiveChat" data-menu-target="menu-chat" data-tooltip="<?php echo __('tooltip_live_chat'); ?> [H]" data-position="bottom" <?php echo $chatLock['attributes']; ?>>
                     <span class="material-symbols-rounded">chat</span>
                 </button>
+                <?php endif; ?>
             </div>
             <?php endif; ?>
 
@@ -188,7 +212,7 @@ extract($designData);
                     <span><?php echo __('lbl_private_canvas'); ?></span>
                 </div>
 
-                <?php if (!$isSnapshot): ?>
+                <?php if (!$isSnapshot && !empty($isOnlineActive)): ?>
                 <div class="component-badge <?php echo ($isBlockedInit || $isSpectatorInit || $isSubscriptionLockedInit) ? 'disabled' : ''; ?>" data-ref="cooldown-badge">
                     <span class="material-symbols-rounded">bolt</span>
                     <span data-ref="cooldown-counter"><?php echo htmlspecialchars($canvasBatchLimit ?? '5'); ?>/<?php echo htmlspecialchars($canvasBatchLimit ?? '5'); ?></span>

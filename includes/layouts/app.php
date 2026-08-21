@@ -102,8 +102,14 @@ if ($isDesignRoute) {
                         if ($cachedPreload) {
                             $decodedPreload = json_decode($cachedPreload, true);
                             if (is_array($decodedPreload)) {
-                                $initialCanvasDataJson = $decodedPreload['initialCanvasDataJson'] ?? 'null';
-                                $preloadedChunksJson = $decodedPreload['preloadedChunksJson'] ?? '{}';
+                                $parsedInitial = json_decode($decodedPreload['initialCanvasDataJson'] ?? 'null', true);
+                                $isCachedOffline = ($parsedInitial && isset($parsedInitial['data']['mode']) && ($parsedInitial['data']['mode'] === 'offline' || empty($parsedInitial['data']['is_online_active'])));
+                                if (!$isCachedOffline) {
+                                    $initialCanvasDataJson = $decodedPreload['initialCanvasDataJson'] ?? 'null';
+                                    $preloadedChunksJson = $decodedPreload['preloadedChunksJson'] ?? '{}';
+                                } else {
+                                    try { $redis->del($layoutCacheKey); } catch (\Throwable $t) {}
+                                }
                             }
                         }
                     }
@@ -130,6 +136,7 @@ if ($isDesignRoute) {
                         $canvasObj = $canvasRes['data'];
                         $boardW = (int)$canvasObj['width'];
                         $boardH = (int)$canvasObj['height'];
+                        $isCanvasOnline = (($canvasObj['mode'] ?? 'offline') === 'online' || !empty($canvasObj['is_online_active']));
 
                         // Calculamos el centro geométrico del lienzo
                         $centerX = (int)($boardW / 2);
@@ -146,14 +153,14 @@ if ($isDesignRoute) {
                             }
                         }
 
-                        if (!empty($initialChunks)) {
+                        if (!empty($initialChunks) && $isCanvasOnline) {
                             $chunksResult = $canvasService->getCanvasChunks($canvasId, $initialChunks);
                             if ($chunksResult && !empty($chunksResult['chunks'])) {
                                 $preloadedChunksJson = json_encode($chunksResult['chunks']);
                             }
                         }
 
-                        if ($redis) {
+                        if ($redis && $isCanvasOnline) {
                             try {
                                 $redis->setex($layoutCacheKey, \App\Core\System\CacheConstants::TTL_THIRTY_DAYS, json_encode([
                                     'initialCanvasDataJson' => $initialCanvasDataJson,

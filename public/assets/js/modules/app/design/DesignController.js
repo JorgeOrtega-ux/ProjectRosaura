@@ -419,6 +419,16 @@ class DesignController {
             this.fileInput.removeEventListener('change', this.handleFileUploadBound);
         }
 
+        if (this.handleBeforeUnloadBound) {
+            window.removeEventListener('beforeunload', this.handleBeforeUnloadBound);
+            window.removeEventListener('pagehide', this.handleBeforeUnloadBound);
+        }
+
+        if (this._offlineSaveTimeout) {
+            clearTimeout(this._offlineSaveTimeout);
+            this._offlineSaveTimeout = null;
+        }
+
         if (this.resizeObserver) {
             this.resizeObserver.disconnect();
             this.resizeObserver = null;

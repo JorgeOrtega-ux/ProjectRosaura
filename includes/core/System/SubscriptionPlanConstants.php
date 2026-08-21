@@ -73,6 +73,7 @@ class SubscriptionPlanConstants {
                 $limits = [
                     'name' => $row['name'],
                     'max_canvases' => (int)$row['max_canvases'],
+                    'max_online_canvases' => (int)$row['max_canvases'],
                     'max_storage_mb' => (int)$row['max_storage_mb'],
                     'max_snapshots_per_canvas' => (int)$row['max_snapshots_per_canvas'],
                     'max_members_per_canvas' => (int)$row['max_members_per_canvas'],
@@ -102,6 +103,7 @@ class SubscriptionPlanConstants {
         $default = [
             'name' => 'Free',
             'max_canvases' => 1,
+            'max_online_canvases' => 1,
             'max_snapshots_per_canvas' => 10,
             'max_storage_mb' => 20,
             'max_upload_mb' => 10,

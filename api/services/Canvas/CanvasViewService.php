@@ -71,6 +71,23 @@ class CanvasViewService {
         $canvasId = (int)$canvas['id'];
         $canvasOwnerId = (int)($canvas['owner_id'] ?? 0);
         $isOwner = ((int)$userId === $canvasOwnerId);
+        $isOffline = (($canvas['mode'] ?? 'offline') === 'offline' || empty($canvas['is_online_active']));
+        
+        if ($isOffline && !$isOwner) {
+            return [
+                'authorized' => false,
+                'is_locked' => false,
+                'userId' => (int)$userId,
+                'canvasId' => null,
+                'canvasUuid' => $canvasUuid,
+                'canvasOwnerId' => null,
+                'isOwner' => false,
+                'canvas' => null,
+                'error' => __('err_canvas_not_found'),
+                'redirect' => $appUrl . '/canvases/manage'
+            ];
+        }
+
         $isLocked = !empty($canvas['is_subscription_locked']);
 
         if ($isLocked) {
@@ -265,7 +282,7 @@ class CanvasViewService {
                          LEFT JOIN canvas_user_roles cur ON c.id = cur.canvas_id AND cur.user_id = :uid1
                          LEFT JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id AND crp.permission_id IN (2, 3, 4, 5, 6, 7)
                          WHERE c.owner_id = :uid2 OR crp.permission_id IS NOT NULL";
-        $sqlSelect = "SELECT DISTINCT c.id, c.uuid, c.name, c.privacy, c.size, c.max_participants, c.created_at, c.favorites_count, c.owner_id, c.is_subscription_locked, c.locked_reasons 
+        $sqlSelect = "SELECT DISTINCT c.id, c.uuid, c.name, c.privacy, c.size, c.mode, c.is_online_active, c.storage_bytes, c.max_participants, c.created_at, c.favorites_count, c.owner_id, c.is_subscription_locked, c.locked_reasons 
                       FROM {$tblCanvases} c 
                       LEFT JOIN canvas_user_roles cur ON c.id = cur.canvas_id AND cur.user_id = :uid1
                       LEFT JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id AND crp.permission_id IN (2, 3, 4, 5, 6, 7)

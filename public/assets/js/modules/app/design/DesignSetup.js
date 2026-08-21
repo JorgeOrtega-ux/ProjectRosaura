@@ -80,6 +80,9 @@ export const DesignSetup = {
             this.canvasIntId = wrapper.getAttribute('data-canvas-id');
             this.canvasId = wrapper.getAttribute('data-canvas-uuid'); 
             this.canvasPrivacy = wrapper.getAttribute('data-privacy') || 'private';
+            this.canvasMode = wrapper.getAttribute('data-mode') || 'offline';
+            this.isOnlineActive = wrapper.getAttribute('data-online-active') === '1';
+            this.isOfflineMode = (this.canvasMode === 'offline' && !this.isOnlineActive);
             this.isPrivateBlocked = wrapper.getAttribute('data-is-blocked') === '1';
             this.isSubscriptionLocked = wrapper.getAttribute('data-subscription-locked') === '1';
             this.isSpectator = wrapper.getAttribute('data-is-spectator') === '1';
@@ -166,7 +169,9 @@ export const DesignSetup = {
             }
 
             this.updateLockBadges();
-            this.initWebSocket();
+            if (!this.isOfflineMode) {
+                this.initWebSocket();
+            }
         } else {
             this.setupCanvas();
             this.centerBoard();
@@ -205,6 +210,14 @@ export const DesignSetup = {
             this.setCanvasBadge('lock-freeze', 'ac_unit', 'Lienzo Congelado (Solo Lectura)', 'left');
         } else {
             this.removeCanvasBadge('lock-freeze', 'left');
+        }
+
+        if (this.isOfflineMode) {
+            this.setCanvasBadge('mode-offline', 'palette', 'Estudio Personal', 'left');
+            this.removeCanvasBadge('mode-online', 'left');
+        } else {
+            this.setCanvasBadge('mode-online', 'sensors', 'Batalla En Vivo', 'left');
+            this.removeCanvasBadge('mode-offline', 'left');
         }
 
         if (this.isSubscriptionLocked) {
@@ -586,7 +599,8 @@ export const DesignSetup = {
         if (this.canvas && typeof this.canvas.transferControlToOffscreen === 'function' && typeof Worker !== 'undefined') {
             try {
                 if (!this.renderWorker) {
-                    const workerPath = `${this.basePath}/assets/js/modules/app/design/workers/CanvasRenderWorker.js?v=2.0.3`;
+                    const workerVersion = window.__ASSETS_VERSION__ || '2.1.' + Date.now();
+                    const workerPath = `${this.basePath}/assets/js/modules/app/design/workers/CanvasRenderWorker.js?v=${workerVersion}`;
                     this.renderWorker = new Worker(workerPath);
                     const offscreen = this.canvas.transferControlToOffscreen();
                     const dpr = window.devicePixelRatio || 1;

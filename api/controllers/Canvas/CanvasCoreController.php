@@ -390,4 +390,56 @@ class CanvasCoreController extends BaseController {
         }
     }
 
+    public function activate_online($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
+            }
+            $userId = $this->session->getActiveAccountId();
+            $canvasId = (int)($input['canvas_id'] ?? $input['id'] ?? 0);
+            if (!$canvasId) {
+                return $this->respond(['success' => false, 'message' => __('err_invalid_canvas_id')]);
+            }
+            $result = $this->canvasServices->activateOnline($userId, $canvasId);
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function deactivate_online($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
+            }
+            $userId = $this->session->getActiveAccountId();
+            $canvasId = (int)($input['canvas_id'] ?? $input['id'] ?? 0);
+            if (!$canvasId) {
+                return $this->respond(['success' => false, 'message' => __('err_invalid_canvas_id')]);
+            }
+            $result = $this->canvasServices->deactivateOnline($userId, $canvasId);
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function save_offline_state($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
+            }
+            $userId = $this->session->getActiveAccountId();
+            $canvasId = (int)($input['canvas_id'] ?? $input['id'] ?? 0);
+            $stateBase64 = $input['state_base64'] ?? '';
+            if (!$canvasId || empty($stateBase64)) {
+                return $this->respond(['success' => false, 'message' => __('err_invalid_params')]);
+            }
+            $result = $this->canvasServices->saveOfflineState($userId, $canvasId, $stateBase64);
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
 }

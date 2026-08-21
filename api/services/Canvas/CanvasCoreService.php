@@ -45,11 +45,17 @@ class CanvasCoreService {
                 return ['success' => false, 'message' => __('err_canvas_not_found'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
             }
 
+            $isOwner = ($userId !== null && (int)($canvas['owner_id'] ?? 0) === (int)$userId);
+            $isOffline = (($canvas['mode'] ?? 'offline') === 'offline' || empty($canvas['is_online_active']));
+
+            if ($isOffline && !$isOwner) {
+                return ['success' => false, 'message' => __('err_canvas_not_found'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
+            }
+
             if (($canvas['privacy'] ?? '') === DB::PRIVACY_PRIVATE) {
                 if ($userId === null) {
                     return ['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED];
                 }
-                $isOwner = ((int)($canvas['owner_id'] ?? 0) === (int)$userId);
                 if (!$isOwner) {
                     $roles = $this->canvasRepository->getMemberRoles($canvasId, $userId);
                     if (empty($roles)) {
@@ -70,6 +76,11 @@ class CanvasCoreService {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) {
                 return ['success' => false, 'message' => __('err_canvas_not_found'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
+            }
+
+            $isOffline = (($canvas['mode'] ?? 'offline') === 'offline' || empty($canvas['is_online_active']));
+            if ($isOffline) {
+                return ['success' => false, 'message' => __('err_canvas_offline') ?: 'Este lienzo está en modo estudio privado.', 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
             }
 
             $secret = getenv('INTERNAL_API_SECRET') ?: 'default_secret';
@@ -210,6 +221,14 @@ class CanvasCoreService {
                 }
             } catch (Exception $e) {}
 
+            $user = $this->userRepository->findById($userId);
+            $tier = $user['subscription_tier'] ?? 0;
+            $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
+            $currentStorageMB = $this->canvasRepository->getUserStorageUsed($userId);
+            $onlineSlotsUsed = $this->canvasRepository->countUserOnlineCanvases($userId);
+            $onlineSlotsMax = $planLimits['max_online_canvases'] ?? $planLimits['max_canvases'] ?? 1;
+            $storageMaxMB = $planLimits['max_storage_mb'] ?? 20;
+
             $formattedCanvases = [];
             foreach ($canvases as $canvas) {
                 $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".webp");
@@ -225,6 +244,9 @@ class CanvasCoreService {
                     'name' => $canvas['name'],
                     'privacy' => $canvas['privacy'],
                     'size' => $canvas['size'],
+                    'mode' => $canvas['mode'] ?? 'offline',
+                    'is_online_active' => (bool)($canvas['is_online_active'] ?? 0),
+                    'storage_bytes' => (int)($canvas['storage_bytes'] ?? 0),
                     'max_participants' => $canvas['max_participants'],
                     'created_at' => $canvas['created_at'],
                     'is_favorite' => $canvas['is_favorite'],
@@ -239,7 +261,16 @@ class CanvasCoreService {
                 ];
             }
             
-            return ['success' => true, 'data' => $formattedCanvases];
+            return [
+                'success' => true, 
+                'data' => $formattedCanvases,
+                'stats' => [
+                    'storage_used_mb' => round($currentStorageMB, 2),
+                    'storage_max_mb' => $storageMaxMB,
+                    'online_slots_used' => $onlineSlotsUsed,
+                    'online_slots_max' => $onlineSlotsMax
+                ]
+            ];
         } catch (\Exception $e) {
             Logger::error('Error getting user canvases.', ['error' => $e->getMessage()]);
             return ['success' => false, 'message' => $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine()];
@@ -287,6 +318,13 @@ class CanvasCoreService {
             $canvas = $this->canvasRepository->getById($canvasId);
             
             if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found')];
+            }
+
+            $isOwner = ($userId !== null && (int)($canvas['owner_id'] ?? 0) === (int)$userId);
+            $isOffline = (($canvas['mode'] ?? 'offline') === 'offline' || empty($canvas['is_online_active']));
+
+            if ($isOffline && !$isOwner) {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
             }
             
@@ -393,6 +431,9 @@ class CanvasCoreService {
             $canvas['width'] = $width;
             $canvas['height'] = $height;
             $canvas['requires_approval'] = (bool)$canvas['requires_approval'];
+            $canvas['mode'] = $canvas['mode'] ?? 'offline';
+            $canvas['is_online_active'] = (bool)($canvas['is_online_active'] ?? 0);
+            $canvas['storage_bytes'] = (int)($canvas['storage_bytes'] ?? 0);
 
             $resetSettings = $this->canvasRepository->getResetSettings($canvasId);
             if ($resetSettings && $resetSettings['is_active']) {
@@ -415,42 +456,47 @@ class CanvasCoreService {
                 $canvas['target_size'] = null;
             }
 
-            $isProgressive = Utils::isProgressiveLoadRequired($canvas['size']);
+            $isOnline = ($canvas['mode'] === 'online' || $canvas['is_online_active']);
+            $isProgressive = $isOnline ? Utils::isProgressiveLoadRequired($canvas['size']) : false;
             $canvas['progressive_load'] = $isProgressive;
 
             $redisKey = "canvas:{$canvasId}:state";
             $stateRaw = null;
             $redis = null;
 
-            try {
-                if (class_exists(RedisCache::class)) {
-                    $redisInstance = new RedisCache();
-                    $redis = $redisInstance->getClient();
-                    
-                    if ($redis) {
-                        $redis->hMSet("canvas:{$canvasId}:config", [
-                            'cooldown_batch' => $canvas['cooldown_pixels_batch'] ?? 5,
-                            'cooldown_seconds' => $canvas['cooldown_seconds'] ?? 10,
-                            'is_subscription_locked' => $canvas['is_subscription_locked'] ? 1 : 0
-                        ]);
+            if ($isOnline) {
+                try {
+                    if (class_exists(RedisCache::class)) {
+                        $redisInstance = new RedisCache();
+                        $redis = $redisInstance->getClient();
+                        
+                        if ($redis) {
+                            $redis->hMSet("canvas:{$canvasId}:config", [
+                                'cooldown_batch' => $canvas['cooldown_pixels_batch'] ?? 5,
+                                'cooldown_seconds' => $canvas['cooldown_seconds'] ?? 10,
+                                'is_subscription_locked' => $canvas['is_subscription_locked'] ? 1 : 0
+                            ]);
+                        }
                     }
+                } catch (Exception $e) {
+                    Logger::error('Error setting canvas config in Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
                 }
-            } catch (Exception $e) {
-                Logger::error('Error setting canvas config in Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
             }
 
             if (!$isProgressive) {
-                try {
-                    if ($redis && $redis->exists($redisKey)) {
-                        $stateRaw = $redis->get($redisKey);
+                if ($isOnline) {
+                    try {
+                        if ($redis && $redis->exists($redisKey)) {
+                            $stateRaw = $redis->get($redisKey);
+                        }
+                    } catch (Exception $e) {
+                        Logger::error('Error reading canvas from Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
                     }
-                } catch (Exception $e) {
-                    Logger::error('Error reading canvas from Redis.', ['canvas_id' => $canvasId, 'error' => $e->getMessage()]);
                 }
 
                 if ($stateRaw === null || $stateRaw === false) {
                     $stateRaw = $this->canvasRepository->getSnapshot($canvasId);
-                    if ($stateRaw && $redis) {
+                    if ($stateRaw && $redis && $isOnline) {
                         try {
                             $redis->set($redisKey, $stateRaw);
                         } catch (Exception $e) {}
@@ -460,7 +506,7 @@ class CanvasCoreService {
                 if (!$stateRaw) {
                     $totalPixels = $width * $height;
                     $stateRaw = str_repeat(chr(0).chr(0).chr(0).chr(0), $totalPixels); 
-                    if ($redis) {
+                    if ($redis && $isOnline) {
                         try {
                             $redis->set($redisKey, $stateRaw);
                         } catch (Exception $e) {}
@@ -492,7 +538,7 @@ class CanvasCoreService {
 
             $tEnd = microtime(true);
             $result = ['success' => true, 'data' => $canvas, 'debug_timing' => ['total' => $tEnd - $t0, 'check_perms' => isset($t1) ? ($t1 - $t0) : null, 'redis_init' => isset($t2) ? ($t2 - $t1) : null]];
-            if ($redis) {
+            if ($redis && $isOnline) {
                 try {
                     $redis->setex($cacheKey, CacheConstants::TTL_THIRTY_DAYS, json_encode($result)); // Cache permanente (invalidado al editar)
                     error_log("[DEBUG getCanvas] Saved metadata cache for key: $cacheKey");
@@ -531,13 +577,32 @@ class CanvasCoreService {
             $tier = $user['subscription_tier'] ?? 0;
             $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
 
-                if (method_exists($this->canvasRepository, 'countUserCanvases')) {
-                    $currentCanvasCount = $this->canvasRepository->countUserCanvases($userId);
-                    if ($planLimits['max_canvases'] !== -1 && $currentCanvasCount >= $planLimits['max_canvases']) {
+                $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
+                if (!isset($allSizes[$size])) {
+                    $size = '64x64';
+                }
+                $requiredTier = $allSizes[$size]['tier'] ?? 0;
+                if ($tier < $requiredTier) {
+                    return [
+                        'success' => false, 
+                        'message' => __('err_plan_canvas_size'),
+                        'error_code' => 'UPGRADE_REQUIRED'
+                    ];
+                }
+
+                $sizeParts = explode('x', strtolower($size));
+                $targetW = (int)$sizeParts[0];
+                $targetH = isset($sizeParts[1]) ? (int)$sizeParts[1] : $targetW;
+                $estimatedStorageBytes = max(4096, (int)(($targetW * $targetH * 4) * 0.05));
+
+                if ($planLimits['max_storage_mb'] !== -1) {
+                    $currentStorageMB = $this->canvasRepository->getUserStorageUsed($userId);
+                    $newCanvasMB = $estimatedStorageBytes / (1024 * 1024);
+                    if (($currentStorageMB + $newCanvasMB) > $planLimits['max_storage_mb']) {
                         return [
                             'success' => false, 
-                            'message' => __('err_canvas_limit_reached') . ' (' . $planLimits['name'] . ').',
-                            'error_code' => 'LIMIT_EXCEEDED'
+                            'message' => __('err_storage_limit_exceeded'),
+                            'error_code' => 'STORAGE_LIMIT_EXCEEDED'
                         ];
                     }
                 }
@@ -555,24 +620,11 @@ class CanvasCoreService {
                     $cooldownBatch = $maxPixelsPerBatch;
                 }
 
-                $allSizes = \App\Core\Helpers\Utils::getCanvasSizes();
-                if (!isset($allSizes[$size])) {
-                    $size = '64x64';
-                }
-                $requiredTier = $allSizes[$size]['tier'] ?? 0;
-                if ($tier < $requiredTier) {
-                    return [
-                        'success' => false, 
-                        'message' => __('err_plan_canvas_size'),
-                        'error_code' => 'UPGRADE_REQUIRED'
-                    ];
-                }
-
                 if ($requiredTier >= 3) {
                     $tier3Count = $this->canvasRepository->countUserTierCanvases($userId, 3);
                     if ($tier3Count >= 3) {
                         return [
-                            'success' => false,
+                            'success' => false, 
                             'message' => __('err_canvas_tier3_limit_reached'),
                             'error_code' => 'TIER3_LIMIT_EXCEEDED'
                         ];
@@ -594,6 +646,9 @@ class CanvasCoreService {
                 'requires_approval'     => $requiresApproval ? 1 : 0,
                 'size'                  => $size,
                 'palette_id'            => $paletteId,
+                'mode'                  => 'offline',
+                'is_online_active'      => 0,
+                'storage_bytes'         => $estimatedStorageBytes,
                 'max_participants'      => $limit,
                 'cooldown_pixels_batch' => max(1, $cooldownBatch),
                 'cooldown_seconds'      => max(0, $cooldownSeconds),
@@ -612,6 +667,13 @@ class CanvasCoreService {
             $canvasId = $this->canvasRepository->create($canvasData);
 
             $this->canvasRepository->addMember($canvasId, $userId, 4);
+
+            // Update user storage bytes
+            try {
+                $this->userRepository->updateStorageUsed($userId, $estimatedStorageBytes);
+            } catch (Exception $e) {}
+
+            $hasTemplatePainted = false;
 
             // Pre-paint template if selected
             if ($templateId !== null) {
@@ -664,16 +726,9 @@ class CanvasCoreService {
                                                 }
                                             }
 
-                                            // Save to Redis
-                                            if (class_exists(RedisCache::class)) {
-                                                $redis = (new RedisCache())->getClient();
-                                                if ($redis) {
-                                                    $redis->set("canvas:{$canvasId}:state", $binaryData);
-                                                }
-                                            }
-
-                                            // Save to Database
+                                            // Save to Database / S3
                                             $this->canvasRepository->saveSnapshot($canvasId, $binaryData);
+                                            $hasTemplatePainted = true;
 
                                             // Enqueue for Python worker to generate thumbnail
                                             if (class_exists(RedisCache::class)) {
@@ -682,9 +737,6 @@ class CanvasCoreService {
                                                     $thumbRedis->sAdd('canvases:pending_snapshots', (string)$canvasId);
                                                 }
                                             }
-
-                                            // Note: template pixels are NOT counted in total_pixels
-                                            // to keep the metric reflecting actual user engagement
                                         }
                                         imagedestroy($img);
                                     }
@@ -701,6 +753,18 @@ class CanvasCoreService {
                 }
             }
 
+            if (!$hasTemplatePainted) {
+                // Initialize blank snapshot in S3 / DB
+                $blankBinary = str_repeat(chr(0).chr(0).chr(0).chr(0), $targetW * $targetH);
+                $this->canvasRepository->saveSnapshot($canvasId, $blankBinary);
+                if (class_exists(RedisCache::class)) {
+                    $thumbRedis = (new RedisCache())->getClient();
+                    if ($thumbRedis) {
+                        $thumbRedis->sAdd('canvases:pending_snapshots', (string)$canvasId);
+                    }
+                }
+            }
+
             try {
                 $dbManager = new DatabaseManager();
                 $redisCache = new RedisCache();
@@ -708,22 +772,6 @@ class CanvasCoreService {
                 $lockManager->evaluateUserCanvases($userId);
             } catch (Exception $e) {
                 Logger::error('Error evaluating canvases on create.', ['error' => $e->getMessage()]);
-            }
-
-            try {
-                if (class_exists(RedisCache::class)) {
-                    $redis = (new RedisCache())->getClient();
-                    if ($redis) {
-                        $redis->hMSet("canvas:{$canvasId}:config", [
-                            'cooldown_batch' => $canvasData['cooldown_pixels_batch'],
-                            'cooldown_seconds' => $canvasData['cooldown_seconds']
-                        ]);
-
-
-                    }
-                }
-            } catch (Exception $e) {
-                Logger::error('Could not save cooldown config in Redis.', ['error' => $e->getMessage()]);
             }
 
             return ['success' => true, 'message' => __('msg_canvas_created'), 'data' => ['uuid' => $uuid]];
@@ -982,10 +1030,16 @@ class CanvasCoreService {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
 
+            $storageBytes = (int)($canvas['storage_bytes'] ?? 0);
             $deleted = $this->canvasRepository->deleteCanvasByUuid($uuid);
 
             if ($deleted) {
                 // S3 deletion of thumbnail skipped
+                if ($storageBytes > 0 && !empty($canvas['owner_id'])) {
+                    try {
+                        $this->userRepository->updateStorageUsed((int)$canvas['owner_id'], -$storageBytes);
+                    } catch (Exception $e) {}
+                }
 
                 try {
                     if (class_exists(RedisCache::class)) {
@@ -1034,10 +1088,23 @@ class CanvasCoreService {
                 return ['success' => false, 'message' => !empty($credential) ? __('auth.google_verification_failed') : __('err_invalid_password')];
             }
 
+            $totalBytesToDeduct = 0;
+            foreach ($canvasIds as $cid) {
+                $c = $this->canvasRepository->getById((int)$cid);
+                if ($c && (int)$c['owner_id'] === $userId) {
+                    $totalBytesToDeduct += (int)($c['storage_bytes'] ?? 0);
+                }
+            }
+
             $deleted = $this->canvasRepository->deleteCanvases($canvasIds, $userId);
 
             if ($deleted) {
                 // S3 deletion of thumbnail skipped
+                if ($totalBytesToDeduct > 0) {
+                    try {
+                        $this->userRepository->updateStorageUsed($userId, -$totalBytesToDeduct);
+                    } catch (Exception $e) {}
+                }
 
                 try {
                     if (class_exists(RedisCache::class)) {
@@ -1323,4 +1390,239 @@ LUA;
         }
     }
 
+    public function activateOnline(int $userId, int $canvasId): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found')];
+            }
+            if ((int)$canvas['owner_id'] !== $userId) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
+            $user = $this->userRepository->findById($userId);
+            $tier = $user['subscription_tier'] ?? 0;
+            $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
+            $maxOnlineCanvases = $planLimits['max_online_canvases'] ?? $planLimits['max_canvases'] ?? 1;
+
+            if ($maxOnlineCanvases !== -1) {
+                $currentOnlineCount = $this->canvasRepository->countUserOnlineCanvases($userId);
+                if ($currentOnlineCount >= $maxOnlineCanvases && empty($canvas['is_online_active'])) {
+                    return [
+                        'success' => false,
+                        'message' => __('err_online_slots_exceeded') ?: 'Has alcanzado el límite de salas online de tu plan de suscripción.',
+                        'error_code' => 'ONLINE_LIMIT_EXCEEDED'
+                    ];
+                }
+            }
+
+            $stateRaw = $this->canvasRepository->getSnapshot($canvasId);
+            if (!$stateRaw) {
+                $sizeStr = strtolower($canvas['size']);
+                $parts = explode('x', $sizeStr);
+                $w = (int)$parts[0];
+                $h = isset($parts[1]) ? (int)$parts[1] : $w;
+                $stateRaw = str_repeat(chr(0).chr(0).chr(0).chr(0), $w * $h);
+            }
+
+            if (class_exists(RedisCache::class)) {
+                $redis = (new RedisCache())->getClient();
+                if ($redis) {
+                    $redis->set("canvas:{$canvasId}:state", $stateRaw);
+                    $redis->hMSet("canvas:{$canvasId}:config", [
+                        'cooldown_batch' => $canvas['cooldown_pixels_batch'] ?? 5,
+                        'cooldown_seconds' => $canvas['cooldown_seconds'] ?? 10,
+                        'is_subscription_locked' => $canvas['is_subscription_locked'] ? 1 : 0
+                    ]);
+                    $redis->publish("admin:canvas_events", json_encode([
+                        'type' => 'canvas_mode_changed',
+                        'canvas_id' => $canvasId,
+                        'mode' => 'online',
+                        'is_online_active' => 1
+                    ]));
+                }
+            }
+
+            $dbManager = new DatabaseManager();
+            $db = $dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_CANVASES);
+            $stmt = $db->prepare("UPDATE canvases SET `mode` = 'online', `is_online_active` = 1, `last_online_at` = NOW() WHERE id = ?");
+            $stmt->execute([$canvasId]);
+
+            try {
+                if (class_exists(\App\Config\Search\TypesenseManager::class)) {
+                    $tsManager = new \App\Config\Search\TypesenseManager();
+                    $tsClient = $tsManager->getClient();
+                    if ($tsClient && ($canvas['privacy'] ?? '') === 'public') {
+                        $document = [
+                            'id'         => (string)$canvasId,
+                            'uuid'       => $canvas['uuid'],
+                            'name'       => $canvas['name'],
+                            'owner_id'   => (int)$userId,
+                            'privacy'    => 'public',
+                            'created_at' => !empty($canvas['created_at']) ? strtotime($canvas['created_at']) : time()
+                        ];
+                        $tsClient->collections['canvases']->documents->upsert($document);
+                    }
+                }
+            } catch (\Throwable $tsEx) {}
+
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redis = (new RedisCache())->getClient();
+                    if ($redis) {
+                        (new \App\Core\System\CacheInvalidator($redis))->canvas($canvasId, $canvas['uuid'] ?? null);
+                        (new \App\Core\System\CacheInvalidator($redis))->userCanvasList($userId);
+                    }
+                }
+            } catch (\Throwable $ex) {}
+
+            return ['success' => true, 'message' => __('msg_canvas_online_activated') ?: 'Lienzo activado en modo Online con éxito.'];
+        } catch (Exception $e) {
+            Logger::error('Error activating canvas online.', ['canvas_id' => $canvasId, 'user_id' => $userId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function deactivateOnline(int $userId, int $canvasId): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found')];
+            }
+            if ((int)$canvas['owner_id'] !== $userId) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
+            $dbManager = new DatabaseManager();
+            $db = $dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_CANVASES);
+
+            if (class_exists(RedisCache::class)) {
+                $redis = (new RedisCache())->getClient();
+                if ($redis) {
+                    $stateRaw = $redis->get("canvas:{$canvasId}:state");
+                    if ($stateRaw) {
+                        $this->canvasRepository->saveSnapshot($canvasId, $stateRaw);
+                        $newSizeBytes = strlen($stateRaw);
+                        $oldSizeBytes = (int)($canvas['storage_bytes'] ?? 0);
+                        $diffBytes = $newSizeBytes - $oldSizeBytes;
+                        if ($diffBytes !== 0 && !empty($canvas['owner_id'])) {
+                            try {
+                                $this->userRepository->updateStorageUsed((int)$canvas['owner_id'], $diffBytes);
+                            } catch (Exception $e) {}
+                        }
+                        $stmtStorage = $db->prepare("UPDATE canvases SET `storage_bytes` = ? WHERE id = ?");
+                        $stmtStorage->execute([$newSizeBytes, $canvasId]);
+                    }
+                    $redis->del("canvas:{$canvasId}:state");
+                    $redis->del("canvas:{$canvasId}:config");
+                    $redis->publish("admin:canvas_events", json_encode([
+                        'type' => 'canvas_mode_changed',
+                        'canvas_id' => $canvasId,
+                        'mode' => 'offline',
+                        'is_online_active' => 0
+                    ]));
+                }
+            }
+
+            $stmt = $db->prepare("UPDATE canvases SET `mode` = 'offline', `is_online_active` = 0 WHERE id = ?");
+            $stmt->execute([$canvasId]);
+
+            try {
+                if (class_exists(\App\Config\Search\TypesenseManager::class)) {
+                    $tsManager = new \App\Config\Search\TypesenseManager();
+                    $tsClient = $tsManager->getClient();
+                    if ($tsClient) {
+                        try {
+                            $tsClient->collections['canvases']->documents[(string)$canvasId]->delete();
+                        } catch (\Throwable $t) {}
+                    }
+                }
+            } catch (\Throwable $tsEx) {}
+
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redis = (new RedisCache())->getClient();
+                    if ($redis) {
+                        (new \App\Core\System\CacheInvalidator($redis))->canvas($canvasId, $canvas['uuid'] ?? null);
+                        (new \App\Core\System\CacheInvalidator($redis))->userCanvasList($userId);
+                    }
+                }
+            } catch (\Throwable $ex) {}
+
+            return ['success' => true, 'message' => __('msg_canvas_offline_deactivated') ?: 'Lienzo cambiado a modo Estudio (Offline) con éxito.'];
+        } catch (Exception $e) {
+            Logger::error('Error deactivating canvas online.', ['canvas_id' => $canvasId, 'user_id' => $userId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function saveOfflineState(int $userId, int $canvasId, string $stateBase64): array {
+        try {
+            $canvas = $this->canvasRepository->getById($canvasId);
+            if (!$canvas) {
+                return ['success' => false, 'message' => __('err_canvas_not_found')];
+            }
+            $isOwner = ((int)$canvas['owner_id'] === $userId);
+            if (!$isOwner) {
+                $hasPerm = $this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::PLACE_PIXELS);
+                if (!$hasPerm) {
+                    return ['success' => false, 'message' => __('err_unauthorized')];
+                }
+            }
+
+            $rawBinary = base64_decode($stateBase64);
+            if (!$rawBinary) {
+                return ['success' => false, 'message' => __('err_invalid_data')];
+            }
+
+            if (strlen($rawBinary) >= 2 && substr($rawBinary, 0, 2) === "\x1f\x8b") {
+                $decompressed = @gzdecode($rawBinary);
+                if ($decompressed !== false) {
+                    $rawBinary = $decompressed;
+                }
+            }
+
+            $sizeParts = explode('x', strtolower($canvas['size'] ?? '64x64'));
+            $targetW = (int)$sizeParts[0];
+            $targetH = isset($sizeParts[1]) ? (int)$sizeParts[1] : $targetW;
+            $expectedBytes = $targetW * $targetH * 4;
+
+            if (strlen($rawBinary) !== $expectedBytes) {
+                return [
+                    'success' => false, 
+                    'message' => __('err_invalid_dimensions') ?: 'Las dimensiones de los datos no coinciden con el tamaño del lienzo.'
+                ];
+            }
+
+            $this->canvasRepository->saveSnapshot($canvasId, $rawBinary);
+
+            $newSizeBytes = strlen($rawBinary);
+            $oldSizeBytes = (int)($canvas['storage_bytes'] ?? 0);
+            $diffBytes = $newSizeBytes - $oldSizeBytes;
+
+            $dbManager = new DatabaseManager();
+            $db = $dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_CANVASES);
+            $stmt = $db->prepare("UPDATE canvases SET `storage_bytes` = ? WHERE id = ?");
+            $stmt->execute([$newSizeBytes, $canvasId]);
+
+            if ($diffBytes !== 0 && !empty($canvas['owner_id'])) {
+                try {
+                    $this->userRepository->updateStorageUsed((int)$canvas['owner_id'], $diffBytes);
+                } catch (Exception $e) {}
+            }
+
+            if (class_exists(RedisCache::class)) {
+                $redis = (new RedisCache())->getClient();
+                if ($redis) {
+                    $redis->sAdd('canvases:pending_snapshots', (string)$canvasId);
+                    (new \App\Core\System\CacheInvalidator($redis))->canvas($canvasId, $canvas['uuid'] ?? null);
+                }
+            }
+
+            return ['success' => true, 'message' => __('msg_state_saved') ?: 'Estado guardado con éxito.'];
+        } catch (Exception $e) {
+            Logger::error('Error saving offline state.', ['canvas_id' => $canvasId, 'user_id' => $userId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
 }

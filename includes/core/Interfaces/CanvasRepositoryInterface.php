@@ -9,6 +9,7 @@ interface CanvasRepositoryInterface {
     public function getUserAndJoinedCanvases(int $userId, int $limit = 50, string $filter = 'all', int $offset = 0): array;
     public function getUserCanvasesPaginated(int $ownerId, int $limit, int $offset): array;
     public function countUserCanvases(int $ownerId): int;
+    public function countUserOnlineCanvases(int $ownerId): int;
     public function countUserTierCanvases(int $ownerId, int $tier): int;
     public function countOlderCanvases(int $canvasId, int $ownerId, string $createdAt): int;
     public function deleteCanvases(array $canvasIds, int $ownerId): bool;

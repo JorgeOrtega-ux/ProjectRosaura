@@ -63,24 +63,30 @@ class CacheInvalidator {
         } catch (\Throwable $e) {}
     }
 
-    public function canvas(int $canvasId): void {
+    public function canvas(int $canvasId, ?string $canvasUuid = null): void {
         if (!$this->redis) return;
         try {
             $this->redis->del(CacheConstants::PREFIX_CANVAS_DETAIL . $canvasId);
             $this->redis->del(CacheConstants::PREFIX_CANVAS_RESET_SETTINGS . $canvasId);
             $this->redis->del(CacheConstants::PREFIX_CANVAS_RESIZE_SETTINGS . $canvasId);
             $this->redis->del("canvas:{$canvasId}:config");
-            $this->redis->del("canvas:{$canvasId}:state");
 
             $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_DETAIL . 'uuid:*');
             $this->deleteByPattern("canvas:view_data:{$canvasId}:*");
             $this->deleteByPattern("canvas:layout_preload:{$canvasId}:*");
+            if ($canvasUuid) {
+                $this->deleteByPattern("canvas:view_data:{$canvasUuid}:*");
+                $this->deleteByPattern("canvas:layout_preload:{$canvasUuid}:*");
+            }
+            $this->deleteByPattern("canvas:view_data:*");
+            $this->deleteByPattern("canvas:layout_preload:*");
 
             $metaPattern = CacheConstants::PREFIX_CANVAS_META . $canvasId . CacheConstants::SUFFIX_CANVAS_META_USER . '*';
             $this->deleteByPattern($metaPattern);
 
             $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_PUBLIC_PAGE . '*');
             $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_HOME_FEED . '*');
+            $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_DASHBOARD . '*');
         } catch (\Throwable $e) {}
     }
 

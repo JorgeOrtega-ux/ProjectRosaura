@@ -194,7 +194,7 @@ class CanvasAssetController extends BaseController {
 
             $dbManager = new \App\Config\Database\DatabaseManager();
             $pdo = $dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_CANVASES);
-            $stmt = $pdo->prepare("SELECT id, owner_id, privacy, is_subscription_locked FROM canvases WHERE uuid = :uuid LIMIT 1");
+            $stmt = $pdo->prepare("SELECT id, owner_id, privacy, is_subscription_locked, mode, is_online_active FROM canvases WHERE uuid = :uuid LIMIT 1");
             $stmt->execute(['uuid' => $canvasUuid]);
             $canvas = $stmt->fetch(\PDO::FETCH_ASSOC);
 
@@ -253,6 +253,16 @@ class CanvasAssetController extends BaseController {
 
             $this->userRepo->consumeTemplateTokens($userId, $tokensCost);
             // --- END TOKEN LIMIT CHECK ---
+
+            $isCanvasOffline = (($canvas['mode'] ?? 'offline') === 'offline' || empty($canvas['is_online_active']));
+            if ($isCanvasOffline) {
+                return $this->respond([
+                    'success' => true,
+                    'is_offline' => true,
+                    'tokens_consumed' => $tokensCost,
+                    'message' => __('msg_template_stamped') ?: 'Plantilla estampada con éxito.'
+                ]);
+            }
 
             $redis = (new \App\Config\Database\RedisCache())->getClient();
             $taskData = [

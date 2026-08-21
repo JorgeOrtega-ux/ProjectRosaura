@@ -21,10 +21,14 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         const onlinePlayers = parseInt(canvas.online_players || 0, 10);
         const membersCount = parseInt(canvas.members_count || 0, 10);
         const likesCount = parseInt(canvas.favorites_count || 0, 10);
+        const isOnline = (canvas.mode === 'online' || !!canvas.is_online_active);
+        const modeSegment = isOnline
+            ? `<span class="material-symbols-rounded ${onlinePlayers > 0 ? 'component-text-success' : ''}">sensors</span><span>${formatNumber(onlinePlayers)} ${window.__('online')}</span>`
+            : `<span class="material-symbols-rounded component-text-accent">brush</span><span>${window.__('badge_studio') || 'Estudio'}</span>`;
+
         const badgeHtml = `
             <div class="component-badge component-badge--glass component-badge--absolute-tr">
-                <span class="material-symbols-rounded ${onlinePlayers > 0 ? 'component-text-success' : ''}">person</span>
-                <span>${formatNumber(onlinePlayers)} ${window.__('online')}</span> 
+                ${modeSegment}
                 <span class="component-badge-divider">|</span>
                 <span class="material-symbols-rounded">group</span>
                 <span class="member-count-val">${formatNumber(membersCount)}</span>

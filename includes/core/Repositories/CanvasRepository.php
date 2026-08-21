@@ -65,10 +65,12 @@ class CanvasRepository implements CanvasRepositoryInterface {
     public function create(array $canvasData): int {
         $sql = "INSERT INTO " . DB::TBL_CANVASES . "
             (uuid, owner_id, name, privacy, requires_approval, size, palette_id,
+             mode, is_online_active, storage_bytes,
              max_participants, cooldown_pixels_batch, cooldown_seconds,
              allow_chat, tags)
             VALUES
             (:uuid, :owner_id, :name, :privacy, :requires_approval, :size, :palette_id,
+             :mode, :is_online_active, :storage_bytes,
              :max_participants, :cooldown_pixels_batch, :cooldown_seconds,
              :allow_chat, :tags)";
 
@@ -81,6 +83,9 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':requires_approval'     => $canvasData['requires_approval'] ?? 0,
             ':size'                  => $canvasData['size'],
             ':palette_id'            => $canvasData['palette_id'] ?? 'default',
+            ':mode'                  => $canvasData['mode'] ?? 'offline',
+            ':is_online_active'      => $canvasData['is_online_active'] ?? 0,
+            ':storage_bytes'         => $canvasData['storage_bytes'] ?? 0,
             ':max_participants'      => $canvasData['max_participants'] ?? null,
             ':cooldown_pixels_batch' => $canvasData['cooldown_pixels_batch'] ?? 1,
             ':cooldown_seconds'      => $canvasData['cooldown_seconds'] ?? 0,
@@ -89,17 +94,21 @@ class CanvasRepository implements CanvasRepositoryInterface {
         ]);
         $id = (int)$this->db->lastInsertId();
         try {
-            $client = $this->typesenseManager->getClient();
-            if ($client) {
-                $document = [
-                    'id'         => (string)$id,
-                    'uuid'       => $canvasData['uuid'],
-                    'name'       => $canvasData['name'],
-                    'owner_id'   => (int)$canvasData['owner_id'],
-                    'privacy'    => $canvasData['privacy'],
-                    'created_at' => time()
-                ];
-                $client->collections['canvases']->documents->create($document);
+            $isOnline = (($canvasData['mode'] ?? 'offline') === 'online' && !empty($canvasData['is_online_active']));
+            $isPublic = (($canvasData['privacy'] ?? 'private') === 'public');
+            if ($isOnline && $isPublic) {
+                $client = $this->typesenseManager->getClient();
+                if ($client) {
+                    $document = [
+                        'id'         => (string)$id,
+                        'uuid'       => $canvasData['uuid'],
+                        'name'       => $canvasData['name'],
+                        'owner_id'   => (int)$canvasData['owner_id'],
+                        'privacy'    => $canvasData['privacy'],
+                        'created_at' => time()
+                    ];
+                    $client->collections['canvases']->documents->create($document);
+                }
             }
         } catch (Exception $e) {
             Logger::error("Typesense Create Error (Canvas ID {$id}): " . $e->getMessage());
@@ -191,7 +200,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                     FROM " . DB::TBL_CANVASES . " c
                     LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :current_user_id
                     $joinMemberSql
-                    WHERE c.privacy = 'public' AND c.is_subscription_locked = 0
+                    WHERE c.privacy = 'public' AND c.is_subscription_locked = 0 AND (c.mode = 'online' OR c.is_online_active = 1)
                     $orderClause 
                     LIMIT :limit OFFSET :offset";
             
@@ -256,7 +265,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             }
             
             $userIdParam = $userId ?? 0;
-            $whereConditions[] = "c.is_subscription_locked = 0 AND c.privacy = 'public'";
+            $whereConditions[] = "c.is_subscription_locked = 0 AND c.privacy = 'public' AND (c.mode = 'online' OR c.is_online_active = 1)";
             
             $whereSql = implode(' AND ', $whereConditions);
 
@@ -344,19 +353,20 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':uid_owner' => $userId,
         ];
 
-        $whereClause = "WHERE (c.owner_id = :uid_owner OR cm2.canvas_id IS NOT NULL)";
+        $whereClause = "WHERE (c.owner_id = :uid_owner OR (cm2.canvas_id IS NOT NULL AND (c.mode = 'online' OR c.is_online_active = 1)))";
         if ($filter === 'mine') {
             $whereClause = "WHERE c.owner_id = :uid_owner";
         } elseif ($filter === 'joined') {
-            $whereClause = "WHERE c.owner_id != :uid_owner AND cm2.canvas_id IS NOT NULL";
+            $whereClause = "WHERE c.owner_id != :uid_owner AND cm2.canvas_id IS NOT NULL AND (c.mode = 'online' OR c.is_online_active = 1)";
         } elseif ($filter === 'managed') {
-            $whereClause = "WHERE (c.owner_id = :uid_owner OR EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_USER_ROLES . " cur JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id WHERE cur.canvas_id = c.id AND cur.user_id = :uid_managed AND crp.permission_id IN (2, 3, 4, 5, 6, 7)))";
+            $whereClause = "WHERE (c.owner_id = :uid_owner OR (EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_USER_ROLES . " cur JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id WHERE cur.canvas_id = c.id AND cur.user_id = :uid_managed AND crp.permission_id IN (2, 3, 4, 5, 6, 7)) AND (c.mode = 'online' OR c.is_online_active = 1)))";
             $params[':uid_managed'] = $userId;
         } elseif ($filter === 'favorites') {
-            $whereClause = "WHERE (c.owner_id = :uid_owner OR cm2.canvas_id IS NOT NULL) AND f.canvas_id IS NOT NULL";
+            $whereClause = "WHERE (c.owner_id = :uid_owner OR (cm2.canvas_id IS NOT NULL AND (c.mode = 'online' OR c.is_online_active = 1))) AND f.canvas_id IS NOT NULL";
         }
 
         $sql = "SELECT c.id, c.uuid, c.name, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.owner_id, c.is_subscription_locked, c.locked_reasons, c.favorites_count,
+                       c.mode, c.is_online_active, c.storage_bytes,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count,
                        CASE WHEN c.owner_id = :uid_sel THEN 1 ELSE 0 END as is_owner,
@@ -457,6 +467,13 @@ class CanvasRepository implements CanvasRepositoryInterface {
         }
 
         return $count;
+    }
+
+    public function countUserOnlineCanvases(int $ownerId): int {
+        $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE owner_id = :oid AND (mode = 'online' OR is_online_active = 1)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':oid' => $ownerId]);
+        return (int)$stmt->fetchColumn();
     }
 
     public function countUserTierCanvases(int $ownerId, int $tier): int {
@@ -1172,12 +1189,6 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
         if ($data === null && !empty($row['snapshot_data'])) {
             $data = @gzuncompress($row['snapshot_data']);
-        }
-
-        if ($data !== null && $this->redisClient) {
-            try {
-                $this->redisClient->set($redisKey, $data);
-            } catch (\Throwable $e) {}
         }
 
         return $data;

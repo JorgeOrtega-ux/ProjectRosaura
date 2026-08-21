@@ -172,6 +172,17 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                                                 <span class="material-symbols-rounded">palette</span>
                                                 <span class="search-target"><?php echo htmlspecialchars($canvas['name']); ?></span>
                                             </div>
+                                            <?php if (!empty($canvas['is_online_active']) || ($canvas['mode'] ?? '') === 'online'): ?>
+                                                <div class="component-badge component-badge--sm component-badge--success" data-tooltip="En Vivo (Online)">
+                                                    <span class="material-symbols-rounded">sensors</span>
+                                                    <span>Online</span>
+                                                </div>
+                                            <?php else: ?>
+                                                <div class="component-badge component-badge--sm component-badge--secondary" data-tooltip="Estudio (Offline)">
+                                                    <span class="material-symbols-rounded">brush</span>
+                                                    <span>Estudio</span>
+                                                </div>
+                                            <?php endif; ?>
                                             <?php if ($isLocked): ?>
                                                 <div class="component-badge component-badge--sm component-badge--danger" data-tooltip="<?php echo htmlspecialchars(__('plan_expired')); ?>" data-position="bottom">
                                                     <span class="material-symbols-rounded">lock_clock</span>

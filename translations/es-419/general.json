@@ -1934,8 +1934,23 @@
     "msg_home_managed_empty": "No administras ningún lienzo adicional.",
     "msg_home_all_empty": "No tienes lienzos propios ni colaboraciones activas.",
     "msg_explore_empty": "No hay murales disponibles por el momento.",
-    "btn_explore_canvases": "Explorar murales"
+    "btn_explore_canvases": "Explorar murales",
+    "tooltip_save_offline": "Guardar cambios de estudio",
+    "tooltip_activate_online": "Activar Modo Batalla Online",
+    "tooltip_deactivate_online": "Desactivar Modo Online (Guardar en Estudio)",
+    "msg_canvas_online_activated": "Lienzo activado en modo Online con éxito.",
+    "msg_canvas_offline_deactivated": "Lienzo guardado y puesto en modo Estudio Offline.",
+    "msg_canvas_mode_deactivated_by_owner": "El propietario ha guardado y cambiado este lienzo a modo estudio privado.",
+    "badge_studio": "Estudio Personal",
+    "badge_online_battle": "Batalla En Vivo",
+    "err_canvas_offline": "Este lienzo está en modo estudio privado.",
+    "err_online_slots_exceeded": "Has alcanzado el límite de salas online de tu plan de suscripción.",
+    "err_invalid_dimensions": "Las dimensiones de los datos no coinciden con el tamaño del lienzo.",
+    "msg_state_saved": "Cambios guardados en estudio correctamente.",
+    "lbl_studio_mode": "Estudio",
+    "lbl_online_mode": "Online"
 }
+
 
 
 
