@@ -151,11 +151,9 @@ extract($designData);
                 <button class="component-button component-button--icon component-button--h32" data-action="toggleOnlineMode" data-tooltip="<?php echo ($isOnlineModeActive ? __('tooltip_deactivate_online') : __('tooltip_activate_online')); ?>" data-position="bottom">
                     <span class="material-symbols-rounded <?php echo $isOnlineModeActive ? 'component-text-success' : ''; ?>"><?php echo $isOnlineModeActive ? 'sensors' : 'sensors_off'; ?></span>
                 </button>
-                <?php if ($isOnlineModeActive): ?>
                 <button class="component-button component-button--icon component-button--h32" data-action="toggleOwnerTools" data-ref="btn-owner-tools" data-tooltip="<?php echo __('tooltip_owner_tools'); ?> [O]" data-position="bottom">
                     <span class="material-symbols-rounded">construction</span>
                 </button>
-                <?php endif; ?>
                 <?php endif; ?>
 
                 <?php if ($isOnlineModeActive): ?>

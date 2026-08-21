@@ -1705,7 +1705,7 @@ export const DesignInteractions = {
                 badgesRight.appendChild(badgeEl);
             }
 
-            if (this.showOwnerTools || this.isFrozen) {
+            if (!this.isOfflineMode && (this.showOwnerTools || this.isFrozen)) {
                 const isToggledOn = this.isFrozen;
                 const colorClass = isToggledOn ? 'component-text-warning' : '';
                 const badgeEl = document.createElement('div');
@@ -1730,7 +1730,7 @@ export const DesignInteractions = {
                 badgesRight.appendChild(badgeEl);
             }
 
-            if (this.showOwnerTools || this.interactionMode === 'owner_protecting') {
+            if (!this.isOfflineMode && (this.showOwnerTools || this.interactionMode === 'owner_protecting')) {
                 const isToggledOn = (this.interactionMode === 'owner_protecting');
                 const colorClass = isToggledOn ? 'component-text-success' : '';
                 const badgeEl = document.createElement('div');
@@ -1853,9 +1853,11 @@ export const DesignInteractions = {
             });
         }
 
-        if (!this.ownerCooldowns) this.ownerCooldowns = {};
-        this.ownerCooldowns.clear = Date.now() + cooldownMs;
-        this.startOwnerCooldownTimer();
+        if (!this.isOfflineMode) {
+            if (!this.ownerCooldowns) this.ownerCooldowns = {};
+            this.ownerCooldowns.clear = Date.now() + cooldownMs;
+            this.startOwnerCooldownTimer();
+        }
 
         this.interactionMode = 'normal';
         this.selectedPixels.clear();
