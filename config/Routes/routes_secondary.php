@@ -1002,6 +1002,38 @@ return [
             ],
         ],
     ],
+    'canvases.restore_template' => [
+        'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasAssetController',
+        'action' => 'restore_template',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'canvas_restore_tpl',
+                'max' => 20,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'canvases.permanent_delete_template' => [
+        'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasAssetController',
+        'action' => 'permanent_delete_template',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'canvas_perm_del_tpl',
+                'max' => 10,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
     'canvases.inject_template' => [
         'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasAssetController',
         'action' => 'inject_template',

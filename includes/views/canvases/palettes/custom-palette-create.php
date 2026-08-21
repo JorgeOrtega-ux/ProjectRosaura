@@ -2,124 +2,84 @@
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 $userPermissions = $_SESSION['user_permissions'] ?? [];
-
-$rawName = '';
 $translatedName = __('canvas_palette_new');
 ?>
 
 <div class="view-content" data-ref="customPaletteBuilderView">
-    
-    <div class="component-top">
-        <div class="component-top-left">
-            <h1 class="component-top-title"><?php echo __('canvas_create_custom_palette'); ?></h1>
-        </div>
-        <div class="component-top-right">
-            <button class="component-button component-button--h40" data-action="savePaletteData">
-                <span class="material-symbols-rounded">save</span>
-                <?php echo __('btn_save'); ?>
-            </button>
-        </div>
-    </div>
-
-    <div class="component-viewport">
-        <div class="component-wrapper">
-            <div class="component-bottom">
-
-                <!-- Nombre Accordion -->
-                <div class="component-card--grouped component-accordion active">
-                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
-                        <div class="component-card__content">
-                            <div class="component-card__icon-container component-card__icon-container--bordered">
-                                <span class="material-symbols-rounded">edit</span>
-                            </div>
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('canvas_palette_name'); ?></h2>
-                                <p class="component-card__description"><?php echo __('canvas_palette_name_accordion_desc'); ?></p>
-                            </div>
+    <div class="component-wrapper component-wrapper--full no-padding" data-ref="custom-palette-wrapper">
+        
+        <div class="component-top">
+            <div class="component-top-left">
+                <h1 class="component-top-title"><?php echo __('canvas_create_custom_palette'); ?></h1>
+            </div>
+            
+            <div class="component-top-right">
+                
+                <!-- Acciones de Selección Múltiple -->
+                <div class="component-actions disabled" data-ref="header-selection-actions">
+                    <button class="component-button component-button--icon component-button--h40" data-action="editSelectedColor" data-position="bottom" data-ref="btn-edit-color" data-tooltip="<?php echo __('tooltip_edit_color'); ?>">
+                        <span class="material-symbols-rounded">edit</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h40 component-button--danger" data-action="deleteSelectedColors" data-position="bottom" data-ref="btn-delete-color" data-tooltip="<?php echo __('tooltip_delete_color'); ?>">
+                        <span class="material-symbols-rounded">delete</span>
+                    </button>
+                </div>
+                
+                <!-- Acciones Predeterminadas -->
+                <div class="component-actions active" data-ref="header-default-actions">
+                    <div class="component-search component-search--w260" data-ref="paletteNameWrapper">
+                        <div class="component-search-icon">
+                            <span class="material-symbols-rounded">palette</span>
                         </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
+                        <div class="component-search-input">
+                            <input type="text" data-ref="paletteNameInput" placeholder="<?php echo htmlspecialchars($translatedName); ?>" value="<?php echo htmlspecialchars($translatedName); ?>" autocomplete="off">
                         </div>
                     </div>
-                    <div class="component-accordion-body">
-                        <div class="component-accordion-content">
-                            <div class="component-group-item component-group-item--stateful">
-                                <div class="active component-state-box" data-state="palette-name-view" data-ref="paletteNameView">
-                                    <div class="component-card__content">
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('canvas_palette_name'); ?></h2>
-                                            <span class="component-display-value" data-ref="display-palette-name">
-                                                <?php echo htmlspecialchars($translatedName); ?>
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div class="component-card__actions component-card__actions--stretch">
-                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="palette-name"><?php echo __('btn_edit'); ?></button>
-                                    </div>
-                                </div>
 
-                                <div class="disabled component-state-box" data-state="palette-name-edit" data-ref="paletteNameEdit">
-                                    <div class="component-card__content">
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('canvas_palette_name'); ?></h2>
-                                            <div class="component-edit-row">
-                                                <div class="component-input-group component-input-group--h34">
-                                                    <input type="text" data-ref="paletteNameInput" class="component-input-field component-input-field--simple" placeholder="<?php echo __('ph_palette_name'); ?>" value="<?php echo htmlspecialchars($translatedName); ?>">
-                                                </div>
-                                                <div class="component-card__actions component-card__actions--stretch">
-                                                    <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="palette-name"><?php echo __('btn_cancel'); ?></button>
-                                                    <button type="button" class="component-button component-button--h34" data-action="applyPaletteName"><?php echo __('btn_save'); ?></button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <button class="component-button component-button--icon component-button--h40" data-action="searchColor" data-position="bottom" data-ref="btn-toggle-search" data-tooltip="<?php echo __('search_color_placeholder'); ?>">
+                        <span class="material-symbols-rounded">search</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h40" data-action="openAddColorModal" data-position="bottom" data-ref="btn-add-color" data-tooltip="<?php echo __('btn_add_color'); ?>">
+                        <span class="material-symbols-rounded">add</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h40" data-action="savePaletteData" data-position="bottom" data-ref="btn-save-palette" data-tooltip="<?php echo __('btn_save'); ?>">
+                        <span class="material-symbols-rounded">save</span>
+                    </button>
+                </div>
+                
+            </div>
+
+            <!-- Barra de Búsqueda -->
+            <div class="component-search-toolbar disabled" data-ref="search-toolbar">
+                <div class="component-search">
+                    <div class="component-search-icon">
+                        <span class="material-symbols-rounded">search</span>
+                    </div>
+                    <div class="component-search-input">
+                        <input type="text" data-ref="color-search-input" placeholder="<?php echo __('search_color_placeholder'); ?>">
                     </div>
                 </div>
+            </div>
 
-                <!-- Colores Accordion -->
-                <div data-ref="colorsMasterContainer" class="component-card--grouped component-accordion active">
-                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
-                        <div class="component-card__content">
-                            <div class="component-card__icon-container component-card__icon-container--bordered">
-                                <span class="material-symbols-rounded">palette</span>
-                            </div>
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('canvas_palette_colors_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('canvas_palette_colors_desc'); ?></p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
-                        </div>
-                    </div>
-                    <div class="component-accordion-body">
-                        <div class="component-accordion-content">
-                            <div class="component-group-item">
-                                <div class="component-card__content">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title">Añadir colores</h2>
-                                        <p class="component-card__description">Agrega los colores que conformarán tu paleta.</p>
-                                    </div>
-                                </div>
-                                <div class="component-card__actions component-card__actions--end" data-ref="btnAddColorWrapper">
-                                    <button type="button" class="component-button component-button--h36" data-ref="btnAddColor" data-action="addColor">
-                                        <?php echo __('btn_add_color'); ?>
-                                    </button>
-                                </div>
-                            </div>
+        </div>
 
-                            <hr class="component-divider">
-
-                            <div data-ref="paletteColorsContainer" class="component-color-list">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+        <div class="component-bottom">
+            <div class="component-table-wrapper" data-ref="view-table">
+                <table class="component-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th><?php echo __('table_header_sample'); ?></th>
+                            <th><?php echo __('table_header_hex'); ?></th>
+                            <th><?php echo __('table_header_rgb'); ?></th>
+                            <th><?php echo __('table_header_hsl'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody data-ref="paletteTableBody">
+                    </tbody>
+                </table>
             </div>
         </div>
+
     </div>
 </div>

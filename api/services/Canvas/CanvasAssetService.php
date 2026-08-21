@@ -131,21 +131,76 @@ class CanvasAssetService {
 
     public function deleteTemplate(int $userId, int $templateId): array {
         try {
-            $templates = $this->canvasRepository->getUserTemplates($userId);
-            $filePath = null;
-            
-            foreach($templates as $t) {
-                if ((int)$t['id'] === $templateId) {
-                    $filePath = $t['file_path'];
-                    break;
-                }
+            $deleted = $this->canvasRepository->softDeleteTemplate($templateId, $userId);
+            if ($deleted) {
+                return ['success' => true, 'message' => __('msg_template_trashed')];
+            }
+            return ['success' => false, 'message' => __('err_template_delete_failed')];
+        } catch (Exception $e) {
+            Logger::error('Error soft deleting template.', ['user_id' => $userId, 'template_id' => $templateId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function deleteTemplatesBatch(int $userId, array $templateIds): array {
+        try {
+            if (empty($templateIds)) {
+                return ['success' => false, 'message' => __('err_invalid_template_id')];
+            }
+            $deleted = $this->canvasRepository->softDeleteTemplates($templateIds, $userId);
+            if ($deleted) {
+                return ['success' => true, 'message' => __('msg_templates_trashed')];
+            }
+            return ['success' => false, 'message' => __('err_template_delete_failed')];
+        } catch (Exception $e) {
+            Logger::error('Error soft deleting templates batch.', ['user_id' => $userId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function restoreTemplate(int $userId, int $templateId): array {
+        try {
+            $restored = $this->canvasRepository->restoreTemplate($templateId, $userId);
+            if ($restored) {
+                return ['success' => true, 'message' => __('msg_template_restored')];
+            }
+            return ['success' => false, 'message' => __('err_template_restore_failed')];
+        } catch (Exception $e) {
+            Logger::error('Error restoring template.', ['user_id' => $userId, 'template_id' => $templateId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function restoreTemplatesBatch(int $userId, array $templateIds): array {
+        try {
+            if (empty($templateIds)) {
+                return ['success' => false, 'message' => __('err_invalid_template_id')];
+            }
+            $restored = $this->canvasRepository->restoreTemplates($templateIds, $userId);
+            if ($restored) {
+                return ['success' => true, 'message' => __('msg_templates_restored')];
+            }
+            return ['success' => false, 'message' => __('err_template_restore_failed')];
+        } catch (Exception $e) {
+            Logger::error('Error restoring templates batch.', ['user_id' => $userId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function permanentDeleteTemplate(int $userId, int $templateId, string $password = '', ?string $credential = null): array {
+        if (!$userId) return ['success' => false, 'message' => __('err_unauthorized')];
+        try {
+            $user = $this->userRepository->findById($userId);
+            if (!$user) return ['success' => false, 'message' => __('err_unauthorized')];
+
+            if (!\App\Core\Helpers\Utils::verifyUserIdentity($user, ['password' => $password, 'credential' => $credential])) {
+                return ['success' => false, 'message' => !empty($credential) ? __('auth.google_verification_failed') : __('err_invalid_password')];
             }
 
-            $deleted = $this->canvasRepository->deleteTemplate($templateId, $userId);
-            
-            if ($deleted) {
-                if ($filePath) {
-                    $s3Key = preg_replace('#^/?public/storage/#', '', ltrim($filePath, '/'));
+            $template = $this->canvasRepository->permanentDeleteTemplate($templateId, $userId);
+            if ($template) {
+                if (!empty($template['file_path'])) {
+                    $s3Key = Utils::normalizeStoragePath($template['file_path']);
                     $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
                     $s3Client = Utils::getS3Client();
                     try {
@@ -157,11 +212,49 @@ class CanvasAssetService {
                         Logger::error('Failed to delete template file from S3.', ['user_id' => $userId, 'error' => $e->getMessage()]);
                     }
                 }
-                return ['success' => true, 'message' => __('msg_template_deleted')];
+                return ['success' => true, 'message' => __('msg_template_permanent_deleted')];
             }
-            return ['success' => false, 'message' => __('err_template_delete_failed')];
+            return ['success' => false, 'message' => __('err_template_permanent_delete_failed')];
         } catch (Exception $e) {
-            Logger::error('Error deleteTemplate.', ['user_id' => $userId, 'error' => $e->getMessage()]);
+            Logger::error('Error permanently deleting template.', ['user_id' => $userId, 'template_id' => $templateId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function permanentDeleteTemplatesBatch(int $userId, array $templateIds, string $password = '', ?string $credential = null): array {
+        if (!$userId) return ['success' => false, 'message' => __('err_unauthorized')];
+        try {
+            if (empty($templateIds)) return ['success' => false, 'message' => __('err_invalid_template_id')];
+
+            $user = $this->userRepository->findById($userId);
+            if (!$user) return ['success' => false, 'message' => __('err_unauthorized')];
+
+            if (!\App\Core\Helpers\Utils::verifyUserIdentity($user, ['password' => $password, 'credential' => $credential])) {
+                return ['success' => false, 'message' => !empty($credential) ? __('auth.google_verification_failed') : __('err_invalid_password')];
+            }
+
+            $templates = $this->canvasRepository->permanentDeleteTemplates($templateIds, $userId);
+            if (!empty($templates)) {
+                $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+                $s3Client = Utils::getS3Client();
+                foreach ($templates as $t) {
+                    if (!empty($t['file_path'])) {
+                        $s3Key = Utils::normalizeStoragePath($t['file_path']);
+                        try {
+                            $s3Client->deleteObject([
+                                'Bucket' => $bucket,
+                                'Key'    => ltrim($s3Key, '/')
+                            ]);
+                        } catch (Exception $e) {
+                            Logger::error('Failed to delete template file from S3.', ['user_id' => $userId, 'error' => $e->getMessage()]);
+                        }
+                    }
+                }
+                return ['success' => true, 'message' => __('msg_templates_permanent_deleted')];
+            }
+            return ['success' => false, 'message' => __('err_template_permanent_delete_failed')];
+        } catch (Exception $e) {
+            Logger::error('Error permanently deleting templates batch.', ['user_id' => $userId, 'error' => $e->getMessage()]);
             return ['success' => false, 'message' => __('err_database')];
         }
     }

@@ -1,6 +1,6 @@
 import { ModalTemplates } from './ModalTemplates.js';
 import { CalendarSystem } from './CalendarSystem.js';
-import { showMessage, setButtonLoading, restoreButton } from '../utils/uiUtils.js';
+import { getEventCoords, hexToHsv, hsvToHex, restoreButton, setButtonLoading, showMessage } from '../utils/uiUtils.js';
 
 export class ModalSystem {
     constructor() {
@@ -16,12 +16,15 @@ export class ModalSystem {
         this.activeAsyncConfirm = false;
 
         this.dragState = { startY: 0, currentDiff: 0, isDragging: false };
+        this.colorPickerDrag = null;
+        this.activeColorPicker = null;
 
         this.handleClickBound = this.handleClick.bind(this);
         this.handlePointerDownBound = this.handlePointerDown.bind(this);
         this.handlePointerMoveBound = this.handlePointerMove.bind(this);
         this.handlePointerUpBound = this.handlePointerUp.bind(this);
         this.handleKeyDownBound = this.handleKeyDown.bind(this);
+        this.handleInputBound = this.handleInput.bind(this);
         
         this.initialized = false;
 
@@ -46,6 +49,7 @@ export class ModalSystem {
         document.addEventListener('pointerup', this.handlePointerUpBound);
         document.addEventListener('pointercancel', this.handlePointerUpBound);
         document.addEventListener('keydown', this.handleKeyDownBound);
+        document.addEventListener('input', this.handleInputBound);
     }
 
     destroy() {
@@ -56,6 +60,7 @@ export class ModalSystem {
         document.removeEventListener('pointerup', this.handlePointerUpBound);
         document.removeEventListener('pointercancel', this.handlePointerUpBound);
         document.removeEventListener('keydown', this.handleKeyDownBound);
+        document.removeEventListener('input', this.handleInputBound);
         document.body.classList.remove('modal-open');
         
         const container = document.querySelector('.modal-container[data-type="modal"]');
@@ -140,6 +145,10 @@ export class ModalSystem {
 
             if (template.noPadding) {
                 this.activeBox.classList.add('component-modal-box--no-padding');
+            }
+
+            if (template.medium) {
+                this.activeBox.classList.add('component-modal-box--medium');
             }
 
             const buildFn = typeof template.build === 'function' ? template.build : (typeof template.template === 'function' ? template.template : null);
@@ -527,6 +536,56 @@ export class ModalSystem {
             return;
         }
 
+        const selectTemplateCardBtn = e.target.closest('[data-action="selectModalTemplateCard"]');
+        if (selectTemplateCardBtn && this.activeBox) {
+            const templateId = selectTemplateCardBtn.getAttribute('data-template-id') || '';
+            const valEl = this.activeBox.querySelector('[data-ref="selected_template_id"]');
+            if (valEl) {
+                valEl.setAttribute('data-value', templateId);
+            }
+            const grid = selectTemplateCardBtn.closest('[data-ref="modal_template_grid"]');
+            if (grid) {
+                grid.querySelectorAll('.component-modal-template-card').forEach(c => {
+                    c.classList.remove('active');
+                    c.classList.remove('selected');
+                });
+                selectTemplateCardBtn.classList.add('active');
+                selectTemplateCardBtn.classList.add('selected');
+            }
+            return;
+        }
+
+        const selectPaletteCardBtn = e.target.closest('[data-action="selectModalPaletteCard"]');
+        if (selectPaletteCardBtn && this.activeBox) {
+            const paletteId = selectPaletteCardBtn.getAttribute('data-palette-id') || 'default';
+            const valEl = this.activeBox.querySelector('[data-ref="selected_palette_id"]');
+            if (valEl) {
+                valEl.setAttribute('data-value', paletteId);
+            }
+            const grid = selectPaletteCardBtn.closest('[data-ref="modal_palette_grid"]');
+            if (grid) {
+                grid.querySelectorAll('.component-modal-palette-card').forEach(c => {
+                    c.classList.remove('active');
+                    c.classList.remove('selected');
+                });
+                selectPaletteCardBtn.classList.add('active');
+                selectPaletteCardBtn.classList.add('selected');
+            }
+            return;
+        }
+
+        const navCustomPaletteBtn = e.target.closest('[data-action="navigateCustomPaletteModal"]');
+        if (navCustomPaletteBtn) {
+            this.closeCurrent(false);
+            const basePath = window.AppBasePath || '';
+            if (window.spaRouter) {
+                window.spaRouter.navigate(`${basePath}/canvases/palettes/create`);
+            } else {
+                window.location.href = `${basePath}/canvases/palettes/create`;
+            }
+            return;
+        }
+
         const actionBtn = e.target.closest('[data-modal-action], [data-action="confirm"], [data-action="cancel"], #btn_confirm_custom_backup');
         
         if (actionBtn) {
@@ -832,8 +891,46 @@ export class ModalSystem {
         }
     }
 
+    handleInput(e) {
+        if (!this.activeBox) return;
+        const hexInput = e.target.closest('[data-ref="selected_hex"]');
+        if (hexInput && this.activeBox.contains(hexInput)) {
+            let val = hexInput.value.trim();
+            if (!val.startsWith('#')) val = '#' + val;
+            if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                const picker = this.activeBox.querySelector('[data-ref="customColorPicker"]');
+                if (picker) {
+                    const hsv = hexToHsv(val);
+                    picker.dataset.h = hsv.h;
+                    picker.dataset.s = hsv.s;
+                    picker.dataset.v = hsv.v;
+                    this._updateModalPickerUI(picker, false);
+                }
+            }
+        }
+    }
+
     handlePointerDown(e) {
         if (!this.activeBox) return; 
+
+        const svArea = e.target.closest('[data-action="dragSV"]');
+        if (svArea && this.activeBox.contains(svArea)) {
+            this.colorPickerDrag = 'sv';
+            this.activeColorPicker = svArea.closest('[data-ref="customColorPicker"]');
+            this._updateModalColorFromPointer(e, svArea);
+            if (e.cancelable) e.preventDefault();
+            return;
+        }
+
+        const hueArea = e.target.closest('[data-action="dragHue"]');
+        if (hueArea && this.activeBox.contains(hueArea)) {
+            this.colorPickerDrag = 'hue';
+            this.activeColorPicker = hueArea.closest('[data-ref="customColorPicker"]');
+            this._updateModalColorFromPointer(e, hueArea);
+            if (e.cancelable) e.preventDefault();
+            return;
+        }
+
         if (window.innerWidth > 768 && window.innerHeight > 550) return;
         if (e.pointerType === 'mouse' && e.button !== 0) return; 
 
@@ -848,6 +945,18 @@ export class ModalSystem {
     }
 
     handlePointerMove(e) {
+        if (this.colorPickerDrag && this.activeColorPicker) {
+            if (this.colorPickerDrag === 'sv') {
+                const svArea = this.activeColorPicker.querySelector('[data-action="dragSV"]');
+                this._updateModalColorFromPointer(e, svArea);
+            } else if (this.colorPickerDrag === 'hue') {
+                const hueArea = this.activeColorPicker.querySelector('[data-action="dragHue"]');
+                this._updateModalColorFromPointer(e, hueArea);
+            }
+            if (e.cancelable) e.preventDefault();
+            return;
+        }
+
         if (!this.dragState.isDragging || !this.activeWrapper) return;
         this.dragState.currentDiff = e.clientY - this.dragState.startY;
         
@@ -857,6 +966,11 @@ export class ModalSystem {
     }
 
     handlePointerUp(e) {
+        if (this.colorPickerDrag) {
+            this.colorPickerDrag = null;
+            this.activeColorPicker = null;
+        }
+
         if (!this.dragState.isDragging || !this.activeWrapper) return;
         this.dragState.isDragging = false;
         
@@ -873,6 +987,52 @@ export class ModalSystem {
         }
         
         this.dragState.currentDiff = 0;
+    }
+
+    _updateModalColorFromPointer(e, container) {
+        if (!container || !this.activeColorPicker) return;
+        const rect = container.getBoundingClientRect();
+        const coords = getEventCoords(e);
+
+        let x = Math.max(0, Math.min(coords.clientX - rect.left, rect.width));
+        let y = Math.max(0, Math.min(coords.clientY - rect.top, rect.height));
+
+        if (this.colorPickerDrag === 'sv') {
+            this.activeColorPicker.dataset.s = (x / rect.width) * 100;
+            this.activeColorPicker.dataset.v = 100 - ((y / rect.height) * 100);
+        } else if (this.colorPickerDrag === 'hue') {
+            this.activeColorPicker.dataset.h = (x / rect.width) * 360;
+        }
+
+        this._updateModalPickerUI(this.activeColorPicker, true);
+    }
+
+    _updateModalPickerUI(pickerNode, updateInput = true) {
+        let h = Math.max(0, Math.min(360, parseFloat(pickerNode.dataset.h) || 0));
+        let s = Math.max(0, Math.min(100, parseFloat(pickerNode.dataset.s) || 0));
+        let v = Math.max(0, Math.min(100, parseFloat(pickerNode.dataset.v) || 0));
+
+        const hex = hsvToHex(h, s, v);
+
+        const svArea = pickerNode.querySelector('[data-action="dragSV"]');
+        if (svArea) svArea.style.backgroundColor = `hsl(${h}, 100%, 50%)`;
+
+        const svThumb = pickerNode.querySelector('[data-ref="svThumb"]');
+        if (svThumb) {
+            svThumb.style.left = `${s}%`;
+            svThumb.style.top = `${100 - v}%`;
+        }
+
+        const hueThumb = pickerNode.querySelector('[data-ref="hueThumb"]');
+        if (hueThumb) hueThumb.style.left = `${(h / 360) * 100}%`;
+
+        if (updateInput) {
+            const hexInput = pickerNode.querySelector('[data-ref="selected_hex"]');
+            if (hexInput) hexInput.value = hex;
+        }
+
+        const hexInputPreview = pickerNode.querySelector('[data-ref="hexInputPreview"]');
+        if (hexInputPreview) hexInputPreview.style.backgroundColor = hex;
     }
 
     handleGoogleVerifyInModal(btn) {

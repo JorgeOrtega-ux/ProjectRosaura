@@ -174,6 +174,8 @@ export const ApiRoutes = {
         UploadTemplate: 'canvases.upload_template',
         GetTemplates: 'canvases.get_templates',
         DeleteTemplate: 'canvases.delete_template',
+        RestoreTemplate: 'canvases.restore_template',
+        PermanentDeleteTemplate: 'canvases.permanent_delete_template',
         InjectTemplate: 'canvases.inject_template',
         GetTemplateTokens: 'canvases.template_tokens',
 

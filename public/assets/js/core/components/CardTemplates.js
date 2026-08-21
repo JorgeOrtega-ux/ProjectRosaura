@@ -24,7 +24,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         const isOnline = (canvas.mode === 'online' || !!canvas.is_online_active);
         const modeSegment = isOnline
             ? `<span class="material-symbols-rounded ${onlinePlayers > 0 ? 'component-text-success' : ''}">sensors</span><span>${formatNumber(onlinePlayers)} ${window.__('online')}</span>`
-            : `<span class="material-symbols-rounded component-text-accent">brush</span><span>${window.__('badge_studio') || 'Estudio'}</span>`;
+            : `<span class="material-symbols-rounded component-text-accent">brush</span><span>${window.__('badge_studio')}</span>`;
 
         const badgeHtml = `
             <div class="component-badge component-badge--glass component-badge--absolute-tr">
@@ -66,12 +66,12 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         `;
     },
     promoCard: (promo, config = {}) => {
-        const sponsorName = escapeHTML(promo.sponsor || 'Patrocinador');
+        const sponsorName = escapeHTML(promo.sponsor || window.__('sponsor'));
         const description = escapeHTML(promo.description || promo.title || '');
         const basePath = config.basePath || '';
         const fallbackImg = basePath + '/assets/img/fallbacks/canvas-default.png';
         const targetUrl = promo.url ? promo.url : `${basePath}/upgrade`;
-        const sponsoredLabel = (window.__ ? window.__('sponsored') : null) || 'Patrocinado';
+        const sponsoredLabel = window.__('sponsored');
         const promoUuid = promo.promo_uuid || promo.uuid || promo.id || '';
 
         const resolveUrl = (url) => {

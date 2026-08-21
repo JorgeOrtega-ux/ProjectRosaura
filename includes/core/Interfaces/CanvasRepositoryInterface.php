@@ -69,8 +69,20 @@ interface CanvasRepositoryInterface {
     public function getTrashCanvases(int $userId, int $limit, int $offset): array;
     public function countTrashCanvases(int $userId): int;
     public function restoreCanvas(string $uuid, int $userId): bool;
+    public function restoreCanvases(array $canvasIds, int $userId): array;
     public function permanentDeleteCanvas(string $uuid, int $userId): bool;
     public function permanentDeleteCanvases(array $canvasIds, int $ownerId): bool;
     public function getExpiredTrashCanvases(int $daysOld): array;
+
+    // Template Recycle Bin
+    public function softDeleteTemplate(int $templateId, int $userId): bool;
+    public function softDeleteTemplates(array $templateIds, int $userId): bool;
+    public function restoreTemplate(int $templateId, int $userId): bool;
+    public function restoreTemplates(array $templateIds, int $userId): bool;
+    public function permanentDeleteTemplate(int $templateId, int $userId): ?array;
+    public function permanentDeleteTemplates(array $templateIds, int $userId): array;
+    public function getTrashTemplates(int $userId, ?string $searchQuery = '', int $limit = 50, int $offset = 0): array;
+    public function countTrashTemplates(int $userId, ?string $searchQuery = ''): int;
+    public function getExpiredTrashTemplates(int $daysOld = 30): array;
 }
 ?>

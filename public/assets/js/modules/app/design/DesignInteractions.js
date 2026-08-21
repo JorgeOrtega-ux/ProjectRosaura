@@ -1445,7 +1445,6 @@ export const DesignInteractions = {
         }
 
         if (this.isOfflineMode) {
-            console.info('%c[Rosaura Studio] %d píxeles colocados. Programando autoguardado...', 'color: #3b82f6; font-weight: bold;', validPixels.length);
             try {
                 CanvasSyncChannel.broadcast({
                     type: 'local_offline_stroke',

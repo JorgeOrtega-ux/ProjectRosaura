@@ -1,4 +1,4 @@
-import { escapeHTML, getLockDetails } from '../utils/uiUtils.js';
+import { escapeHTML, getDynamicTierName, getLockDetails, hexToHsv } from '../utils/uiUtils.js';
 
 const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
 
@@ -1126,10 +1126,53 @@ export const ModalTemplates = {
         })
     },
 
+    confirmPermanentDeleteCanvases: {
+        build: (data) => ModalTemplates.confirmAction.build({
+            titleKey: 'title_verify_perm_delete_canvases',
+            descHtml: __('desc_verify_perm_delete_canvases').replace(':count', data.count || 1),
+            confirmKey: 'btn_perm_delete_canvas',
+            confirmClass: 'component-button--danger'
+        })
+    },
+
+    confirmPermanentDeleteTemplates: {
+        build: (data) => ModalTemplates.confirmAction.build({
+            titleKey: 'title_verify_perm_delete_canvases',
+            descHtml: __('desc_verify_perm_delete_templates').replace(':count', data.count || 1),
+            confirmKey: 'btn_perm_delete_canvas',
+            confirmClass: 'component-button--danger'
+        })
+    },
+
+    confirmPermanentDeleteTrash: {
+        build: (data) => ModalTemplates.confirmAction.build({
+            titleKey: 'title_verify_perm_delete_canvases',
+            descHtml: __('desc_verify_perm_delete_mixed').replace(':count', data.count || 1),
+            confirmKey: 'btn_perm_delete_canvas',
+            confirmClass: 'component-button--danger'
+        })
+    },
+
     verifyPasswordPermanentDeleteCanvases: {
         build: (data) => ModalTemplates.verifyPasswordDialog.build({
             titleKey: 'title_verify_perm_delete_canvases',
             descHtml: __('desc_verify_perm_delete_canvases').replace(':count', data.count || 0),
+            confirmKey: 'btn_perm_delete_canvas'
+        })
+    },
+
+    verifyPasswordPermanentDeleteTemplates: {
+        build: (data) => ModalTemplates.verifyPasswordDialog.build({
+            titleKey: 'title_verify_perm_delete_canvases',
+            descHtml: __('desc_verify_perm_delete_templates').replace(':count', data.count || 0),
+            confirmKey: 'btn_perm_delete_canvas'
+        })
+    },
+
+    verifyPasswordPermanentDeleteTrash: {
+        build: (data) => ModalTemplates.verifyPasswordDialog.build({
+            titleKey: 'title_verify_perm_delete_canvases',
+            descHtml: __('desc_verify_perm_delete_mixed').replace(':count', data.count || 0),
             confirmKey: 'btn_perm_delete_canvas'
         })
     },
@@ -2311,6 +2354,182 @@ export const ModalTemplates = {
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
                     <button class="component-button component-button--primary component-button--h40" data-action="confirmExportTimelapseVideo" data-ref="btn-confirm-export-video">${__('btn_generate_mp4')}</button>
+                </div>
+            `;
+        }
+    },
+    selectCanvasTemplateModal: {
+        medium: true,
+        build: (data = {}) => {
+            const templates = data.templates || [];
+            const selectedTemplateId = data.selectedTemplateId || '';
+            const basePath = data.basePath || '';
+
+            const isEmptyActive = (!selectedTemplateId || selectedTemplateId === '') ? 'active selected' : '';
+
+            let cardsHtml = `
+                <div class="component-modal-template-card ${isEmptyActive}" data-action="selectModalTemplateCard" data-template-id="" data-template-name="${__('lbl_empty_canvas')}">
+                    <div class="component-modal-template-preview component-modal-template-preview--empty">
+                        <span class="material-symbols-rounded">crop_free</span>
+                    </div>
+                    <span class="component-modal-template-check material-symbols-rounded">check_circle</span>
+                    <div class="component-modal-template-info">
+                        <span class="component-modal-template-name">${__('lbl_empty_canvas')}</span>
+                    </div>
+                </div>
+            `;
+
+            templates.forEach(tpl => {
+                const isTplActive = (selectedTemplateId === tpl.id) ? 'active selected' : '';
+                const name = __(tpl.name_key);
+                const thumbnailSrc = basePath + tpl.thumbnail;
+
+                cardsHtml += `
+                    <div class="component-modal-template-card ${isTplActive}" data-action="selectModalTemplateCard" data-template-id="${tpl.id}" data-template-name="${name}">
+                        <img class="component-modal-template-img image-lazy-fade" data-ref="template-thumbnail" src="${thumbnailSrc}" alt="${name}" loading="lazy" onload="this.classList.add('image-loaded')" onerror="this.classList.add('image-loaded')">
+                        <span class="component-modal-template-check material-symbols-rounded">check_circle</span>
+                        <div class="component-modal-template-info">
+                            <span class="component-modal-template-name">${name}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h3 class="component-modal-title">${__('canvas_template_modal_title')}</h3>
+                    <p class="component-modal-desc">${__('canvas_template_modal_desc')}</p>
+                </div>
+                <div class="component-modal-body component-modal-body--scrollable">
+                    <div class="component-modal-template-grid" data-ref="modal_template_grid">
+                        ${cardsHtml}
+                    </div>
+                    <div data-ref="selected_template_id" data-value="${selectedTemplateId}"></div>
+                </div>
+                <div class="component-modal-actions">
+                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${__('btn_select_template')}</button>
+                </div>
+            `;
+        }
+    },
+    selectCanvasPaletteModal: {
+        medium: true,
+        build: (data = {}) => {
+            const palettes = data.palettes || [];
+            const selectedPaletteId = data.selectedPaletteId || 'default';
+            const userTier = data.userTier ?? (window.APP_USER?.subscription_tier ?? 0);
+            const canUseCustomPalettes = data.canUseCustomPalettes ?? (window.APP_LIMITS && window.APP_LIMITS.custom_palettes === true);
+
+            let cardsHtml = '';
+            palettes.forEach(palette => {
+                const isDefault = palette.id === 'default';
+                let fallbackTier = 0;
+                if (!isDefault && window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
+                    const paid = [...window.APP_TIERS].filter(t => parseInt(t.tier_level, 10) > 0 && t.is_active !== 0 && t.is_active !== false).sort((a, b) => parseInt(a.tier_level, 10) - parseInt(b.tier_level, 10));
+                    if (paid.length > 0) fallbackTier = parseInt(paid[0].tier_level, 10);
+                }
+                const reqTier = palette.tier !== undefined ? palette.tier : (isDefault ? 0 : fallbackTier);
+                const isLocked = isDefault ? false : (palette.id.startsWith('custom_') || palette.is_custom ? !canUseCustomPalettes : (userTier < reqTier));
+                
+                const translatedName = __(palette.name_key);
+                const isActive = (selectedPaletteId === palette.id);
+                const activeClass = isActive ? 'active selected' : '';
+                const lockedClass = isLocked ? 'disabled-interaction' : '';
+                const actionAttr = isLocked ? '' : 'selectModalPaletteCard';
+                const titleAttr = isLocked ? `title="${__('tooltip_upgrade_palette')}"` : '';
+
+                const tierName = reqTier > 0 ? getDynamicTierName(reqTier) : '';
+                const lockHtml = isLocked ? `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ${tierName}</span>` : '';
+
+                const colors = palette.colors || [];
+                let swatchesHtml = '';
+                colors.forEach(col => {
+                    const hex = col.hex || col;
+                    swatchesHtml += `<div class="component-modal-palette-swatch" style="background-color: ${hex};"></div>`;
+                });
+
+                cardsHtml += `
+                    <div class="component-modal-palette-card ${activeClass} ${lockedClass}" data-action="${actionAttr}" data-palette-id="${palette.id}" data-palette-name="${translatedName}" ${titleAttr}>
+                        <div class="component-modal-palette-card-header">
+                            <div class="component-modal-palette-title-group">
+                                <span class="material-symbols-rounded">palette</span>
+                                <span class="component-modal-palette-name">${translatedName}</span>
+                            </div>
+                            <div class="component-modal-palette-badges">
+                                ${lockHtml}
+                            </div>
+                        </div>
+                        <div class="component-modal-palette-swatches">
+                            ${swatchesHtml}
+                        </div>
+                        <span class="component-modal-palette-check material-symbols-rounded">check_circle</span>
+                    </div>
+                `;
+            });
+
+            const customBtnHtml = canUseCustomPalettes ? `
+                <button type="button" class="component-modal-palette-custom-btn" data-action="navigateCustomPaletteModal">
+                    <span class="material-symbols-rounded">add_circle</span>
+                    <span>${__('btn_create_custom_palette')}</span>
+                </button>
+            ` : '';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h3 class="component-modal-title">${__('canvas_palette_modal_title')}</h3>
+                    <p class="component-modal-desc">${__('canvas_palette_modal_desc')}</p>
+                </div>
+                <div class="component-modal-body component-modal-body--scrollable">
+                    <div class="component-modal-palette-grid" data-ref="modal_palette_grid">
+                        ${cardsHtml}
+                    </div>
+                    ${customBtnHtml}
+                    <div data-ref="selected_palette_id" data-value="${selectedPaletteId}"></div>
+                </div>
+                <div class="component-modal-actions">
+                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${__('btn_select_palette')}</button>
+                </div>
+            `;
+        }
+    },
+    editPaletteColorModal: {
+        medium: false,
+        colorPicker: true,
+        build: (data = {}) => {
+            const hex = (data.hex || '#3b82f6').toUpperCase();
+            const hsv = hexToHsv(hex);
+            const title = data.title || __('canvas_palette_color_modal_title');
+            const desc = data.desc || __('canvas_palette_color_modal_desc');
+            const confirmBtnText = data.confirmText || __('btn_save');
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h3 class="component-modal-title">${title}</h3>
+                    <p class="component-modal-desc">${desc}</p>
+                </div>
+                <div class="component-modal-body">
+                    <div class="component-color-picker" data-ref="customColorPicker" data-h="${hsv.h}" data-s="${hsv.s}" data-v="${hsv.v}">
+                        <div class="component-color-picker__sv-area" data-action="dragSV" style="background-color: hsl(${hsv.h}, 100%, 50%);">
+                            <div class="component-color-picker__sv-bg"></div>
+                            <div class="component-color-picker__sv-thumb" data-ref="svThumb" style="left: ${hsv.s}%; top: ${100 - hsv.v}%;"></div>
+                        </div>
+                        <div class="component-color-picker__hue-area" data-action="dragHue">
+                            <div class="component-color-picker__hue-thumb" data-ref="hueThumb" style="left: ${(hsv.h / 360) * 100}%;"></div>
+                        </div>
+                        <div class="component-input-group component-input-group--h34 component-input-group--color">
+                            <div class="component-color-swatch component-color-swatch--sm" data-ref="hexInputPreview" style="background-color: ${hex};"></div>
+                            <input type="text" class="component-input-field component-input-field--mono" data-ref="selected_hex" value="${hex}" maxlength="7" placeholder="#000000">
+                        </div>
+                    </div>
+                </div>
+                <div class="component-modal-actions">
+                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${confirmBtnText}</button>
                 </div>
             `;
         }

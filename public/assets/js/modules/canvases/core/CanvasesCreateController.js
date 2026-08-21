@@ -1,8 +1,7 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
-import { showMessage, setButtonLoading, restoreButton, getDynamicTierName, getAllPalettes, closeDropdown, filterMenuList } from '../../../core/utils/uiUtils.js';
-
+import { closeDropdown, filterMenuList, getAllPalettes, getDynamicTierName, restoreButton, setButtonLoading, showMessage } from '../../../core/utils/uiUtils.js';
 
 class CanvasesCreateController {
     constructor() {
@@ -10,6 +9,7 @@ class CanvasesCreateController {
         this.basePath = window.AppBasePath || '';
         this.abortController = null;
         this.cardInteractions = null;
+        this.templates = [];
         
         this.formState = {
             name: '',
@@ -19,7 +19,8 @@ class CanvasesCreateController {
             palette_id: 'default',
             limit: 10,
             cooldown_pixels_batch: 5,
-            cooldown_seconds: 10
+            cooldown_seconds: 10,
+            template_id: null
         };
 
         this.countriesLoaded = false;
@@ -33,17 +34,16 @@ class CanvasesCreateController {
         this.bindEvents();
         this.setupDefaultValues();
         this.syncStateWithDOM();
-        this.renderPalettes();
+        this.updatePaletteTriggerDisplay();
         this.updateSizesAvailability();
 
         fetch(`${this.basePath}/assets/config/canvas_templates.json`)
             .then(res => res.ok ? res.json() : [])
             .then(data => {
                 this.templates = data;
-                const initialSize = this.formState.size || '64x64';
-                this.renderTemplatesGrid(initialSize);
+                this.updateTemplateTriggerDisplay();
             })
-            .catch(e => console.error('Error fetching templates:', e));
+            .catch(() => {});
     }
 
     destroy() {
@@ -114,7 +114,6 @@ class CanvasesCreateController {
             this.formState.limit = parseInt(limitEl.getAttribute('data-value'), 10) || 10;
         }
 
-
         const allowChatEl = document.querySelector('[data-ref="val_allow_chat"]');
         if (allowChatEl) {
             this.formState.allow_chat = allowChatEl.checked ? 1 : 0;
@@ -122,65 +121,7 @@ class CanvasesCreateController {
 
         const templateEl = document.querySelector('[data-ref="canvas_template_id"]');
         if (templateEl) {
-            this.formState.template_id = templateEl.getAttribute('data-value') || templateEl.value || null;
-        }
-    }
-
-    renderPalettes() {
-        const container = document.querySelector('[data-ref="palette-selector-container"]');
-        if (!container) return;
-
-        const palettes = getAllPalettes();
-        container.innerHTML = '';
-
-        let activePaletteName = window.__('lbl_loading');
-        
-        const userTier = window.APP_USER?.subscription_tier ?? 0;
-        const canUseCustomPalettes = window.APP_LIMITS && window.APP_LIMITS.custom_palettes === true;
-
-        palettes.forEach(palette => {
-            const isDefault = palette.id === 'default';
-            let fallbackTier = 0;
-            if (!isDefault && window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
-                const paid = [...window.APP_TIERS].filter(t => parseInt(t.tier_level, 10) > 0 && t.is_active !== 0 && t.is_active !== false).sort((a,b) => parseInt(a.tier_level, 10) - parseInt(b.tier_level, 10));
-                if (paid.length > 0) fallbackTier = parseInt(paid[0].tier_level, 10);
-            }
-            const reqTier = palette.tier !== undefined ? palette.tier : (isDefault ? 0 : fallbackTier);
-            const isLocked = isDefault ? false : (palette.id.startsWith('custom_') || palette.is_custom ? !canUseCustomPalettes : (userTier < reqTier));
-            
-            const translatedName = window.__ ? window.__(palette.name_key) : palette.id;
-
-            const isActive = this.formState.palette_id === palette.id;
-            if (isActive) activePaletteName = translatedName;
-
-            const btn = document.createElement('div');
-            btn.className = `component-menu-link ${isActive ? 'active' : ''} ${isLocked ? 'disabled-interaction' : ''}`;
-            btn.setAttribute('data-action', isLocked ? '' : 'selectPalette');
-            btn.setAttribute('data-palette-id', palette.id);
-            btn.setAttribute('data-palette-name', translatedName);
-            
-            if (isLocked) {
-                btn.classList.add('disabled-interaction');
-                btn.title = window.__('tooltip_upgrade_palette');
-            }
-
-            const tierName = getDynamicTierName(reqTier);
-            const lockHtml = isLocked ? `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ${tierName}</span>` : '';
-
-            btn.innerHTML = `
-                <div class="component-menu-link-icon"><span class="material-symbols-rounded">palette</span></div>
-                <div class="component-menu-link-text">
-                    <span>${translatedName}</span>
-                </div>
-                ${lockHtml}
-            `;
-            container.appendChild(btn);
-        });
-
-        const triggerWrapper = container.closest('.component-dropdown-wrapper');
-        if (triggerWrapper) {
-            const textRef = triggerWrapper.querySelector('[data-ref="text-palette"]');
-            if (textRef) textRef.textContent = activePaletteName;
+            this.formState.template_id = templateEl.getAttribute('data-value') || null;
         }
     }
 
@@ -196,29 +137,13 @@ class CanvasesCreateController {
 
         const action = actionBtn.getAttribute('data-action');
 
-        if (action === 'selectCanvasTemplate') {
-            const templateId = actionBtn.getAttribute('data-template-id');
-            this.formState.template_id = templateId || null;
-            
-            const listContainer = document.querySelector('[data-ref="canvas_templates_list"]');
-            if (listContainer) {
-                listContainer.querySelectorAll('.component-menu-link').forEach(el => el.classList.remove('active'));
-                actionBtn.classList.add('active');
-            }
-            
-            const triggerText = document.querySelector('[data-ref="text-template"]');
-            if (triggerText) {
-                const label = actionBtn.getAttribute('data-label');
-                triggerText.textContent = label || __('lbl_select_template');
-            }
-            
-            closeDropdown(actionBtn.closest('.component-module--dropdown'));
-            
-            const hiddenInput = document.querySelector('[data-ref="canvas_template_id"]');
-            if (hiddenInput) {
-                hiddenInput.setAttribute('data-value', templateId || '');
-                if ('value' in hiddenInput) hiddenInput.value = templateId || '';
-            }
+        if (action === 'openCanvasTemplateModal') {
+            this.openTemplateModal();
+            return;
+        }
+
+        if (action === 'openCanvasPaletteModal') {
+            this.openPaletteModal();
             return;
         }
 
@@ -234,18 +159,94 @@ class CanvasesCreateController {
             this.adjustCooldownSeconds(actionBtn);
         } else if (action === 'saveCanvasName') {
             this.saveCanvasName(actionBtn);
-        } else if (action === 'selectPalette') {
-            this.selectPalette(actionBtn);
         } else if (action === 'createCanvas') {
             e.preventDefault();
             this.submitCanvas(actionBtn);
-
         } else if (action === 'navigateCustomPalette') {
             if (window.spaRouter) {
                 window.spaRouter.navigate(`${this.basePath}/canvases/palettes/create`);
             } else {
                 window.location.href = `${this.basePath}/canvases/palettes/create`;
             }
+        }
+    }
+
+    async openTemplateModal() {
+        const availableTemplates = (this.templates || []).filter(tpl => tpl.sizes.includes(this.formState.size));
+
+        const res = await window.modalSystem.show('selectCanvasTemplateModal', {
+            templates: availableTemplates,
+            selectedTemplateId: this.formState.template_id || '',
+            basePath: this.basePath
+        });
+
+        if (res && res.confirmed) {
+            const selectedId = res.data?.selected_template_id || null;
+            this.setTemplate(selectedId);
+        }
+    }
+
+    setTemplate(templateId) {
+        this.formState.template_id = templateId || null;
+        
+        const templateEl = document.querySelector('[data-ref="canvas_template_id"]');
+        if (templateEl) {
+            templateEl.setAttribute('data-value', templateId || '');
+        }
+
+        this.updateTemplateTriggerDisplay();
+    }
+
+    updateTemplateTriggerDisplay() {
+        const triggerText = document.querySelector('[data-ref="text-template"]');
+        if (!triggerText) return;
+
+        if (!this.formState.template_id) {
+            triggerText.textContent = window.__('lbl_empty_canvas');
+            return;
+        }
+
+        const tpl = (this.templates || []).find(t => t.id === this.formState.template_id);
+        if (tpl) {
+            triggerText.textContent = window.__(tpl.name_key);
+        } else {
+            triggerText.textContent = window.__('lbl_empty_canvas');
+        }
+    }
+
+    async openPaletteModal() {
+        const palettes = getAllPalettes();
+        const userTier = window.APP_USER?.subscription_tier ?? 0;
+        const canUseCustomPalettes = window.APP_LIMITS && window.APP_LIMITS.custom_palettes === true;
+
+        const res = await window.modalSystem.show('selectCanvasPaletteModal', {
+            palettes,
+            selectedPaletteId: this.formState.palette_id || 'default',
+            userTier,
+            canUseCustomPalettes
+        });
+
+        if (res && res.confirmed) {
+            const selectedId = res.data?.selected_palette_id || 'default';
+            this.setPalette(selectedId);
+        }
+    }
+
+    setPalette(paletteId) {
+        this.formState.palette_id = paletteId || 'default';
+        this.updatePaletteTriggerDisplay();
+    }
+
+    updatePaletteTriggerDisplay() {
+        const triggerText = document.querySelector('[data-ref="text-palette"]');
+        if (!triggerText) return;
+
+        const palettes = getAllPalettes();
+        const pal = palettes.find(p => p.id === this.formState.palette_id);
+        if (pal) {
+            triggerText.textContent = window.__(pal.name_key);
+        } else {
+            triggerText.textContent = this.formState.palette_id;
         }
     }
 
@@ -292,7 +293,7 @@ class CanvasesCreateController {
                 
                 let lockIcon = link.querySelector('.component-badge');
                 if (isUltraCapped && isTierAllowed) {
-                    link.setAttribute('title', window.__ ? window.__('tooltip_ultra_limit_reached') : 'Límite de 3 lienzos Ultra alcanzado');
+                    link.setAttribute('title', window.__('tooltip_ultra_limit_reached'));
                     const badgeHtml = `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">block</span> ${tier3Count}/${tier3Max} Ultra</span>`;
                     if (!lockIcon) {
                         link.insertAdjacentHTML('beforeend', badgeHtml);
@@ -300,7 +301,7 @@ class CanvasesCreateController {
                         lockIcon.outerHTML = badgeHtml;
                     }
                 } else {
-                    link.setAttribute('title', window.__ ? window.__('tooltip_upgrade_required') : 'Mejora de plan requerida');
+                    link.setAttribute('title', window.__('tooltip_upgrade_required'));
                     const tierName = getDynamicTierName(reqTier);
                     const badgeHtml = `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ${tierName}</span>`;
                     if (!lockIcon) {
@@ -320,8 +321,6 @@ class CanvasesCreateController {
             }
         }
     }
-
-
 
     saveCanvasName(btn) {
         const container = btn.closest('.component-group-item--stateful');
@@ -356,7 +355,10 @@ class CanvasesCreateController {
         this.formState[type] = value;
 
         if (type === 'size') {
-            this.renderTemplatesGrid(value);
+            const currentTpl = (this.templates || []).find(t => t.id === this.formState.template_id);
+            if (currentTpl && !currentTpl.sizes.includes(value)) {
+                this.setTemplate(null);
+            }
         }
 
         const menu = optionBtn.closest('.component-menu-list');
@@ -508,64 +510,6 @@ class CanvasesCreateController {
             }
         } else {
             showMessage(res.message, 'error');
-        }
-    }
-
-    renderTemplatesGrid(size) {
-        const trigger = document.querySelector('[data-ref="template_dropdown_trigger"]');
-        const triggerText = document.querySelector('[data-ref="text-template"]');
-        const listContainer = document.querySelector('[data-ref="canvas_templates_list"]');
-        const hiddenInput = document.querySelector('[data-ref="canvas_template_id"]');
-
-        if (!trigger || !listContainer) return;
-
-        const templates = this.templates || [];
-        
-        const availableTemplates = templates.filter(tpl => tpl.sizes.includes(size));
-        
-        const currentTpl = templates.find(t => t.id === this.formState.template_id);
-        if (currentTpl && !currentTpl.sizes.includes(size)) {
-            this.formState.template_id = null;
-            if (hiddenInput) hiddenInput.value = '';
-        }
-
-        if (availableTemplates.length === 0) {
-            triggerText.textContent = 'Sin plantillas disponibles';
-            trigger.classList.add('disabled-interaction');
-            listContainer.innerHTML = '';
-        } else {
-            trigger.classList.remove('disabled-interaction');
-
-            let html = '';
-            
-            const isNoneActive = !this.formState.template_id ? 'active' : '';
-            html += `
-                <div class="component-menu-link ${isNoneActive}" data-action="selectCanvasTemplate" data-template-id="" data-label="${window.__('lbl_empty_canvas')}">
-                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">crop_free</span></div>
-                    <div class="component-menu-link-text"><span>${window.__('lbl_empty_canvas')}</span></div>
-                </div>
-            `;
-            
-            availableTemplates.forEach(tpl => {
-                const isActive = this.formState.template_id === tpl.id ? 'active' : '';
-                const name = window.__ ? window.__(tpl.name_key) : tpl.id;
-                
-                html += `
-                    <div class="component-menu-link ${isActive}" data-action="selectCanvasTemplate" data-template-id="${tpl.id}" data-label="${name}">
-                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">crop_free</span></div>
-                        <div class="component-menu-link-text"><span>${name}</span></div>
-                    </div>
-                `;
-            });
-            
-            listContainer.innerHTML = html;
-            
-            const selectedTpl = availableTemplates.find(t => t.id === this.formState.template_id);
-            if (selectedTpl) {
-                triggerText.textContent = window.__ ? window.__(selectedTpl.name_key) : selectedTpl.id;
-            } else {
-                triggerText.textContent = 'Seleccionar plantilla';
-            }
         }
     }
 }

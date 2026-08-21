@@ -233,8 +233,10 @@ CREATE TABLE IF NOT EXISTS `user_templates` (
   `file_path` varchar(255) NOT NULL,
   `file_size` bigint(20) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `deleted_at` datetime DEFAULT NULL COMMENT 'NULL = activo, NOT NULL = en papelera',
   PRIMARY KEY (`id`),
-  INDEX `idx_user_templates` (`user_id`)
+  INDEX `idx_user_templates` (`user_id`),
+  INDEX `idx_user_templates_deleted` (`deleted_at`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 

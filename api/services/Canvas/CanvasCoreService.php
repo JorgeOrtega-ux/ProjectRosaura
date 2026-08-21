@@ -1722,6 +1722,33 @@ LUA;
         }
     }
 
+    public function restoreUserCanvases(?int $userId, array $canvasIds): array {
+        if (!$userId) return ['success' => false, 'message' => __('err_unauthorized')];
+        try {
+            if (empty($canvasIds)) {
+                return ['success' => false, 'message' => __('err_no_canvases_selected')];
+            }
+
+            $result = $this->canvasRepository->restoreCanvases($canvasIds, $userId);
+            if (($result['count'] ?? 0) > 0) {
+                // Re-evaluar locks de suscripción
+                try {
+                    $dbManager = new DatabaseManager();
+                    $redisCache = new RedisCache();
+                    $lockManager = new CanvasLockManager($this->canvasRepository, $this->userRepository, $dbManager, $redisCache);
+                    $lockManager->evaluateUserCanvases($userId);
+                } catch (Exception $e) {
+                    Logger::error('Error evaluating canvases on batch restore.', ['error' => $e->getMessage()]);
+                }
+                return ['success' => true, 'message' => __('msg_canvas_restored'), 'data' => $result];
+            }
+            return ['success' => false, 'message' => __('err_canvas_restore_failed')];
+        } catch (Exception $e) {
+            Logger::error('Error restoring canvases batch.', ['user_id' => $userId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
     public function permanentDeleteCanvas(?int $userId, string $uuid, string $password = '', ?string $credential = null): array {
         if (!$userId) return ['success' => false, 'message' => __('err_unauthorized')];
         try {

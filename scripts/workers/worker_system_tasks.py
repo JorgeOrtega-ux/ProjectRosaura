@@ -696,8 +696,101 @@ def purge_trash_canvases():
             cursor_id.close()
             conn_id.close()
 
+def purge_trash_templates():
+    """
+    Purges user templates that have been in the recycle bin for 30+ days.
+    Frees user storage quota, cleans up Redis caches, and deletes S3 objects/local files.
+    """
+    Logger.info("Maintenance: Evaluating recycle bin for expired templates (30+ days in trash)...")
+    conn_can = None
+    conn_id = None
+    r = None
+
+    try:
+        conn_can = get_canvases_db_connection()
+        cursor_can = conn_can.cursor(dictionary=True)
+        cursor_can.execute("""
+            SELECT id, user_id, file_path, file_size
+            FROM user_templates
+            WHERE deleted_at IS NOT NULL AND deleted_at <= NOW() - INTERVAL 30 DAY
+        """)
+        expired_templates = cursor_can.fetchall()
+
+        if not expired_templates:
+            Logger.info("Maintenance: No expired templates in recycle bin to purge.")
+            return
+
+        Logger.info(f"Maintenance: Found {len(expired_templates)} expired templates to permanently purge.")
+        conn_id = get_db_connection()
+        cursor_id = conn_id.cursor()
+        r = get_redis_connection()
+
+        for template in expired_templates:
+            template_id = template['id']
+            user_id = template['user_id']
+            file_path = template['file_path'] or ''
+            file_size = int(template['file_size'] or 0)
+
+            try:
+                # 1. Delete physical record from db_canvases
+                cursor_can.execute("DELETE FROM user_templates WHERE id = %s", (template_id,))
+                conn_can.commit()
+
+                # 2. Release storage quota in db_identity
+                if user_id and file_size > 0:
+                    cursor_id.execute("""
+                        UPDATE users
+                        SET storage_used_bytes = GREATEST(0, storage_used_bytes - %s)
+                        WHERE id = %s
+                    """, (file_size, user_id))
+                    conn_id.commit()
+
+                # 3. Clean Redis storage cache for user
+                if r and user_id:
+                    try:
+                        r.delete(f"user:storage:{user_id}")
+                    except Exception as re:
+                        Logger.error(f"Failed to clear Redis storage key for user {user_id}: {re}")
+
+                # 4. Delete S3 object and local file fallback
+                if file_path:
+                    # S3 key normalization
+                    s3_key = file_path.lstrip('/')
+                    if s3_key.startswith('public/storage/'):
+                        s3_key = s3_key[len('public/storage/'):]
+                    elif s3_key.startswith('storage/'):
+                        s3_key = s3_key[len('storage/'):]
+
+                    try:
+                        s3.delete_object(Bucket=S3_BUCKET, Key=s3_key)
+                    except Exception:
+                        pass
+
+                    full_t_path = os.path.join(APP_ROOT_PATH, file_path.lstrip('/'))
+                    if os.path.exists(full_t_path) and os.path.isfile(full_t_path):
+                        try:
+                            os.remove(full_t_path)
+                        except Exception:
+                            pass
+
+                Logger.info(f"Purged expired template ID {template_id} (User ID: {user_id}, Size: {file_size} bytes) from recycle bin.")
+
+            except Exception as item_err:
+                Logger.error(f"Error purging template {template_id}: {item_err}")
+
+    except Exception as e:
+        Logger.error(f"Recycle bin template purge maintenance failed: {e}")
+    finally:
+        if conn_can and conn_can.is_connected():
+            cursor_can.close()
+            conn_can.close()
+        if conn_id and conn_id.is_connected():
+            cursor_id.close()
+            conn_id.close()
+
 def future_maintenance_tasks():
     purge_trash_canvases()
+    purge_trash_templates()
 
 def worker_loop():
     queues_to_listen = [QUEUE_ACCOUNT_DELETION, QUEUE_EMAILS]

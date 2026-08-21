@@ -63,13 +63,80 @@ class CanvasAssetController extends BaseController {
             }
             
             $userId = $this->session->getActiveAccountId();
-            $templateId = $input['id'] ?? null;
+            $templateId = $input['id'] ?? $input['template_id'] ?? null;
+            $templateIds = $input['template_ids'] ?? $input['ids'] ?? [];
+
+            if (!empty($templateIds) && is_array($templateIds)) {
+                $result = $this->canvasServices->deleteTemplatesBatch($userId, array_map('intval', $templateIds));
+                return $this->respond($result);
+            }
             
             if (!$templateId) {
                 return $this->respond(['success' => false, 'message' => __('err_invalid_template_id')]);
             }
 
             $result = $this->canvasServices->deleteTemplate($userId, (int)$templateId);
+            return $this->respond($result);
+            
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function restore_template($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
+            }
+            
+            $userId = $this->session->getActiveAccountId();
+            $templateId = $input['id'] ?? $input['template_id'] ?? null;
+            $templateIds = $input['template_ids'] ?? $input['ids'] ?? [];
+
+            if (!empty($templateIds) && is_array($templateIds)) {
+                $result = $this->canvasServices->restoreTemplatesBatch($userId, array_map('intval', $templateIds));
+                return $this->respond($result);
+            }
+            
+            if (!$templateId) {
+                return $this->respond(['success' => false, 'message' => __('err_invalid_template_id')]);
+            }
+
+            $result = $this->canvasServices->restoreTemplate($userId, (int)$templateId);
+            return $this->respond($result);
+            
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function permanent_delete_template($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
+            }
+            
+            $userId = $this->session->getActiveAccountId();
+
+            $password = $input['password'] ?? '';
+            $credential = $input['credential'] ?? $input['google_token'] ?? null;
+            if (empty(trim($password)) && empty($credential)) {
+                return $this->respond(['success' => false, 'message' => __('err_password_required')]);
+            }
+
+            $templateId = $input['id'] ?? $input['template_id'] ?? null;
+            $templateIds = $input['template_ids'] ?? $input['ids'] ?? [];
+
+            if (!empty($templateIds) && is_array($templateIds)) {
+                $result = $this->canvasServices->permanentDeleteTemplatesBatch($userId, array_map('intval', $templateIds), $password, $credential);
+                return $this->respond($result);
+            }
+            
+            if (!$templateId) {
+                return $this->respond(['success' => false, 'message' => __('err_invalid_template_id')]);
+            }
+
+            $result = $this->canvasServices->permanentDeleteTemplate($userId, (int)$templateId, $password, $credential);
             return $this->respond($result);
             
         } catch (\Throwable $e) {

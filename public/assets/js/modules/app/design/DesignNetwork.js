@@ -2065,7 +2065,7 @@ export const DesignNetwork = {
         const newMode = data.mode || (data.is_online_active ? 'online' : 'offline');
         if (newMode === 'offline') {
             if (!this.isOwner) {
-                showMessage((window.__ ? window.__('msg_canvas_mode_deactivated_by_owner') : null) || 'El propietario ha guardado y cambiado este lienzo a modo estudio privado.', 'info');
+                showMessage(window.__('msg_canvas_mode_deactivated_by_owner'), 'info');
                 if (this.wsManager) {
                     this.wsManager.disconnect();
                 }
@@ -2074,13 +2074,13 @@ export const DesignNetwork = {
                 }, 2000);
             } else {
                 if (!this._isChangingMode) {
-                    showMessage((window.__ ? window.__('msg_canvas_offline_deactivated') : null) || 'Lienzo en modo Estudio (Offline)', 'info');
+                    showMessage(window.__('msg_canvas_offline_deactivated'), 'info');
                     setTimeout(() => window.location.reload(), 600);
                 }
             }
         } else if (newMode === 'online') {
             if (!this._isChangingMode) {
-                showMessage((window.__ ? window.__('msg_canvas_online_activated') : null) || 'Lienzo activado en modo Online', 'success');
+                showMessage(window.__('msg_canvas_online_activated'), 'success');
                 setTimeout(() => window.location.reload(), 600);
             }
         }
@@ -2093,7 +2093,6 @@ export const DesignNetwork = {
 
         try {
             if (this.isOfflineMode && this._offlineDirty && typeof this.saveOfflineCanvasState === 'function') {
-                console.info('[Rosaura Studio] Guardando cambios locales pendientes antes de activar online...');
                 await this.saveOfflineCanvasState(true);
             }
 
@@ -2106,19 +2105,19 @@ export const DesignNetwork = {
 
             if (resp && resp.success) {
                 const successMsg = resp.message || (action === 'activate' 
-                    ? ((window.__ ? window.__('msg_canvas_online_activated') : null) || 'Lienzo activado en modo En Vivo con éxito.')
-                    : ((window.__ ? window.__('msg_canvas_offline_deactivated') : null) || 'Lienzo guardado y puesto en modo Estudio Offline.'));
+                    ? window.__('msg_canvas_online_activated')
+                    : window.__('msg_canvas_offline_deactivated'));
                 showMessage(successMsg, 'success');
                 setTimeout(() => window.location.reload(), 500);
             } else {
                 if (btn) restoreButton(btn);
                 this._isChangingMode = false;
-                showMessage(resp?.message || 'Error al cambiar modo de lienzo', 'error');
+                showMessage(resp?.message || window.__('err_occurred'), 'error');
             }
         } catch (e) {
             if (btn) restoreButton(btn);
             this._isChangingMode = false;
-            showMessage((window.__ ? window.__('err_occurred') : null) || 'Error al cambiar modo', 'error');
+            showMessage(window.__('err_occurred'), 'error');
         }
     },
 
@@ -2126,7 +2125,6 @@ export const DesignNetwork = {
         const btn = btnElement || document.querySelector('[data-action="manualSaveOffline"]');
         if (btn) setButtonLoading(btn);
 
-        console.info('%c[Rosaura Studio] Guardado manual disparado...', 'color: #3b82f6; font-weight: bold;');
         const minWait = new Promise(r => setTimeout(r, 450));
         const [success] = await Promise.all([
             this.saveOfflineCanvasState(true),
@@ -2136,9 +2134,9 @@ export const DesignNetwork = {
         if (btn) {
             restoreButton(btn);
             if (success) {
-                showMessage((window.__ ? window.__('msg_state_saved') : null) || 'Lienzo guardado en tu Estudio', 'success');
+                showMessage(window.__('msg_state_saved'), 'success');
             } else {
-                showMessage((window.__ ? window.__('err_occurred') : null) || 'Error al guardar estado', 'error');
+                showMessage(window.__('err_occurred'), 'error');
             }
         }
     },
@@ -2165,8 +2163,6 @@ export const DesignNetwork = {
             this._offlineHasPendingChanges = false;
             this._offlineSaving = true;
 
-            console.info('%c[Rosaura Studio] Iniciando exportación y guardado...', 'color: #f59e0b; font-weight: bold;');
-
             try {
                 let base64Data = null;
                 if (this.renderWorker) {
@@ -2183,7 +2179,6 @@ export const DesignNetwork = {
                         this.renderWorker.postMessage({ type: 'EXPORT_OFFLINE_STATE' });
                         timeoutId = setTimeout(() => {
                             this.renderWorker.removeEventListener('message', handler);
-                            console.warn('[Rosaura Studio] Timeout esperando respuesta de renderWorker (3000ms)');
                             resolve(null);
                         }, 3000);
                     });
@@ -2205,18 +2200,14 @@ export const DesignNetwork = {
                         state_base64: base64Data
                     });
                     if (resp && resp.success) {
-                        console.info('%c[Rosaura Studio] Guardado completado con éxito en base de datos.', 'color: #10b981; font-weight: bold;');
                         return true;
                     } else {
-                        console.error('%c[Rosaura Studio] Error de respuesta de API al guardar:', 'color: #ef4444;', resp);
                         return false;
                     }
                 } else {
-                    console.error('%c[Rosaura Studio] No se pudo obtener base64Data del Worker.', 'color: #ef4444;');
                     return false;
                 }
             } catch (err) {
-                console.error('%c[Rosaura Studio] Excepción al guardar estado:', 'color: #ef4444;', err);
                 return false;
             } finally {
                 this._offlineSaving = false;

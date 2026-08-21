@@ -205,24 +205,14 @@ extract($createData);
                                     </div>
                                 </div>
                                 <div class="component-card__actions component-card__actions--start">
-                                    <div class="component-dropdown-wrapper">
-                                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownTemplate" data-ref="template_dropdown_trigger">
-                                            <span class="material-symbols-rounded">crop_free</span>
-                                            <span class="component-dropdown-text" data-ref="text-template"><?php echo __('lbl_select_template'); ?></span>
-                                            <span class="material-symbols-rounded">expand_more</span>
-                                        </div>
-                                        <div class="component-module component-module--dropdown disabled" data-module="dropdownTemplate">
-                                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
-                                                <div class="pill-container"><div class="drag-handle"></div></div>
-                                                <div class="component-menu-list" data-ref="canvas_templates_list">
-                                                    <!-- Renderizado dinámico desde JS -->
-                                                </div>
-                                            </div>
-                                        </div>
+                                    <div class="component-dropdown-trigger" data-action="openCanvasTemplateModal" data-ref="template_dropdown_trigger">
+                                        <span class="material-symbols-rounded">crop_free</span>
+                                        <span class="component-dropdown-text" data-ref="text-template"><?php echo __('lbl_empty_canvas'); ?></span>
+                                        <span class="material-symbols-rounded">dashboard_customize</span>
                                     </div>
                                 </div>
                             </div>
-                            <div data-ref="canvas_template_id" data-value=""></div>
+                            <div class="component-state-value" data-ref="canvas_template_id" data-value=""></div>
                             <hr class="component-divider">
                             <div class="component-group-item component-group-item--stacked">
                         <div class="component-card__content">
@@ -411,37 +401,20 @@ extract($createData);
                     <div class="component-accordion-body">
                         <div class="component-accordion-content">
                             <div class="component-group-item component-group-item--stacked">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('canvas_palette_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('canvas_palette_desc'); ?></p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--start">
-                            <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownPalette">
-                                    <span class="material-symbols-rounded" data-ref="icon-palette">palette</span>
-                                    <span class="component-dropdown-text" data-ref="text-palette"><?php echo __('lbl_loading'); ?></span>
-                                    <span class="material-symbols-rounded">expand_more</span>
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('canvas_palette_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('canvas_palette_desc'); ?></p>
+                                    </div>
                                 </div>
-                                <div class="component-module component-module--dropdown disabled" data-module="dropdownPalette">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
-                                        <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list" data-ref="palette-selector-container">
-                                        </div>
-                                        <?php if (SubscriptionPlanConstants::hasFeature($tier, 'custom_palettes')): ?>
-                                            <div class="component-menu-footer">
-                                                <button type="button" class="component-button component-button--h40 component-button--full" data-action="navigateCustomPalette">
-                                                    <span class="material-symbols-rounded">add_circle</span>
-                                                    <span><?php echo __('btn_create_custom_palette'); ?></span>
-                                                </button>
-                                            </div>
-                                        <?php endif; ?>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-dropdown-trigger" data-action="openCanvasPaletteModal" data-ref="palette_dropdown_trigger">
+                                        <span class="material-symbols-rounded" data-ref="icon-palette">palette</span>
+                                        <span class="component-dropdown-text" data-ref="text-palette"><?php echo __('lbl_loading'); ?></span>
+                                        <span class="material-symbols-rounded">dashboard_customize</span>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
                             <hr class="component-divider">
 
                     <div class="component-group-item <?php echo !$hasLiveChat ? 'disabled-interaction' : ''; ?>" <?php if(!$hasLiveChat) echo 'data-tooltip="' . htmlspecialchars(__('lbl_requires_pro')) . '" data-position="top"'; ?>>

@@ -109,7 +109,6 @@ class PromoCardService {
         this.trackedImpressions = new Set();
         this.trackedVideos = new Set();
         this.initGlobalListeners();
-        this.loadActiveAds();
     }
 
     async ensureLoaded() {

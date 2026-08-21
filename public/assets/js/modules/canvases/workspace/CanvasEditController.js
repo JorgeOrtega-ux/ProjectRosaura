@@ -1,6 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiServices.js';
-import { showMessage, setButtonLoading, restoreButton, getDynamicTierName, getAllPalettes, closeDropdown } from '../../../core/utils/uiUtils.js';
+import { closeDropdown, getAllPalettes, getDynamicTierName, restoreButton, setButtonLoading, showMessage } from '../../../core/utils/uiUtils.js';
 
 
 class CanvasEditController {
@@ -70,9 +70,7 @@ class CanvasEditController {
             this.state.palette_id = textPalette.getAttribute('data-current-palette') || 'default';
         }
 
-
-
-        this.renderPalettes();
+        this.updatePaletteTriggerDisplay();
     }
 
     handleClick(e) {
@@ -110,87 +108,41 @@ class CanvasEditController {
         }
     }
 
-    renderPalettes() {
-        const container = this.container.querySelector('[data-ref="palette-selector-container"]');
-        if (!container) return;
-
+    async openCanvasPaletteModal() {
         const palettes = getAllPalettes();
-        container.innerHTML = '';
-
-        let activePaletteName = window.__('lbl_palette');
-        
         const userTier = window.APP_USER?.subscription_tier ?? 0;
         const canUseCustomPalettes = window.APP_LIMITS && window.APP_LIMITS.custom_palettes === true;
 
-        palettes.forEach(palette => {
-            const isDefault = palette.id === 'default';
-            let fallbackTier = 0;
-            if (!isDefault && window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
-                const paid = [...window.APP_TIERS].filter(t => parseInt(t.tier_level, 10) > 0 && t.is_active !== 0 && t.is_active !== false).sort((a,b) => parseInt(a.tier_level, 10) - parseInt(b.tier_level, 10));
-                if (paid.length > 0) fallbackTier = parseInt(paid[0].tier_level, 10);
-            }
-            const reqTier = palette.tier !== undefined ? palette.tier : (isDefault ? 0 : fallbackTier);
-            const isLocked = isDefault ? false : (palette.id.startsWith('custom_') || palette.is_custom ? !canUseCustomPalettes : (userTier < reqTier));
-
-            const translatedName = window.__ ? window.__(palette.name_key) : palette.id;
-
-            const isActive = this.state.palette_id === palette.id;
-            if (isActive) activePaletteName = translatedName;
-
-            const btn = document.createElement('div');
-            btn.className = `component-menu-link ${isActive ? 'active' : ''} ${isLocked ? 'disabled-interaction' : ''}`;
-            btn.setAttribute('data-action', isLocked ? '' : 'selectPalette');
-            btn.setAttribute('data-palette-id', palette.id);
-            btn.setAttribute('data-palette-name', translatedName);
-            
-            if (isLocked) {
-                btn.classList.add('disabled-interaction');
-                btn.title = window.__('tooltip_upgrade_palette');
-            }
-
-            const tierName = getDynamicTierName(reqTier);
-            const lockHtml = isLocked ? `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ${tierName}</span>` : '';
-
-            btn.innerHTML = `
-                <div class="component-menu-link-icon"><span class="material-symbols-rounded">palette</span></div>
-                <div class="component-menu-link-text">
-                    <span>${translatedName}</span>
-                </div>
-                ${lockHtml}
-            `;
-            container.appendChild(btn);
+        const res = await window.modalSystem.show('selectCanvasPaletteModal', {
+            palettes,
+            selectedPaletteId: this.state.palette_id || 'default',
+            userTier,
+            canUseCustomPalettes
         });
 
-        const triggerWrapper = container.closest('.component-dropdown-wrapper');
-        if (triggerWrapper) {
-            const textRef = triggerWrapper.querySelector('[data-ref="text-palette"]');
-            if (textRef) {
-                textRef.textContent = activePaletteName;
-                textRef.setAttribute('data-current-palette', this.state.palette_id);
-            }
+        if (res && res.confirmed) {
+            const selectedId = res.data?.selected_palette_id || 'default';
+            this.setPalette(selectedId);
         }
     }
 
-    selectPalette(btn) {
-        this.state.palette_id = btn.getAttribute('data-palette-id');
-        const paletteName = btn.getAttribute('data-palette-name');
+    setPalette(paletteId) {
+        this.state.palette_id = paletteId || 'default';
+        this.updatePaletteTriggerDisplay();
+    }
 
-        const menu = btn.closest('.component-menu-list');
-        if (menu) {
-            menu.querySelectorAll('.component-menu-link').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+    updatePaletteTriggerDisplay() {
+        const textRef = this.container?.querySelector('[data-ref="text-palette"]');
+        if (!textRef) return;
+
+        const palettes = getAllPalettes();
+        const pal = palettes.find(p => p.id === this.state.palette_id);
+        if (pal) {
+            textRef.textContent = window.__(pal.name_key);
+        } else {
+            textRef.textContent = this.state.palette_id;
         }
-
-        const dropdownWrapper = btn.closest('.component-dropdown-wrapper');
-        if (dropdownWrapper) {
-            const triggerText = dropdownWrapper.querySelector('[data-ref="text-palette"]');
-            if (triggerText) {
-                triggerText.textContent = paletteName;
-                triggerText.setAttribute('data-current-palette', this.state.palette_id);
-            }
-
-            closeDropdown(dropdownWrapper.querySelector('.component-module--dropdown'));
-        }
+        textRef.setAttribute('data-current-palette', this.state.palette_id);
     }
 
     async loadCanvasData() {

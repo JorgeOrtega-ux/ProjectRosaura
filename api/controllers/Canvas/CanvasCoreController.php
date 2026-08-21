@@ -467,7 +467,14 @@ class CanvasCoreController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
             $userId = $this->session->getActiveAccountId();
-            $uuid   = $input['id'] ?? $input['uuid'] ?? null;
+
+            $canvasIds = $input['canvas_ids'] ?? [];
+            if (!empty($canvasIds) && is_array($canvasIds)) {
+                $result = $this->canvasServices->restoreUserCanvases($userId, $canvasIds);
+                return $this->respond($result);
+            }
+
+            $uuid = $input['id'] ?? $input['uuid'] ?? null;
             if (!$uuid) {
                 return $this->respond(['success' => false, 'message' => __('err_invalid_canvas_id')]);
             }
@@ -484,7 +491,8 @@ class CanvasCoreController extends BaseController {
                 return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
             }
             $userId = $this->session->getActiveAccountId();
-            $password   = $input['password'] ?? '';
+
+            $password = $input['password'] ?? '';
             $credential = $input['credential'] ?? $input['google_token'] ?? null;
             if (empty(trim($password)) && empty($credential)) {
                 return $this->respond(['success' => false, 'message' => __('err_password_required')]);
@@ -493,7 +501,7 @@ class CanvasCoreController extends BaseController {
             $uuid      = $input['id'] ?? $input['uuid'] ?? null;
             $canvasIds = $input['canvas_ids'] ?? [];
 
-            if ($uuid && is_string($uuid) && empty($canvasIds)) {
+            if ($uuid && is_string($uuid) && empty($input['canvas_ids'])) {
                 $result = $this->canvasServices->permanentDeleteCanvas($userId, $uuid, $password, $credential);
                 return $this->respond($result);
             }

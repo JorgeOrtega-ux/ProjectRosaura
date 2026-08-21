@@ -424,6 +424,12 @@ class DesignController {
             window.removeEventListener('pagehide', this.handleBeforeUnloadBound);
         }
 
+        if (this.isOfflineMode && this._offlineDirty && typeof this.saveOfflineCanvasState === 'function') {
+            try {
+                this.saveOfflineCanvasState(true);
+            } catch (e) {}
+        }
+
         if (this._offlineSaveTimeout) {
             clearTimeout(this._offlineSaveTimeout);
             this._offlineSaveTimeout = null;

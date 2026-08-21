@@ -1437,9 +1437,9 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function getUserTemplates(int $userId): array {
-        $sql = "SELECT id, user_id, file_path, created_at 
+        $sql = "SELECT id, user_id, file_path, file_size, created_at 
                 FROM " . DB::TBL_USER_TEMPLATES . " 
-                WHERE user_id = :user_id 
+                WHERE user_id = :user_id AND deleted_at IS NULL
                 ORDER BY created_at DESC";
         
         $stmt = $this->db->prepare($sql);
@@ -1692,6 +1692,62 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return $success && $stmt->rowCount() > 0;
     }
 
+    public function restoreCanvases(array $canvasIds, int $userId): array {
+        if (empty($canvasIds)) return ['restored_ids' => [], 'count' => 0];
+
+        $sanitizedIds = array_values(array_filter(array_map('intval', $canvasIds), function($id) { return $id > 0; }));
+        if (empty($sanitizedIds)) return ['restored_ids' => [], 'count' => 0];
+
+        $placeholders = implode(',', array_fill(0, count($sanitizedIds), '?'));
+        
+        // Obtenemos los lienzos antes o durante para invalidar cachés
+        $selectSql = "SELECT id, uuid, name, privacy, is_online_active, created_at FROM " . DB::TBL_CANVASES . " WHERE id IN ($placeholders) AND owner_id = ? AND deleted_at IS NOT NULL";
+        $selectStmt = $this->db->prepare($selectSql);
+        $selectStmt->execute(array_merge($sanitizedIds, [$userId]));
+        $canvasesToRestore = $selectStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        if (empty($canvasesToRestore)) {
+            return ['restored_ids' => [], 'count' => 0];
+        }
+
+        $restoredIds = array_column($canvasesToRestore, 'id');
+        $restorePlaceholders = implode(',', array_fill(0, count($restoredIds), '?'));
+
+        $updateSql = "UPDATE " . DB::TBL_CANVASES . " SET deleted_at = NULL, deleted_by_user_id = NULL WHERE id IN ($restorePlaceholders) AND owner_id = ? AND deleted_at IS NOT NULL";
+        $updateStmt = $this->db->prepare($updateSql);
+        $updateStmt->execute(array_merge($restoredIds, [$userId]));
+
+        $this->invalidateUserCanvasListCaches($userId);
+
+        $client = null;
+        try {
+            $client = $this->typesenseManager->getClient();
+        } catch (\Throwable $e) {}
+
+        foreach ($canvasesToRestore as $c) {
+            $this->invalidateCanvasCache((int)$c['id']);
+            if (($c['privacy'] ?? '') === 'public' && !empty($c['is_online_active']) && $client) {
+                try {
+                    $client->collections['canvases']->documents->upsert([
+                        'id'         => (string)$c['id'],
+                        'uuid'       => $c['uuid'],
+                        'name'       => $c['name'],
+                        'owner_id'   => (int)$userId,
+                        'privacy'    => $c['privacy'],
+                        'created_at' => strtotime($c['created_at'])
+                    ]);
+                } catch (\Throwable $te) {
+                    Logger::error("Typesense Batch Restore Error (Canvas ID {$c['id']}): " . $te->getMessage());
+                }
+            }
+        }
+
+        return [
+            'restored_ids' => $restoredIds,
+            'count' => count($restoredIds)
+        ];
+    }
+
     public function permanentDeleteCanvas(string $uuid, int $userId): bool {
         $canvas = $this->getCanvasByUuid($uuid);
         if (!$canvas || (int)$canvas['owner_id'] !== $userId || $canvas['deleted_at'] === null) {
@@ -1728,6 +1784,187 @@ class CanvasRepository implements CanvasRepositoryInterface {
     public function getExpiredTrashCanvases(int $daysOld = 30): array {
         $sql = "SELECT id, uuid, owner_id, name, storage_bytes
                 FROM " . DB::TBL_CANVASES . "
+                WHERE deleted_at IS NOT NULL AND deleted_at <= NOW() - INTERVAL :days DAY
+                ORDER BY deleted_at ASC
+                LIMIT 500";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':days', $daysOld, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    // =========================================================================
+    // PAPELERA DE RECICLAJE - PLANTILLAS
+    // =========================================================================
+
+    public function softDeleteTemplate(int $templateId, int $userId): bool {
+        $sql = "UPDATE " . DB::TBL_USER_TEMPLATES . " 
+                SET deleted_at = NOW() 
+                WHERE id = :id AND user_id = :user_id AND deleted_at IS NULL";
+        $stmt = $this->db->prepare($sql);
+        $result = $stmt->execute([':id' => $templateId, ':user_id' => $userId]);
+        return $result && $stmt->rowCount() > 0;
+    }
+
+    public function softDeleteTemplates(array $templateIds, int $userId): bool {
+        if (empty($templateIds)) return false;
+        $placeholders = implode(',', array_fill(0, count($templateIds), '?'));
+        $sql = "UPDATE " . DB::TBL_USER_TEMPLATES . " 
+                SET deleted_at = NOW() 
+                WHERE id IN ($placeholders) AND user_id = ? AND deleted_at IS NULL";
+        $stmt = $this->db->prepare($sql);
+        $params = array_merge(array_map('intval', $templateIds), [$userId]);
+        $result = $stmt->execute($params);
+        return $result && $stmt->rowCount() > 0;
+    }
+
+    public function restoreTemplate(int $templateId, int $userId): bool {
+        $sql = "UPDATE " . DB::TBL_USER_TEMPLATES . " 
+                SET deleted_at = NULL 
+                WHERE id = :id AND user_id = :user_id AND deleted_at IS NOT NULL";
+        $stmt = $this->db->prepare($sql);
+        $result = $stmt->execute([':id' => $templateId, ':user_id' => $userId]);
+        return $result && $stmt->rowCount() > 0;
+    }
+
+    public function restoreTemplates(array $templateIds, int $userId): bool {
+        if (empty($templateIds)) return false;
+        $placeholders = implode(',', array_fill(0, count($templateIds), '?'));
+        $sql = "UPDATE " . DB::TBL_USER_TEMPLATES . " 
+                SET deleted_at = NULL 
+                WHERE id IN ($placeholders) AND user_id = ? AND deleted_at IS NOT NULL";
+        $stmt = $this->db->prepare($sql);
+        $params = array_merge(array_map('intval', $templateIds), [$userId]);
+        $result = $stmt->execute($params);
+        return $result && $stmt->rowCount() > 0;
+    }
+
+    public function permanentDeleteTemplate(int $templateId, int $userId): ?array {
+        $stmt = $this->db->prepare("SELECT id, user_id, file_path, file_size, created_at, deleted_at 
+                                    FROM " . DB::TBL_USER_TEMPLATES . " 
+                                    WHERE id = :id AND user_id = :user_id AND deleted_at IS NOT NULL LIMIT 1");
+        $stmt->execute([':id' => $templateId, ':user_id' => $userId]);
+        $template = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$template) {
+            return null;
+        }
+
+        $sql = "DELETE FROM " . DB::TBL_USER_TEMPLATES . " WHERE id = :id AND user_id = :user_id AND deleted_at IS NOT NULL";
+        $stmtDel = $this->db->prepare($sql);
+        $result = $stmtDel->execute([':id' => $templateId, ':user_id' => $userId]);
+
+        if ($result && $stmtDel->rowCount() > 0) {
+            $fileSize = (int)($template['file_size'] ?? 0);
+            if ($fileSize > 0) {
+                try {
+                    $identityDb = (new DatabaseManager())->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+                    $stmtUpd = $identityDb->prepare("UPDATE users SET storage_used_bytes = GREATEST(0, storage_used_bytes - ?) WHERE id = ?");
+                    $stmtUpd->execute([$fileSize, $userId]);
+                    $this->cacheInvalidator->userStorage($userId);
+                } catch (\Throwable $e) {
+                    Logger::error("permanentDeleteTemplate: failed to update storage", ['user_id' => $userId, 'error' => $e->getMessage()]);
+                }
+            }
+            return $template;
+        }
+
+        return null;
+    }
+
+    public function permanentDeleteTemplates(array $templateIds, int $userId): array {
+        if (empty($templateIds)) return [];
+        $ids = array_map('intval', $templateIds);
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+        $stmt = $this->db->prepare("SELECT id, user_id, file_path, file_size, created_at, deleted_at 
+                                    FROM " . DB::TBL_USER_TEMPLATES . " 
+                                    WHERE id IN ($placeholders) AND user_id = ? AND deleted_at IS NOT NULL");
+        $stmt->execute(array_merge($ids, [$userId]));
+        $templates = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        if (empty($templates)) {
+            return [];
+        }
+
+        $foundIds = array_column($templates, 'id');
+        $foundPlaceholders = implode(',', array_fill(0, count($foundIds), '?'));
+        $sql = "DELETE FROM " . DB::TBL_USER_TEMPLATES . " WHERE id IN ($foundPlaceholders) AND user_id = ? AND deleted_at IS NOT NULL";
+        $stmtDel = $this->db->prepare($sql);
+        $result = $stmtDel->execute(array_merge($foundIds, [$userId]));
+
+        if ($result && $stmtDel->rowCount() > 0) {
+            $totalBytes = 0;
+            foreach ($templates as $t) {
+                $totalBytes += (int)($t['file_size'] ?? 0);
+            }
+            if ($totalBytes > 0) {
+                try {
+                    $identityDb = (new DatabaseManager())->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+                    $stmtUpd = $identityDb->prepare("UPDATE users SET storage_used_bytes = GREATEST(0, storage_used_bytes - ?) WHERE id = ?");
+                    $stmtUpd->execute([$totalBytes, $userId]);
+                    $this->cacheInvalidator->userStorage($userId);
+                } catch (\Throwable $e) {
+                    Logger::error("permanentDeleteTemplates: failed to update storage", ['user_id' => $userId, 'error' => $e->getMessage()]);
+                }
+            }
+            return $templates;
+        }
+
+        return [];
+    }
+
+    public function getTrashTemplates(int $userId, ?string $searchQuery = '', int $limit = 50, int $offset = 0): array {
+        $whereConditions = ["user_id = :uid", "deleted_at IS NOT NULL"];
+        $params = [':uid' => $userId];
+
+        $searchQuery = trim($searchQuery ?? '');
+        if ($searchQuery !== '') {
+            $whereConditions[] = "file_path LIKE :q";
+            $params[':q'] = '%' . $searchQuery . '%';
+        }
+
+        $whereClause = "WHERE " . implode(" AND ", $whereConditions);
+        $sql = "SELECT id, user_id, file_path, file_size, created_at, deleted_at
+                FROM " . DB::TBL_USER_TEMPLATES . "
+                {$whereClause}
+                ORDER BY deleted_at DESC
+                LIMIT :limit OFFSET :offset";
+
+        $stmt = $this->db->prepare($sql);
+        foreach ($params as $k => $v) {
+            $stmt->bindValue($k, $v);
+        }
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function countTrashTemplates(int $userId, ?string $searchQuery = ''): int {
+        $whereConditions = ["user_id = :uid", "deleted_at IS NOT NULL"];
+        $params = [':uid' => $userId];
+
+        $searchQuery = trim($searchQuery ?? '');
+        if ($searchQuery !== '') {
+            $whereConditions[] = "file_path LIKE :q";
+            $params[':q'] = '%' . $searchQuery . '%';
+        }
+
+        $whereClause = "WHERE " . implode(" AND ", $whereConditions);
+        $sql = "SELECT COUNT(*) FROM " . DB::TBL_USER_TEMPLATES . " {$whereClause}";
+        $stmt = $this->db->prepare($sql);
+        foreach ($params as $k => $v) {
+            $stmt->bindValue($k, $v);
+        }
+        $stmt->execute();
+
+        return (int)$stmt->fetchColumn();
+    }
+
+    public function getExpiredTrashTemplates(int $daysOld = 30): array {
+        $sql = "SELECT id, user_id, file_path, file_size, deleted_at
+                FROM " . DB::TBL_USER_TEMPLATES . "
                 WHERE deleted_at IS NOT NULL AND deleted_at <= NOW() - INTERVAL :days DAY
                 ORDER BY deleted_at ASC
                 LIMIT 500";

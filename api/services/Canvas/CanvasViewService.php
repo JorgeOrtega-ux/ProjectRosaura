@@ -1596,7 +1596,7 @@ class CanvasViewService {
         ];
     }
 
-    public function getTrashData(?string $searchQuery = '', array $sizeFilter = [], array $privacyFilter = [], int $page = 1): array {
+    public function getTrashData(?string $searchQuery = '', array $typeFilter = [], array $sizeFilter = [], array $privacyFilter = [], int $page = 1): array {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
@@ -1605,12 +1605,13 @@ class CanvasViewService {
         if (!$userId) {
             return [
                 'unauthorized' => true,
-                'canvases' => [],
+                'items' => [],
                 'totalItems' => 0,
                 'totalPages' => 0,
                 'page' => 1,
                 'allSizes' => Utils::getCanvasSizes(),
                 'searchQuery' => '',
+                'typeFilter' => [],
                 'sizeFilter' => [],
                 'privacyFilter' => []
             ];
@@ -1623,102 +1624,146 @@ class CanvasViewService {
         $connName = defined('\App\Core\System\DatabaseConstants::CONN_CANVASES') ? \App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases';
         $pdo = $db->getConnection($connName);
         $tblCanvases = defined('\App\Core\System\DatabaseConstants::TBL_CANVASES') ? \App\Core\System\DatabaseConstants::TBL_CANVASES : 'canvases';
-
-        $whereConditions = ["c.owner_id = :uid", "c.deleted_at IS NOT NULL"];
-        $params = [':uid' => (int)$userId];
+        $tblUserTemplates = defined('\App\Core\System\DatabaseConstants::TBL_USER_TEMPLATES') ? \App\Core\System\DatabaseConstants::TBL_USER_TEMPLATES : 'user_templates';
 
         $searchQuery = trim($searchQuery ?? '');
-        if ($searchQuery !== '') {
-            $whereConditions[] = "(c.name LIKE :q1 OR c.uuid LIKE :q2)";
-            $qVal = '%' . $searchQuery . '%';
-            $params[':q1'] = $qVal;
-            $params[':q2'] = $qVal;
+        $allowedTypes = ['canvas', 'template'];
+        $validTypes = !empty($typeFilter) ? array_values(array_intersect($typeFilter, $allowedTypes)) : $allowedTypes;
+        if (empty($validTypes)) {
+            $validTypes = $allowedTypes;
         }
 
-        if (!empty($privacyFilter)) {
-            $allowedPrivacy = ['public', 'private'];
-            $validPrivacy = array_values(array_intersect($privacyFilter, $allowedPrivacy));
-            if (!empty($validPrivacy)) {
-                $placeholders = [];
-                foreach ($validPrivacy as $idx => $priv) {
-                    $pKey = ':priv_' . $idx;
-                    $placeholders[] = $pKey;
-                    $params[$pKey] = $priv;
-                }
-                $whereConditions[] = "c.privacy IN (" . implode(', ', $placeholders) . ")";
+        $includeCanvases = in_array('canvas', $validTypes);
+        $includeTemplates = in_array('template', $validTypes);
+
+        // Si se especifican filtros específicos de lienzos (tamaño o privacidad), omitimos plantillas
+        if (!empty($sizeFilter) || !empty($privacyFilter)) {
+            $includeTemplates = false;
+        }
+
+        $subQueries = [];
+        $params = [];
+
+        if ($includeCanvases) {
+            $cWhere = ["c.owner_id = :uid_c", "c.deleted_at IS NOT NULL"];
+            $params[':uid_c'] = (int)$userId;
+
+            if ($searchQuery !== '') {
+                $cWhere[] = "(c.name LIKE :q_c1 OR c.uuid LIKE :q_c2)";
+                $params[':q_c1'] = '%' . $searchQuery . '%';
+                $params[':q_c2'] = '%' . $searchQuery . '%';
             }
-        }
 
-        if (!empty($sizeFilter)) {
-            $validSizes = array_values(array_filter($sizeFilter, function($s) {
-                return is_string($s) && preg_match('/^[0-9]+(x[0-9]+)?$/', $s);
-            }));
-            if (!empty($validSizes)) {
-                $sizePlaceholders = [];
-                foreach ($validSizes as $idx => $sz) {
-                    $sKey = ':size_' . $idx;
-                    $sizePlaceholders[] = $sKey;
-                    $params[$sKey] = $sz;
+            if (!empty($privacyFilter)) {
+                $allowedPrivacy = ['public', 'private'];
+                $validPrivacy = array_values(array_intersect($privacyFilter, $allowedPrivacy));
+                if (!empty($validPrivacy)) {
+                    $placeholders = [];
+                    foreach ($validPrivacy as $idx => $priv) {
+                        $pKey = ':priv_' . $idx;
+                        $placeholders[] = $pKey;
+                        $params[$pKey] = $priv;
+                    }
+                    $cWhere[] = "c.privacy IN (" . implode(', ', $placeholders) . ")";
                 }
-                $whereConditions[] = "c.size IN (" . implode(', ', $sizePlaceholders) . ")";
             }
+
+            if (!empty($sizeFilter)) {
+                $validSizes = array_values(array_filter($sizeFilter, function($s) {
+                    return is_string($s) && preg_match('/^[0-9]+(x[0-9]+)?$/', $s);
+                }));
+                if (!empty($validSizes)) {
+                    $sizePlaceholders = [];
+                    foreach ($validSizes as $idx => $sz) {
+                        $sKey = ':size_' . $idx;
+                        $sizePlaceholders[] = $sKey;
+                        $params[$sKey] = $sz;
+                    }
+                    $cWhere[] = "c.size IN (" . implode(', ', $sizePlaceholders) . ")";
+                }
+            }
+
+            $cWhereSql = implode(" AND ", $cWhere);
+            $subQueries[] = "SELECT c.id AS id, c.uuid AS uuid, 'canvas' AS item_type, c.name AS name, c.size AS size, c.privacy AS privacy, c.storage_bytes AS storage_bytes, NULL AS file_path, c.created_at AS created_at, c.deleted_at AS deleted_at FROM {$tblCanvases} c WHERE {$cWhereSql}";
         }
 
-        $whereClause = "WHERE " . implode(" AND ", $whereConditions);
+        if ($includeTemplates) {
+            $tWhere = ["t.user_id = :uid_t", "t.deleted_at IS NOT NULL"];
+            $params[':uid_t'] = (int)$userId;
+
+            if ($searchQuery !== '') {
+                $tWhere[] = "t.file_path LIKE :q_t";
+                $params[':q_t'] = '%' . $searchQuery . '%';
+            }
+
+            $tWhereSql = implode(" AND ", $tWhere);
+            $subQueries[] = "SELECT t.id AS id, NULL AS uuid, 'template' AS item_type, t.file_path AS name, NULL AS size, NULL AS privacy, t.file_size AS storage_bytes, t.file_path AS file_path, t.created_at AS created_at, t.deleted_at AS deleted_at FROM {$tblUserTemplates} t WHERE {$tWhereSql}";
+        }
 
         $totalItems = 0;
-        try {
-            $sqlCount = "SELECT COUNT(c.id) FROM {$tblCanvases} c {$whereClause}";
-            $stmtCount = $pdo->prepare($sqlCount);
-            foreach ($params as $k => $v) {
-                $stmtCount->bindValue($k, $v);
-            }
-            $stmtCount->execute();
-            $totalItems = (int)$stmtCount->fetchColumn();
-        } catch (\Throwable $e) {
-            Logger::error("getTrashData count query error: " . $e->getMessage(), ['exception' => $e]);
-        }
+        $items = [];
+        $totalPages = 1;
 
-        $totalPages = (int)ceil($totalItems / $limit);
-        if ($totalPages < 1) $totalPages = 1;
-        if ($currentPage > $totalPages) $currentPage = $totalPages;
-        $offset = ($currentPage - 1) * $limit;
+        if (!empty($subQueries)) {
+            $unionSql = implode(" UNION ALL ", array_map(function($q) { return "({$q})"; }, $subQueries));
 
-        $canvases = [];
-        try {
-            $sqlSelect = "SELECT c.id, c.uuid, c.name, c.privacy, c.size, c.storage_bytes, c.created_at, c.deleted_at 
-                          FROM {$tblCanvases} c 
-                          {$whereClause} 
-                          ORDER BY c.deleted_at DESC 
-                          LIMIT $limit OFFSET $offset";
-            $stmtSelect = $pdo->prepare($sqlSelect);
-            foreach ($params as $k => $v) {
-                $stmtSelect->bindValue($k, $v);
+            try {
+                $sqlCount = "SELECT COUNT(*) FROM ({$unionSql}) AS combined_items";
+                $stmtCount = $pdo->prepare($sqlCount);
+                foreach ($params as $k => $v) {
+                    $stmtCount->bindValue($k, $v);
+                }
+                $stmtCount->execute();
+                $totalItems = (int)$stmtCount->fetchColumn();
+            } catch (\Throwable $e) {
+                Logger::error("getTrashData combined count query error: " . $e->getMessage(), ['exception' => $e]);
             }
-            $stmtSelect->execute();
-            $canvases = $stmtSelect->fetchAll(\PDO::FETCH_ASSOC) ?: [];
-        } catch (\Throwable $e) {
-            Logger::error("getTrashData select query error: " . $e->getMessage(), ['exception' => $e]);
+
+            $totalPages = (int)ceil($totalItems / $limit);
+            if ($totalPages < 1) $totalPages = 1;
+            if ($currentPage > $totalPages) $currentPage = $totalPages;
+            $offset = ($currentPage - 1) * $limit;
+
+            try {
+                $sqlSelect = "SELECT * FROM ({$unionSql}) AS combined_items ORDER BY deleted_at DESC LIMIT $limit OFFSET $offset";
+                $stmtSelect = $pdo->prepare($sqlSelect);
+                foreach ($params as $k => $v) {
+                    $stmtSelect->bindValue($k, $v);
+                }
+                $stmtSelect->execute();
+                $items = $stmtSelect->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+            } catch (\Throwable $e) {
+                Logger::error("getTrashData combined select query error: " . $e->getMessage(), ['exception' => $e]);
+            }
         }
 
         $retentionDays = 30;
         $now = new \DateTime();
-        foreach ($canvases as &$c) {
-            $deletedAt = new \DateTime($c['deleted_at']);
+        foreach ($items as &$item) {
+            $deletedAt = new \DateTime($item['deleted_at']);
             $expiresAt = (clone $deletedAt)->modify("+{$retentionDays} days");
-            $c['days_left'] = max(0, (int)$now->diff($expiresAt)->days);
-            $c['thumbnail_url'] = Utils::getS3PublicUrl("thumbnails/canvas_" . $c['uuid'] . ".webp");
+            $item['days_left'] = max(0, (int)$now->diff($expiresAt)->days);
+
+            if ($item['item_type'] === 'canvas') {
+                $item['thumbnail_url'] = Utils::getS3PublicUrl("thumbnails/canvas_" . $item['uuid'] . ".webp");
+            } else {
+                $item['thumbnail_url'] = Utils::getS3PublicUrl($item['file_path']);
+                $item['formatted_size'] = Utils::formatBytes((int)($item['storage_bytes'] ?? 0));
+                $filename = basename($item['file_path']);
+                $item['name'] = !empty($filename) ? $filename : ('Plantilla #' . $item['id']);
+            }
         }
-        unset($c);
+        unset($item);
 
         return [
             'unauthorized' => false,
-            'canvases' => $canvases,
+            'items' => $items,
             'totalItems' => $totalItems,
             'totalPages' => $totalPages,
             'page' => $currentPage,
             'allSizes' => Utils::getCanvasSizes(),
             'searchQuery' => $searchQuery,
+            'typeFilter' => $validTypes,
             'sizeFilter' => $sizeFilter,
             'privacyFilter' => $privacyFilter
         ];
