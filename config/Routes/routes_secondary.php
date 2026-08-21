@@ -308,6 +308,51 @@ return [
             ],
         ],
     ],
+    'canvases.get_trash' => [
+        'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasCoreController',
+        'action' => 'get_trash',
+        'middleware' => [
+            [
+                'type' => 'RateLimit',
+                'key' => 'canvas_get_trash',
+                'max' => 30,
+                'time' => 60,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'canvases.restore' => [
+        'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasCoreController',
+        'action' => 'restore',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'canvas_restore',
+                'max' => 20,
+                'time' => 60,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
+    'canvases.permanent_delete' => [
+        'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasCoreController',
+        'action' => 'permanent_delete',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'canvas_perm_delete',
+                'max' => 10,
+                'time' => 60,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
     'canvases.downgrade' => [
         'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasCoreController',
         'action' => 'downgrade',

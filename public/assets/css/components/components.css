@@ -1732,10 +1732,7 @@ html.dark-theme .component-avatar__overlay {
     position: absolute;
     top: 16px;
     left: 16px;
-    pointer-events: none;
-    box-shadow: var(--shadow-card);
-    background-color: var(--bg-surface);
-    font-family: var(--sl-font-mono);
+    z-index: 10;
 }
 
 .component-module {
@@ -4367,7 +4364,8 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     border-radius: inherit;
 }
 
-.component-gallery-card:hover {
+.component-gallery-card:hover,
+.component-gallery-card.selected {
     outline: 2px solid var(--text-primary, #000000);
     outline-offset: 2px;
 }
@@ -4542,6 +4540,7 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
 }
 
 .component-gallery-card:hover .component-gallery-actions-wrapper,
+.component-gallery-card.selected .component-gallery-actions-wrapper,
 .component-gallery-actions-wrapper:has(.component-module.active) {
     opacity: 1;
     visibility: visible;

@@ -78,8 +78,10 @@ export const RouteModulesMap = {
     '/admin/logs': { path: './modules/admin/logs/AdminLogsController.js', className: 'AdminLogsController', requiresAdminLang: true, skeletonType: 'layout-table' },
     '/admin/logs/viewer': { path: './modules/admin/logs/AdminLogsViewerController.js', className: 'AdminLogsViewerController', requiresAdminLang: true, skeletonType: 'layout-basic' },
 
-    '/canvases/create': { path: './modules/canvases/core/CanvasesCreateController.js', className: 'CanvasesCreateController', skeletonType: 'layout-basic' },
+    '/trash': { path: './modules/canvases/core/CanvasesTrashController.js', className: 'CanvasesTrashController', skeletonType: 'layout-grid' },
+    '/canvases/create': { path: './modules/canvases/core/CanvasesCreateController.js', className: 'CanvasesCreateController', skeletonType: 'layout-table' },
     '/canvases/manage': { path: './modules/canvases/core/CanvasesManageController.js', className: 'CanvasesManageController', skeletonType: 'layout-table' },
+    '/canvases/trash': { path: './modules/canvases/core/CanvasesTrashController.js', className: 'CanvasesTrashController', skeletonType: 'layout-grid' },
 
 
     

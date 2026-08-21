@@ -41,7 +41,7 @@ class CanvasCoreService {
     public function validateCanvasAccess(?int $userId, int $canvasId): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
-            if (!$canvas) {
+            if (!$canvas || !empty($canvas['deleted_at'])) {
                 return ['success' => false, 'message' => __('err_canvas_not_found'), 'http_code' => \App\Core\System\HttpConstants::NOT_FOUND];
             }
 
@@ -322,7 +322,7 @@ class CanvasCoreService {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             
-            if (!$canvas) {
+            if (!$canvas || !empty($canvas['deleted_at'])) {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
             }
 
@@ -1029,23 +1029,17 @@ class CanvasCoreService {
             if (!$canvas) {
                 return ['success' => false, 'message' => __('err_canvas_not_found')];
             }
-            
+
             $isOwner = ($canvas['owner_id'] == $userId);
             if (!$isOwner) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
 
-            $storageBytes = (int)($canvas['storage_bytes'] ?? 0);
+            // Soft-delete: mover a la papelera (no liberar storage aún)
             $deleted = $this->canvasRepository->deleteCanvasByUuid($uuid);
 
             if ($deleted) {
-                // S3 deletion of thumbnail skipped
-                if ($storageBytes > 0 && !empty($canvas['owner_id'])) {
-                    try {
-                        $this->userRepository->updateStorageUsed((int)$canvas['owner_id'], -$storageBytes);
-                    } catch (Exception $e) {}
-                }
-
+                // Limpiar caché de Redis del canvas
                 try {
                     if (class_exists(RedisCache::class)) {
                         $redisInstance = new RedisCache();
@@ -1070,7 +1064,7 @@ class CanvasCoreService {
                     }
                 }
 
-                return ['success' => true, 'message' => __('msg_canvas_deleted')];
+                return ['success' => true, 'message' => __('msg_canvas_trashed')];
             }
 
             return ['success' => false, 'message' => __('err_canvas_delete_failed')];
@@ -1093,24 +1087,11 @@ class CanvasCoreService {
                 return ['success' => false, 'message' => !empty($credential) ? __('auth.google_verification_failed') : __('err_invalid_password')];
             }
 
-            $totalBytesToDeduct = 0;
-            foreach ($canvasIds as $cid) {
-                $c = $this->canvasRepository->getById((int)$cid);
-                if ($c && (int)$c['owner_id'] === $userId) {
-                    $totalBytesToDeduct += (int)($c['storage_bytes'] ?? 0);
-                }
-            }
-
+            // Soft-delete: mover a papelera (no liberar storage aún)
             $deleted = $this->canvasRepository->deleteCanvases($canvasIds, $userId);
 
             if ($deleted) {
-                // S3 deletion of thumbnail skipped
-                if ($totalBytesToDeduct > 0) {
-                    try {
-                        $this->userRepository->updateStorageUsed($userId, -$totalBytesToDeduct);
-                    } catch (Exception $e) {}
-                }
-
+                // Limpiar caché de Redis para cada canvas
                 try {
                     if (class_exists(RedisCache::class)) {
                         $redisInstance = new RedisCache();
@@ -1126,7 +1107,7 @@ class CanvasCoreService {
                     }
                 } catch (Exception $e) {}
 
-                return ['success' => true, 'message' => __('msg_canvases_deleted')];
+                return ['success' => true, 'message' => __('msg_canvases_trashed')];
             }
 
             return ['success' => false, 'message' => __('err_canvases_delete_failed')];
@@ -1678,6 +1659,173 @@ LUA;
             return ['success' => true, 'message' => __('msg_state_saved') ?: 'Estado guardado con éxito.'];
         } catch (Exception $e) {
             Logger::error('Error saving offline state.', ['canvas_id' => $canvasId, 'user_id' => $userId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    // =========================================================================
+    // PAPELERA DE RECICLAJE
+    // =========================================================================
+
+    public function getTrash(?int $userId, int $limit = 50, int $offset = 0): array {
+        if (!$userId) return ['success' => false, 'message' => __('err_unauthorized')];
+        try {
+            $canvases = $this->canvasRepository->getTrashCanvases($userId, $limit, $offset);
+            $total = $this->canvasRepository->countTrashCanvases($userId);
+            $retentionDays = 30;
+            $now = new DateTime();
+
+            $formatted = array_map(function($canvas) use ($now, $retentionDays) {
+                $deletedAt = new DateTime($canvas['deleted_at']);
+                $expiresAt = (clone $deletedAt)->modify("+{$retentionDays} days");
+                $daysLeft = max(0, (int)$now->diff($expiresAt)->days);
+                return [
+                    'id'           => $canvas['id'],
+                    'uuid'         => $canvas['uuid'],
+                    'name'         => $canvas['name'],
+                    'privacy'      => $canvas['privacy'],
+                    'size'         => $canvas['size'],
+                    'storage_bytes'=> (int)($canvas['storage_bytes'] ?? 0),
+                    'created_at'   => $canvas['created_at'],
+                    'deleted_at'   => $canvas['deleted_at'],
+                    'days_left'    => $daysLeft,
+                ];
+            }, $canvases);
+
+            return ['success' => true, 'data' => $formatted, 'total' => $total];
+        } catch (Exception $e) {
+            Logger::error('Error getting trash canvases.', ['user_id' => $userId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function restoreCanvas(?int $userId, string $uuid): array {
+        if (!$userId) return ['success' => false, 'message' => __('err_unauthorized')];
+        try {
+            $restored = $this->canvasRepository->restoreCanvas($uuid, $userId);
+            if ($restored) {
+                // Re-evaluar locks de suscripción
+                try {
+                    $dbManager = new DatabaseManager();
+                    $redisCache = new RedisCache();
+                    $lockManager = new CanvasLockManager($this->canvasRepository, $this->userRepository, $dbManager, $redisCache);
+                    $lockManager->evaluateUserCanvases($userId);
+                } catch (Exception $e) {
+                    Logger::error('Error evaluating canvases on restore.', ['error' => $e->getMessage()]);
+                }
+                return ['success' => true, 'message' => __('msg_canvas_restored')];
+            }
+            return ['success' => false, 'message' => __('err_canvas_restore_failed')];
+        } catch (Exception $e) {
+            Logger::error('Error restoring canvas.', ['user_id' => $userId, 'uuid' => $uuid, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function permanentDeleteCanvas(?int $userId, string $uuid, string $password = '', ?string $credential = null): array {
+        if (!$userId) return ['success' => false, 'message' => __('err_unauthorized')];
+        try {
+            $user = $this->userRepository->findById($userId);
+            if (!$user) return ['success' => false, 'message' => __('err_unauthorized')];
+
+            if (!\App\Core\Helpers\Utils::verifyUserIdentity($user, ['password' => $password, 'credential' => $credential])) {
+                return ['success' => false, 'message' => !empty($credential) ? __('auth.google_verification_failed') : __('err_invalid_password')];
+            }
+
+            $canvas = $this->canvasRepository->getCanvasByUuid($uuid);
+            if (!$canvas || $canvas['deleted_at'] === null) {
+                return ['success' => false, 'message' => __('err_canvas_not_found')];
+            }
+            if ((int)$canvas['owner_id'] !== $userId) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
+            }
+
+            $storageBytes = (int)($canvas['storage_bytes'] ?? 0);
+            $deleted = $this->canvasRepository->permanentDeleteCanvas($uuid, $userId);
+
+            if ($deleted) {
+                // Liberar storage ahora sí (borrado definitivo)
+                if ($storageBytes > 0) {
+                    try { $this->userRepository->updateStorageUsed($userId, -$storageBytes); } catch (Exception $e) {}
+                }
+                // Limpiar Redis
+                try {
+                    if (class_exists(RedisCache::class)) {
+                        $redisInstance = new RedisCache();
+                        $redis = $redisInstance->getClient();
+                        if ($redis) {
+                            $redis->del("canvas:{$canvas['id']}:state");
+                            $redis->del("canvas:{$canvas['id']}:config");
+                            $redis->del(CacheConstants::PREFIX_CANVAS_NEXT_RESET . $canvas['id']);
+                            $redis->del(CacheConstants::PREFIX_CANVAS_NEXT_RESIZE . $canvas['id']);
+                        }
+                    }
+                } catch (Exception $e) {}
+                // Re-evaluar locks
+                try {
+                    $dbManager = new DatabaseManager();
+                    $redisCache = new RedisCache();
+                    $lockManager = new CanvasLockManager($this->canvasRepository, $this->userRepository, $dbManager, $redisCache);
+                    $lockManager->evaluateUserCanvases($userId);
+                } catch (Exception $e) {}
+
+                return ['success' => true, 'message' => __('msg_canvas_permanent_deleted')];
+            }
+            return ['success' => false, 'message' => __('err_canvas_permanent_delete_failed')];
+        } catch (Exception $e) {
+            Logger::error('Error permanently deleting canvas.', ['user_id' => $userId, 'uuid' => $uuid, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => __('err_database')];
+        }
+    }
+
+    public function permanentDeleteUserCanvases(?int $userId, array $canvasIds, string $password = '', ?string $credential = null): array {
+        if (!$userId) return ['success' => false, 'message' => __('err_unauthorized')];
+        try {
+            if (empty($canvasIds)) return ['success' => false, 'message' => __('err_no_canvases_selected')];
+
+            $user = $this->userRepository->findById($userId);
+            if (!$user) return ['success' => false, 'message' => __('err_unauthorized')];
+
+            if (!\App\Core\Helpers\Utils::verifyUserIdentity($user, ['password' => $password, 'credential' => $credential])) {
+                return ['success' => false, 'message' => !empty($credential) ? __('auth.google_verification_failed') : __('err_invalid_password')];
+            }
+
+            // Calcular storage a liberar antes de borrar
+            $totalBytesToDeduct = 0;
+            foreach ($canvasIds as $cid) {
+                $c = $this->canvasRepository->getById((int)$cid);
+                if ($c && (int)($c['owner_id'] ?? 0) === $userId && !empty($c['deleted_at'])) {
+                    $totalBytesToDeduct += (int)($c['storage_bytes'] ?? 0);
+                }
+            }
+
+            $deleted = $this->canvasRepository->permanentDeleteCanvases($canvasIds, $userId);
+
+            if ($deleted) {
+                // Liberar storage
+                if ($totalBytesToDeduct > 0) {
+                    try { $this->userRepository->updateStorageUsed($userId, -$totalBytesToDeduct); } catch (Exception $e) {}
+                }
+                // Limpiar Redis
+                try {
+                    if (class_exists(RedisCache::class)) {
+                        $redisInstance = new RedisCache();
+                        $redis = $redisInstance->getClient();
+                        if ($redis) {
+                            foreach ($canvasIds as $id) {
+                                $redis->del("canvas:{$id}:state");
+                                $redis->del("canvas:{$id}:config");
+                                $redis->del(CacheConstants::PREFIX_CANVAS_NEXT_RESET . $id);
+                                $redis->del(CacheConstants::PREFIX_CANVAS_NEXT_RESIZE . $id);
+                            }
+                        }
+                    }
+                } catch (Exception $e) {}
+                return ['success' => true, 'message' => __('msg_canvases_permanent_deleted')];
+            }
+            return ['success' => false, 'message' => __('err_canvas_permanent_delete_failed')];
+        } catch (Exception $e) {
+            Logger::error('Error permanently deleting canvases.', ['user_id' => $userId, 'exception' => $e->getMessage()]);
             return ['success' => false, 'message' => __('err_database')];
         }
     }

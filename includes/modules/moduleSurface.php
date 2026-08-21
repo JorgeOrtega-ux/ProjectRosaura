@@ -35,6 +35,20 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
             </div>
         </div>
 
+        <div class="component-menu-bottom">
+            <div class="component-menu-list">
+                <?php if ($isLoggedIn): ?>
+                <div class="component-menu-link nav-item" data-nav="/trash">
+                    <div class="component-menu-link-icon">
+                        <span class="material-symbols-rounded">delete</span>
+                    </div>
+                    <div class="component-menu-link-text">
+                        <span><?php echo __('menu_trash'); ?></span>
+                    </div>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
 
     </div>
 

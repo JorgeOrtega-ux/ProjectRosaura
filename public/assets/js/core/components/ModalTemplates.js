@@ -1126,6 +1126,14 @@ export const ModalTemplates = {
         })
     },
 
+    verifyPasswordPermanentDeleteCanvases: {
+        build: (data) => ModalTemplates.verifyPasswordDialog.build({
+            titleKey: 'title_verify_perm_delete_canvases',
+            descHtml: __('desc_verify_perm_delete_canvases').replace(':count', data.count || 0),
+            confirmKey: 'btn_perm_delete_canvas'
+        })
+    },
+
     verifyPasswordUpdateRole: {
         build: () => ModalTemplates.verifyPasswordDialog.build({
             titleKey: 'admin_verify_identity_title',

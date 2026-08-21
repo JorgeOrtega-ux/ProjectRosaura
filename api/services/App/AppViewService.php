@@ -214,7 +214,7 @@ class AppViewService {
                         FROM " . DB::TBL_CANVASES . " c
                         LEFT JOIN canvas_reset_settings r ON c.id = r.canvas_id
                         LEFT JOIN canvas_resize_settings rs ON c.id = rs.canvas_id
-                        WHERE c.uuid = :uuid LIMIT 1";
+                        WHERE c.uuid = :uuid AND c.deleted_at IS NULL LIMIT 1";
                 
                 $stmt = $db->prepare($sql);
                 $stmt->execute([':uuid' => $canvasUuid]);

@@ -47,8 +47,8 @@ class CanvasViewService {
         $isNumeric = is_numeric($canvasUuid);
         $stmt = $pdoCanvases->prepare(
             $isNumeric 
-                ? "SELECT * FROM canvases WHERE id = :id LIMIT 1"
-                : "SELECT * FROM canvases WHERE uuid = :uuid LIMIT 1"
+                ? "SELECT * FROM canvases WHERE id = :id AND deleted_at IS NULL LIMIT 1"
+                : "SELECT * FROM canvases WHERE uuid = :uuid AND deleted_at IS NULL LIMIT 1"
         );
         $stmt->execute($isNumeric ? ['id' => (int)$canvasUuid] : ['uuid' => $canvasUuid]);
         $canvas = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -281,12 +281,12 @@ class CanvasViewService {
         $sqlCount = "SELECT COUNT(DISTINCT c.id) FROM {$tblCanvases} c 
                          LEFT JOIN canvas_user_roles cur ON c.id = cur.canvas_id AND cur.user_id = :uid1
                          LEFT JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id AND crp.permission_id IN (2, 3, 4, 5, 6, 7)
-                         WHERE c.owner_id = :uid2 OR crp.permission_id IS NOT NULL";
+                         WHERE (c.owner_id = :uid2 OR crp.permission_id IS NOT NULL) AND c.deleted_at IS NULL";
         $sqlSelect = "SELECT DISTINCT c.id, c.uuid, c.name, c.privacy, c.size, c.mode, c.is_online_active, c.storage_bytes, c.max_participants, c.created_at, c.favorites_count, c.owner_id, c.is_subscription_locked, c.locked_reasons 
                       FROM {$tblCanvases} c 
                       LEFT JOIN canvas_user_roles cur ON c.id = cur.canvas_id AND cur.user_id = :uid1
                       LEFT JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id AND crp.permission_id IN (2, 3, 4, 5, 6, 7)
-                      WHERE c.owner_id = :uid2 OR crp.permission_id IS NOT NULL
+                      WHERE (c.owner_id = :uid2 OR crp.permission_id IS NOT NULL) AND c.deleted_at IS NULL
                       ORDER BY c.id DESC 
                       LIMIT $limit OFFSET $offset";
 
@@ -385,7 +385,7 @@ class CanvasViewService {
                 $tblCanvases = defined('\App\Core\System\DatabaseConstants::TBL_CANVASES') ? \App\Core\System\DatabaseConstants::TBL_CANVASES : 'canvases';
                 $db = (new DatabaseManager())->getConnection($dbConnName);
 
-                $stmt = $db->prepare('SELECT id, name, privacy, owner_id FROM ' . $tblCanvases . ' WHERE uuid = :uuid LIMIT 1');
+                $stmt = $db->prepare('SELECT id, name, privacy, owner_id FROM ' . $tblCanvases . ' WHERE uuid = :uuid AND deleted_at IS NULL LIMIT 1');
                 $stmt->execute([':uuid' => $uuid]);
                 $canvas = $stmt->fetch(\PDO::FETCH_ASSOC);
 
@@ -1438,7 +1438,7 @@ class CanvasViewService {
                 $pdo = $dbManager->getConnection($dbConnName);
 
                 $tblCanvases = defined('\App\Core\System\DatabaseConstants::TBL_CANVASES') ? \App\Core\System\DatabaseConstants::TBL_CANVASES : 'canvases';
-                $stmt = $pdo->prepare("SELECT id, privacy, owner_id FROM " . $tblCanvases . " WHERE uuid = ?");
+                $stmt = $pdo->prepare("SELECT id, privacy, owner_id FROM " . $tblCanvases . " WHERE uuid = ? AND deleted_at IS NULL");
                 $stmt->execute([$canvasUuid]);
                 $canvas = $stmt->fetch(\PDO::FETCH_ASSOC);
 
@@ -1593,6 +1593,134 @@ class CanvasViewService {
             'prevPageUrl' => $prevPageUrl,
             'nextPageUrl' => $nextPageUrl,
             'appUrl' => $appUrl
+        ];
+    }
+
+    public function getTrashData(?string $searchQuery = '', array $sizeFilter = [], array $privacyFilter = [], int $page = 1): array {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $userId = $_SESSION['active_account_id'] ?? $_SESSION['user_id'] ?? null;
+        if (!$userId) {
+            return [
+                'unauthorized' => true,
+                'canvases' => [],
+                'totalItems' => 0,
+                'totalPages' => 0,
+                'page' => 1,
+                'allSizes' => Utils::getCanvasSizes(),
+                'searchQuery' => '',
+                'sizeFilter' => [],
+                'privacyFilter' => []
+            ];
+        }
+
+        $limit = 25;
+        $currentPage = ($page && $page > 0) ? $page : 1;
+
+        $db = new DatabaseManager();
+        $connName = defined('\App\Core\System\DatabaseConstants::CONN_CANVASES') ? \App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases';
+        $pdo = $db->getConnection($connName);
+        $tblCanvases = defined('\App\Core\System\DatabaseConstants::TBL_CANVASES') ? \App\Core\System\DatabaseConstants::TBL_CANVASES : 'canvases';
+
+        $whereConditions = ["c.owner_id = :uid", "c.deleted_at IS NOT NULL"];
+        $params = [':uid' => (int)$userId];
+
+        $searchQuery = trim($searchQuery ?? '');
+        if ($searchQuery !== '') {
+            $whereConditions[] = "(c.name LIKE :q1 OR c.uuid LIKE :q2)";
+            $qVal = '%' . $searchQuery . '%';
+            $params[':q1'] = $qVal;
+            $params[':q2'] = $qVal;
+        }
+
+        if (!empty($privacyFilter)) {
+            $allowedPrivacy = ['public', 'private'];
+            $validPrivacy = array_values(array_intersect($privacyFilter, $allowedPrivacy));
+            if (!empty($validPrivacy)) {
+                $placeholders = [];
+                foreach ($validPrivacy as $idx => $priv) {
+                    $pKey = ':priv_' . $idx;
+                    $placeholders[] = $pKey;
+                    $params[$pKey] = $priv;
+                }
+                $whereConditions[] = "c.privacy IN (" . implode(', ', $placeholders) . ")";
+            }
+        }
+
+        if (!empty($sizeFilter)) {
+            $validSizes = array_values(array_filter($sizeFilter, function($s) {
+                return is_string($s) && preg_match('/^[0-9]+(x[0-9]+)?$/', $s);
+            }));
+            if (!empty($validSizes)) {
+                $sizePlaceholders = [];
+                foreach ($validSizes as $idx => $sz) {
+                    $sKey = ':size_' . $idx;
+                    $sizePlaceholders[] = $sKey;
+                    $params[$sKey] = $sz;
+                }
+                $whereConditions[] = "c.size IN (" . implode(', ', $sizePlaceholders) . ")";
+            }
+        }
+
+        $whereClause = "WHERE " . implode(" AND ", $whereConditions);
+
+        $totalItems = 0;
+        try {
+            $sqlCount = "SELECT COUNT(c.id) FROM {$tblCanvases} c {$whereClause}";
+            $stmtCount = $pdo->prepare($sqlCount);
+            foreach ($params as $k => $v) {
+                $stmtCount->bindValue($k, $v);
+            }
+            $stmtCount->execute();
+            $totalItems = (int)$stmtCount->fetchColumn();
+        } catch (\Throwable $e) {
+            Logger::error("getTrashData count query error: " . $e->getMessage(), ['exception' => $e]);
+        }
+
+        $totalPages = (int)ceil($totalItems / $limit);
+        if ($totalPages < 1) $totalPages = 1;
+        if ($currentPage > $totalPages) $currentPage = $totalPages;
+        $offset = ($currentPage - 1) * $limit;
+
+        $canvases = [];
+        try {
+            $sqlSelect = "SELECT c.id, c.uuid, c.name, c.privacy, c.size, c.storage_bytes, c.created_at, c.deleted_at 
+                          FROM {$tblCanvases} c 
+                          {$whereClause} 
+                          ORDER BY c.deleted_at DESC 
+                          LIMIT $limit OFFSET $offset";
+            $stmtSelect = $pdo->prepare($sqlSelect);
+            foreach ($params as $k => $v) {
+                $stmtSelect->bindValue($k, $v);
+            }
+            $stmtSelect->execute();
+            $canvases = $stmtSelect->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            Logger::error("getTrashData select query error: " . $e->getMessage(), ['exception' => $e]);
+        }
+
+        $retentionDays = 30;
+        $now = new \DateTime();
+        foreach ($canvases as &$c) {
+            $deletedAt = new \DateTime($c['deleted_at']);
+            $expiresAt = (clone $deletedAt)->modify("+{$retentionDays} days");
+            $c['days_left'] = max(0, (int)$now->diff($expiresAt)->days);
+            $c['thumbnail_url'] = Utils::getS3PublicUrl("thumbnails/canvas_" . $c['uuid'] . ".webp");
+        }
+        unset($c);
+
+        return [
+            'unauthorized' => false,
+            'canvases' => $canvases,
+            'totalItems' => $totalItems,
+            'totalPages' => $totalPages,
+            'page' => $currentPage,
+            'allSizes' => Utils::getCanvasSizes(),
+            'searchQuery' => $searchQuery,
+            'sizeFilter' => $sizeFilter,
+            'privacyFilter' => $privacyFilter
         ];
     }
 }

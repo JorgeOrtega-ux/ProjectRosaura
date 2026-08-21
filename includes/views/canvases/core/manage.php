@@ -109,6 +109,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                 
                 <div class="component-actions active" data-ref="header-default-actions">
                     
+                    <a href="<?php echo $appUrl; ?>/trash" data-nav="<?php echo $appUrl; ?>/trash" class="component-button component-button--icon component-button--h40" data-tooltip="<?php echo __('tooltip_recycle_bin'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">delete</span>
+                    </a>
+
                     <button class="component-button component-button--icon component-button--h40" data-action="searchCanvas" data-ref="btn-toggle-search" data-tooltip="<?php echo __('search_canvas_placeholder'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">search</span>
                     </button>

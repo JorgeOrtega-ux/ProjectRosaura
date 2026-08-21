@@ -28,7 +28,7 @@ class CanvasMediaService {
         try {
             $db = new DatabaseManager();
             $pdo = $db->getConnection(DB::CONN_CANVASES);
-            $stmt = $pdo->prepare("SELECT id, owner_id, name, privacy, size FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid LIMIT 1");
+            $stmt = $pdo->prepare("SELECT id, owner_id, name, privacy, size FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid AND deleted_at IS NULL LIMIT 1");
             $stmt->execute([':uuid' => $uuid]);
             $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
 

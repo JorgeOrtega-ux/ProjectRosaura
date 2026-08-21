@@ -200,7 +200,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                     FROM " . DB::TBL_CANVASES . " c
                     LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :current_user_id
                     $joinMemberSql
-                    WHERE c.privacy = 'public' AND c.is_subscription_locked = 0 AND (c.mode = 'online' OR c.is_online_active = 1)
+                    WHERE c.privacy = 'public' AND c.is_subscription_locked = 0 AND (c.mode = 'online' OR c.is_online_active = 1) AND c.deleted_at IS NULL
                     $orderClause 
                     LIMIT :limit OFFSET :offset";
             
@@ -265,7 +265,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             }
             
             $userIdParam = $userId ?? 0;
-            $whereConditions[] = "c.is_subscription_locked = 0 AND c.privacy = 'public' AND (c.mode = 'online' OR c.is_online_active = 1)";
+            $whereConditions[] = "c.is_subscription_locked = 0 AND c.privacy = 'public' AND (c.mode = 'online' OR c.is_online_active = 1) AND c.deleted_at IS NULL";
             
             $whereSql = implode(' AND ', $whereConditions);
 
@@ -353,16 +353,16 @@ class CanvasRepository implements CanvasRepositoryInterface {
             ':uid_owner' => $userId,
         ];
 
-        $whereClause = "WHERE (c.owner_id = :uid_owner OR (cm2.canvas_id IS NOT NULL AND (c.mode = 'online' OR c.is_online_active = 1)))";
+        $whereClause = "WHERE (c.owner_id = :uid_owner OR (cm2.canvas_id IS NOT NULL AND (c.mode = 'online' OR c.is_online_active = 1))) AND c.deleted_at IS NULL";
         if ($filter === 'mine') {
-            $whereClause = "WHERE c.owner_id = :uid_owner";
+            $whereClause = "WHERE c.owner_id = :uid_owner AND c.deleted_at IS NULL";
         } elseif ($filter === 'joined') {
-            $whereClause = "WHERE c.owner_id != :uid_owner AND cm2.canvas_id IS NOT NULL AND (c.mode = 'online' OR c.is_online_active = 1)";
+            $whereClause = "WHERE c.owner_id != :uid_owner AND cm2.canvas_id IS NOT NULL AND (c.mode = 'online' OR c.is_online_active = 1) AND c.deleted_at IS NULL";
         } elseif ($filter === 'managed') {
-            $whereClause = "WHERE (c.owner_id = :uid_owner OR (EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_USER_ROLES . " cur JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id WHERE cur.canvas_id = c.id AND cur.user_id = :uid_managed AND crp.permission_id IN (2, 3, 4, 5, 6, 7)) AND (c.mode = 'online' OR c.is_online_active = 1)))";
+            $whereClause = "WHERE (c.owner_id = :uid_owner OR (EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_USER_ROLES . " cur JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id WHERE cur.canvas_id = c.id AND cur.user_id = :uid_managed AND crp.permission_id IN (2, 3, 4, 5, 6, 7)) AND (c.mode = 'online' OR c.is_online_active = 1))) AND c.deleted_at IS NULL";
             $params[':uid_managed'] = $userId;
         } elseif ($filter === 'favorites') {
-            $whereClause = "WHERE (c.owner_id = :uid_owner OR (cm2.canvas_id IS NOT NULL AND (c.mode = 'online' OR c.is_online_active = 1))) AND f.canvas_id IS NOT NULL";
+            $whereClause = "WHERE (c.owner_id = :uid_owner OR (cm2.canvas_id IS NOT NULL AND (c.mode = 'online' OR c.is_online_active = 1))) AND f.canvas_id IS NOT NULL AND c.deleted_at IS NULL";
         }
 
         $sql = "SELECT c.id, c.uuid, c.name, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.owner_id, c.is_subscription_locked, c.locked_reasons, c.favorites_count,
@@ -421,7 +421,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                        c.members_count
                 FROM " . DB::TBL_CANVASES . " c
                 LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :oid
-                WHERE c.owner_id = :oid 
+                WHERE c.owner_id = :oid AND c.deleted_at IS NULL
                 ORDER BY c.id DESC 
                 LIMIT :limit OFFSET :offset";
         
@@ -457,7 +457,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             } catch (\Throwable $e) {}
         }
 
-        $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE owner_id = :oid";
+        $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE owner_id = :oid AND deleted_at IS NULL";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':oid' => $ownerId]);
         $count = (int)$stmt->fetchColumn();
@@ -470,7 +470,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function countUserOnlineCanvases(int $ownerId): int {
-        $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE owner_id = :oid AND (mode = 'online' OR is_online_active = 1)";
+        $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE owner_id = :oid AND (mode = 'online' OR is_online_active = 1) AND deleted_at IS NULL";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':oid' => $ownerId]);
         return (int)$stmt->fetchColumn();
@@ -496,7 +496,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         if (empty($tierSizes)) return 0;
 
         $placeholders = implode(',', array_fill(0, count($tierSizes), '?'));
-        $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE owner_id = ? AND size IN ($placeholders)";
+        $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE owner_id = ? AND size IN ($placeholders) AND deleted_at IS NULL";
         $stmt = $this->db->prepare($sql);
         $params = array_merge([$ownerId], $tierSizes);
         $stmt->execute($params);
@@ -522,13 +522,16 @@ class CanvasRepository implements CanvasRepositoryInterface {
         }
 
         $placeholders = implode(',', array_fill(0, count($canvasIds), '?'));
-        
-        $sql = "DELETE FROM " . DB::TBL_CANVASES . " WHERE id IN ($placeholders) AND owner_id = ?";
+
+        // Soft-delete: mover a papelera en lugar de borrar permanentemente
+        $sql = "UPDATE " . DB::TBL_CANVASES . " SET deleted_at = NOW(), deleted_by_user_id = ? WHERE id IN ($placeholders) AND owner_id = ? AND deleted_at IS NULL";
         $stmt = $this->db->prepare($sql);
-        
-        $params = array_merge($canvasIds, [$ownerId]);
+
+        $params = array_merge([$ownerId], $canvasIds, [$ownerId]);
         $success = $stmt->execute($params);
-        if ($success) {
+
+        if ($success && $stmt->rowCount() > 0) {
+            // Eliminar de Typesense para que no aparezca en búsquedas
             $client = $this->typesenseManager->getClient();
             if ($client) {
                 foreach ($canvasIds as $id) {
@@ -539,18 +542,18 @@ class CanvasRepository implements CanvasRepositoryInterface {
                     }
                 }
             }
-            // Invalidate caches for each deleted canvas
+            // Invalidar cachés
             foreach ($canvasIds as $id) {
                 $this->invalidateCanvasCache((int)$id);
             }
             $this->invalidateUserCanvasListCaches($ownerId);
         }
 
-        return $success;
+        return $success && $stmt->rowCount() > 0;
     }
 
     public function getByIdAndOwner(int $id, int $ownerId): ?array {
-        $sql = "SELECT * FROM " . DB::TBL_CANVASES . " WHERE id = :id AND owner_id = :owner_id LIMIT 1";
+        $sql = "SELECT * FROM " . DB::TBL_CANVASES . " WHERE id = :id AND owner_id = :owner_id AND deleted_at IS NULL LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             ':id' => $id, 
@@ -1068,13 +1071,15 @@ class CanvasRepository implements CanvasRepositoryInterface {
     }
 
     public function deleteCanvasByUuid(string $uuid): bool {
-        $canvas = $this->getCanvasByUuid($uuid); 
+        $canvas = $this->getCanvasByUuid($uuid);
 
-        $sql = "DELETE FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid";
+        // Soft-delete: mover a papelera en lugar de borrar permanentemente
+        $sql = "UPDATE " . DB::TBL_CANVASES . " SET deleted_at = NOW(), deleted_by_user_id = owner_id WHERE uuid = :uuid AND deleted_at IS NULL";
         $stmt = $this->db->prepare($sql);
         $success = $stmt->execute([':uuid' => $uuid]);
 
-        if ($success && $canvas) {
+        if ($success && $stmt->rowCount() > 0 && $canvas) {
+            // Eliminar de Typesense para que no aparezca en búsquedas
             $client = $this->typesenseManager->getClient();
             if ($client) {
                 try {
@@ -1083,9 +1088,13 @@ class CanvasRepository implements CanvasRepositoryInterface {
                     Logger::error("Typesense Delete UUID Error (Canvas ID {$canvas['id']}): " . $e->getMessage());
                 }
             }
+            $this->cacheInvalidator->canvas((int)$canvas['id'], $canvas['uuid'] ?? null);
+            if (!empty($canvas['owner_id'])) {
+                $this->invalidateUserCanvasListCaches((int)$canvas['owner_id']);
+            }
         }
 
-        return $success;
+        return $success && $stmt->rowCount() > 0;
     }
 
         public function removeMember(int $canvasId, int $userId): bool {
@@ -1622,6 +1631,111 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return $weight;
     }
 
+
+    // =========================================================================
+    // PAPELERA DE RECICLAJE
+    // =========================================================================
+
+    public function getTrashCanvases(int $userId, int $limit = 50, int $offset = 0): array {
+        $sql = "SELECT c.id, c.uuid, c.name, c.privacy, c.size, c.storage_bytes,
+                       c.created_at, c.deleted_at, c.deleted_by_user_id
+                FROM " . DB::TBL_CANVASES . " c
+                WHERE c.owner_id = :uid AND c.deleted_at IS NOT NULL
+                ORDER BY c.deleted_at DESC
+                LIMIT :limit OFFSET :offset";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':uid', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function countTrashCanvases(int $userId): int {
+        $sql = "SELECT COUNT(*) FROM " . DB::TBL_CANVASES . " WHERE owner_id = :uid AND deleted_at IS NOT NULL";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':uid' => $userId]);
+        return (int)$stmt->fetchColumn();
+    }
+
+    public function restoreCanvas(string $uuid, int $userId): bool {
+        $sql = "UPDATE " . DB::TBL_CANVASES . " SET deleted_at = NULL, deleted_by_user_id = NULL WHERE uuid = :uuid AND owner_id = :uid AND deleted_at IS NOT NULL";
+        $stmt = $this->db->prepare($sql);
+        $success = $stmt->execute([':uuid' => $uuid, ':uid' => $userId]);
+        if ($success && $stmt->rowCount() > 0) {
+            // Obtener el canvas para invalidar caché y re-indexar en Typesense
+            $canvas = $this->getCanvasByUuid($uuid);
+            if ($canvas) {
+                $this->invalidateCanvasCache((int)$canvas['id']);
+                $this->invalidateUserCanvasListCaches($userId);
+                // Re-indexar en Typesense si es público y online
+                if (($canvas['privacy'] ?? '') === 'public' && !empty($canvas['is_online_active'])) {
+                    try {
+                        $client = $this->typesenseManager->getClient();
+                        if ($client) {
+                            $document = [
+                                'id'         => (string)$canvas['id'],
+                                'uuid'       => $canvas['uuid'],
+                                'name'       => $canvas['name'],
+                                'owner_id'   => (int)$canvas['owner_id'],
+                                'privacy'    => $canvas['privacy'],
+                                'created_at' => strtotime($canvas['created_at'])
+                            ];
+                            $client->collections['canvases']->documents->upsert($document);
+                        }
+                    } catch (Exception $e) {
+                        Logger::error("Typesense Restore Error (Canvas UUID {$uuid}): " . $e->getMessage());
+                    }
+                }
+            }
+        }
+        return $success && $stmt->rowCount() > 0;
+    }
+
+    public function permanentDeleteCanvas(string $uuid, int $userId): bool {
+        $canvas = $this->getCanvasByUuid($uuid);
+        if (!$canvas || (int)$canvas['owner_id'] !== $userId || $canvas['deleted_at'] === null) {
+            return false;
+        }
+
+        $sql = "DELETE FROM " . DB::TBL_CANVASES . " WHERE uuid = :uuid AND owner_id = :uid AND deleted_at IS NOT NULL";
+        $stmt = $this->db->prepare($sql);
+        $success = $stmt->execute([':uuid' => $uuid, ':uid' => $userId]);
+
+        if ($success && $stmt->rowCount() > 0) {
+            $this->invalidateUserCanvasListCaches($userId);
+        }
+
+        return $success && $stmt->rowCount() > 0;
+    }
+
+    public function permanentDeleteCanvases(array $canvasIds, int $ownerId): bool {
+        if (empty($canvasIds)) return false;
+
+        $placeholders = implode(',', array_fill(0, count($canvasIds), '?'));
+        $sql = "DELETE FROM " . DB::TBL_CANVASES . " WHERE id IN ($placeholders) AND owner_id = ? AND deleted_at IS NOT NULL";
+        $stmt = $this->db->prepare($sql);
+        $params = array_merge($canvasIds, [$ownerId]);
+        $success = $stmt->execute($params);
+
+        if ($success && $stmt->rowCount() > 0) {
+            $this->invalidateUserCanvasListCaches($ownerId);
+        }
+
+        return $success && $stmt->rowCount() > 0;
+    }
+
+    public function getExpiredTrashCanvases(int $daysOld = 30): array {
+        $sql = "SELECT id, uuid, owner_id, name, storage_bytes
+                FROM " . DB::TBL_CANVASES . "
+                WHERE deleted_at IS NOT NULL AND deleted_at <= NOW() - INTERVAL :days DAY
+                ORDER BY deleted_at ASC
+                LIMIT 500";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':days', $daysOld, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
 
 }
 ?>

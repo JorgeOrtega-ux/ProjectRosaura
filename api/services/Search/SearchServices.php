@@ -97,10 +97,10 @@ class SearchServices {
             $offset = ($page - 1) * $limit;
             $searchPattern = '%' . $query . '%';
 
-            $privacyWhere = "(c.privacy = 'public' AND (c.mode = 'online' OR c.is_online_active = 1))";
+            $privacyWhere = "(c.privacy = 'public' AND (c.mode = 'online' OR c.is_online_active = 1) AND c.deleted_at IS NULL)";
             $countParams = [$searchPattern];
             if ($currentUserId) {
-                $privacyWhere = "((c.privacy = 'public' AND (c.mode = 'online' OR c.is_online_active = 1)) OR c.owner_id = ?)";
+                $privacyWhere = "(((c.privacy = 'public' AND (c.mode = 'online' OR c.is_online_active = 1)) OR c.owner_id = ?) AND c.deleted_at IS NULL)";
                 $countParams = [$searchPattern, $currentUserId];
             }
 

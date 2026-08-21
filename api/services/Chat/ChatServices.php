@@ -27,7 +27,7 @@ class ChatServices
 
     public function resolveCanvasIntId($uuid)
     {
-        $stmt = $this->pdo->prepare("SELECT id FROM " . DB::TBL_CANVASES . " WHERE uuid = ? LIMIT 1");
+        $stmt = $this->pdo->prepare("SELECT id FROM " . DB::TBL_CANVASES . " WHERE uuid = ? AND deleted_at IS NULL LIMIT 1");
         $stmt->execute([$uuid]);
         return (int)($stmt->fetchColumn() ?: 0);
     }
@@ -40,7 +40,7 @@ class ChatServices
             return ['success' => false, 'message' => __('err_invalid_canvas'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
 }
 
-        $stmt = $this->pdo->prepare("SELECT id, allow_chat, uuid, privacy, owner_id FROM " . DB::TBL_CANVASES . " WHERE id = ?");
+        $stmt = $this->pdo->prepare("SELECT id, allow_chat, uuid, privacy, owner_id FROM " . DB::TBL_CANVASES . " WHERE id = ? AND deleted_at IS NULL");
         $stmt->execute([$canvasId]);
         $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -233,7 +233,7 @@ class ChatServices
             return ['success' => false, 'message' => __('err_message_too_long'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
         }
 
-        $stmt = $this->pdo->prepare("SELECT id, allow_chat, uuid, privacy, owner_id FROM " . DB::TBL_CANVASES . " WHERE id = ?");
+        $stmt = $this->pdo->prepare("SELECT id, allow_chat, uuid, privacy, owner_id FROM " . DB::TBL_CANVASES . " WHERE id = ? AND deleted_at IS NULL");
         $stmt->execute([$canvasId]);
         $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -577,7 +577,7 @@ class ChatServices
             return ['success' => false, 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
 }
 
-        $stmt = $this->pdo->prepare("SELECT id, privacy, allow_chat, owner_id FROM " . DB::TBL_CANVASES . " WHERE uuid = ?");
+        $stmt = $this->pdo->prepare("SELECT id, privacy, allow_chat, owner_id FROM " . DB::TBL_CANVASES . " WHERE uuid = ? AND deleted_at IS NULL");
         $stmt->execute([$canvasUuid]);
         $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -936,7 +936,7 @@ class ChatServices
             return ['success' => false, 'message' => __('err_invalid_canvas')];
         }
 
-        $stmt = $this->pdo->prepare("SELECT id, allow_chat, uuid, privacy, owner_id FROM " . DB::TBL_CANVASES . " WHERE id = ?");
+        $stmt = $this->pdo->prepare("SELECT id, allow_chat, uuid, privacy, owner_id FROM " . DB::TBL_CANVASES . " WHERE id = ? AND deleted_at IS NULL");
         $stmt->execute([$canvasId]);
         $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
 

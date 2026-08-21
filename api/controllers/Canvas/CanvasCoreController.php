@@ -442,4 +442,71 @@ class CanvasCoreController extends BaseController {
         }
     }
 
+    // =========================================================================
+    // PAPELERA DE RECICLAJE
+    // =========================================================================
+
+    public function get_trash($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
+            }
+            $userId = $this->session->getActiveAccountId();
+            $limit  = isset($input['limit'])  ? min(max((int)$input['limit'], 1), 100) : 50;
+            $offset = isset($input['offset']) ? max((int)$input['offset'], 0) : 0;
+            $result = $this->canvasServices->getTrash($userId, $limit, $offset);
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function restore($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
+            }
+            $userId = $this->session->getActiveAccountId();
+            $uuid   = $input['id'] ?? $input['uuid'] ?? null;
+            if (!$uuid) {
+                return $this->respond(['success' => false, 'message' => __('err_invalid_canvas_id')]);
+            }
+            $result = $this->canvasServices->restoreCanvas($userId, (string)$uuid);
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    public function permanent_delete($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
+            }
+            $userId = $this->session->getActiveAccountId();
+            $password   = $input['password'] ?? '';
+            $credential = $input['credential'] ?? $input['google_token'] ?? null;
+            if (empty(trim($password)) && empty($credential)) {
+                return $this->respond(['success' => false, 'message' => __('err_password_required')]);
+            }
+
+            $uuid      = $input['id'] ?? $input['uuid'] ?? null;
+            $canvasIds = $input['canvas_ids'] ?? [];
+
+            if ($uuid && is_string($uuid) && empty($canvasIds)) {
+                $result = $this->canvasServices->permanentDeleteCanvas($userId, $uuid, $password, $credential);
+                return $this->respond($result);
+            }
+
+            if (empty($canvasIds)) {
+                return $this->respond(['success' => false, 'message' => __('err_no_canvases_selected')]);
+            }
+
+            $result = $this->canvasServices->permanentDeleteUserCanvases($userId, $canvasIds, $password, $credential);
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
 }

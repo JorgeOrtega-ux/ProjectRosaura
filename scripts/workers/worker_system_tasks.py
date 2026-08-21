@@ -591,8 +591,113 @@ def process_email(payload):
             cursor.close()
             conn.close()
 
+def purge_trash_canvases():
+    """
+    Purges canvases that have been in the recycle bin for 30+ days.
+    Frees user storage quota, cleans up Redis caches, Typesense indices, and S3 objects.
+    """
+    Logger.info("Maintenance: Evaluating recycle bin for expired canvases (30+ days in trash)...")
+    conn_can = None
+    conn_id = None
+    r = None
+    
+    try:
+        conn_can = get_canvases_db_connection()
+        cursor_can = conn_can.cursor(dictionary=True)
+        cursor_can.execute("""
+            SELECT id, uuid, owner_id, name, storage_bytes
+            FROM canvases
+            WHERE deleted_at IS NOT NULL AND deleted_at <= NOW() - INTERVAL 30 DAY
+        """)
+        expired_canvases = cursor_can.fetchall()
+        
+        if not expired_canvases:
+            Logger.info("Maintenance: No expired canvases in recycle bin to purge.")
+            return
+
+        Logger.info(f"Maintenance: Found {len(expired_canvases)} expired canvases to permanently purge.")
+        conn_id = get_db_connection()
+        cursor_id = conn_id.cursor()
+        r = get_redis_connection()
+
+        typesense_client = None
+        try:
+            ts_host = os.getenv('TYPESENSE_HOST', 'localhost')
+            ts_port = os.getenv('TYPESENSE_PORT', '8108')
+            ts_key = os.getenv('TYPESENSE_API_KEY', '')
+            if ts_key:
+                typesense_client = typesense.Client({
+                    'nodes': [{'host': ts_host, 'port': ts_port, 'protocol': 'http'}],
+                    'api_key': ts_key,
+                    'connection_timeout_seconds': 2
+                })
+        except Exception:
+            pass
+
+        for canvas in expired_canvases:
+            canvas_id = canvas['id']
+            canvas_uuid = canvas['uuid']
+            owner_id = canvas['owner_id']
+            storage_bytes = int(canvas['storage_bytes'] or 0)
+            
+            try:
+                # 1. Delete physical record from db_canvases (Cascades to all child tables)
+                cursor_can.execute("DELETE FROM canvases WHERE id = %s", (canvas_id,))
+                conn_can.commit()
+
+                # 2. Release storage quota in db_identity
+                if owner_id and storage_bytes > 0:
+                    cursor_id.execute("""
+                        UPDATE users
+                        SET storage_used_bytes = GREATEST(0, storage_used_bytes - %s)
+                        WHERE id = %s
+                    """, (storage_bytes, owner_id))
+                    conn_id.commit()
+
+                # 3. Clean Redis caches
+                if r:
+                    try:
+                        r.delete(f"canvas:{canvas_id}:state")
+                        r.delete(f"canvas:{canvas_id}:config")
+                        r.delete(f"canvas:next_reset:{canvas_id}")
+                        r.delete(f"canvas:next_resize:{canvas_id}")
+                        if owner_id:
+                            r.delete(f"user:storage:{owner_id}")
+                            r.delete(f"user:{owner_id}:canvases:count")
+                    except Exception as re:
+                        Logger.error(f"Failed to clear Redis keys for canvas {canvas_id}: {re}")
+
+                # 4. Clean Typesense document
+                if typesense_client:
+                    try:
+                        typesense_client.collections['canvases'].documents[str(canvas_id)].delete()
+                    except Exception:
+                        pass
+
+                # 5. Clean S3 thumbnails
+                try:
+                    s3_thumb_key = f"thumbnails/canvas_{canvas_uuid}.webp"
+                    s3.delete_object(Bucket=S3_BUCKET, Key=s3_thumb_key)
+                except Exception:
+                    pass
+
+                Logger.info(f"Purged expired canvas ID {canvas_id} (UUID: {canvas_uuid}, Owner ID: {owner_id}) from recycle bin.")
+
+            except Exception as item_err:
+                Logger.error(f"Error purging canvas {canvas_id}: {item_err}")
+
+    except Exception as e:
+        Logger.error(f"Recycle bin purge maintenance failed: {e}")
+    finally:
+        if conn_can and conn_can.is_connected():
+            cursor_can.close()
+            conn_can.close()
+        if conn_id and conn_id.is_connected():
+            cursor_id.close()
+            conn_id.close()
+
 def future_maintenance_tasks():
-    pass
+    purge_trash_canvases()
 
 def worker_loop():
     queues_to_listen = [QUEUE_ACCOUNT_DELETION, QUEUE_EMAILS]

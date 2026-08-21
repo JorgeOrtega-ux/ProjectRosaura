@@ -64,5 +64,13 @@ interface CanvasRepositoryInterface {
     public function incrementInviteUses(int $inviteId): bool;
     public function revokeInvite(int $inviteId, int $canvasId): bool;
     public function getUserCanvasWeight(int $userId, int $canvasId): int;
+
+    // Recycle Bin
+    public function getTrashCanvases(int $userId, int $limit, int $offset): array;
+    public function countTrashCanvases(int $userId): int;
+    public function restoreCanvas(string $uuid, int $userId): bool;
+    public function permanentDeleteCanvas(string $uuid, int $userId): bool;
+    public function permanentDeleteCanvases(array $canvasIds, int $ownerId): bool;
+    public function getExpiredTrashCanvases(int $daysOld): array;
 }
 ?>

@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   `storage_bytes` bigint(20) NOT NULL DEFAULT 0,
   `last_online_at` datetime DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `deleted_at` datetime DEFAULT NULL COMMENT 'NULL = activo, NOT NULL = en papelera',
+  `deleted_by_user_id` int(11) DEFAULT NULL COMMENT 'Usuario que lo envió a la papelera',
   `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uuid` (`uuid`),
@@ -37,7 +39,8 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   INDEX `idx_canvases_feed_opt` (`is_subscription_locked`, `privacy`, `created_at`),
   INDEX `idx_canvases_popular` (`favorites_count` DESC, `created_at` DESC),
   INDEX `idx_canvases_tags` ((CAST(tags AS CHAR(32) ARRAY))),
-  INDEX `idx_canvases_mode_owner` (`owner_id`, `mode`, `is_online_active`)
+  INDEX `idx_canvases_mode_owner` (`owner_id`, `mode`, `is_online_active`),
+  INDEX `idx_canvases_deleted` (`deleted_at`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS `canvas_protections` (
