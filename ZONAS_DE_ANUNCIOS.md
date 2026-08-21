@@ -69,3 +69,11 @@ El sistema publicitario implementa una capa de alto rendimiento con Redis:
    - Los dots `.component-gallery-dot` permiten hacer clic directamente para ir a cualquier foto o al video.
 5. **Animación Visual Suave**:
    - Transición de **crossfade cinematográfico con micro-zoom** (`opacity 0.6s cubic-bezier(0.25, 1, 0.5, 1)` y `transform: scale(1.05)` a `scale(1)`).
+
+
+
+
+
+
+
+Mira tengo un problema y es que quiero llevar mi web app, a otro nivel lo que me bloquea es que yo quiero ser como canva.con que te deja crear cientos de lienzos, el problema de mi web es que te limita segun tu nivel de suscripcion a ya sea, 1, 5, etc, entonces, como te dije yo quisiera llevar la web a otro nivel donde no solo sea para batallas de pixeles si no que tambien sea la web como una web para pintar pixeles, tenia pensado en eliminar el limite de lienzos de todas las suscripciones y en su lugar usar la cuota de almacenamiento, pero como se que todos los lienzos se estan almacenando en redis, seria imposible otrogar lienzos casi infinitos sin saturar redis, estuve pensando en una solucion de que al crear un lienzo no active el online

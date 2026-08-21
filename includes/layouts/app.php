@@ -37,6 +37,7 @@ if (strpos($currentPath, '/admin') === 0) {
 
 $routeTitles = [
     '/' => __('route_home'),
+    '/explore' => __('route_explore'),
 
     '/upgrade' => __('route_premium'), 
     '/premium' => __('route_premium'), 

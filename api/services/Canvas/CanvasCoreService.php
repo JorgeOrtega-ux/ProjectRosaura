@@ -194,6 +194,22 @@ class CanvasCoreService {
         try {
             $canvases = $this->canvasRepository->getUserAndJoinedCanvases($userId, $limit, $filter, $offset);
             
+            $onlineCounts = [];
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redis = (new RedisCache())->getClient();
+                    if ($redis && !empty($canvases)) {
+                        $canvasIds = array_column($canvases, 'id');
+                        $rawCounts = $redis->hmGet("canvas:online_counts", $canvasIds);
+                        foreach ($canvasIds as $idx => $cId) {
+                            if ($rawCounts[$idx] !== false) {
+                                $onlineCounts[$cId] = $rawCounts[$idx];
+                            }
+                        }
+                    }
+                }
+            } catch (Exception $e) {}
+
             $formattedCanvases = [];
             foreach ($canvases as $canvas) {
                 $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".webp");
@@ -214,7 +230,7 @@ class CanvasCoreService {
                     'is_favorite' => $canvas['is_favorite'],
                     'is_owner' => $canvas['is_owner'],
                     'is_member' => !empty($canvas['is_member']),
-                    'online_players' => 0, 
+                    'online_players' => isset($onlineCounts[$canvas['id']]) ? (int)$onlineCounts[$canvas['id']] : 0, 
                     'members_count' => $canvas['members_count'],
                     'favorites_count' => $canvas['favorites_count'] ?? 0,
                     'thumbnail_url' => $thumbnailUrl,

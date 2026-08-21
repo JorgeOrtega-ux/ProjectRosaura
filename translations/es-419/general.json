@@ -1920,7 +1920,21 @@
     "btn_download_snapshot": "Descargar",
     "msg_generating_image": "Preparando imagen...",
     "msg_image_download_ready": "¡Imagen descargada correctamente!",
-    "err_4k_download_requires_premium": "La exportación en calidad 4K Ultra HD requiere una suscripción premium."
+    "err_4k_download_requires_premium": "La exportación en calidad 4K Ultra HD requiere una suscripción premium.",
+    "route_explore": "Explorar murales",
+    "menu_explore": "Explorar murales",
+    "home_title": "Tus murales",
+    "filter_home_all": "Mostrar todo",
+    "filter_home_mine": "Mis lienzos",
+    "filter_home_joined": "Lienzos unidos",
+    "filter_home_managed": "Lienzos administrados",
+    "msg_home_guest": "Inicia sesión para ver tus lienzos y colaboraciones.",
+    "msg_home_mine_empty": "Aún no has creado ningún lienzo.",
+    "msg_home_joined_empty": "No te has unido a ningún lienzo.",
+    "msg_home_managed_empty": "No administras ningún lienzo adicional.",
+    "msg_home_all_empty": "No tienes lienzos propios ni colaboraciones activas.",
+    "msg_explore_empty": "No hay murales disponibles por el momento.",
+    "btn_explore_canvases": "Explorar murales"
 }
 
 

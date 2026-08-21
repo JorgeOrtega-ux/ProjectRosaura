@@ -4,6 +4,7 @@ use App\Core\System\PermissionsConstants as PC;
 
 return [
     '/' => ['view' => 'app/home.php'],
+    '/explore' => ['view' => 'app/explore.php'],
     '/build-audio-sprite' => ['view' => 'system/build_sprite.php'],
 
     '/search' => ['view' => 'app/search.php'], 

@@ -122,24 +122,25 @@ if ($redirectUrl) {
 }
 
 $initialCanvasesJson = '[]';
-if ($currentView === 'app/home.php' && class_exists('\App\Api\Services\Canvas\CanvasCoreService')) {
+if (in_array($currentView, ['app/home.php', 'app/explore.php']) && class_exists('\App\Api\Services\Canvas\CanvasCoreService')) {
     try {
         global $container, $sessionManager;
         if ($container && $sessionManager) {
             $canvasServices = $container->get(\App\Api\Services\Canvas\CanvasCoreService::class);
             $userId = $isLoggedIn ? $sessionManager->getActiveAccountId() : null;
-            $perms = $isLoggedIn ? $sessionManager->getPermissions() : [];
-            if (empty($perms) && isset($_SESSION['user_permissions'])) {
-                $perms = $_SESSION['user_permissions'];
+            $res = null;
+            if ($currentView === 'app/explore.php') {
+                $res = $canvasServices->getHomeFeed($userId, 'all', 20, 0);
+            } else {
+                $res = $userId ? $canvasServices->getMine($userId, 50, 'all', 0) : ['success' => true, 'data' => []];
             }
-            $res = $canvasServices->getHomeFeed($userId, 'all', 20, 0);
             if ($res && isset($res['success']) && $res['success'] && isset($res['data'])) {
                 $initialCanvasesJson = htmlspecialchars(json_encode($res['data']), ENT_QUOTES, 'UTF-8');
             }
         }
     } catch (\Throwable $e) {
         if (class_exists('\App\Core\System\Logger')) {
-            \App\Core\System\Logger::security("Error fetching home feed: " . $e->getMessage(), 'error');
+            \App\Core\System\Logger::security("Error fetching initial canvases: " . $e->getMessage(), 'error');
         }
     }
 }

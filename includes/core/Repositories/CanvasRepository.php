@@ -256,22 +256,12 @@ class CanvasRepository implements CanvasRepositoryInterface {
             }
             
             $userIdParam = $userId ?? 0;
-            
-            if ($userId) {
-                // Feed shows all public canvases (like a YouTube-style feed).
-                // User's own private canvases are NOT force-included here;
-                // they appear only if they are public or the user is explicitly a member.
-                $whereConditions[] = "c.is_subscription_locked = 0 AND (c.privacy = 'public' OR EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_MEMBERS . " cm_feed WHERE cm_feed.canvas_id = c.id AND cm_feed.user_id = :current_user_id_member_where))";
-                $params[':current_user_id_member_where'] = $userIdParam;
-            } else {
-                $whereConditions[] = "c.is_subscription_locked = 0 AND c.privacy = 'public'";
-            }
+            $whereConditions[] = "c.is_subscription_locked = 0 AND c.privacy = 'public'";
             
             $whereSql = implode(' AND ', $whereConditions);
 
             $isMemberSelect = $userId ? "CASE WHEN EXISTS (SELECT 1 FROM (SELECT canvas_id, user_id FROM " . DB::TBL_CANVAS_MEMBERS . " UNION SELECT canvas_id, user_id FROM " . DB::TBL_CANVAS_USER_ROLES . ") cm_feed WHERE cm_feed.canvas_id = c.id AND cm_feed.user_id = :current_user_id_member_sel) THEN 1 ELSE 0 END as is_member" : "0 as is_member";
 
-            // YouTube-style ranking: scored by member count + favorites + recency decay.
             $orderSql = "ORDER BY
                 (c.members_count * 3 + c.favorites_count * 2 + TIMESTAMPDIFF(HOUR, c.created_at, NOW()) * -1) DESC,
                 c.members_count DESC,
@@ -345,34 +335,43 @@ class CanvasRepository implements CanvasRepositoryInterface {
                 }
             } catch (\Throwable $e) {}
         }
-        $joinRolesSql = "LEFT JOIN (SELECT canvas_id, user_id FROM " . DB::TBL_CANVAS_MEMBERS . " UNION SELECT canvas_id, user_id FROM " . DB::TBL_CANVAS_USER_ROLES . ") cm2 ON c.id = cm2.canvas_id AND cm2.user_id = :uid4";
+        $joinRolesSql = "LEFT JOIN (SELECT canvas_id, user_id FROM " . DB::TBL_CANVAS_MEMBERS . " UNION SELECT canvas_id, user_id FROM " . DB::TBL_CANVAS_USER_ROLES . ") cm2 ON c.id = cm2.canvas_id AND cm2.user_id = :uid_join";
         
-        $whereClause = "WHERE (c.owner_id = :uid3 OR cm2.canvas_id IS NOT NULL)";
+        $params = [
+            ':uid_sel' => $userId,
+            ':uid_fav' => $userId,
+            ':uid_join' => $userId,
+            ':uid_owner' => $userId,
+        ];
+
+        $whereClause = "WHERE (c.owner_id = :uid_owner OR cm2.canvas_id IS NOT NULL)";
         if ($filter === 'mine') {
-            $whereClause = "WHERE c.owner_id = :uid3";
+            $whereClause = "WHERE c.owner_id = :uid_owner";
         } elseif ($filter === 'joined') {
-            $whereClause = "WHERE c.owner_id != :uid3 AND cm2.canvas_id IS NOT NULL";
+            $whereClause = "WHERE c.owner_id != :uid_owner AND cm2.canvas_id IS NOT NULL";
+        } elseif ($filter === 'managed') {
+            $whereClause = "WHERE (c.owner_id = :uid_owner OR EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_USER_ROLES . " cur JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id WHERE cur.canvas_id = c.id AND cur.user_id = :uid_managed AND crp.permission_id IN (2, 3, 4, 5, 6, 7)))";
+            $params[':uid_managed'] = $userId;
         } elseif ($filter === 'favorites') {
-            $whereClause = "WHERE (c.owner_id = :uid3 OR cm2.canvas_id IS NOT NULL) AND f.canvas_id IS NOT NULL";
+            $whereClause = "WHERE (c.owner_id = :uid_owner OR cm2.canvas_id IS NOT NULL) AND f.canvas_id IS NOT NULL";
         }
 
         $sql = "SELECT c.id, c.uuid, c.name, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.owner_id, c.is_subscription_locked, c.locked_reasons, c.favorites_count,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count,
-                       CASE WHEN c.owner_id = :uid1 THEN 1 ELSE 0 END as is_owner,
+                       CASE WHEN c.owner_id = :uid_sel THEN 1 ELSE 0 END as is_owner,
                        CASE WHEN cm2.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_member
                 FROM " . DB::TBL_CANVASES . " c
-                LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :uid2
+                LEFT JOIN " . DB::TBL_CANVAS_FAVORITES . " f ON c.id = f.canvas_id AND f.user_id = :uid_fav
                 $joinRolesSql
                 $whereClause
                 ORDER BY c.id DESC 
                 LIMIT :limit OFFSET :offset";
         
         $stmt = $this->db->prepare($sql);
-        $stmt->bindValue(':uid1', $userId, PDO::PARAM_INT);
-        $stmt->bindValue(':uid2', $userId, PDO::PARAM_INT);
-        $stmt->bindValue(':uid3', $userId, PDO::PARAM_INT);
-        $stmt->bindValue(':uid4', $userId, PDO::PARAM_INT);
+        foreach ($params as $paramKey => $paramVal) {
+            $stmt->bindValue($paramKey, $paramVal, PDO::PARAM_INT);
+        }
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();

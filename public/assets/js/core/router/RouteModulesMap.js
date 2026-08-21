@@ -2,6 +2,7 @@ export const RouteModulesMap = {
     
     '/': { path: './modules/app/home/HomeController.js', className: 'HomeController', skeletonType: 'layout-grid' },
     '/home': { path: './modules/app/home/HomeController.js', className: 'HomeController', skeletonType: 'layout-grid' },
+    '/explore': { path: './modules/app/explore/ExploreController.js', className: 'ExploreController', skeletonType: 'layout-grid' },
         
     '/search': { path: './modules/app/search/SearchController.js', className: 'SearchController', skeletonType: 'layout-grid' },
     
