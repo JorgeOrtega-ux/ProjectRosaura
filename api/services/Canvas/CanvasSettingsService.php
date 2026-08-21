@@ -633,6 +633,9 @@ class CanvasSettingsService {
             return ['success' => true, 'message' => __('msg_role_created'), 'data' => ['id' => $roleId]];
         } catch (Exception $e) {
             Logger::error('Error creating canvas role.', ['error' => $e->getMessage()]);
+            if (strpos($e->getMessage(), '1062') !== false || $e->getCode() == 23000) {
+                return ['success' => false, 'message' => __('err_role_name_exists', [], 'Ya existe un rol con este nombre en el lienzo.')];
+            }
             return ['success' => false, 'message' => __('err_database')];
         }
     }
@@ -653,10 +656,6 @@ class CanvasSettingsService {
 
             if (!$isOwner) {
                 $requesterWeight = $this->canvasRepository->getUserCanvasWeight($userId, $canvasId);
-                // query moved to repository
-                // execute removed
-                // fetch removed
-                // assignment removed
                 
                 if ($weight >= $requesterWeight) {
                     return ['success' => false, 'message' => __('err_role_weight_too_high')];
@@ -677,6 +676,9 @@ class CanvasSettingsService {
             return ['success' => false, 'message' => __('err_role_update_failed')];
         } catch (Exception $e) {
             Logger::error('Error updating canvas role.', ['error' => $e->getMessage()]);
+            if (strpos($e->getMessage(), '1062') !== false || $e->getCode() == 23000) {
+                return ['success' => false, 'message' => __('err_role_name_exists', [], 'Ya existe un rol con este nombre en el lienzo.')];
+            }
             return ['success' => false, 'message' => __('err_database')];
         }
     }

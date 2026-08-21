@@ -63,6 +63,15 @@ class CacheInvalidator {
         } catch (\Throwable $e) {}
     }
 
+    public function userRoles(int $userId): void {
+        if (!$this->redis) return;
+        try {
+            $this->redis->del(CacheConstants::PREFIX_USER_ROLES . $userId);
+            $this->redis->del(CacheConstants::PREFIX_USER_PERMS . $userId);
+            $this->redis->del(CacheConstants::PREFIX_USER_HIGHEST_ROLE . $userId);
+        } catch (\Throwable $e) {}
+    }
+
     public function canvas(int $canvasId, ?string $canvasUuid = null): void {
         if (!$this->redis) return;
         try {
@@ -87,6 +96,19 @@ class CacheInvalidator {
             $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_PUBLIC_PAGE . '*');
             $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_HOME_FEED . '*');
             $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_DASHBOARD . '*');
+        } catch (\Throwable $e) {}
+    }
+
+    public function canvasRoles(?int $canvasId = null): void {
+        if (!$this->redis) return;
+        try {
+            if ($canvasId !== null && $canvasId > 0) {
+                $this->redis->del(CacheConstants::PREFIX_CANVAS_ROLES_LIST . $canvasId);
+            } else {
+                $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_ROLES_LIST . '*');
+            }
+            $this->redis->del(CacheConstants::PREFIX_CANVAS_ROLES_LIST . 'global');
+            $this->redis->del(CacheConstants::KEY_CANVAS_PERMS_ALL);
         } catch (\Throwable $e) {}
     }
 

@@ -100,6 +100,7 @@ export const ApiRoutes = {
         ToggleVisibilityTier: 'admin.subscriptions.toggle_visibility',
         SetPopularTier: 'admin.subscriptions.set_popular',
         SaveTier: 'admin.subscriptions.save',
+        SaveSubscriptionColor: 'admin.subscriptions.save_color',
 
         GetAdProviders: 'admin.advertisements.list',
         CreateAdProvider: 'admin.advertisements.create_provider',

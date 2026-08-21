@@ -620,7 +620,9 @@ class AdminViewService {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
         $userPerms = $_SESSION['user_permissions'] ?? [];
-        $canManageTiers = in_array(PermissionsConstants::MANAGE_ROLES_STRUCTURE, $userPerms) || in_array(PermissionsConstants::ACCESS_ADMIN_PANEL, $userPerms);
+        $canManageTiers = in_array(PermissionsConstants::MANAGE_SUBSCRIPTIONS, $userPerms) 
+            || in_array(PermissionsConstants::ACCESS_ADMIN_PANEL, $userPerms)
+            || in_array(PermissionsConstants::MANAGE_ROLES_STRUCTURE, $userPerms);
 
         if (!$canManageTiers) {
             return ['error' => __('err_unauthorized')];

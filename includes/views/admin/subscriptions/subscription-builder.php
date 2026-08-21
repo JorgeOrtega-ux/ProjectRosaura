@@ -675,134 +675,27 @@ $featuresData = [
                     </div>
                 </div>
 
-                <!-- Estilo y Diseño Accordion -->
-                <div class="component-card--grouped component-accordion">
-                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
+                <!-- Color de la Suscripción Card -->
+                <?php if ($isEdit && !empty($tierData['uuid'])): ?>
+                <div class="component-card--grouped">
+                    <div class="component-group-item">
                         <div class="component-card__content">
                             <div class="component-card__icon-container component-card__icon-container--bordered">
                                 <span class="material-symbols-rounded">palette</span>
                             </div>
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('admin_role_style_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('admin_role_style_desc'); ?></p>
+                                <h2 class="component-card__title"><?php echo __('admin_subscription_color_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('admin_subscription_color_desc'); ?></p>
                             </div>
                         </div>
                         <div class="component-card__actions component-card__actions--end">
-                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
-                        </div>
-                    </div>
-                    <div class="component-accordion-body">
-                        <div class="component-accordion-content">
-                            <div class="component-group-item component-group-item--stacked">
-                                <div class="component-card__content">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title"><?php echo __('admin_tier_color_type'); ?></h2>
-                                        <p class="component-card__description"><?php echo __('admin_tier_color_type_desc'); ?></p>
-                                    </div>
-                                </div>                     </div>
-                                <div class="component-card__actions component-card__actions--start">
-                                    <div class="component-dropdown-wrapper">
-                                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleColorType">
-                                            <span class="material-symbols-rounded" data-ref="colorTypeIcon"><?php echo $colorTypeIcon; ?></span>
-                                            <span class="component-dropdown-text" data-ref="colorTypeText"><?php echo $colorTypeLabel; ?></span>
-                                            <span class="material-symbols-rounded">expand_more</span>
-                                        </div>
-                                        <div class="component-module component-module--dropdown disabled" data-module="moduleColorType">
-                                            <div class="component-menu component-menu--w-full component-menu--h-auto">
-                                                <div class="pill-container"><div class="drag-handle"></div></div>
-                                                <div class="component-menu-list">
-                                                    <div class="component-menu-link <?php echo $colorType === 'solid' ? 'active' : ''; ?>" data-action="setColorType" data-value="solid">
-                                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">circle</span></div>
-                                                        <div class="component-menu-link-text"><span><?php echo __('admin_role_color_solid'); ?></span></div>
-                                                    </div>
-                                                    <div class="component-menu-link <?php echo $colorType === 'gradient' ? 'active' : ''; ?>" data-action="setColorType" data-value="gradient">
-                                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">pie_chart</span></div>
-                                                        <div class="component-menu-link-text"><span><?php echo __('admin_role_color_gradient'); ?></span></div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div data-ref="solidMasterContainer" class="<?php echo $colorType !== 'solid' ? 'disabled' : ''; ?>">
-                                <hr class="component-divider">
-                                <div data-ref="solidColorContainer" class="component-color-list">
-                                    <?php if ($colorType === 'solid') echo renderColorBlock($colors[0]['hex'], 100, true); ?>
-                                </div>
-                            </div>
-
-                            <div data-ref="gradientMasterContainer" class="<?php echo $colorType !== 'gradient' ? 'disabled' : ''; ?>">
-                                <hr class="component-divider">
-                                <div class="component-group-item component-group-item--stacked">
-                                    <div class="component-card__content">
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('admin_role_rotation_title'); ?></h2>
-                                            <p class="component-card__description"><?php echo __('admin_role_rotation_desc'); ?></p>
-                                        </div>
-                                    </div>
-                                    <div class="component-card__actions component-card__actions--start">
-                                        <div class="component-dropdown-wrapper">
-                                            <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleGradientAngle" data-value="<?php echo $gradientAngle; ?>" data-ref="gradientAngleTrigger">
-                                                <span class="material-symbols-rounded">rotate_right</span>
-                                                <span class="component-dropdown-text" data-ref="gradientAngleText"><?php echo $gradientAngle; ?>°</span>
-                                                <span class="material-symbols-rounded">expand_more</span>
-                                            </div>
-                                            <div class="component-module component-module--dropdown disabled" data-module="moduleGradientAngle">
-                                                <div class="component-menu component-menu--w-full component-menu--h-auto">
-                                                    <div class="pill-container"><div class="drag-handle"></div></div>
-                                                    <div class="component-menu-list">
-                                                        <?php 
-                                                        $angles = [
-                                                            0 => 'north', 45 => 'north_east', 90 => 'east', 135 => 'south_east', 
-                                                            180 => 'south', 225 => 'south_west', 270 => 'west', 315 => 'north_west'
-                                                        ];
-                                                        foreach ($angles as $ang => $icon) {
-                                                            $active = $gradientAngle === $ang ? 'active' : '';
-                                                            echo '
-                                                            <div class="component-menu-link ' . $active . '" data-action="setGradientAngle" data-value="' . $ang . '">
-                                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">' . $icon . '</span></div>
-                                                                <div class="component-menu-link-text"><span>' . $ang . '°</span></div>
-                                                            </div>';
-                                                        }
-                                                        ?>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <hr class="component-divider">
-
-                                <div class="component-group-item">
-                                    <div class="component-card__content">
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title"><?php echo __('admin_role_blocks_title'); ?></h2>
-                                            <p class="component-card__description"><?php echo __('admin_role_blocks_desc'); ?></p>
-                                        </div>
-                                    </div>
-                                    <div class="component-card__actions component-card__actions--end" data-ref="btnAddGradientColorWrapper">
-                                        <button type="button" class="component-button component-button--h36" data-ref="btnAddGradientColor" data-action="addGradientColor">
-                                            <?php echo __('btn_add_block'); ?>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <hr class="component-divider">
-
-                                <div data-ref="gradientColorsContainer" class="component-color-list">
-                                    <?php 
-                                    if ($colorType === 'gradient') {
-                                        foreach ($colors as $c) echo renderColorBlock($c['hex'], $c['percentage'], false);
-                                    }
-                                    ?>
-                                </div>
-                            </div>
-
+                            <button type="button" class="component-button component-button--h36" data-nav="<?php echo $appUrl; ?>/admin/subscription-color/<?php echo htmlspecialchars($tierData['uuid']); ?>">
+                                <?php echo __('btn_configure'); ?>
+                            </button>
                         </div>
                     </div>
                 </div>
+                <?php endif; ?>
 
             </div>
         </div>

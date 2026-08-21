@@ -607,12 +607,17 @@ class AdminSubscriptionBuilderController {
         }
     }
     extractTierColorPayload() {
+        const solidContainer = document.querySelector('[data-ref="solidColorContainer"]');
+        const gradientContainer = document.querySelector('[data-ref="gradientColorsContainer"]');
+        if (!solidContainer && !gradientContainer) {
+            return null;
+        }
+
         const angleTrigger = document.querySelector('[data-ref="gradientAngleTrigger"]');
         const angle = parseInt(angleTrigger ? angleTrigger.dataset.value : 0, 10);
         let colors = [];
         if (this.currentColorType === 'solid') {
-            const container = document.querySelector('[data-ref="solidColorContainer"]');
-            const hexText = container?.querySelector('[data-ref="triggerHex"]');
+            const hexText = solidContainer?.querySelector('[data-ref="triggerHex"]');
             colors = [{ hex: hexText ? hexText.textContent : '#808080', percentage: 100 }];
         } else {
             const rows = document.querySelectorAll('[data-ref="gradientColorsContainer"] [data-component="color-block"]');
@@ -653,10 +658,10 @@ class AdminSubscriptionBuilderController {
     }
 
     async saveTier(btn) {
-        const tierName = document.getElementById('tierName')?.value.trim();
+        const tierName = document.querySelector('[data-ref="input-tier-name"]')?.value.trim();
         const tierLevel = document.querySelector('[data-ref="val_tierLevel"]')?.dataset.value;
-        const wrapper = document.querySelector('[data-ref="admin-subscriptions-wrapper"]');
-        const isActive = wrapper && wrapper.dataset.tierActive !== undefined ? parseInt(wrapper.dataset.tierActive, 10) : 1;
+        const toggleActive = document.querySelector('[data-ref="toggle-active"]');
+        const isActive = toggleActive ? (toggleActive.checked ? 1 : 0) : 1;
         
         const stripeMonthly = document.querySelector('[data-ref="input-stripe-monthly"]')?.value.trim();
         const stripeYearly = document.querySelector('[data-ref="input-stripe-yearly"]')?.value.trim();

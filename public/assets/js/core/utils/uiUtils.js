@@ -73,10 +73,13 @@ function tierHasFeature(tierObj, featureKey) {
     if (tierObj.is_active !== undefined && (parseInt(tierObj.is_active, 10) === 0 || tierObj.is_active === false)) {
         return false;
     }
-    return tierObj[featureKey] === 1 || 
-           tierObj['feat_' + featureKey] === 1 || 
-           tierObj[featureKey] === true || 
-           tierObj['feat_' + featureKey] === true;
+    const rawKey = featureKey.startsWith('feat_') ? featureKey.substring(5) : featureKey;
+    const featKey = 'feat_' + rawKey;
+    
+    const val = tierObj[featKey] !== undefined ? tierObj[featKey] : (tierObj[rawKey] !== undefined ? tierObj[rawKey] : tierObj[featureKey]);
+    if (val === undefined || val === null) return false;
+    
+    return val === 1 || val === '1' || val === true || val === 'true';
 }
 
 function findTierForFeature(featureKey) {

@@ -355,6 +355,22 @@ return [
             ],
         ],
     ],
+    'admin.subscriptions.save_color' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'save_subscription_color',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'adm_save_sub_color',
+                'max' => 15,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
     'admin.subscriptions.toggle_visibility' => [
         'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
         'action' => 'toggle_subscription_visibility',

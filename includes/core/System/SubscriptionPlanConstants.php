@@ -205,6 +205,19 @@ class SubscriptionPlanConstants {
             $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
             $stmt = $pdo->query("SELECT * FROM subscription_tiers ORDER BY tier_level ASC");
             while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $row['tier_level'] = (int)$row['tier_level'];
+                $row['is_active'] = (int)$row['is_active'];
+                $row['is_popular'] = (int)($row['is_popular'] ?? 0);
+                $row['price_monthly'] = (float)($row['price_monthly'] ?? 0);
+                $row['price_yearly'] = (float)($row['price_yearly'] ?? 0);
+                $row['feat_advanced_roles'] = (int)($row['feat_advanced_roles'] ?? 0);
+                $row['feat_chat_restriction'] = (int)($row['feat_chat_restriction'] ?? 0);
+                $row['feat_custom_palettes'] = (int)($row['feat_custom_palettes'] ?? 0);
+                $row['feat_unlimited_exports'] = (int)($row['feat_unlimited_exports'] ?? 0);
+                $row['feat_inject_templates'] = (int)($row['feat_inject_templates'] ?? 0);
+                $row['feat_live_share'] = (int)($row['feat_live_share'] ?? 0);
+                $row['feat_no_ads'] = (int)($row['feat_no_ads'] ?? 0);
+                $row['feat_download_4k'] = (int)($row['feat_download_4k'] ?? 0);
                 $row['color'] = is_string($row['color'] ?? null) ? (json_decode($row['color'], true) ?? []) : ($row['color'] ?? []);
                 $tiers[] = $row;
             }

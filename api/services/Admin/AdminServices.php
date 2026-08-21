@@ -723,13 +723,14 @@ class AdminServices {
         if (empty($name)) return ['success' => false, 'message' => 'Nombre requerido'];
         
         $colorData = $data['color'] ?? [];
-        if (is_array($colorData)) {
+        $colorString = null;
+        if (is_array($colorData) && !empty($colorData['colors'])) {
             $colorValidation = $this->validateAndFormatRoleColor($colorData);
             if (!$colorValidation['valid']) {
                 return ['success' => false, 'message' => $colorValidation['message']];
             }
             $colorString = $colorValidation['color_string'];
-        } else {
+        } elseif (is_string($colorData) && !empty($colorData)) {
             $colorString = $colorData;
         }
 
@@ -762,8 +763,13 @@ class AdminServices {
             
             if (!empty($uuid)) {
                 // Update
-                $stmt = $pdo->prepare("UPDATE subscription_tiers SET name = ?, tier_level = ?, is_active = ?, color = ?, stripe_price_id_monthly = ?, stripe_price_id_yearly = ?, price_monthly = ?, price_yearly = ?, max_canvases = ?, max_storage_mb = ?, max_snapshots_per_canvas = ?, max_members_per_canvas = ?, max_custom_palettes = ?, feat_advanced_roles = ?, feat_chat_restriction = ?, feat_custom_palettes = ?, feat_unlimited_exports = ?, feat_inject_templates = ?, feat_live_share = ?, feat_no_ads = ?, feat_download_4k = ?, max_template_tokens = ?, max_upload_mb = ?, max_pixels_per_batch = ? WHERE uuid = ?");
-                $stmt->execute([$name, $tier_level, $is_active, $colorString, $stripeMonthly, $stripeYearly, $priceMonthly, $priceYearly, $maxCanvases, $maxStorageMb, $maxSnapshots, $maxMembers, $maxCustomPalettes, $featAdvancedRoles, $featChatRestriction, $featCustomPalettes, $featUnlimitedExports, $featInjectTemplates, $featLiveShare, $featNoAds, $featDownload4k, $maxTemplateTokens, $maxUploadMb, $maxPixelsPerBatch, $uuid]);
+                if ($colorString !== null) {
+                    $stmt = $pdo->prepare("UPDATE subscription_tiers SET name = ?, tier_level = ?, is_active = ?, color = ?, stripe_price_id_monthly = ?, stripe_price_id_yearly = ?, price_monthly = ?, price_yearly = ?, max_canvases = ?, max_storage_mb = ?, max_snapshots_per_canvas = ?, max_members_per_canvas = ?, max_custom_palettes = ?, feat_advanced_roles = ?, feat_chat_restriction = ?, feat_custom_palettes = ?, feat_unlimited_exports = ?, feat_inject_templates = ?, feat_live_share = ?, feat_no_ads = ?, feat_download_4k = ?, max_template_tokens = ?, max_upload_mb = ?, max_pixels_per_batch = ? WHERE uuid = ?");
+                    $stmt->execute([$name, $tier_level, $is_active, $colorString, $stripeMonthly, $stripeYearly, $priceMonthly, $priceYearly, $maxCanvases, $maxStorageMb, $maxSnapshots, $maxMembers, $maxCustomPalettes, $featAdvancedRoles, $featChatRestriction, $featCustomPalettes, $featUnlimitedExports, $featInjectTemplates, $featLiveShare, $featNoAds, $featDownload4k, $maxTemplateTokens, $maxUploadMb, $maxPixelsPerBatch, $uuid]);
+                } else {
+                    $stmt = $pdo->prepare("UPDATE subscription_tiers SET name = ?, tier_level = ?, is_active = ?, stripe_price_id_monthly = ?, stripe_price_id_yearly = ?, price_monthly = ?, price_yearly = ?, max_canvases = ?, max_storage_mb = ?, max_snapshots_per_canvas = ?, max_members_per_canvas = ?, max_custom_palettes = ?, feat_advanced_roles = ?, feat_chat_restriction = ?, feat_custom_palettes = ?, feat_unlimited_exports = ?, feat_inject_templates = ?, feat_live_share = ?, feat_no_ads = ?, feat_download_4k = ?, max_template_tokens = ?, max_upload_mb = ?, max_pixels_per_batch = ? WHERE uuid = ?");
+                    $stmt->execute([$name, $tier_level, $is_active, $stripeMonthly, $stripeYearly, $priceMonthly, $priceYearly, $maxCanvases, $maxStorageMb, $maxSnapshots, $maxMembers, $maxCustomPalettes, $featAdvancedRoles, $featChatRestriction, $featCustomPalettes, $featUnlimitedExports, $featInjectTemplates, $featLiveShare, $featNoAds, $featDownload4k, $maxTemplateTokens, $maxUploadMb, $maxPixelsPerBatch, $uuid]);
+                }
 
                 try {
                     $redisCache = new \App\Config\Database\RedisCache();
@@ -776,9 +782,10 @@ class AdminServices {
                 return ['success' => true, 'message' => __('admin.subscription_updated')];
             } else {
                 // Insert
+                $finalColor = $colorString ?? '{"type":"solid","colors":[{"hex":"#808080","percentage":100}]}';
                 $uuid = \App\Core\Helpers\Utils::generateUUID();
                 $stmt = $pdo->prepare("INSERT INTO subscription_tiers (uuid, name, tier_level, is_active, color, stripe_price_id_monthly, stripe_price_id_yearly, price_monthly, price_yearly, max_canvases, max_storage_mb, max_snapshots_per_canvas, max_members_per_canvas, max_custom_palettes, feat_advanced_roles, feat_chat_restriction, feat_custom_palettes, feat_unlimited_exports, feat_inject_templates, feat_live_share, feat_no_ads, feat_download_4k, max_template_tokens, max_upload_mb, max_pixels_per_batch) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$name, $tier_level, $is_active, $colorString, $stripeMonthly, $stripeYearly, $priceMonthly, $priceYearly, $maxCanvases, $maxStorageMb, $maxSnapshots, $maxMembers, $maxCustomPalettes, $featAdvancedRoles, $featChatRestriction, $featCustomPalettes, $featUnlimitedExports, $featInjectTemplates, $featLiveShare, $featNoAds, $featDownload4k, $maxTemplateTokens, $maxUploadMb, $maxPixelsPerBatch]);
+                $stmt->execute([$name, $tier_level, $is_active, $finalColor, $stripeMonthly, $stripeYearly, $priceMonthly, $priceYearly, $maxCanvases, $maxStorageMb, $maxSnapshots, $maxMembers, $maxCustomPalettes, $featAdvancedRoles, $featChatRestriction, $featCustomPalettes, $featUnlimitedExports, $featInjectTemplates, $featLiveShare, $featNoAds, $featDownload4k, $maxTemplateTokens, $maxUploadMb, $maxPixelsPerBatch]);
                 
                 try {
                     $redisCache = new \App\Config\Database\RedisCache();
@@ -790,9 +797,77 @@ class AdminServices {
 
                 return ['success' => true, 'message' => __('admin.subscription_created'), 'data' => ['uuid' => $uuid]];
             }
-        } catch (\PDOException $e) {
-            Logger::error("saveSubscription Error", ['exception' => $e]);
-            return ['success' => false, 'message' => __('err_database')];
+        } catch (\Throwable $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    public function saveSubscriptionColor($data) {
+        if (!$this->hasPermission(PermissionsConstants::ACCESS_ADMIN_PANEL)) return ['success' => false, 'message' => __('error.unauthorized')];
+        $uuid = Utils::sanitizeText($data['uuid'] ?? '');
+        if (empty($uuid)) return ['success' => false, 'message' => 'UUID requerido'];
+
+        $rawColors = $data['colors'] ?? [];
+        if (!is_array($rawColors) || empty($rawColors)) {
+            return ['success' => false, 'message' => __('msg_subscription_min_colors')];
+        }
+
+        $validColors = [];
+        $totalPercentage = 0;
+        foreach ($rawColors as $c) {
+            $hex = strtoupper(trim(is_array($c) ? ($c['hex'] ?? '') : (string)$c));
+            if (!str_starts_with($hex, '#')) $hex = '#' . $hex;
+            $pct = is_array($c) ? (int)($c['percentage'] ?? 0) : 0;
+            if (preg_match('/^#[0-9A-F]{6}$/', $hex)) {
+                $validColors[] = ['hex' => $hex, 'percentage' => $pct];
+                $totalPercentage += $pct;
+            }
+        }
+
+        if (empty($validColors)) {
+            return ['success' => false, 'message' => __('msg_subscription_min_colors')];
+        }
+
+        $angle = (int)($data['angle'] ?? 0);
+        if ($angle < 0) $angle = 0;
+        if ($angle > 360) $angle = 360;
+
+        $count = count($validColors);
+        $type = $count === 1 ? 'solid' : 'gradient';
+
+        if ($type === 'solid') {
+            $validColors = [['hex' => $validColors[0]['hex'], 'percentage' => 100]];
+            $angle = 0;
+        } else {
+            if ($totalPercentage !== 100) {
+                $base = floor(100 / $count);
+                $rem = 100 % $count;
+                foreach ($validColors as $idx => &$c) {
+                    $c['percentage'] = (int)($base + ($idx < $rem ? 1 : 0));
+                }
+                unset($c);
+            }
+        }
+
+        $colorJson = json_encode(['type' => $type, 'angle' => $angle, 'colors' => $validColors]);
+
+        try {
+            $db = new \App\Config\Database\DatabaseManager();
+            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+            $stmt = $pdo->prepare("UPDATE subscription_tiers SET color = ? WHERE uuid = ?");
+            $stmt->execute([$colorJson, $uuid]);
+
+            try {
+                $redisCache = new \App\Config\Database\RedisCache();
+                $redis = $redisCache->getClient();
+                $invalidator = new \App\Core\System\CacheInvalidator($redis);
+                $invalidator->allUsers();
+                $invalidator->subscriptionTiers();
+            } catch (\Throwable $t) {}
+
+            return ['success' => true, 'message' => __('admin_subscription_color_updated')];
+        } catch (\Throwable $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
         }
     }
 

@@ -234,6 +234,18 @@ class AdminController extends BaseController {
             return $this->respond($this->adminServices->saveSubscription($safeInput));
         } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
+
+    public function save_subscription_color($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::MANAGE_SUBSCRIPTIONS);
+            $safeInput = [
+                'uuid' => $input['uuid'] ?? null,
+                'angle' => isset($input['angle']) ? (int)$input['angle'] : 0,
+                'colors' => $input['colors'] ?? []
+            ];
+            return $this->respond($this->adminServices->saveSubscriptionColor($safeInput));
+        } catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
     public function toggle_subscription_visibility($input) {
         try {
             $this->requirePermission(PermissionsConstants::MANAGE_SUBSCRIPTIONS);
