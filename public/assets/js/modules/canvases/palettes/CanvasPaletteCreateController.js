@@ -1,14 +1,14 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
-import { ApiService } from '../../../core/api/ApiServices.js';
+import { ApiService } from '../../../core/api/ApiService.js';
 import { 
     handleOutsideSearchToolbarClick,
     restoreButton, 
     setButtonLoading, 
-    showMessage,
+    showMessage, 
     toggleSearchToolbar 
 } from '../../../core/utils/uiUtils.js';
 
-class CustomPaletteCreateController {
+class CanvasPaletteCreateController {
     constructor() {
         this.api = new ApiService();
         this.abortController = null;
@@ -380,4 +380,4 @@ class CustomPaletteCreateController {
     }
 }
 
-export { CustomPaletteCreateController };
+export { CanvasPaletteCreateController };

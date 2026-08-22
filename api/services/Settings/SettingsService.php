@@ -18,7 +18,7 @@ use App\Core\System\DatabaseConstants as DB;
 use App\Core\System\RateLimitConstants;
 use App\Core\System\SessionConstants;
 
-class SettingsServices
+class SettingsService
 {
     private $rateLimiter;
     private $sessionManager;

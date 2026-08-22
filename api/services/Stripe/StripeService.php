@@ -8,7 +8,7 @@ use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\System\Logger;
 use App\Core\System\SubscriptionPlanConstants;
 
-class StripeServices {
+class StripeService {
 
     private $sessionManager;
     private $subscriptionRepo;

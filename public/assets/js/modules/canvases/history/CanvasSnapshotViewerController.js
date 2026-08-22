@@ -1,9 +1,9 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
-import { ApiService } from '../../../core/api/ApiServices.js';
+import { ApiService } from '../../../core/api/ApiService.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 import { ModalTemplates } from '../../../core/components/ModalTemplates.js';
 
-class SnapshotViewerController {
+class CanvasSnapshotViewerController {
     constructor() {
         this.api = new ApiService();
         this.snapshotId = null;
@@ -1630,4 +1630,4 @@ class SnapshotViewerController {
     }
 }
 
-export { SnapshotViewerController };
+export { CanvasSnapshotViewerController };

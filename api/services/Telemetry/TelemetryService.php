@@ -7,7 +7,7 @@ use App\Core\System\Logger;
 use App\Core\Helpers\Utils;
 use App\Core\Helpers\GeoIpHelper;
 
-class TelemetryServices {
+class TelemetryService {
     private RedisCache $redis;
 
     public function __construct(RedisCache $redis) {

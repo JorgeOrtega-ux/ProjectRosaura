@@ -2,7 +2,7 @@
 namespace App\Api\Controllers\Chat;
 
 use App\Api\Controllers\BaseController;
-use App\Api\Services\Chat\ChatServices;
+use App\Api\Services\Chat\ChatService;
 use App\Core\Interfaces\SessionManagerInterface;
 
 class ChatController extends BaseController
@@ -10,10 +10,10 @@ class ChatController extends BaseController
     private $sessionManager;
     private $chatServices;
 
-    public function __construct(SessionManagerInterface $sessionManager, ChatServices $chatServices = null)
+    public function __construct(SessionManagerInterface $sessionManager, ChatService $chatServices = null)
     {
         $this->sessionManager = $sessionManager;
-        $this->chatServices = $chatServices ?? new ChatServices();
+        $this->chatServices = $chatServices ?? new ChatService();
     }
 
     public function history($request)

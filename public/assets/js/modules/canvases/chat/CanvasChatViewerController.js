@@ -1,8 +1,8 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
-import { ApiService } from '../../../core/api/ApiServices.js';
+import { ApiService } from '../../../core/api/ApiService.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 
-class ChatViewerController {
+class CanvasChatViewerController {
     constructor() {
         this.api = new ApiService();
         this.images = [];
@@ -165,4 +165,4 @@ class ChatViewerController {
     }
 }
 
-export { ChatViewerController };
+export { CanvasChatViewerController };

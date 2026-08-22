@@ -1,6 +1,6 @@
-import { isAdFreeUser } from '../utils/uiUtils.js';
+﻿import { isAdFreeUser } from '../utils/uiUtils.js';
 import { ApiRoutes } from '../api/ApiRoutes.js';
-import { ApiService } from '../api/ApiServices.js';
+import { ApiService } from '../api/ApiService.js';
 
 export const PromoType = {
     FEED: 'feed',

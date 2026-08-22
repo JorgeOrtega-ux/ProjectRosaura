@@ -25,7 +25,7 @@ use App\Core\System\SessionConstants;
 use App\Core\System\PermissionsConstants;
 use App\Core\System\ModerationConstants;
 
-class AdminServices {
+class AdminService {
     private $userRepository;
     private $moderationRepository;
     private $sessionManager;

@@ -1,5 +1,5 @@
-import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
-import { ApiService } from '../../../core/api/ApiServices.js';
+﻿import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { ApiService } from '../../../core/api/ApiService.js';
 import { showMessage, setButtonLoading, restoreButton, handleInlineNumberAdjustment } from '../../../core/utils/uiUtils.js';
 import { AdminModalTemplates } from '../AdminModalTemplates.js';
 

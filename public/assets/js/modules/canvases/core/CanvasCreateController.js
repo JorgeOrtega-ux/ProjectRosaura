@@ -1,9 +1,9 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
-import { ApiService } from '../../../core/api/ApiServices.js';
+import { ApiService } from '../../../core/api/ApiService.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
 import { closeDropdown, filterMenuList, getAllPalettes, getDynamicTierName, restoreButton, setButtonLoading, showMessage } from '../../../core/utils/uiUtils.js';
 
-class CanvasesCreateController {
+class CanvasCreateController {
     constructor() {
         this.api = new ApiService();
         this.basePath = window.AppBasePath || '';
@@ -514,4 +514,4 @@ class CanvasesCreateController {
     }
 }
 
-export { CanvasesCreateController };
+export { CanvasCreateController };

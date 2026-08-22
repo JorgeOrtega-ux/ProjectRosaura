@@ -10,7 +10,7 @@ use App\Core\Helpers\Utils;
 use App\Core\System\Logger;
 use PDO;
 
-class ChatServices
+class ChatService
 {
     private $pdo;
     private $identityPdo;

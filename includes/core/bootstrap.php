@@ -138,7 +138,7 @@ register_shutdown_function(function () {
 use App\Core\Helpers\Utils; 
 use App\Core\System\Translator; 
 use App\Core\Container;
-use App\Api\Services\Auth\AuthServices;
+use App\Api\Services\Auth\AuthService;
 use App\Core\Interfaces\UserPrefsManagerInterface;
 use App\Core\Interfaces\ServerConfigRepositoryInterface;
 use App\Core\Interfaces\UserRepositoryInterface;
@@ -153,7 +153,7 @@ try {
     $configRepo = $container->get(ServerConfigRepositoryInterface::class);
     $serverConfig = $configRepo->getConfig();
 
-    $authService = $container->get(AuthServices::class);
+    $authService = $container->get(AuthService::class);
     $prefsManager = $container->get(UserPrefsManagerInterface::class);
     $userRepo = $container->get(UserRepositoryInterface::class);
     if ($sessionManager->isLoggedIn()) {

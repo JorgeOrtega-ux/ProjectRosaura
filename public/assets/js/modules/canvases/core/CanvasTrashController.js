@@ -1,5 +1,5 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
-import { ApiService } from '../../../core/api/ApiServices.js';
+import { ApiService } from '../../../core/api/ApiService.js';
 import { 
     backToMainFilters,
     catchPaginationClick,
@@ -14,7 +14,7 @@ import {
     updateFilterIndicator
 } from '../../../core/utils/uiUtils.js';
 
-class CanvasesTrashController {
+class CanvasTrashController {
     constructor() {
         this.api = new ApiService();
         this.selectedCanvasIds = new Set();
@@ -680,5 +680,5 @@ class CanvasesTrashController {
     }
 }
 
-export { CanvasesTrashController };
+export { CanvasTrashController };
 

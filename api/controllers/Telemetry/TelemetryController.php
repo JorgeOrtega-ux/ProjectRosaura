@@ -2,17 +2,17 @@
 namespace App\Api\Controllers\Telemetry;
 
 use App\Api\Controllers\BaseController;
-use App\Api\Services\Telemetry\TelemetryServices;
+use App\Api\Services\Telemetry\TelemetryService;
 use App\Core\System\SessionManager;
 use App\Core\Helpers\Utils;
 use App\Core\System\Logger;
 
 class TelemetryController extends BaseController {
-    private TelemetryServices $telemetryServices;
+    private TelemetryService $telemetryServices;
     private SessionManager $session;
 
     public function __construct(
-        TelemetryServices $telemetryServices, 
+        TelemetryService $telemetryServices, 
         SessionManager $session
     ) {
         $this->telemetryServices = $telemetryServices;

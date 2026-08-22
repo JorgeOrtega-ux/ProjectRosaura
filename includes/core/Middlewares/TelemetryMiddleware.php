@@ -2,15 +2,15 @@
 namespace App\Core\Middlewares;
 
 use App\Core\Interfaces\MiddlewareInterface;
-use App\Api\Services\Telemetry\TelemetryServices;
+use App\Api\Services\Telemetry\TelemetryService;
 use App\Core\System\SessionManager;
 use App\Core\Helpers\Utils;
 
 class TelemetryMiddleware implements MiddlewareInterface {
-    private TelemetryServices $telemetryServices;
+    private TelemetryService $telemetryServices;
     private SessionManager $session;
 
-    public function __construct(TelemetryServices $telemetryServices, SessionManager $session) {
+    public function __construct(TelemetryService $telemetryServices, SessionManager $session) {
         $this->telemetryServices = $telemetryServices;
         $this->session = $session;
     }

@@ -3,7 +3,7 @@ namespace App\Api\Controllers\Admin;
 
 use App\Api\Controllers\BaseController;
 
-use App\Api\Services\Admin\AdminServices;
+use App\Api\Services\Admin\AdminService;
 use App\Api\Services\Admin\AdminAdvertisementsService;
 use App\Core\System\PermissionsConstants;
 
@@ -12,7 +12,7 @@ class AdminController extends BaseController {
     private $adminServices;
     private $adsService;
 
-    public function __construct(AdminServices $adminServices, ?AdminAdvertisementsService $adsService = null) {
+    public function __construct(AdminService $adminServices, ?AdminAdvertisementsService $adsService = null) {
         $this->adminServices = $adminServices;
         $this->adsService = $adsService;
     }

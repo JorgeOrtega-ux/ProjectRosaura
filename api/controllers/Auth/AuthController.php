@@ -3,7 +3,7 @@ namespace App\Api\Controllers\Auth;
 
 use App\Api\Controllers\BaseController;
 
-use App\Api\Services\Auth\AuthServices;
+use App\Api\Services\Auth\AuthService;
 use App\Core\Security\TurnstileValidator;
 use App\Core\Helpers\Utils; 
 
@@ -12,7 +12,7 @@ class AuthController extends BaseController {
     private $authServices;
     private $turnstile;
 
-    public function __construct(AuthServices $authServices) {
+    public function __construct(AuthService $authServices) {
         $this->authServices = $authServices;
         $this->turnstile = new TurnstileValidator();
     }

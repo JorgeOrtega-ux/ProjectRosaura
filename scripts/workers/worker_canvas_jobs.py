@@ -25,10 +25,10 @@ import io
 import numpy as np
 
 try:
-    from scripts.workers.timelapse_video_renderer import render_timelapse_to_mp4
+    from scripts.workers.worker_timelapse_renderer import render_timelapse_to_mp4
 except ImportError:
     try:
-        from timelapse_video_renderer import render_timelapse_to_mp4
+        from worker_timelapse_renderer import render_timelapse_to_mp4
     except ImportError:
         render_timelapse_to_mp4 = None
 

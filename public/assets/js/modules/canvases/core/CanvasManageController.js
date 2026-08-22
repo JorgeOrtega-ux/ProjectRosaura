@@ -1,5 +1,5 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
-import { ApiService } from '../../../core/api/ApiServices.js';
+import { ApiService } from '../../../core/api/ApiService.js';
 import { 
     showMessage, 
     setButtonLoading, 
@@ -11,7 +11,7 @@ import {
     applyLocalTableSearch
 } from '../../../core/utils/uiUtils.js';
 
-class CanvasesManageController {
+class CanvasManageController {
     constructor() {
         this.api = new ApiService();
         this.selectedCanvasIds = new Set();
@@ -559,4 +559,4 @@ class CanvasesManageController {
     }
 }
 
-export { CanvasesManageController };
+export { CanvasManageController };

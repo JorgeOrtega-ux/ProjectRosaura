@@ -9,7 +9,7 @@ use App\Core\Repositories\CanvasRepository;
 use App\Core\Repositories\UserRepository;
 use App\Api\Services\Canvas\CanvasCoreService;
 use App\Api\Services\Canvas\CanvasAccessService;
-use App\Api\Services\Search\SearchServices;
+use App\Api\Services\Search\SearchService;
 use App\Core\Container;
 
 echo "=====================================================\n";
@@ -21,7 +21,7 @@ $canvasRepo = $container->get(CanvasRepository::class);
 $userRepo = $container->get(UserRepository::class);
 $canvasService = $container->get(CanvasCoreService::class);
 $accessService = $container->get(CanvasAccessService::class);
-$searchService = $container->get(SearchServices::class);
+$searchService = $container->get(SearchService::class);
 $dbManager = $container->get(DatabaseManager::class);
 
 $identityDb = $dbManager->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);

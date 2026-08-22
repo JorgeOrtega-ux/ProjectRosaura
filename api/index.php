@@ -54,7 +54,7 @@ use App\Core\Helpers\Utils;
 use App\Core\Container;
 use App\Core\System\Logger;
 use App\Core\System\Translator;
-use App\Api\Services\Auth\AuthServices;
+use App\Api\Services\Auth\AuthService;
 use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\Interfaces\ServerConfigRepositoryInterface;
 use App\Core\Routing\MiddlewarePipeline;
@@ -155,7 +155,7 @@ $serverConfig = [];
 $sessionManager = $container->get(SessionManagerInterface::class);
 
 try {
-    $authService = $container->get(AuthServices::class);
+    $authService = $container->get(AuthService::class);
     $userRepo = $container->get(UserRepositoryInterface::class);
 
     if ($sessionManager->isLoggedIn()) {

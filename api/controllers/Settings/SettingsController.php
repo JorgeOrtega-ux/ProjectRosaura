@@ -2,13 +2,13 @@
 namespace App\Api\Controllers\Settings;
 
 use App\Api\Controllers\BaseController;
-use App\Api\Services\Settings\SettingsServices;
+use App\Api\Services\Settings\SettingsService;
 
 class SettingsController extends BaseController {
     
     private $settingsServices;
 
-    public function __construct(SettingsServices $settingsServices) {
+    public function __construct(SettingsService $settingsServices) {
         $this->settingsServices = $settingsServices;
     }
 

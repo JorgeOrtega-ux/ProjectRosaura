@@ -12,7 +12,7 @@ export const RouteModulesMap = {
     '/design': { path: './modules/app/design/DesignController.js?v=12', className: 'DesignController', skeletonType: 'layout-design' },
     '/design/:id': { path: './modules/app/design/DesignController.js?v=12', className: 'DesignController', skeletonType: 'layout-design' },
     
-    '/canvases/c/v/:canvas/:msg/:idx': { path: './modules/app/canvases/ChatViewerController.js', className: 'ChatViewerController', skeletonType: 'layout-basic' },
+    '/canvases/c/v/:canvas/:msg/:idx': { path: './modules/canvases/chat/CanvasChatViewerController.js', className: 'CanvasChatViewerController', skeletonType: 'layout-basic' },
 
     '/login': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-auth' },
     '/login/two-factor': { path: './modules/auth/AuthController.js', className: 'AuthController', skeletonType: 'layout-auth' },
@@ -57,7 +57,7 @@ export const RouteModulesMap = {
     '/admin/subscription-edit/:uuid': { path: './modules/admin/subscriptions/AdminSubscriptionBuilderController.js', className: 'AdminSubscriptionBuilderController', requiresAdminLang: true, skeletonType: 'layout-basic' },
     '/admin/subscription-color/:uuid': { path: './modules/admin/subscriptions/AdminSubscriptionColorController.js', className: 'AdminSubscriptionColorController', requiresAdminLang: true, skeletonType: 'layout-table' },
     '/admin/advertisements': { path: './modules/admin/advertisements/AdminAdvertisementsController.js', className: 'AdminAdvertisementsController', requiresAdminLang: true, skeletonType: 'layout-table' },
-    '/admin/advertisement-items/:uuid': { path: './modules/admin/advertisements/AdminProviderAdsController.js', className: 'AdminProviderAdsController', requiresAdminLang: true, skeletonType: 'layout-table' },
+    '/admin/advertisement-items/:uuid': { path: './modules/admin/advertisements/AdminProviderAdvertisementsController.js', className: 'AdminProviderAdvertisementsController', requiresAdminLang: true, skeletonType: 'layout-table' },
 
     '/admin/role-edit/:uuid': { path: './modules/admin/roles/AdminRoleBuilderController.js', className: 'AdminRoleBuilderController', requiresAdminLang: true, skeletonType: 'layout-basic' },
     '/admin/role-permissions/:uuid': { path: './modules/admin/roles/AdminRolePermissionsController.js', className: 'AdminRolePermissionsController', requiresAdminLang: true, skeletonType: 'layout-basic' },
@@ -67,7 +67,7 @@ export const RouteModulesMap = {
     '/admin/user-moderation/:uuid': { path: './modules/admin/users/AdminStatusEditController.js', className: 'AdminStatusEditController', requiresAdminLang: true, skeletonType: 'layout-basic' },
     '/admin/user-activity/:uuid': { path: './modules/admin/users/AdminUserHistoryController.js', className: 'AdminUserHistoryController', requiresAdminLang: true, skeletonType: 'layout-basic' },
 
-    '/admin/system-settings': { path: './modules/admin/server/AdminServerConfigController.js', className: 'AdminServerConfigController', requiresAdminLang: true, skeletonType: 'layout-basic' },
+    '/admin/system-settings': { path: './modules/admin/system/AdminServerConfigController.js', className: 'AdminServerConfigController', requiresAdminLang: true, skeletonType: 'layout-basic' },
 
     '/admin/backups': { path: './modules/admin/backups/AdminBackupsController.js', className: 'AdminBackupsController', requiresAdminLang: true, skeletonType: 'layout-table' },
     '/admin/backup-schedule': { path: './modules/admin/backups/AdminBackupsAutomationController.js', className: 'AdminBackupsAutomationController', requiresAdminLang: true, skeletonType: 'layout-basic' },
@@ -78,10 +78,10 @@ export const RouteModulesMap = {
     '/admin/logs': { path: './modules/admin/logs/AdminLogsController.js', className: 'AdminLogsController', requiresAdminLang: true, skeletonType: 'layout-table' },
     '/admin/logs/viewer': { path: './modules/admin/logs/AdminLogsViewerController.js', className: 'AdminLogsViewerController', requiresAdminLang: true, skeletonType: 'layout-basic' },
 
-    '/trash': { path: './modules/canvases/core/CanvasesTrashController.js', className: 'CanvasesTrashController', skeletonType: 'layout-grid' },
-    '/canvases/create': { path: './modules/canvases/core/CanvasesCreateController.js', className: 'CanvasesCreateController', skeletonType: 'layout-table' },
-    '/canvases/manage': { path: './modules/canvases/core/CanvasesManageController.js', className: 'CanvasesManageController', skeletonType: 'layout-table' },
-    '/canvases/trash': { path: './modules/canvases/core/CanvasesTrashController.js', className: 'CanvasesTrashController', skeletonType: 'layout-grid' },
+    '/trash': { path: './modules/canvases/core/CanvasTrashController.js', className: 'CanvasTrashController', skeletonType: 'layout-grid' },
+    '/canvases/create': { path: './modules/canvases/core/CanvasCreateController.js', className: 'CanvasCreateController', skeletonType: 'layout-table' },
+    '/canvases/manage': { path: './modules/canvases/core/CanvasManageController.js', className: 'CanvasManageController', skeletonType: 'layout-table' },
+    '/canvases/trash': { path: './modules/canvases/core/CanvasTrashController.js', className: 'CanvasTrashController', skeletonType: 'layout-grid' },
 
 
     
@@ -102,11 +102,11 @@ export const RouteModulesMap = {
     '/canvases/manage/invites/generate/:uuid': { path: './modules/canvases/team/CanvasInvitesGenerateController.js', className: 'CanvasInvitesGenerateController', skeletonType: 'layout-basic' },
     
     '/canvases/manage/resize/:uuid': { path: './modules/canvases/workspace/CanvasResizeController.js', className: 'CanvasResizeController', skeletonType: 'layout-basic' },
-    '/canvases/palettes/create': { path: './modules/canvases/palettes/CustomPaletteCreateController.js', className: 'CustomPaletteCreateController', skeletonType: 'layout-basic' },
+    '/canvases/palettes/create': { path: './modules/canvases/palettes/CanvasPaletteCreateController.js', className: 'CanvasPaletteCreateController', skeletonType: 'layout-basic' },
 
     '/design/s/:uuid': { path: './modules/canvases/history/CanvasSnapshotsGalleryController.js', className: 'CanvasSnapshotsGalleryController', skeletonType: 'layout-grid' },
 
-    '/snapshot/view/:id': { path: './modules/canvases/history/SnapshotViewerController.js', className: 'SnapshotViewerController', skeletonType: 'layout-grid' }
+    '/snapshot/view/:id': { path: './modules/canvases/history/CanvasSnapshotViewerController.js', className: 'CanvasSnapshotViewerController', skeletonType: 'layout-grid' }
 };
 
 

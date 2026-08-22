@@ -3,13 +3,13 @@ namespace App\Api\Controllers\Stripe;
 
 use App\Api\Controllers\BaseController;
 
-use App\Api\Services\Stripe\StripeServices;
+use App\Api\Services\Stripe\StripeService;
 
 class StripeController extends BaseController {
 
     private $stripeServices;
 
-    public function __construct(StripeServices $stripeServices) {
+    public function __construct(StripeService $stripeServices) {
         $this->stripeServices = $stripeServices;
     }
 

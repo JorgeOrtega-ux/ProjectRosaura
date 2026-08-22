@@ -1,7 +1,7 @@
-import { getPaletteById } from './utils/DesignPaletteUtils.js';
+﻿import { getPaletteById } from './utils/DesignPaletteUtils.js';
 import { showMessage } from '../../../core/utils/uiUtils.js';
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
-import { ApiService } from '../../../core/api/ApiServices.js';
+import { ApiService } from '../../../core/api/ApiService.js';
 
 const api = new ApiService();
 

@@ -9,7 +9,7 @@ function _t(key) {
     return typeof window.__ === 'function' ? window.__(key) : key;
 }
 
-class AdminProviderAdsController extends BaseListController {
+class AdminProviderAdvertisementsController extends BaseListController {
     constructor() {
         super();
         this.selectedAdUuid = null;
@@ -936,10 +936,10 @@ class AdminProviderAdsController extends BaseListController {
     }
 }
 
-applySelectableTable(AdminProviderAdsController, {
+applySelectableTable(AdminProviderAdvertisementsController, {
     idProp: 'selectedAdUuid',
     selectionRef: 'ad-selection-actions',
     rowSelector: '[data-action="selectAdRow"]',
 });
 
-export { AdminProviderAdsController };
+export { AdminProviderAdvertisementsController };

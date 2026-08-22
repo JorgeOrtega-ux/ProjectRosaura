@@ -21,9 +21,9 @@ use App\Core\System\SecurityConstants;
 use App\Core\System\CacheConstants;
 use App\Core\System\DatabaseConstants;
 use App\Core\System\SessionConstants;
-use App\Api\Services\Telemetry\TelemetryServices;
+use App\Api\Services\Telemetry\TelemetryService;
 
-class AuthServices {
+class AuthService {
     private $rateLimiter;
     private $prefsManager;
     private $userRepository;
@@ -43,7 +43,7 @@ class AuthServices {
         VerificationCodeRepositoryInterface $verificationCodeRepository,
         ServerConfigRepositoryInterface $configRepository,
         RoleRepositoryInterface $roleRepository,
-        TelemetryServices $telemetryServices 
+        TelemetryService $telemetryServices 
     ) {
         $this->rateLimiter = $rateLimiter;
         $this->prefsManager = $prefsManager;

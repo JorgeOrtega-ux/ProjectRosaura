@@ -3,14 +3,14 @@ namespace App\Api\Controllers\Search;
 
 use App\Api\Controllers\BaseController;
 
-use App\Api\Services\Search\SearchServices;
+use App\Api\Services\Search\SearchService;
 use App\Core\Interfaces\SessionManagerInterface;
 
 class SearchController extends BaseController {
-    private SearchServices $searchServices;
+    private SearchService $searchServices;
     private SessionManagerInterface $session;
 
-    public function __construct(SearchServices $searchServices, SessionManagerInterface $session) {
+    public function __construct(SearchService $searchServices, SessionManagerInterface $session) {
         $this->searchServices = $searchServices;
         $this->session = $session;
     }

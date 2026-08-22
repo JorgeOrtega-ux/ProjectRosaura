@@ -304,7 +304,7 @@ def render_timelapse_to_mp4(jsonl_path, output_mp4_path, duration_seconds=15, ta
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        print("Usage: python timelapse_video_renderer.py <input.jsonl> <output.mp4> [duration_sec] [target_max_dim]")
+        print("Usage: python worker_timelapse_renderer.py <input.jsonl> <output.mp4> [duration_sec] [target_max_dim]")
         sys.exit(1)
     in_file = sys.argv[1]
     out_file = sys.argv[2]

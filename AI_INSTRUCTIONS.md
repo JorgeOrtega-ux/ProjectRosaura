@@ -1,4 +1,4 @@
-# AI Development Instructions - Project Rosaura
+﻿# AI Development Instructions - Project Rosaura
 
 This guide outlines the mandatory coding rules and architectural constraints that must be followed by any AI developer or coding assistant working on this codebase.
 
@@ -31,7 +31,7 @@ This guide outlines the mandatory coding rules and architectural constraints tha
 * **Action**: Do not pass string literals directly into API client calls. Always import `ApiRoutes` and use its constants (e.g., `ApiRoutes.Auth.Login`).
 
 ## 5. HTTP requests via `ApiService`
-* **Rule**: All backend HTTP calls must go through the standard `ApiService` wrapper (`public/assets/js/core/api/ApiServices.js`).
+* **Rule**: All backend HTTP calls must go through the standard `ApiService` wrapper (`public/assets/js/core/api/ApiService.js`).
 * **Action**: Never use native `fetch()` or `XMLHttpRequest` for API endpoints. 
   - For standard JSON POST: `this.api.post(route, data, signal)`
   - For multipart/FormData POST: `this.api.postForm(route, formData, signal)`
@@ -81,7 +81,7 @@ To maintain consistency across controllers, all class-based JS modules must foll
 ### Example Template:
 ```javascript
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
-import { ApiService } from '../../../core/api/ApiServices.js';
+import { ApiService } from '../../../core/api/ApiService.js';
 import { showMessage } from '../../../core/utils/uiUtils.js';
 
 class FeatureController {

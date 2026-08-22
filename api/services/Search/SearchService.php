@@ -10,7 +10,7 @@ use App\Core\System\DatabaseConstants as DB;
 use PDO;
 use Exception;
 
-class SearchServices {
+class SearchService {
     private TypesenseManager $typesenseManager;
     private DatabaseManager $dbManager;
 

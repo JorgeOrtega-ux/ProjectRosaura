@@ -650,9 +650,9 @@ class Utils {
         if (empty($text)) return $text;
         static $badWords = null;
         if ($badWords === null) {
-            $path = __DIR__ . '/bad_words.php';
+            $path = dirname(__DIR__, 3) . '/config/bad_words.json';
             if (file_exists($path)) {
-                $badWords = require $path;
+                $badWords = json_decode(file_get_contents($path), true) ?? [];
             } else {
                 $badWords = [];
             }
