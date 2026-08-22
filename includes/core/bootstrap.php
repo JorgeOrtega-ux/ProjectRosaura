@@ -214,6 +214,9 @@ try {
     }
 
 } catch (\Throwable $e) {
+    if (class_exists('\App\Core\System\Logger')) {
+        \App\Core\System\Logger::error("Bootstrap error: " . $e->getMessage(), ['exception' => $e]);
+    }
     $isSystemDegraded = true;
     $isLoggedIn = false;
 }

@@ -50,8 +50,10 @@ class AuthViewService {
                 $errorMsg = __('reg_no_data');
             }
         }
-        $linkedAccounts = $_SESSION['accounts'] ?? [];
-        $isMultiSessionAdd = count($linkedAccounts) > 0;
+        global $sessionManager, $isLoggedIn;
+        $isUserLoggedIn = ($isLoggedIn ?? false) || ($sessionManager && $sessionManager->isLoggedIn()) || (!empty($_SESSION['active_account']) && !empty($_SESSION['accounts']));
+        $linkedAccounts = $isUserLoggedIn ? ($_SESSION['accounts'] ?? []) : [];
+        $isMultiSessionAdd = $isUserLoggedIn && !empty($_SESSION['active_account']) && count($linkedAccounts) > 0;
 
         return [
             'relativePath' => $relativePath,

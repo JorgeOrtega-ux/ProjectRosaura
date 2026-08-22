@@ -111,54 +111,63 @@ class CanvasCoreService {
     public function getHomeFeed(?int $currentUserId, string $tagFilter = 'all', int $limit = 20, int $offset = 0): array {
         try {
             $canvases = $this->canvasRepository->getHomeFeed($currentUserId, $tagFilter, $limit, $offset);
+            if (!is_array($canvases) || (isset($canvases['success']) && !$canvases['success'])) {
+                return ['success' => true, 'data' => []];
+            }
             
             $onlineCounts = [];
             try {
                 if (class_exists(RedisCache::class)) {
                     $redis = (new RedisCache())->getClient();
                     if ($redis && !empty($canvases)) {
-                        $canvasIds = array_column($canvases, 'id');
-                        $rawCounts = $redis->hmGet("canvas:online_counts", $canvasIds);
-                        foreach ($canvasIds as $idx => $cId) {
-                            if ($rawCounts[$idx] !== false) {
-                                $onlineCounts[$cId] = $rawCounts[$idx];
+                        $canvasIds = array_filter(array_column($canvases, 'id'));
+                        if (!empty($canvasIds)) {
+                            $rawCounts = $redis->hmGet("canvas:online_counts", $canvasIds);
+                            foreach ($canvasIds as $idx => $cId) {
+                                if (isset($rawCounts[$idx]) && $rawCounts[$idx] !== false) {
+                                    $onlineCounts[$cId] = $rawCounts[$idx];
+                                }
                             }
                         }
                     }
                 }
-            } catch (Exception $e) {}
+            } catch (\Throwable $e) {}
             
-            $formattedCanvases = array_map(function($canvas) use ($currentUserId, $onlineCounts) {
-                $canvas['is_owner'] = ($canvas['owner_id'] == $currentUserId && !empty($canvas['owner_id']));
+            $formattedCanvases = [];
+            foreach ($canvases as $canvas) {
+                if (!is_array($canvas)) continue;
+                $canvas['is_owner'] = (isset($canvas['owner_id']) && $canvas['owner_id'] == $currentUserId && !empty($canvas['owner_id']));
                 $canvas['is_member'] = !empty($canvas['is_member']);
                 $canvas['is_subscription_locked'] = !empty($canvas['is_subscription_locked']);
                 $canvas['locked_requires_downgrade'] = !empty($canvas['is_subscription_locked']);
                 
-                $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".webp");
+                $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . ($canvas['uuid'] ?? '') . ".webp");
                 
                 $canvas['thumbnail_url'] = $thumbnailUrl;
-                $canvas['online_players'] = isset($onlineCounts[$canvas['id']]) ? (int)$onlineCounts[$canvas['id']] : 0;
-                return $canvas;
-            }, $canvases);
+                $canvas['online_players'] = (isset($canvas['id']) && isset($onlineCounts[$canvas['id']])) ? (int)$onlineCounts[$canvas['id']] : 0;
+                $formattedCanvases[] = $canvas;
+            }
 
             // Append cache-busting ?v= timestamp from Redis so browsers always reload updated thumbnails
             try {
                 if (!empty($formattedCanvases) && isset($redis) && $redis) {
-                    $uuids = array_column($formattedCanvases, 'uuid');
-                    $versionKeys = array_map(fn($uuid) => "canvas:{$uuid}:thumbnail_version", $uuids);
-                    $versions = $redis->mGet($versionKeys);
-                    foreach ($formattedCanvases as $i => &$c) {
-                        $v = $versions[$i] ?? null;
-                        if ($v) {
-                            $c['thumbnail_url'] .= '?v=' . $v;
+                    $uuids = array_filter(array_column($formattedCanvases, 'uuid'));
+                    if (!empty($uuids)) {
+                        $versionKeys = array_map(fn($uuid) => "canvas:{$uuid}:thumbnail_version", $uuids);
+                        $versions = $redis->mGet($versionKeys);
+                        foreach ($formattedCanvases as $i => &$c) {
+                            $v = $versions[$i] ?? null;
+                            if ($v) {
+                                $c['thumbnail_url'] .= '?v=' . $v;
+                            }
                         }
+                        unset($c);
                     }
-                    unset($c);
                 }
             } catch (\Throwable $e) {}
 
             return ['success' => true, 'data' => $formattedCanvases];
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             Logger::error("Error in getHomeFeed: " . $e->getMessage(), ['user_id' => $currentUserId, 'tag' => $tagFilter]);
             return ['success' => false, 'message' => __('err_fetch_canvases'), 'http_code' => 500];
         }
@@ -167,38 +176,45 @@ class CanvasCoreService {
     public function getPublicCanvases(?int $currentUserId, int $limit = 20, string $sort = 'newest', int $offset = 0): array {
         try {
             $canvases = $this->canvasRepository->getPublicCanvases($limit, $currentUserId, $sort, $offset);
+            if (!is_array($canvases) || (isset($canvases['success']) && !$canvases['success'])) {
+                return ['success' => true, 'data' => []];
+            }
             
             $onlineCounts = [];
             try {
                 if (class_exists(RedisCache::class)) {
                     $redis = (new RedisCache())->getClient();
                     if ($redis && !empty($canvases)) {
-                        $canvasIds = array_column($canvases, 'id');
-                        $rawCounts = $redis->hmGet("canvas:online_counts", $canvasIds);
-                        foreach ($canvasIds as $idx => $cId) {
-                            if ($rawCounts[$idx] !== false) {
-                                $onlineCounts[$cId] = $rawCounts[$idx];
+                        $canvasIds = array_filter(array_column($canvases, 'id'));
+                        if (!empty($canvasIds)) {
+                            $rawCounts = $redis->hmGet("canvas:online_counts", $canvasIds);
+                            foreach ($canvasIds as $idx => $cId) {
+                                if (isset($rawCounts[$idx]) && $rawCounts[$idx] !== false) {
+                                    $onlineCounts[$cId] = $rawCounts[$idx];
+                                }
                             }
                         }
                     }
                 }
-            } catch (Exception $e) {}
+            } catch (\Throwable $e) {}
             
-            $formattedCanvases = array_map(function($canvas) use ($currentUserId, $onlineCounts) {
-                $canvas['is_owner'] = ($canvas['owner_id'] == $currentUserId && !empty($canvas['owner_id']));
+            $formattedCanvases = [];
+            foreach ($canvases as $canvas) {
+                if (!is_array($canvas)) continue;
+                $canvas['is_owner'] = (isset($canvas['owner_id']) && $canvas['owner_id'] == $currentUserId && !empty($canvas['owner_id']));
                 $canvas['is_member'] = !empty($canvas['is_member']);
                 
-                $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".webp");
+                $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . ($canvas['uuid'] ?? '') . ".webp");
                 
                 $canvas['thumbnail_url'] = $thumbnailUrl;
-                $canvas['online_players'] = isset($onlineCounts[$canvas['id']]) ? (int)$onlineCounts[$canvas['id']] : 0;
+                $canvas['online_players'] = (isset($canvas['id']) && isset($onlineCounts[$canvas['id']])) ? (int)$onlineCounts[$canvas['id']] : 0;
                 $canvas['members_count'] = isset($canvas['members_count']) ? (int)$canvas['members_count'] : 0;
                 
-                return $canvas;
-            }, $canvases);
+                $formattedCanvases[] = $canvas;
+            }
             
             return ['success' => true, 'data' => $formattedCanvases];
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             Logger::error('Error getting public canvases.', ['error' => $e->getMessage()]);
             return ['success' => false, 'message' => __('err_database')];
         }
@@ -209,22 +225,27 @@ class CanvasCoreService {
         if (!$userId) return ['success' => false, 'message' => __('err_unauthorized')];
         try {
             $canvases = $this->canvasRepository->getUserAndJoinedCanvases($userId, $limit, $filter, $offset);
+            if (!is_array($canvases) || (isset($canvases['success']) && !$canvases['success'])) {
+                $canvases = [];
+            }
             
             $onlineCounts = [];
             try {
                 if (class_exists(RedisCache::class)) {
                     $redis = (new RedisCache())->getClient();
                     if ($redis && !empty($canvases)) {
-                        $canvasIds = array_column($canvases, 'id');
-                        $rawCounts = $redis->hmGet("canvas:online_counts", $canvasIds);
-                        foreach ($canvasIds as $idx => $cId) {
-                            if ($rawCounts[$idx] !== false) {
-                                $onlineCounts[$cId] = $rawCounts[$idx];
+                        $canvasIds = array_filter(array_column($canvases, 'id'));
+                        if (!empty($canvasIds)) {
+                            $rawCounts = $redis->hmGet("canvas:online_counts", $canvasIds);
+                            foreach ($canvasIds as $idx => $cId) {
+                                if (isset($rawCounts[$idx]) && $rawCounts[$idx] !== false) {
+                                    $onlineCounts[$cId] = $rawCounts[$idx];
+                                }
                             }
                         }
                     }
                 }
-            } catch (Exception $e) {}
+            } catch (\Throwable $e) {}
 
             $user = $this->userRepository->findById($userId);
             $tier = $user['subscription_tier'] ?? 0;
@@ -236,7 +257,8 @@ class CanvasCoreService {
 
             $formattedCanvases = [];
             foreach ($canvases as $canvas) {
-                $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . $canvas['uuid'] . ".webp");
+                if (!is_array($canvas)) continue;
+                $thumbnailUrl = \App\Core\Helpers\Utils::getS3PublicUrl("thumbnails/canvas_" . ($canvas['uuid'] ?? '') . ".webp");
                 
                 $lockedReasons = [];
                 if (!empty($canvas['locked_reasons'])) {
@@ -244,24 +266,24 @@ class CanvasCoreService {
                 }
 
                 $formattedCanvases[] = [
-                    'id' => $canvas['id'],
-                    'uuid' => $canvas['uuid'],
-                    'name' => $canvas['name'],
-                    'privacy' => $canvas['privacy'],
-                    'size' => $canvas['size'],
+                    'id' => $canvas['id'] ?? 0,
+                    'uuid' => $canvas['uuid'] ?? '',
+                    'name' => $canvas['name'] ?? '',
+                    'privacy' => $canvas['privacy'] ?? '',
+                    'size' => $canvas['size'] ?? '',
                     'mode' => $canvas['mode'] ?? 'offline',
                     'is_online_active' => (bool)($canvas['is_online_active'] ?? 0),
                     'storage_bytes' => (int)($canvas['storage_bytes'] ?? 0),
-                    'max_participants' => $canvas['max_participants'],
-                    'created_at' => $canvas['created_at'],
-                    'is_favorite' => $canvas['is_favorite'],
-                    'is_owner' => $canvas['is_owner'],
+                    'max_participants' => $canvas['max_participants'] ?? null,
+                    'created_at' => $canvas['created_at'] ?? null,
+                    'is_favorite' => !empty($canvas['is_favorite']),
+                    'is_owner' => !empty($canvas['is_owner']),
                     'is_member' => !empty($canvas['is_member']),
-                    'online_players' => isset($onlineCounts[$canvas['id']]) ? (int)$onlineCounts[$canvas['id']] : 0, 
-                    'members_count' => $canvas['members_count'],
+                    'online_players' => (isset($canvas['id']) && isset($onlineCounts[$canvas['id']])) ? (int)$onlineCounts[$canvas['id']] : 0, 
+                    'members_count' => $canvas['members_count'] ?? 0,
                     'favorites_count' => $canvas['favorites_count'] ?? 0,
                     'thumbnail_url' => $thumbnailUrl,
-                    'locked_requires_downgrade' => (bool)$canvas['is_subscription_locked'],
+                    'locked_requires_downgrade' => (bool)($canvas['is_subscription_locked'] ?? 0),
                     'locked_reasons' => $lockedReasons ?: []
                 ];
             }
@@ -276,7 +298,7 @@ class CanvasCoreService {
                     'online_slots_max' => $onlineSlotsMax
                 ]
             ];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Logger::error('Error getting user canvases.', ['error' => $e->getMessage()]);
             return ['success' => false, 'message' => $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine()];
         }

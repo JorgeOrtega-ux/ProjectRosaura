@@ -1,5 +1,6 @@
 import { ApiRoutes } from '../../../../core/api/ApiRoutes.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../../core/utils/uiUtils.js';
+import { getStickersList, getStickerById } from '../data/StickersData.js';
 
 export const DesignTemplates = {
 
@@ -34,6 +35,13 @@ export const DesignTemplates = {
         if (btnToggleTemplateMenu) {
             if (!this.templatesLoaded) {
                 this.loadUserLibrary();
+            }
+        }
+
+        const btnToggleStickersMenu = e.target.closest('[data-menu-target="menu-stickers"]');
+        if (btnToggleStickersMenu) {
+            if (!this.stickersLoaded) {
+                this.loadStickersLibrary();
             }
         }
 
@@ -332,6 +340,153 @@ export const DesignTemplates = {
         });
 
         this.updateTemplateUI();
+    },
+
+    loadStickersLibrary() {
+        this.stickersLoaded = true;
+        const list = getStickersList();
+        this.renderStickersLibraryDOM(list);
+    },
+
+    renderStickersLibraryDOM(stickers) {
+        const container = document.querySelector('[data-ref="stickers-grid"]');
+        if (!container) return;
+
+        const countSpan = document.querySelector('[data-ref="stickers-count"]');
+        if (countSpan) countSpan.innerText = (stickers && stickers.length) ? stickers.length : 0;
+
+        const emptyState = document.querySelector('[data-ref="stickers-empty-state"]');
+
+        container.innerHTML = '';
+
+        if (!stickers || stickers.length === 0) {
+            container.classList.remove('active');
+            container.classList.add('disabled');
+            if (emptyState) {
+                emptyState.classList.remove('disabled');
+                emptyState.classList.add('active');
+            }
+            return;
+        }
+
+        container.classList.remove('disabled');
+        container.classList.add('active');
+        if (emptyState) {
+            emptyState.classList.remove('active');
+            emptyState.classList.add('disabled');
+        }
+
+        stickers.forEach(sticker => {
+            const card = document.createElement('div');
+            card.className = 'component-library-card component-sticker-card';
+            card.setAttribute('data-action', 'addStickerToCanvas');
+            card.setAttribute('data-sticker-id', sticker.id);
+            card.setAttribute('data-sticker-category', sticker.category || 'all');
+            card.setAttribute('data-tooltip', sticker.name);
+            card.setAttribute('data-position', 'top');
+
+            const img = document.createElement('img');
+            img.src = sticker.dataUrl;
+            img.alt = sticker.name;
+            img.className = 'component-library-card__image image-loaded';
+            img.loading = 'lazy';
+            img.style.imageRendering = 'pixelated';
+            img.style.objectFit = 'contain';
+            img.style.padding = '4px';
+
+            card.appendChild(img);
+            container.appendChild(card);
+        });
+
+        this.updateTemplateUI();
+    },
+
+    addStickerToCanvas(stickerId, fallbackDataUrl = null, fallbackName = null) {
+        if (this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+
+        let sticker = getStickerById(stickerId);
+        if (!sticker && fallbackDataUrl) {
+            sticker = {
+                id: stickerId,
+                name: fallbackName || 'Figura',
+                dataUrl: fallbackDataUrl,
+                width: 16,
+                height: 16
+            };
+        }
+        if (!sticker) return;
+
+        const existing = this.templates.find(t => t.id === sticker.id);
+        if (existing) {
+            if (this.activeTemplateId !== sticker.id) {
+                const targetSize = Math.max(16, Math.min(64, Math.floor(Math.min(this.boardWidth, this.boardHeight) / 3)));
+                existing.w = targetSize;
+                existing.h = targetSize;
+                existing.x = Math.round((this.boardWidth - targetSize) / 2);
+                existing.y = Math.round((this.boardHeight - targetSize) / 2);
+                existing.angle = 0;
+                existing.opacity = 0.8;
+                existing.locked = false;
+            }
+            this.toggleTemplate(sticker.id);
+            return;
+        }
+
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+
+        const loadBitmap = async (imageSource) => {
+            if (typeof createImageBitmap === 'function') {
+                try {
+                    return await createImageBitmap(imageSource);
+                } catch (e) {}
+            }
+            try {
+                const offCanvas = document.createElement('canvas');
+                offCanvas.width = imageSource.naturalWidth || 16;
+                offCanvas.height = imageSource.naturalHeight || 16;
+                const offCtx = offCanvas.getContext('2d');
+                offCtx.drawImage(imageSource, 0, 0);
+                return await createImageBitmap(offCanvas);
+            } catch (err) {
+                return null;
+            }
+        };
+
+        img.onload = async () => {
+            const targetSize = Math.max(16, Math.min(64, Math.floor(Math.min(this.boardWidth, this.boardHeight) / 3)));
+            const w = targetSize;
+            const h = targetSize;
+            const x = Math.round((this.boardWidth - w) / 2);
+            const y = Math.round((this.boardHeight - h) / 2);
+
+            const imageBitmap = await loadBitmap(img);
+
+            this.templates.push({
+                id: sticker.id,
+                img,
+                imageBitmap,
+                src: sticker.dataUrl,
+                x,
+                y,
+                w,
+                h,
+                angle: 0,
+                locked: false,
+                opacity: 0.8,
+                isSticker: true,
+                title: sticker.name
+            });
+
+            this.toggleTemplate(sticker.id);
+            showMessage(window.__('msg_template_added') || 'Figura añadida al lienzo', 'success');
+        };
+
+        img.onerror = () => {
+            showMessage(window.__('err_download_library_image') || 'Error al cargar la figura', 'error');
+        };
+
+        img.src = sticker.dataUrl;
     },
 
     _compressTemplateImage(file) {
@@ -821,6 +976,68 @@ export const DesignTemplates = {
         if (!this.canvasId) return;
         if (this.isInjectLocked || this.isResetLocked || this.isResizeLocked) return;
 
+        // INYECCIÓN GRATUITA PARA FIGURAS Y STICKERS (Solo en modo offline / personal, 0 Tokens, sin modal)
+        if (tpl.isSticker) {
+            if (!this.isOfflineMode) {
+                showMessage(window.__('err_stickers_offline_only') || 'Las figuras solo se pueden estampar en modo personal / offline.', 'warning');
+                return;
+            }
+
+            const btn = document.querySelector('[data-ref="btn-template-inject"]');
+            if (btn) setButtonLoading(btn);
+
+            try {
+                if (typeof this.setLastInjectedTemplate === 'function') {
+                    let bitmapClone = null;
+                    if (tpl.imageBitmap) {
+                        try {
+                            bitmapClone = await createImageBitmap(tpl.imageBitmap);
+                        } catch (e) {}
+                    }
+                    this.setLastInjectedTemplate({
+                        x: Math.round(tpl.x),
+                        y: Math.round(tpl.y),
+                        w: tpl.w,
+                        h: tpl.h,
+                        imageBitmap: bitmapClone
+                    });
+                }
+
+                if (this.renderWorker && tpl.imageBitmap) {
+                    try {
+                        const bitmapClone = await createImageBitmap(tpl.imageBitmap);
+                        this.renderWorker.postMessage({
+                            type: 'TRIGGER_INJECT_ANIMATION',
+                            payload: {
+                                templateCoords: {
+                                    x: Math.round(tpl.x),
+                                    y: Math.round(tpl.y),
+                                    w: Math.round(tpl.w),
+                                    h: Math.round(tpl.h)
+                                },
+                                imageBitmap: bitmapClone
+                            }
+                        }, [bitmapClone]);
+                    } catch (bmErr) {}
+                }
+
+                if (typeof this.saveOfflineCanvasState === 'function') {
+                    this.saveOfflineCanvasState(false);
+                }
+
+                this.deleteTemplate();
+                this.requestRender();
+                showMessage(window.__('msg_sticker_stamped') || 'Figura estampada con éxito.', 'success');
+            } catch (err) {
+                console.error("Error stamping sticker:", err);
+                showMessage(window.__('err_stamp_failed') || 'Error al estampar figura.', 'error');
+            } finally {
+                if (btn) restoreButton(btn);
+            }
+            return;
+        }
+
+        // PLANTILLAS PERSONALIZADAS (Mantiene cobro de tokens y modal de confirmación)
         const w = tpl.w || 500;
         const h = tpl.h || 500;
         const cost = Math.max(25, Math.min(2500, Math.round((w * h) / 1000)));

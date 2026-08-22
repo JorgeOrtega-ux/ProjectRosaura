@@ -188,6 +188,20 @@ extract($designData);
                 <button class="component-button component-button--icon component-button--h32" data-action="toggleOfflineEraser" data-ref="btn-offline-eraser" data-tooltip="<?php echo __('tooltip_eraser'); ?> [E]" data-position="right">
                     <span class="material-symbols-rounded">cleaning_services</span>
                 </button>
+                <button class="component-button component-button--icon component-button--h32" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-stickers" data-ref="btn-offline-stickers" data-tooltip="<?php echo __('tooltip_stickers'); ?> [F]" data-position="right">
+                    <span class="material-symbols-rounded">category</span>
+                </button>
+            </div>
+
+            <div class="canvas-design-subtoolbar-vertical disabled" data-ref="offline-subtoolbar-vertical">
+                <div class="canvas-design-subtoolbar-group disabled" data-subtoolbar="eraser">
+                    <button class="component-button component-button--icon component-button--h32 active" data-action="setOfflineEraserMode" data-eraser-mode="box" data-ref="btn-eraser-mode-box" data-tooltip="<?php echo __('tooltip_eraser_box'); ?>" data-position="right">
+                        <span class="material-symbols-rounded">highlight_alt</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setOfflineEraserMode" data-eraser-mode="brush" data-ref="btn-eraser-mode-brush" data-tooltip="<?php echo __('tooltip_eraser_brush'); ?>" data-position="right">
+                        <span class="material-symbols-rounded">draw</span>
+                    </button>
+                </div>
             </div>
             <?php endif; ?>
             <?php endif; ?>

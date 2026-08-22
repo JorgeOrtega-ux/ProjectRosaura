@@ -40,6 +40,7 @@ const MAX_HISTORY = 50;
 let undoStack = [];
 let redoStack = [];
 let activeSprayStrokeDiffs = null;
+let activeBrushStrokeDiffs = null;
 
 function updateProtectedOffscreen() {
     if (typeof OffscreenCanvas === 'undefined') return;
@@ -555,10 +556,12 @@ function render() {
                         const templateIdx = p1.y * injectAnimation.w + p1.x;
                         color = injectAnimation.templatePixels[templateIdx];
                     }
-                    if (pixelBuffer && pixelBuffer[bufferIdx] !== color) {
-                        pixelBuffer[bufferIdx] = color;
-                        markDirty(absX, absY);
-                        needsFlush = true;
+                    if ((color & 0xFF000000) !== 0) {
+                        if (pixelBuffer && pixelBuffer[bufferIdx] !== color) {
+                            pixelBuffer[bufferIdx] = color;
+                            markDirty(absX, absY);
+                            needsFlush = true;
+                        }
                     }
                 }
             }
@@ -575,10 +578,12 @@ function render() {
                         const templateIdx = p2.y * injectAnimation.w + p2.x;
                         color = injectAnimation.templatePixels[templateIdx];
                     }
-                    if (pixelBuffer && pixelBuffer[bufferIdx] !== color) {
-                        pixelBuffer[bufferIdx] = color;
-                        markDirty(absX, absY);
-                        needsFlush = true;
+                    if ((color & 0xFF000000) !== 0) {
+                        if (pixelBuffer && pixelBuffer[bufferIdx] !== color) {
+                            pixelBuffer[bufferIdx] = color;
+                            markDirty(absX, absY);
+                            needsFlush = true;
+                        }
                     }
                 }
             }
@@ -2061,6 +2066,9 @@ self.onmessage = function (e) {
 
         case 'PUSH_PIXELS': {
             const pixels = e.data.payload.pixels;
+            const strokePhase = e.data.payload.strokePhase;
+            const skipUndo = !!e.data.payload.skipUndo;
+
             if (isOfflineMode && pixelBuffer && pixels && pixels.length > 0) {
                 processPixelQueue();
                 const diffs = [];
@@ -2075,14 +2083,35 @@ self.onmessage = function (e) {
                         }
                     }
                 }
-                if (diffs.length > 0) {
-                    undoStack.push({ type: 'pixels', diffs });
-                    redoStack.length = 0;
-                    if (undoStack.length > MAX_HISTORY) undoStack.shift();
-                    self.postMessage({
-                        type: 'HISTORY_CHANGED',
-                        payload: { canUndo: undoStack.length > 0, canRedo: false, action: 'push' }
-                    });
+
+                if (strokePhase === 'start') {
+                    activeBrushStrokeDiffs = [...diffs];
+                } else if (strokePhase === 'step') {
+                    if (!activeBrushStrokeDiffs) activeBrushStrokeDiffs = [];
+                    activeBrushStrokeDiffs.push(...diffs);
+                } else if (strokePhase === 'end') {
+                    if (!activeBrushStrokeDiffs) activeBrushStrokeDiffs = [];
+                    activeBrushStrokeDiffs.push(...diffs);
+                    if (activeBrushStrokeDiffs.length > 0) {
+                        undoStack.push({ type: 'pixels', diffs: activeBrushStrokeDiffs });
+                        redoStack.length = 0;
+                        if (undoStack.length > MAX_HISTORY) undoStack.shift();
+                        self.postMessage({
+                            type: 'HISTORY_CHANGED',
+                            payload: { canUndo: undoStack.length > 0, canRedo: false, action: 'push' }
+                        });
+                    }
+                    activeBrushStrokeDiffs = null;
+                } else if (!skipUndo) {
+                    if (diffs.length > 0) {
+                        undoStack.push({ type: 'pixels', diffs });
+                        redoStack.length = 0;
+                        if (undoStack.length > MAX_HISTORY) undoStack.shift();
+                        self.postMessage({
+                            type: 'HISTORY_CHANGED',
+                            payload: { canUndo: undoStack.length > 0, canRedo: false, action: 'push' }
+                        });
+                    }
                 }
             }
 
@@ -2115,6 +2144,7 @@ self.onmessage = function (e) {
                     try {
                         const tempCanvas = new OffscreenCanvas(tc.w, tc.h);
                         const tempCtx = tempCanvas.getContext('2d');
+                        tempCtx.imageSmoothingEnabled = false;
                         tempCtx.drawImage(payload.imageBitmap, 0, 0, tc.w, tc.h);
                         const imgData = tempCtx.getImageData(0, 0, tc.w, tc.h);
                         templatePixels = new Uint32Array(imgData.data.buffer);

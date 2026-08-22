@@ -223,18 +223,13 @@ class CanvasRepository implements CanvasRepositoryInterface {
             return array_map([$this, 'appendSnapshotUrl'], $results);
         };
 
-        if ($cacheKey && $this->redisCache) {
-            return $this->redisCache->executeWithLock("lock_public_canvases_{$sort}_{$limit}_{$offset}", 5, function() use ($cacheKey, $fetchClosure) {
-                $cached = $this->redisClient->get($cacheKey);
-                if ($cached) return json_decode($cached, true);
-                
-                $results = $fetchClosure();
+        $results = $fetchClosure();
+        if ($cacheKey && $this->redisClient && !(defined('SYSTEM_DEGRADED') && constant('SYSTEM_DEGRADED') === true)) {
+            try {
                 $this->redisClient->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($results));
-                return $results;
-            });
+            } catch (\Throwable $e) {}
         }
-
-        return $fetchClosure();
+        return $results;
     }
 
     public function getHomeFeed(?int $userId, string $tagFilter = 'all', int $limit = 20, int $offset = 0): array {
@@ -318,19 +313,13 @@ class CanvasRepository implements CanvasRepositoryInterface {
             return array_map([$this, 'appendSnapshotUrl'], $results);
         };
 
-        if ($cacheKey && $this->redisCache) {
-            $lockKey = "lock_home_feed_" . ($userId ?? 'guest') . "_{$tagFilter}_{$limit}_{$offset}";
-            return $this->redisCache->executeWithLock($lockKey, 5, function() use ($cacheKey, $cacheTtl, $fetchClosure) {
-                $cached = $this->redisClient->get($cacheKey);
-                if ($cached) return json_decode($cached, true);
-                
-                $results = $fetchClosure();
+        $results = $fetchClosure();
+        if ($cacheKey && $this->redisClient && !(defined('SYSTEM_DEGRADED') && constant('SYSTEM_DEGRADED') === true)) {
+            try {
                 $this->redisClient->setex($cacheKey, $cacheTtl, json_encode($results));
-                return $results;
-            });
+            } catch (\Throwable $e) {}
         }
-
-        return $fetchClosure();
+        return $results;
     }
 
 

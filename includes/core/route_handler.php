@@ -140,7 +140,7 @@ if (in_array($currentView, ['app/home.php', 'app/explore.php']) && class_exists(
         }
     } catch (\Throwable $e) {
         if (class_exists('\App\Core\System\Logger')) {
-            \App\Core\System\Logger::security("Error fetching initial canvases: " . $e->getMessage(), 'error');
+            \App\Core\System\Logger::error("Error fetching initial canvases: " . $e->getMessage(), ['exception' => $e]);
         }
     }
 }

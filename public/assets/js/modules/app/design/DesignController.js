@@ -3,13 +3,13 @@ import { showMessage, setButtonLoading, restoreButton } from '../../../core/util
 import { CardTemplates } from '../../../core/components/CardTemplates.js';
 import { PromoService } from '../../../core/services/PromoCardService.js';
 import { DesignChat } from './DesignChat.js';
-import { DesignInteractions } from './DesignInteractions.js?v=4';
-import { DesignNetwork } from './DesignNetwork.js?v=4';
-import { DesignRender } from './DesignRender.js';
-import { DesignSetup } from './DesignSetup.js';
+import { DesignInteractions } from './DesignInteractions.js?v=5';
+import { DesignNetwork } from './DesignNetwork.js?v=5';
+import { DesignRender } from './DesignRender.js?v=5';
+import { DesignSetup } from './DesignSetup.js?v=5';
 import { PerksRegistry } from './PerksRegistry.js';
 import { soundManager } from './SoundManager.js';
-import { DesignTemplates } from './templates/DesignTemplates.js';
+import { DesignTemplates } from './templates/DesignTemplates.js?v=5';
 
 class DesignController {
     constructor() {
@@ -238,6 +238,9 @@ class DesignController {
         }
         if (typeof this.updateTemplateUI === 'function') {
             this.updateTemplateUI();
+        }
+        if (typeof this.loadStickersLibrary === 'function') {
+            this.loadStickersLibrary();
         }
         this.renderModulePromos();
     }

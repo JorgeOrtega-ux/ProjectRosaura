@@ -100,7 +100,8 @@ class RedisCache {
     }
 
     public function acquireLock(string $name, int $timeoutSeconds = 5) {
-        if (!$this->client || defined('SYSTEM_DEGRADED')) {
+        $isDegraded = defined('SYSTEM_DEGRADED') && constant('SYSTEM_DEGRADED') === true;
+        if (!$this->client || $isDegraded) {
             return false; 
         }
 
@@ -122,7 +123,8 @@ class RedisCache {
     }
 
     public function releaseLock(string $name, string $token): bool {
-        if (!$this->client || defined('SYSTEM_DEGRADED')) {
+        $isDegraded = defined('SYSTEM_DEGRADED') && constant('SYSTEM_DEGRADED') === true;
+        if (!$this->client || $isDegraded) {
             return true;
         }
 
@@ -140,11 +142,16 @@ class RedisCache {
                 'lock_name' => $name, 
                 'exception' => $e->getMessage()
             ]);
-            return false;
         }
+        return false;
     }
 
     public function executeWithLock(string $name, int $timeoutSeconds, callable $callback, int $maxRetries = 10, int $retryDelayMs = 50) {
+        $isDegraded = defined('SYSTEM_DEGRADED') && constant('SYSTEM_DEGRADED') === true;
+        if (!$this->client || $isDegraded) {
+            return $callback(null);
+        }
+
         $lockToken = false;
         for ($i = 0; $i < $maxRetries; $i++) {
             $lockToken = $this->acquireLock($name, $timeoutSeconds);

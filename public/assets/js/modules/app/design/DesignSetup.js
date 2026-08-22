@@ -124,6 +124,9 @@ export const DesignSetup = {
             this.centerBoard();
             this.setCanvasBadge('coords', 'my_location', '- , -', 'left');
             this.renderColorPalette(this.canvasPaletteId);
+            if (typeof this.loadStickersLibrary === 'function') {
+                this.loadStickersLibrary();
+            }
 
             if (this.resetActive && this.nextResetAt) {
                 this.startResetTimer();

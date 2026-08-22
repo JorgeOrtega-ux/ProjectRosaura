@@ -187,7 +187,8 @@ class SubscriptionPlanConstants {
 
         try {
             $redis = (new \App\Config\Database\RedisCache())->getClient();
-            if ($redis && !defined('SYSTEM_DEGRADED')) {
+            $isDegraded = defined('SYSTEM_DEGRADED') && constant('SYSTEM_DEGRADED') === true;
+            if ($redis && !$isDegraded) {
                 $cached = $redis->get(CacheConstants::KEY_SUBSCRIPTION_TIERS_ALL);
                 if ($cached) {
                     $decoded = json_decode($cached, true);
@@ -225,7 +226,8 @@ class SubscriptionPlanConstants {
             if (!empty($tiers)) {
                 try {
                     $redis = (new \App\Config\Database\RedisCache())->getClient();
-                    if ($redis && !defined('SYSTEM_DEGRADED')) {
+                    $isDegraded = defined('SYSTEM_DEGRADED') && constant('SYSTEM_DEGRADED') === true;
+                    if ($redis && !$isDegraded) {
                         $redis->setex(CacheConstants::KEY_SUBSCRIPTION_TIERS_ALL, CacheConstants::TTL_ONE_WEEK, json_encode($tiers));
                     }
                 } catch (\Throwable $e) {}

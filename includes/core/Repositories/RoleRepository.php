@@ -26,102 +26,158 @@ class RoleRepository implements RoleRepositoryInterface {
     }
 
     public function invalidateGlobalRolesCache(): void {
-        if (!$this->redisClient || defined('SYSTEM_DEGRADED')) return;
+        $isDegraded = defined('SYSTEM_DEGRADED') && constant('SYSTEM_DEGRADED') === true;
+        if (!$this->redisClient || $isDegraded) return;
         $this->cacheInvalidator->globalRoles();
     }
 
     public function invalidateRoleCache(int $roleId): void {
-        if (!$this->redisClient || defined('SYSTEM_DEGRADED')) return;
+        $isDegraded = defined('SYSTEM_DEGRADED') && constant('SYSTEM_DEGRADED') === true;
+        if (!$this->redisClient || $isDegraded) return;
         $role = $this->findById($roleId);
         $roleName = $role ? md5($role['name']) : null;
         $this->cacheInvalidator->globalRole($roleId, $roleName);
-        $this->redisClient->setex(CacheConstants::PREFIX_FORCE_REAUTH_ROLE . $roleId, CacheConstants::TTL_ONE_DAY, time());
+        try {
+            $this->redisClient->setex(CacheConstants::PREFIX_FORCE_REAUTH_ROLE . $roleId, CacheConstants::TTL_ONE_DAY, time());
+        } catch (\Throwable $e) {}
     }
 
     public function invalidateUserCache(int $userId): void {
-        if (!$this->redisClient || defined('SYSTEM_DEGRADED')) return;
+        $isDegraded = defined('SYSTEM_DEGRADED') && constant('SYSTEM_DEGRADED') === true;
+        if (!$this->redisClient || $isDegraded) return;
         $this->cacheInvalidator->user($userId);
-        $this->redisClient->setex(CacheConstants::PREFIX_FORCE_REAUTH_USER . $userId, CacheConstants::TTL_ONE_DAY, time());
+        try {
+            $this->redisClient->setex(CacheConstants::PREFIX_FORCE_REAUTH_USER . $userId, CacheConstants::TTL_ONE_DAY, time());
+        } catch (\Throwable $e) {}
     }
 
     public function invalidateGlobalPermissionsCache(): void {
-        if (!$this->redisClient || defined('SYSTEM_DEGRADED')) return;
+        $isDegraded = defined('SYSTEM_DEGRADED') && constant('SYSTEM_DEGRADED') === true;
+        if (!$this->redisClient || $isDegraded) return;
         $this->cacheInvalidator->globalPermissions();
     }
 
     public function getAll(): array {
         $cacheKey = CacheConstants::PREFIX_ROLES_ALL;
-        $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
-        if ($cached) return json_decode($cached, true);
+        $isDegraded = defined('SYSTEM_DEGRADED') && constant('SYSTEM_DEGRADED') === true;
+        if ($this->redisClient && !$isDegraded) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) {
+                    $decoded = json_decode($cached, true);
+                    if (is_array($decoded)) return $decoded;
+                }
+            } catch (\Throwable $e) {}
+        }
 
-        return $this->redisCache->executeWithLock('lock_rbac_all_roles', 5, function() use ($cacheKey) {
-            $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
-            if ($cached) return json_decode($cached, true);
-
+        try {
             $tblRoles = DB::TBL_ROLES;
             $stmt = $this->pdo->query("SELECT id, uuid, name, weight, is_system, created_at, updated_at FROM {$tblRoles} ORDER BY weight DESC, id ASC");
-            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-            if ($this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($data));
+            if ($this->redisClient && !$isDegraded) {
+                try {
+                    $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($data));
+                } catch (\Throwable $e) {}
+            }
             return $data;
-        });
+        } catch (\Throwable $e) {
+            Logger::error("Error in RoleRepository::getAll: " . $e->getMessage());
+            return [];
+        }
     }
 
     public function findById(int $id): ?array {
         $cacheKey = CacheConstants::PREFIX_ROLE_BY_ID . $id;
-        $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
-        if ($cached) return json_decode($cached, true);
+        $isDegraded = defined('SYSTEM_DEGRADED') && constant('SYSTEM_DEGRADED') === true;
+        if ($this->redisClient && !$isDegraded) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) {
+                    $decoded = json_decode($cached, true);
+                    if (is_array($decoded)) return $decoded;
+                }
+            } catch (\Throwable $e) {}
+        }
 
-        return $this->redisCache->executeWithLock('lock_rbac_role_' . $id, 5, function() use ($id, $cacheKey) {
-            $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
-            if ($cached) return json_decode($cached, true);
-
+        try {
             $tblRoles = DB::TBL_ROLES;
             $stmt = $this->pdo->prepare("SELECT id, uuid, name, weight, is_system, created_at, updated_at FROM {$tblRoles} WHERE id = ? LIMIT 1");
             $stmt->execute([$id]);
             $role = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            if ($role && $this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($role));
+            if ($role && $this->redisClient && !$isDegraded) {
+                try {
+                    $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($role));
+                } catch (\Throwable $e) {}
+            }
             return $role ?: null;
-        });
+        } catch (\Throwable $e) {
+            Logger::error("Error in RoleRepository::findById: " . $e->getMessage());
+            return null;
+        }
     }
 
     public function findByUuid(string $uuid): ?array {
         $cacheKey = CacheConstants::PREFIX_ROLE_BY_ID . 'uuid_' . md5($uuid);
-        $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
-        if ($cached) return json_decode($cached, true);
+        $isDegraded = defined('SYSTEM_DEGRADED') && constant('SYSTEM_DEGRADED') === true;
+        if ($this->redisClient && !$isDegraded) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) {
+                    $decoded = json_decode($cached, true);
+                    if (is_array($decoded)) return $decoded;
+                }
+            } catch (\Throwable $e) {}
+        }
 
-        return $this->redisCache->executeWithLock('lock_rbac_role_uuid_' . md5($uuid), 5, function() use ($uuid, $cacheKey) {
-            $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
-            if ($cached) return json_decode($cached, true);
-
+        try {
             $tblRoles = DB::TBL_ROLES;
             $stmt = $this->pdo->prepare("SELECT id, uuid, name, weight, is_system, created_at, updated_at FROM {$tblRoles} WHERE uuid = ? LIMIT 1");
             $stmt->execute([$uuid]);
             $role = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            if ($role && $this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($role));
+            if ($role && $this->redisClient && !$isDegraded) {
+                try {
+                    $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($role));
+                } catch (\Throwable $e) {}
+            }
             return $role ?: null;
-        });
+        } catch (\Throwable $e) {
+            Logger::error("Error in RoleRepository::findByUuid: " . $e->getMessage());
+            return null;
+        }
     }
 
     public function findByName(string $name): ?array {
         $cacheKey = CacheConstants::PREFIX_ROLE_BY_NAME . md5($name);
-        $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
-        if ($cached) return json_decode($cached, true);
+        $isDegraded = defined('SYSTEM_DEGRADED') && constant('SYSTEM_DEGRADED') === true;
+        if ($this->redisClient && !$isDegraded) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) {
+                    $decoded = json_decode($cached, true);
+                    if (is_array($decoded)) return $decoded;
+                }
+            } catch (\Throwable $e) {}
+        }
 
-        return $this->redisCache->executeWithLock('lock_rbac_role_name_' . md5($name), 5, function() use ($name, $cacheKey) {
-            $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
-            if ($cached) return json_decode($cached, true);
-
+        try {
             $tblRoles = DB::TBL_ROLES;
             $stmt = $this->pdo->prepare("SELECT id, uuid, name, weight, is_system, created_at, updated_at FROM {$tblRoles} WHERE name = ? LIMIT 1");
             $stmt->execute([$name]);
             $role = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($role && $this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($role));
+            if ($role && $this->redisClient && !$isDegraded) {
+                try {
+                    $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($role));
+                } catch (\Throwable $e) {}
+            }
             return $role ?: null;
-        });
+        } catch (\Throwable $e) {
+            Logger::error("Error in RoleRepository::findByName: " . $e->getMessage());
+            return null;
+        }
     }
 
     public function ensureDefaultPermissionsExist(): void {
@@ -194,31 +250,48 @@ class RoleRepository implements RoleRepositoryInterface {
     public function getAllPermissions(): array {
         $this->ensureDefaultPermissionsExist();
         $cacheKey = CacheConstants::PREFIX_ALL_PERMISSIONS;
-        $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
-        if ($cached) return json_decode($cached, true);
+        $isDegraded = defined('SYSTEM_DEGRADED') && constant('SYSTEM_DEGRADED') === true;
+        if ($this->redisClient && !$isDegraded) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) {
+                    $decoded = json_decode($cached, true);
+                    if (is_array($decoded)) return $decoded;
+                }
+            } catch (\Throwable $e) {}
+        }
 
-        return $this->redisCache->executeWithLock('lock_rbac_all_perms', 5, function() use ($cacheKey) {
-            $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
-            if ($cached) return json_decode($cached, true);
-
+        try {
             $tblPerms = DB::TBL_PERMISSIONS;
             $stmt = $this->pdo->query("SELECT id, name, description, is_critical FROM {$tblPerms} ORDER BY id ASC");
-            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-            if ($this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_WEEK, json_encode($data));
+            if ($this->redisClient && !$isDegraded) {
+                try {
+                    $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_WEEK, json_encode($data));
+                } catch (\Throwable $e) {}
+            }
             return $data;
-        });
+        } catch (\Throwable $e) {
+            Logger::error("Error in RoleRepository::getAllPermissions: " . $e->getMessage());
+            return [];
+        }
     }
 
     public function getRolePermissions(int $roleId): array {
         $cacheKey = CacheConstants::PREFIX_ROLE_PERMS . $roleId;
-        $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
-        if ($cached) return json_decode($cached, true);
+        $isDegraded = defined('SYSTEM_DEGRADED') && constant('SYSTEM_DEGRADED') === true;
+        if ($this->redisClient && !$isDegraded) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) {
+                    $decoded = json_decode($cached, true);
+                    if (is_array($decoded)) return $decoded;
+                }
+            } catch (\Throwable $e) {}
+        }
 
-        return $this->redisCache->executeWithLock('lock_rbac_role_perms_' . $roleId, 5, function() use ($roleId, $cacheKey) {
-            $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
-            if ($cached) return json_decode($cached, true);
-
+        try {
             $tblPerms = DB::TBL_PERMISSIONS;
             $tblRolePerms = DB::TBL_ROLE_PERMISSIONS;
 
@@ -229,11 +302,18 @@ class RoleRepository implements RoleRepositoryInterface {
                 WHERE rp.role_id = ?
             ");
             $stmt->execute([$roleId]);
-            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-            if ($this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($data));
+            if ($this->redisClient && !$isDegraded) {
+                try {
+                    $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($data));
+                } catch (\Throwable $e) {}
+            }
             return $data;
-        });
+        } catch (\Throwable $e) {
+            Logger::error("Error in RoleRepository::getRolePermissions: " . $e->getMessage());
+            return [];
+        }
     }
 
     public function getValidPermissionIds(array $ids): array {
@@ -264,13 +344,18 @@ class RoleRepository implements RoleRepositoryInterface {
 
     public function getUserRoles(int $userId): array {
         $cacheKey = CacheConstants::PREFIX_USER_ROLES . $userId;
-        $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
-        if ($cached) return json_decode($cached, true);
+        $isDegraded = defined('SYSTEM_DEGRADED') && constant('SYSTEM_DEGRADED') === true;
+        if ($this->redisClient && !$isDegraded) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) {
+                    $decoded = json_decode($cached, true);
+                    if (is_array($decoded)) return $decoded;
+                }
+            } catch (\Throwable $e) {}
+        }
 
-        return $this->redisCache->executeWithLock('lock_rbac_user_roles_' . $userId, 5, function() use ($userId, $cacheKey) {
-            $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
-            if ($cached) return json_decode($cached, true);
-
+        try {
             $tblRoles = DB::TBL_ROLES;
             $tblUserRoles = DB::TBL_USER_ROLES;
 
@@ -282,30 +367,42 @@ class RoleRepository implements RoleRepositoryInterface {
                 ORDER BY r.weight DESC
             ");
             $stmt->execute([$userId]);
-            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
             if (empty($data)) {
                 if ($this->ensureUserHasDefaultRole($userId)) {
                     $stmt->execute([$userId]);
-                    $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    $data = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
                 }
             }
 
-            if ($this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($data));
+            if ($this->redisClient && !$isDegraded) {
+                try {
+                    $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($data));
+                } catch (\Throwable $e) {}
+            }
             return $data;
-        });
+        } catch (\Throwable $e) {
+            Logger::error("Error in RoleRepository::getUserRoles: " . $e->getMessage());
+            return [];
+        }
     }
 
     public function getMergedPermissionsForUser(int $userId): array {
         $this->ensureDefaultPermissionsExist();
         $cacheKey = CacheConstants::PREFIX_USER_PERMS . $userId;
-        $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
-        if ($cached) return json_decode($cached, true);
+        $isDegraded = defined('SYSTEM_DEGRADED') && constant('SYSTEM_DEGRADED') === true;
+        if ($this->redisClient && !$isDegraded) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) {
+                    $decoded = json_decode($cached, true);
+                    if (is_array($decoded)) return $decoded;
+                }
+            } catch (\Throwable $e) {}
+        }
 
-        return $this->redisCache->executeWithLock('lock_rbac_user_perms_' . $userId, 5, function() use ($userId, $cacheKey) {
-            $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
-            if ($cached) return json_decode($cached, true);
-
+        try {
             $tblPerms = DB::TBL_PERMISSIONS;
             $tblRolePerms = DB::TBL_ROLE_PERMISSIONS;
             $tblUserRoles = DB::TBL_USER_ROLES;
@@ -318,29 +415,41 @@ class RoleRepository implements RoleRepositoryInterface {
                 WHERE ur.user_id = ?
             ");
             $stmt->execute([$userId]);
-            $data = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            $data = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
 
             if (empty($data)) {
                 if ($this->ensureUserHasDefaultRole($userId)) {
                     $stmt->execute([$userId]);
-                    $data = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                    $data = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
                 }
             }
 
-            if ($this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($data));
+            if ($this->redisClient && !$isDegraded) {
+                try {
+                    $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($data));
+                } catch (\Throwable $e) {}
+            }
             return $data;
-        });
+        } catch (\Throwable $e) {
+            Logger::error("Error in RoleRepository::getMergedPermissionsForUser: " . $e->getMessage());
+            return [];
+        }
     }
 
     public function getHighestPriorityRole(int $userId): ?array {
         $cacheKey = CacheConstants::PREFIX_USER_HIGHEST_ROLE . $userId;
-        $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
-        if ($cached) return json_decode($cached, true);
+        $isDegraded = defined('SYSTEM_DEGRADED') && constant('SYSTEM_DEGRADED') === true;
+        if ($this->redisClient && !$isDegraded) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) {
+                    $decoded = json_decode($cached, true);
+                    if (is_array($decoded)) return $decoded;
+                }
+            } catch (\Throwable $e) {}
+        }
 
-        return $this->redisCache->executeWithLock('lock_rbac_user_highrole_' . $userId, 5, function() use ($userId, $cacheKey) {
-            $cached = $this->redisClient ? $this->redisClient->get($cacheKey) : null;
-            if ($cached) return json_decode($cached, true);
-
+        try {
             $tblRoles = DB::TBL_ROLES;
             $tblUserRoles = DB::TBL_USER_ROLES;
 
@@ -354,9 +463,16 @@ class RoleRepository implements RoleRepositoryInterface {
             $stmt->execute([$userId]);
             $role = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($role && $this->redisClient) $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($role));
+            if ($role && $this->redisClient && !$isDegraded) {
+                try {
+                    $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($role));
+                } catch (\Throwable $e) {}
+            }
             return $role ?: null;
-        });
+        } catch (\Throwable $e) {
+            Logger::error("Error in RoleRepository::getHighestPriorityRole: " . $e->getMessage());
+            return null;
+        }
     }
 
     public function create(string $name, int $weight = 1): bool {

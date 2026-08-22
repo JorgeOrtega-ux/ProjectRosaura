@@ -37,6 +37,32 @@ function abgrToHex(val) {
     return `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(2)})`;
 }
 
+function getBresenhamLine(x0, y0, x1, y1) {
+    const points = [];
+    const dx = Math.abs(x1 - x0);
+    const dy = Math.abs(y1 - y0);
+    const sx = x0 < x1 ? 1 : -1;
+    const sy = y0 < y1 ? 1 : -1;
+    let err = dx - dy;
+    let currX = x0;
+    let currY = y0;
+
+    while (true) {
+        points.push({ x: currX, y: currY });
+        if (currX === x1 && currY === y1) break;
+        const e2 = 2 * err;
+        if (e2 > -dy) {
+            err -= dy;
+            currX += sx;
+        }
+        if (e2 < dx) {
+            err += dx;
+            currY += sy;
+        }
+    }
+    return points;
+}
+
 export const DesignInteractions = {
     bindEvents() {
         document.addEventListener('wheel', this.handleWheelBound, { passive: false });
@@ -123,6 +149,13 @@ export const DesignInteractions = {
             return; 
         }
 
+        const btnToggleStickers = e.target.closest('[data-menu-target="menu-stickers"]');
+        if (btnToggleStickers) {
+            if (typeof this.loadStickersLibrary === 'function') {
+                this.loadStickersLibrary();
+            }
+        }
+
         const btnOwnerTools = e.target.closest('[data-action="toggleOwnerTools"]');
         if (btnOwnerTools) {
             e.preventDefault();
@@ -194,6 +227,16 @@ export const DesignInteractions = {
             return;
         }
 
+        const btnSetEraserMode = e.target.closest('[data-action="setOfflineEraserMode"]');
+        if (btnSetEraserMode) {
+            e.preventDefault();
+            const mode = btnSetEraserMode.getAttribute('data-eraser-mode') || 'box';
+            if (typeof this.setOfflineEraserMode === 'function') {
+                this.setOfflineEraserMode(mode);
+            }
+            return;
+        }
+
 
 
         const btnJoin = e.target.closest('[data-action="joinCanvasDirectly"]');
@@ -217,6 +260,48 @@ export const DesignInteractions = {
             const url = imgAdd.getAttribute('data-url');
             if (typeof this.addTemplateFromLibrary === 'function') {
                 this.addTemplateFromLibrary(url);
+            }
+            return;
+        }
+
+        const btnAddSticker = e.target.closest('[data-action="addStickerToCanvas"]');
+        if (btnAddSticker) {
+            e.preventDefault();
+            if (this.isResetLocked || this.isResizeLocked) {
+                showMessage(__('err_canvas_locked'), 'warning');
+                return;
+            }
+            const stickerId = btnAddSticker.getAttribute('data-sticker-id');
+            const img = btnAddSticker.querySelector('img');
+            const dataUrl = img ? img.src : null;
+            const name = btnAddSticker.getAttribute('data-tooltip') || 'Figura';
+            if (stickerId && typeof this.addStickerToCanvas === 'function') {
+                this.addStickerToCanvas(stickerId, dataUrl, name);
+            }
+            return;
+        }
+
+        const btnFilterCat = e.target.closest('[data-action="filterStickerCategory"]');
+        if (btnFilterCat) {
+            e.preventDefault();
+            const category = btnFilterCat.getAttribute('data-category') || 'all';
+            const container = document.querySelector('[data-ref="stickers-categories"]');
+            if (container) {
+                container.querySelectorAll('.component-sticker-cat-pill').forEach(btn => btn.classList.remove('active'));
+            }
+            btnFilterCat.classList.add('active');
+
+            const grid = document.querySelector('[data-ref="stickers-grid"]');
+            if (grid) {
+                const cards = grid.querySelectorAll('.component-sticker-card');
+                cards.forEach(card => {
+                    const cardCat = card.getAttribute('data-sticker-category');
+                    if (category === 'all' || cardCat === category) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
             }
             return;
         }
@@ -429,6 +514,17 @@ export const DesignInteractions = {
         } else if (keyUpper === 'T') {
             const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-templates"]');
             if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
+        } else if (keyUpper === 'F') {
+            if (this.isOfflineMode) {
+                const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-stickers"]');
+                if (btn && !btn.classList.contains('disabled')) { 
+                    e.preventDefault(); 
+                    if (typeof this.loadStickersLibrary === 'function') {
+                        this.loadStickersLibrary();
+                    }
+                    btn.click(); 
+                }
+            }
         } else if (keyUpper === 'O') {
             const btn = document.querySelector('[data-action="toggleOwnerTools"]');
             if (btn && !btn.classList.contains('disabled') && !btn.classList.contains('disabled-interaction')) { e.preventDefault(); btn.click(); }
@@ -626,6 +722,13 @@ export const DesignInteractions = {
                 return;
             }
 
+            if (this.interactionMode === 'offline_eraser_brush') {
+                this.isBrushErasing = true;
+                this.brushEraserLastCoords = { x: coords.x, y: coords.y };
+                this.applyBrushEraseAt(coords.x, coords.y, true);
+                return;
+            }
+
             if (this.interactionMode === 'owner_erasing' || this.interactionMode === 'owner_protecting') {
                 const bw = this.boardWidth || 64;
                 const offset = (coords.y * bw) + coords.x;
@@ -715,6 +818,20 @@ export const DesignInteractions = {
             const coords = this.getBoardCoords(e.clientX, e.clientY);
             if (coords) {
                 this.updateSpray(coords.x, coords.y);
+            }
+            return;
+        }
+
+        if (this.interactionMode === 'offline_eraser_brush' && this.isBrushErasing) {
+            const coords = this.getBoardCoords(e.clientX, e.clientY);
+            if (coords && this.brushEraserLastCoords) {
+                if (coords.x !== this.brushEraserLastCoords.x || coords.y !== this.brushEraserLastCoords.y) {
+                    const line = getBresenhamLine(this.brushEraserLastCoords.x, this.brushEraserLastCoords.y, coords.x, coords.y);
+                    for (let i = 1; i < line.length; i++) {
+                        this.applyBrushEraseAt(line[i].x, line[i].y, false);
+                    }
+                    this.brushEraserLastCoords = { x: coords.x, y: coords.y };
+                }
             }
             return;
         }
@@ -1045,6 +1162,22 @@ export const DesignInteractions = {
             this.stopSpray();
         }
 
+        if (this.isBrushErasing) {
+            this.isBrushErasing = false;
+            this.brushEraserLastCoords = null;
+            if (this.isOfflineMode) {
+                if (this.renderWorker) {
+                    this.renderWorker.postMessage({
+                        type: 'PUSH_PIXELS',
+                        payload: { pixels: [], strokePhase: 'end' }
+                    });
+                }
+                if (typeof this.saveOfflineCanvasState === 'function') {
+                    this.saveOfflineCanvasState(false);
+                }
+            }
+        }
+
         if (this.recentDragMode) {
             this.saveRecentColor(false);
             this.recentDragMode = null;
@@ -1155,6 +1288,17 @@ export const DesignInteractions = {
                 }
             }
 
+            if (this.interactionMode === 'offline_eraser_brush' && !this.isSpectator && !isOperationalLocked) {
+                const coords = this.getBoardCoords(this.touchStartX, this.touchStartY);
+                if (coords) {
+                    e.preventDefault();
+                    this.isBrushErasing = true;
+                    this.brushEraserLastCoords = { x: coords.x, y: coords.y };
+                    this.applyBrushEraseAt(coords.x, coords.y, true);
+                    return;
+                }
+            }
+
             const exact = this.getExactBoardCoords(this.touchStartX, this.touchStartY);
             if (exact && !this.isSpectator && !isOperationalLocked) {
                 let hit = null;
@@ -1211,6 +1355,21 @@ export const DesignInteractions = {
             const coords = this.getBoardCoords(e.touches[0].clientX, e.touches[0].clientY);
             if (coords) {
                 this.updateSpray(coords.x, coords.y);
+            }
+            return;
+        }
+
+        if (this.interactionMode === 'offline_eraser_brush' && this.isBrushErasing && e.touches.length === 1) {
+            e.preventDefault();
+            const coords = this.getBoardCoords(e.touches[0].clientX, e.touches[0].clientY);
+            if (coords && this.brushEraserLastCoords) {
+                if (coords.x !== this.brushEraserLastCoords.x || coords.y !== this.brushEraserLastCoords.y) {
+                    const line = getBresenhamLine(this.brushEraserLastCoords.x, this.brushEraserLastCoords.y, coords.x, coords.y);
+                    for (let i = 1; i < line.length; i++) {
+                        this.applyBrushEraseAt(line[i].x, line[i].y, false);
+                    }
+                    this.brushEraserLastCoords = { x: coords.x, y: coords.y };
+                }
             }
             return;
         }
@@ -1393,6 +1552,23 @@ export const DesignInteractions = {
 
         if (this.interactionMode === 'offline_spray' && this.isSpraying) {
             this.stopSpray();
+            return;
+        }
+
+        if (this.isBrushErasing) {
+            this.isBrushErasing = false;
+            this.brushEraserLastCoords = null;
+            if (this.isOfflineMode) {
+                if (this.renderWorker) {
+                    this.renderWorker.postMessage({
+                        type: 'PUSH_PIXELS',
+                        payload: { pixels: [], strokePhase: 'end' }
+                    });
+                }
+                if (typeof this.saveOfflineCanvasState === 'function') {
+                    this.saveOfflineCanvasState(false);
+                }
+            }
             return;
         }
 
