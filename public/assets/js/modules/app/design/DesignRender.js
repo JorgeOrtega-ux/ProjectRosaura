@@ -64,7 +64,7 @@ export const DesignRender = {
 
     syncActiveColorHighlight() {
         const currentUpper = this.currentColor ? this.currentColor.toUpperCase() : '';
-        document.querySelectorAll('.component-color-btn:not(.component-color-btn--rainbow)').forEach(btn => {
+        document.querySelectorAll('.component-color-btn:not(.component-color-btn--rainbow):not(.component-color-btn--eyedropper)').forEach(btn => {
             let btnColor = btn.getAttribute('data-color') || '';
             if (btnColor && !btnColor.startsWith('#')) btnColor = '#' + btnColor;
             btnColor = btnColor.toUpperCase();
@@ -231,6 +231,10 @@ export const DesignRender = {
                         textPreviewOutline: this.textPreviewOutline || null,
                         textPreviewBox: this.textPreviewBox || null,
                         isMirrorMode: !!this.isMirrorMode,
+                        isEyedropperActive: (this.interactionMode === 'offline_eyedropper'),
+                        tileGridSize: this.tileGridSize || 0,
+                        brushSize: (this.interactionMode === 'offline_brush' || this.interactionMode === 'normal') ? (this.brushSize || 1) : 1,
+                        brushShape: (this.interactionMode === 'offline_brush' || this.interactionMode === 'normal') ? (this.brushShape || 'square') : 'square',
                         topBarCenterX: topBarCenterX,
                         topBarBottomY: topBarBottomY
                     }
@@ -442,6 +446,25 @@ export const DesignRender = {
 
         if (this.offscreenCanvas && this.offscreenCanvas.width > 0 && this.offscreenCanvas.height > 0) {
             this.ctx.drawImage(this.offscreenCanvas, 0, 0);
+        }
+
+        if (this.tileGridSize > 0 && this.boardWidth > 0 && this.boardHeight > 0) {
+            this.ctx.save();
+            this.ctx.lineWidth = Math.max(1 / this.transform.scale, 1.5 / this.transform.scale);
+            this.ctx.strokeStyle = isDark ? 'rgba(99, 102, 241, 0.7)' : 'rgba(79, 70, 229, 0.6)';
+            this.ctx.setLineDash([3 / this.transform.scale, 2 / this.transform.scale]);
+            this.ctx.beginPath();
+
+            for (let x = this.tileGridSize; x < this.boardWidth; x += this.tileGridSize) {
+                this.ctx.moveTo(x, 0);
+                this.ctx.lineTo(x, this.boardHeight);
+            }
+            for (let y = this.tileGridSize; y < this.boardHeight; y += this.tileGridSize) {
+                this.ctx.moveTo(0, y);
+                this.ctx.lineTo(this.boardWidth, y);
+            }
+            this.ctx.stroke();
+            this.ctx.restore();
         }
 
         if (this.templates && this.templates.length > 0 && !this.isResetLocked) {
@@ -1509,5 +1532,117 @@ export const DesignRender = {
         }
 
         this.ctx.restore();
+
+        if (this.interactionMode === 'offline_eyedropper' && this.hoveredPixel) {
+            this.drawEyedropperLoupe(this.ctx);
+        }
+    },
+
+    drawEyedropperLoupe(ctx) {
+        if (!this.hoveredPixel || !ctx) return;
+        const hx = this.hoveredPixel.x;
+        const hy = this.hoveredPixel.y;
+        if (hx < 0 || hx >= this.boardWidth || hy < 0 || hy >= this.boardHeight) return;
+
+        const dpr = window.devicePixelRatio || 1;
+        ctx.save();
+        ctx.scale(dpr, dpr);
+
+        const screenX = this.transform.x + (hx + 0.5) * this.transform.scale;
+        const screenY = this.transform.y + (hy + 0.5) * this.transform.scale;
+
+        const gridRadius = 4;
+        const gridSize = 9;
+        const cellSize = 12;
+        const loupeRadius = (gridSize * cellSize) / 2;
+
+        let centerHex = '#FFFFFF';
+        if (this.offscreenCtx) {
+            const img = this.offscreenCtx.getImageData(hx, hy, 1, 1);
+            const val = new Uint32Array(img.data.buffer)[0];
+            if (val !== 0) {
+                const r = val & 0xFF, g = (val >> 8) & 0xFF, b = (val >> 16) & 0xFF;
+                centerHex = '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+            }
+        }
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, loupeRadius + 3, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, loupeRadius, 0, Math.PI * 2);
+        ctx.clip();
+
+        ctx.fillStyle = this.isDarkMode() ? '#1f2937' : '#ffffff';
+        ctx.fillRect(screenX - loupeRadius, screenY - loupeRadius, loupeRadius * 2, loupeRadius * 2);
+
+        for (let gy = -gridRadius; gy <= gridRadius; gy++) {
+            for (let gx = -gridRadius; gx <= gridRadius; gx++) {
+                const bx = hx + gx;
+                const by = hy + gy;
+                let cellColor = '#FFFFFF';
+                if (bx >= 0 && bx < this.boardWidth && by >= 0 && by < this.boardHeight) {
+                    if (this.offscreenCtx) {
+                        const img = this.offscreenCtx.getImageData(bx, by, 1, 1);
+                        const val = new Uint32Array(img.data.buffer)[0];
+                        if (val !== 0) {
+                            const r = val & 0xFF, g = (val >> 8) & 0xFF, b = (val >> 16) & 0xFF;
+                            cellColor = '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+                        }
+                    }
+                } else {
+                    cellColor = this.isDarkMode() ? '#111827' : '#e5e7eb';
+                }
+
+                const cellX = screenX + gx * cellSize - cellSize / 2;
+                const cellY = screenY + gy * cellSize - cellSize / 2;
+
+                ctx.fillStyle = cellColor;
+                ctx.fillRect(cellX, cellY, cellSize, cellSize);
+
+                ctx.strokeStyle = this.isDarkMode() ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(cellX, cellY, cellSize, cellSize);
+            }
+        }
+
+        const centerX = screenX - cellSize / 2;
+        const centerY = screenY - cellSize / 2;
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(centerX, centerY, cellSize, cellSize);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(centerX + 0.5, centerY + 0.5, cellSize - 1, cellSize - 1);
+
+        ctx.restore();
+
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, loupeRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, loupeRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(screenX, screenY - loupeRadius - 14, 10, 0, Math.PI * 2);
+        ctx.fillStyle = centerHex;
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.restore();
     }
 };

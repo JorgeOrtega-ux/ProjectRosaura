@@ -118,6 +118,40 @@ export const DesignInteractions = {
     },
 
     handleClick(e) {
+        const btnApplyCustom = e.target.closest('[data-action="applyCustomColor"]');
+        if (btnApplyCustom) {
+            e.preventDefault();
+            const picker = btnApplyCustom.closest('[data-ref="customColorPicker"]') || document.querySelector('[data-ref="customColorPicker"]');
+            if (picker) {
+                let h = Math.max(0, Math.min(360, parseFloat(picker.dataset.h) || 0));
+                let s = Math.max(0, Math.min(100, parseFloat(picker.dataset.s) || 0));
+                let v = Math.max(0, Math.min(100, parseFloat(picker.dataset.v) || 0));
+                const hex = hsvToHex(h, s, v);
+                this.selectAndAddCustomColor(hex);
+            }
+            return;
+        }
+
+        const btnToggleCustomPicker = e.target.closest('[data-action="toggleModule"][data-target="moduleCustomColorPicker"]');
+        if (btnToggleCustomPicker) {
+            const picker = document.querySelector('[data-ref="customColorPicker"]');
+            if (picker) {
+                const currentHex = this.currentColor || '#FF0000';
+                const hsv = hexToHsv(currentHex);
+                picker.dataset.h = hsv.h;
+                picker.dataset.s = hsv.s;
+                picker.dataset.v = hsv.v;
+                this.updateCustomPickerUI(picker);
+            }
+        }
+
+        const btnEyedropper = e.target.closest('[data-action="toggleEyedropper"]');
+        if (btnEyedropper) {
+            e.preventDefault();
+            this.toggleEyedropper();
+            return;
+        }
+
         const btnSaveOffline = e.target.closest('[data-action="manualSaveOffline"]');
         if (btnSaveOffline) {
             e.preventDefault();
@@ -210,6 +244,29 @@ export const DesignInteractions = {
             return;
         }
 
+        const btnOfflineBrush = e.target.closest('[data-action="toggleOfflineBrush"]');
+        if (btnOfflineBrush) {
+            e.preventDefault();
+            this.toggleOfflineBrush();
+            return;
+        }
+
+        const btnSetBrushShape = e.target.closest('[data-action="setBrushShape"]');
+        if (btnSetBrushShape) {
+            e.preventDefault();
+            const shape = btnSetBrushShape.getAttribute('data-brush-shape') || 'square';
+            this.setBrushShape(shape, btnSetBrushShape);
+            return;
+        }
+
+        const btnSetBrushSizeNew = e.target.closest('[data-action="setBrushSize"]');
+        if (btnSetBrushSizeNew) {
+            e.preventDefault();
+            const size = parseInt(btnSetBrushSizeNew.getAttribute('data-size'), 10) || 1;
+            this.setBrushSize(size, btnSetBrushSizeNew);
+            return;
+        }
+
         const btnOfflineBucket = e.target.closest('[data-action="toggleOfflineBucket"]');
         if (btnOfflineBucket) {
             e.preventDefault();
@@ -287,6 +344,36 @@ export const DesignInteractions = {
             if (typeof this.setDitherSize === 'function') {
                 this.setDitherSize(size);
             }
+            return;
+        }
+
+        const btnOfflineShading = e.target.closest('[data-action="toggleOfflineShading"]');
+        if (btnOfflineShading) {
+            e.preventDefault();
+            this.toggleOfflineShading();
+            return;
+        }
+
+        const btnSetShadingMode = e.target.closest('[data-action="setShadingMode"]');
+        if (btnSetShadingMode) {
+            e.preventDefault();
+            const mode = btnSetShadingMode.getAttribute('data-shading-mode') || 'shadow';
+            this.setShadingMode(mode, btnSetShadingMode);
+            return;
+        }
+
+        const btnSetShadingSize = e.target.closest('[data-action="setShadingSize"]');
+        if (btnSetShadingSize) {
+            e.preventDefault();
+            const size = parseInt(btnSetShadingSize.getAttribute('data-size'), 10) || 1;
+            this.setShadingSize(size, btnSetShadingSize);
+            return;
+        }
+
+        const btnTileGrid = e.target.closest('[data-action="toggleTileGrid"]');
+        if (btnTileGrid) {
+            e.preventDefault();
+            this.toggleTileGrid();
             return;
         }
 
@@ -766,7 +853,22 @@ export const DesignInteractions = {
         } else if (keyUpper === 'R') {
             if (typeof this.rotateTemplate === 'function') { e.preventDefault(); this.rotateTemplate(); }
         } else if (keyUpper === 'B') {
-            if (typeof this.injectTemplate === 'function') { e.preventDefault(); this.injectTemplate(); }
+            e.preventDefault();
+            if (this.activeTemplateId && typeof this.injectTemplate === 'function') {
+                this.injectTemplate();
+            } else if (this.isOfflineMode && typeof this.toggleOfflineBrush === 'function') {
+                this.toggleOfflineBrush();
+            }
+        } else if (keyUpper === 'S') {
+            if (this.isOfflineMode && typeof this.toggleOfflineShading === 'function') {
+                e.preventDefault();
+                this.toggleOfflineShading();
+            }
+        } else if (keyUpper === 'Z' && !e.ctrlKey && !e.metaKey) {
+            if (this.isOfflineMode && typeof this.toggleTileGrid === 'function') {
+                e.preventDefault();
+                this.toggleTileGrid();
+            }
         } else if (e.key === 'Delete' || e.key === 'Backspace') {
             if (this.activeTemplateId && typeof this.deleteTemplate === 'function') {
                 e.preventDefault();
@@ -818,6 +920,21 @@ export const DesignInteractions = {
     },
 
     handleMouseDown(e) {
+        const svArea = e.target.closest('[data-action="dragCustomSV"]');
+        if (svArea) {
+            this.isDraggingCustomPicker = 'sv';
+            this.updateCustomColorFromEvent(e, svArea);
+            if (e.cancelable) e.preventDefault();
+            return;
+        }
+        const hueArea = e.target.closest('[data-action="dragCustomHue"]');
+        if (hueArea) {
+            this.isDraggingCustomPicker = 'hue';
+            this.updateCustomColorFromEvent(e, hueArea);
+            if (e.cancelable) e.preventDefault();
+            return;
+        }
+
         const target = e.target.closest('[data-ref="design-canvas"]');
         if (!target) return;
 
@@ -825,6 +942,26 @@ export const DesignInteractions = {
         if (!exact) return;
 
         const isOperationalLocked = !!(this.isResetLocked || this.isResizeLocked || this.isInjectLocked || this.isClearLocked || (this.isFrozen && !this.isOwner));
+
+        if (this.interactionMode === 'offline_eyedropper' && !this.isSpectator && !isOperationalLocked) {
+            e.preventDefault();
+            const coords = this.getBoardCoords(e.clientX, e.clientY);
+            if (coords) {
+                if (this.renderWorker) {
+                    this.renderWorker.postMessage({
+                        type: 'PICK_PIXEL_COLOR',
+                        payload: { x: coords.x, y: coords.y }
+                    });
+                } else if (this.offscreenCtx) {
+                    const img = this.offscreenCtx.getImageData(coords.x, coords.y, 1, 1);
+                    const val = new Uint32Array(img.data.buffer)[0];
+                    const hex = (val === 0) ? '#FFFFFF' : abgrToHex(val);
+                    this.selectAndAddCustomColor(hex);
+                    this.toggleEyedropper();
+                }
+            }
+            return;
+        }
 
 
 
@@ -934,6 +1071,21 @@ export const DesignInteractions = {
                 return;
             }
 
+            if (this.interactionMode === 'offline_shading') {
+                this.isShadingPainting = true;
+                this.shadingLastCoords = { x: coords.x, y: coords.y };
+                this.shadingTouchedInStroke = new Set();
+                this.applyShadingAt(coords.x, coords.y, true);
+                return;
+            }
+
+            if (this.interactionMode === 'offline_brush' || (this.isOfflineMode && this.interactionMode === 'normal' && (this.brushSize > 1 || this.brushShape !== 'square'))) {
+                this.isBrushPainting = true;
+                this.brushLastCoords = { x: coords.x, y: coords.y };
+                this.applyBrushAt(coords.x, coords.y, true);
+                return;
+            }
+
             if (this.interactionMode === 'offline_shape') {
                 this.isShapeDrawing = true;
                 this.shapeStart = { x: coords.x, y: coords.y };
@@ -1030,6 +1182,20 @@ export const DesignInteractions = {
     },
 
     handleMouseMove(e) {
+        if (this.isDraggingCustomPicker) {
+            const picker = document.querySelector('[data-ref="customColorPicker"]');
+            if (picker) {
+                if (this.isDraggingCustomPicker === 'sv') {
+                    const svArea = picker.querySelector('[data-action="dragCustomSV"]');
+                    if (svArea) this.updateCustomColorFromEvent(e, svArea);
+                } else if (this.isDraggingCustomPicker === 'hue') {
+                    const hueArea = picker.querySelector('[data-action="dragCustomHue"]');
+                    if (hueArea) this.updateCustomColorFromEvent(e, hueArea);
+                }
+            }
+            return;
+        }
+
         if (this.interactionMode === 'offline_moving_area') {
             const coords = this.getBoardCoords(e.clientX, e.clientY);
             if (coords) {
@@ -1077,6 +1243,34 @@ export const DesignInteractions = {
                         this.applyDitherAt(line[i].x, line[i].y, false);
                     }
                     this.ditherLastCoords = { x: coords.x, y: coords.y };
+                }
+            }
+            return;
+        }
+
+        if (this.interactionMode === 'offline_shading' && this.isShadingPainting) {
+            const coords = this.getBoardCoords(e.clientX, e.clientY);
+            if (coords && this.shadingLastCoords) {
+                if (coords.x !== this.shadingLastCoords.x || coords.y !== this.shadingLastCoords.y) {
+                    const line = getBresenhamLine(this.shadingLastCoords.x, this.shadingLastCoords.y, coords.x, coords.y);
+                    for (let i = 1; i < line.length; i++) {
+                        this.applyShadingAt(line[i].x, line[i].y, false);
+                    }
+                    this.shadingLastCoords = { x: coords.x, y: coords.y };
+                }
+            }
+            return;
+        }
+
+        if (this.isBrushPainting) {
+            const coords = this.getBoardCoords(e.clientX, e.clientY);
+            if (coords && this.brushLastCoords) {
+                if (coords.x !== this.brushLastCoords.x || coords.y !== this.brushLastCoords.y) {
+                    const line = getBresenhamLine(this.brushLastCoords.x, this.brushLastCoords.y, coords.x, coords.y);
+                    for (let i = 1; i < line.length; i++) {
+                        this.applyBrushAt(line[i].x, line[i].y, false);
+                    }
+                    this.brushLastCoords = { x: coords.x, y: coords.y };
                 }
             }
             return;
@@ -1429,6 +1623,10 @@ export const DesignInteractions = {
     },
 
     handleMouseUp(e) {
+        if (this.isDraggingCustomPicker) {
+            this.isDraggingCustomPicker = false;
+        }
+
         if (this.interactionMode === 'offline_text' && this.isTextDragging) {
             this.isTextDragging = false;
             this.textDragStart = null;
@@ -1494,6 +1692,39 @@ export const DesignInteractions = {
             }
         }
 
+        if (this.isShadingPainting) {
+            this.isShadingPainting = false;
+            this.shadingLastCoords = null;
+            if (this.shadingTouchedInStroke) this.shadingTouchedInStroke.clear();
+            if (this.isOfflineMode) {
+                if (this.renderWorker) {
+                    this.renderWorker.postMessage({
+                        type: 'PUSH_PIXELS',
+                        payload: { pixels: [], strokePhase: 'end' }
+                    });
+                }
+                if (typeof this.saveOfflineCanvasState === 'function') {
+                    this.saveOfflineCanvasState(false);
+                }
+            }
+        }
+
+        if (this.isBrushPainting) {
+            this.isBrushPainting = false;
+            this.brushLastCoords = null;
+            if (this.isOfflineMode) {
+                if (this.renderWorker) {
+                    this.renderWorker.postMessage({
+                        type: 'PUSH_PIXELS',
+                        payload: { pixels: [], strokePhase: 'end' }
+                    });
+                }
+                if (typeof this.saveOfflineCanvasState === 'function') {
+                    this.saveOfflineCanvasState(false);
+                }
+            }
+        }
+
         if (this.recentDragMode) {
             this.saveRecentColor(false);
             this.recentDragMode = null;
@@ -1528,12 +1759,11 @@ export const DesignInteractions = {
     },
 
     handleTouchStart(e) {
-        const svArea = e.target.closest('[data-action="dragRecentSV"]');
-        const hueArea = e.target.closest('[data-action="dragRecentHue"]');
+        const svArea = e.target.closest('[data-action="dragCustomSV"]');
+        const hueArea = e.target.closest('[data-action="dragCustomHue"]');
         if (svArea || hueArea) {
-            this.recentDragMode = svArea ? 'sv' : 'hue';
-            this.recentDragArea = svArea || hueArea;
-            this.updateRecentColorFromEvent(e.touches[0]);
+            this.isDraggingCustomPicker = svArea ? 'sv' : 'hue';
+            this.updateCustomColorFromEvent(e.touches[0], svArea || hueArea);
             e.preventDefault();
             return;
         }
@@ -1562,6 +1792,26 @@ export const DesignInteractions = {
             this.lastMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
 
             const isOperationalLocked = !!(this.isResetLocked || this.isResizeLocked || this.isInjectLocked || this.isClearLocked || (this.isFrozen && !this.isOwner));
+
+            if (this.interactionMode === 'offline_eyedropper' && !this.isSpectator && !isOperationalLocked) {
+                e.preventDefault();
+                const coords = this.getBoardCoords(this.touchStartX, this.touchStartY);
+                if (coords) {
+                    if (this.renderWorker) {
+                        this.renderWorker.postMessage({
+                            type: 'PICK_PIXEL_COLOR',
+                            payload: { x: coords.x, y: coords.y }
+                        });
+                    } else if (this.offscreenCtx) {
+                        const img = this.offscreenCtx.getImageData(coords.x, coords.y, 1, 1);
+                        const val = new Uint32Array(img.data.buffer)[0];
+                        const hex = (val === 0) ? '#FFFFFF' : abgrToHex(val);
+                        this.selectAndAddCustomColor(hex);
+                        this.toggleEyedropper();
+                    }
+                }
+                return;
+            }
 
             if (this.interactionMode === 'offline_moving_area' && !this.isSpectator && !isOperationalLocked) {
                 const coords = this.getBoardCoords(this.touchStartX, this.touchStartY);
@@ -1622,6 +1872,29 @@ export const DesignInteractions = {
                     this.isDitherPainting = true;
                     this.ditherLastCoords = { x: coords.x, y: coords.y };
                     this.applyDitherAt(coords.x, coords.y, true);
+                    return;
+                }
+            }
+
+            if (this.interactionMode === 'offline_shading' && !this.isSpectator && !isOperationalLocked) {
+                const coords = this.getBoardCoords(this.touchStartX, this.touchStartY);
+                if (coords) {
+                    e.preventDefault();
+                    this.isShadingPainting = true;
+                    this.shadingLastCoords = { x: coords.x, y: coords.y };
+                    this.shadingTouchedInStroke = new Set();
+                    this.applyShadingAt(coords.x, coords.y, true);
+                    return;
+                }
+            }
+
+            if ((this.interactionMode === 'offline_brush' || (this.isOfflineMode && this.interactionMode === 'normal' && (this.brushSize > 1 || this.brushShape !== 'square'))) && !this.isSpectator && !isOperationalLocked) {
+                const coords = this.getBoardCoords(this.touchStartX, this.touchStartY);
+                if (coords) {
+                    e.preventDefault();
+                    this.isBrushPainting = true;
+                    this.brushLastCoords = { x: coords.x, y: coords.y };
+                    this.applyBrushAt(coords.x, coords.y, true);
                     return;
                 }
             }
@@ -1751,6 +2024,36 @@ export const DesignInteractions = {
             return;
         }
 
+        if (this.interactionMode === 'offline_shading' && this.isShadingPainting && e.touches.length === 1) {
+            e.preventDefault();
+            const coords = this.getBoardCoords(e.touches[0].clientX, e.touches[0].clientY);
+            if (coords && this.shadingLastCoords) {
+                if (coords.x !== this.shadingLastCoords.x || coords.y !== this.shadingLastCoords.y) {
+                    const line = getBresenhamLine(this.shadingLastCoords.x, this.shadingLastCoords.y, coords.x, coords.y);
+                    for (let i = 1; i < line.length; i++) {
+                        this.applyShadingAt(line[i].x, line[i].y, false);
+                    }
+                    this.shadingLastCoords = { x: coords.x, y: coords.y };
+                }
+            }
+            return;
+        }
+
+        if (this.isBrushPainting && e.touches.length === 1) {
+            e.preventDefault();
+            const coords = this.getBoardCoords(e.touches[0].clientX, e.touches[0].clientY);
+            if (coords && this.brushLastCoords) {
+                if (coords.x !== this.brushLastCoords.x || coords.y !== this.brushLastCoords.y) {
+                    const line = getBresenhamLine(this.brushLastCoords.x, this.brushLastCoords.y, coords.x, coords.y);
+                    for (let i = 1; i < line.length; i++) {
+                        this.applyBrushAt(line[i].x, line[i].y, false);
+                    }
+                    this.brushLastCoords = { x: coords.x, y: coords.y };
+                }
+            }
+            return;
+        }
+
         if (this.interactionMode === 'offline_shape' && this.isShapeDrawing && this.shapeStart && e.touches.length === 1) {
             e.preventDefault();
             let coords = this.getBoardCoords(e.touches[0].clientX, e.touches[0].clientY);
@@ -1795,8 +2098,17 @@ export const DesignInteractions = {
             return;
         }
 
-        if (this.recentDragMode && this.recentDragArea) {
-            this.updateRecentColorFromEvent(e.touches[0]);
+        if (this.isDraggingCustomPicker && e.touches && e.touches.length > 0) {
+            const picker = document.querySelector('[data-ref="customColorPicker"]');
+            if (picker) {
+                if (this.isDraggingCustomPicker === 'sv') {
+                    const svArea = picker.querySelector('[data-action="dragCustomSV"]');
+                    if (svArea) this.updateCustomColorFromEvent(e.touches[0], svArea);
+                } else if (this.isDraggingCustomPicker === 'hue') {
+                    const hueArea = picker.querySelector('[data-action="dragCustomHue"]');
+                    if (hueArea) this.updateCustomColorFromEvent(e.touches[0], hueArea);
+                }
+            }
             e.preventDefault();
             return;
         }
@@ -1948,10 +2260,8 @@ export const DesignInteractions = {
     },
 
     handleTouchEnd(e) {
-        if (this.recentDragMode) {
-            this.saveRecentColor(false);
-            this.recentDragMode = null;
-            this.recentDragArea = null;
+        if (this.isDraggingCustomPicker) {
+            this.isDraggingCustomPicker = false;
             return;
         }
 
@@ -2009,6 +2319,41 @@ export const DesignInteractions = {
         if (this.isDitherPainting) {
             this.isDitherPainting = false;
             this.ditherLastCoords = null;
+            if (this.isOfflineMode) {
+                if (this.renderWorker) {
+                    this.renderWorker.postMessage({
+                        type: 'PUSH_PIXELS',
+                        payload: { pixels: [], strokePhase: 'end' }
+                    });
+                }
+                if (typeof this.saveOfflineCanvasState === 'function') {
+                    this.saveOfflineCanvasState(false);
+                }
+            }
+            return;
+        }
+
+        if (this.isShadingPainting) {
+            this.isShadingPainting = false;
+            this.shadingLastCoords = null;
+            if (this.shadingTouchedInStroke) this.shadingTouchedInStroke.clear();
+            if (this.isOfflineMode) {
+                if (this.renderWorker) {
+                    this.renderWorker.postMessage({
+                        type: 'PUSH_PIXELS',
+                        payload: { pixels: [], strokePhase: 'end' }
+                    });
+                }
+                if (typeof this.saveOfflineCanvasState === 'function') {
+                    this.saveOfflineCanvasState(false);
+                }
+            }
+            return;
+        }
+
+        if (this.isBrushPainting) {
+            this.isBrushPainting = false;
+            this.brushLastCoords = null;
             if (this.isOfflineMode) {
                 if (this.renderWorker) {
                     this.renderWorker.postMessage({
@@ -2547,10 +2892,332 @@ export const DesignInteractions = {
         if (typeof this.closeSubtoolbar === 'function') this.closeSubtoolbar();
         this.isDitherPainting = false;
         this.ditherLastCoords = null;
+        this.isBrushPainting = false;
+        this.brushLastCoords = null;
+        this.isShadingPainting = false;
+        this.shadingLastCoords = null;
+        if (this.shadingTouchedInStroke) this.shadingTouchedInStroke.clear();
+        const btnBrush = document.querySelector('[data-action="toggleOfflineBrush"]');
+        if (btnBrush) btnBrush.classList.remove('active');
+        const btnShading = document.querySelector('[data-action="toggleOfflineShading"]');
+        if (btnShading) btnShading.classList.remove('active');
+        const btnEyedropper = document.querySelector('[data-action="toggleEyedropper"]');
+        if (btnEyedropper) btnEyedropper.classList.remove('active');
+        if (this.canvas) this.canvas.classList.remove('component-cursor-eyedropper');
         this.updateSelectionUI();
         if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
         if (typeof this.requestRender === 'function') this.requestRender();
         showMessage(window.__('special_mode_deactivated'), 'info');
+    },
+
+    toggleEyedropper() {
+        if (this.interactionMode === 'offline_eyedropper') {
+            this.interactionMode = 'normal';
+            const btn = document.querySelector('[data-action="toggleEyedropper"]');
+            if (btn) btn.classList.remove('active');
+            if (this.canvas) this.canvas.classList.remove('component-cursor-eyedropper');
+        } else {
+            if (typeof this.cancelInteractionMode === 'function') {
+                this.cancelInteractionMode();
+            }
+            this.interactionMode = 'offline_eyedropper';
+            const btn = document.querySelector('[data-action="toggleEyedropper"]');
+            if (btn) btn.classList.add('active');
+            if (this.canvas) this.canvas.classList.add('component-cursor-eyedropper');
+        }
+        this.requestRender();
+    },
+
+    toggleOfflineBrush() {
+        const btnBrush = document.querySelector('[data-action="toggleOfflineBrush"]');
+        if (this.interactionMode === 'offline_brush') {
+            this.interactionMode = 'normal';
+            if (btnBrush) btnBrush.classList.remove('active');
+            this.closeSubtoolbar();
+            this.closeBrushSizeToolbar();
+        } else {
+            if (typeof this.cancelInteractionMode === 'function') {
+                this.cancelInteractionMode();
+            }
+            this.interactionMode = 'offline_brush';
+            if (btnBrush) btnBrush.classList.add('active');
+            this.openSubtoolbar('brush');
+            this.openBrushSizeToolbar('brush');
+        }
+        this.requestRender();
+    },
+
+    setBrushShape(shape = 'square', targetEl = null) {
+        this.brushShape = shape;
+        const subtoolbar = document.querySelector('[data-ref="offline-subtoolbar-vertical"]');
+        if (subtoolbar) {
+            const btns = subtoolbar.querySelectorAll('[data-action="setBrushShape"]');
+            btns.forEach(b => b.classList.toggle('active', b.getAttribute('data-brush-shape') === shape));
+        }
+        const shapeNames = { square: 'Cuadrado', circle: 'Redondo', slash: 'Diagonal' };
+        if (typeof showMessage === 'function') {
+            showMessage(`Forma de pincel: ${shapeNames[shape] || shape}`, 'info');
+        }
+        this.requestRender();
+    },
+
+    setBrushSize(size = 1, targetEl = null) {
+        this.brushSize = parseInt(size, 10) || 1;
+        const toolbar = document.querySelector('[data-ref="brush-size-toolbar"]');
+        if (toolbar) {
+            const btns = toolbar.querySelectorAll('[data-action="setBrushSize"]');
+            btns.forEach(b => b.classList.toggle('active', parseInt(b.getAttribute('data-size'), 10) === this.brushSize));
+        }
+        if (typeof showMessage === 'function') {
+            showMessage(`Tamaño de pincel: ${this.brushSize}x${this.brushSize} px`, 'info');
+        }
+        this.requestRender();
+    },
+
+    toggleOfflineShading() {
+        const btnShading = document.querySelector('[data-action="toggleOfflineShading"]');
+        if (this.interactionMode === 'offline_shading') {
+            this.interactionMode = 'normal';
+            if (btnShading) btnShading.classList.remove('active');
+            this.closeSubtoolbar();
+            this.closeBrushSizeToolbar();
+        } else {
+            if (typeof this.cancelInteractionMode === 'function') {
+                this.cancelInteractionMode();
+            }
+            this.interactionMode = 'offline_shading';
+            if (btnShading) btnShading.classList.add('active');
+            this.openSubtoolbar('shading');
+            this.openBrushSizeToolbar('shading');
+            showMessage(window.__('msg_shading_on') || 'Modo Sombreado activado. Pinta sobre píxeles para dar luces o sombras.', 'info');
+        }
+        this.requestRender();
+    },
+
+    setShadingMode(mode = 'shadow', targetEl = null) {
+        this.shadingMode = mode;
+        const subtoolbar = document.querySelector('[data-ref="offline-subtoolbar-vertical"]');
+        if (subtoolbar) {
+            const btns = subtoolbar.querySelectorAll('[data-action="setShadingMode"]');
+            btns.forEach(b => b.classList.toggle('active', b.getAttribute('data-shading-mode') === mode));
+        }
+        const label = mode === 'highlight' ? 'Iluminar (+8%)' : 'Sombrear (-8%)';
+        if (typeof showMessage === 'function') {
+            showMessage(`Pincel de Sombreado: ${label}`, 'info');
+        }
+    },
+
+    setShadingSize(size = 1, targetEl = null) {
+        this.shadingSize = parseInt(size, 10) || 1;
+        const toolbar = document.querySelector('[data-ref="brush-size-toolbar"]');
+        if (toolbar) {
+            const btns = toolbar.querySelectorAll('[data-action="setShadingSize"]');
+            btns.forEach(b => b.classList.toggle('active', parseInt(b.getAttribute('data-size'), 10) === this.shadingSize));
+        }
+        if (typeof showMessage === 'function') {
+            showMessage(`Pincel de Sombreado: ${this.shadingSize}x${this.shadingSize} px`, 'info');
+        }
+    },
+
+    toggleTileGrid() {
+        const modes = [0, 8, 16, 32];
+        const current = this.tileGridSize || 0;
+        const nextIdx = (modes.indexOf(current) + 1) % modes.length;
+        this.tileGridSize = modes[nextIdx];
+
+        const btn = document.querySelector('[data-action="toggleTileGrid"]');
+        if (btn) {
+            btn.classList.toggle('active', this.tileGridSize > 0);
+        }
+
+        if (this.tileGridSize === 0) {
+            showMessage(window.__('msg_tile_grid_off') || 'Cuadrícula de Tiles desactivada', 'info');
+        } else {
+            const tpl = window.__('msg_tile_grid_on') || 'Cuadrícula de Tiles: :size x :size px';
+            const msg = tpl.replace(/:size/g, this.tileGridSize);
+            showMessage(msg, 'success');
+        }
+        this.requestRender();
+    },
+
+    getBrushOffsets(size = 1, shape = 'square') {
+        const offsets = [];
+        if (size <= 1) {
+            return [{ dx: 0, dy: 0 }];
+        }
+        const half1 = Math.floor((size - 1) / 2);
+        const half2 = Math.floor(size / 2);
+
+        if (shape === 'circle') {
+            if (size === 2) {
+                for (let dy = 0; dy < 2; dy++) {
+                    for (let dx = 0; dx < 2; dx++) {
+                        offsets.push({ dx, dy });
+                    }
+                }
+            } else if (size % 2 === 1) {
+                const r = (size - 1) / 2;
+                const maxDistSq = r * r + 0.45;
+                for (let dy = -r; dy <= r; dy++) {
+                    for (let dx = -r; dx <= r; dx++) {
+                        if (dx * dx + dy * dy <= maxDistSq) {
+                            offsets.push({ dx, dy });
+                        }
+                    }
+                }
+            } else {
+                const half = size / 2;
+                const maxDistSq = (half - 0.5) * (half - 0.5) + (half - 0.85);
+                for (let dy = -half; dy < half; dy++) {
+                    for (let dx = -half; dx < half; dx++) {
+                        const cx = dx + 0.5;
+                        const cy = dy + 0.5;
+                        if (cx * cx + cy * cy <= maxDistSq) {
+                            offsets.push({ dx, dy });
+                        }
+                    }
+                }
+            }
+        } else if (shape === 'slash') {
+            for (let i = -half1; i <= half2; i++) {
+                offsets.push({ dx: i, dy: -i });
+            }
+        } else {
+            for (let dy = -half1; dy <= half2; dy++) {
+                for (let dx = -half1; dx <= half2; dx++) {
+                    offsets.push({ dx, dy });
+                }
+            }
+        }
+        return offsets.length > 0 ? offsets : [{ dx: 0, dy: 0 }];
+    },
+
+    applyBrushAt(cx, cy, isStart = false) {
+        const size = this.brushSize || 1;
+        const shape = this.brushShape || 'square';
+        const color = this.currentColor || '#000000';
+        const offsets = this.getBrushOffsets(size, shape);
+        const bw = this.boardWidth || 64;
+        const bh = this.boardHeight || 64;
+        const pixelsToPaint = [];
+        const seen = new Set();
+
+        offsets.forEach(off => {
+            const px = cx + off.dx;
+            const py = cy + off.dy;
+            if (px >= 0 && px < bw && py >= 0 && py < bh) {
+                const k = (py << 16) | px;
+                if (!seen.has(k)) {
+                    seen.add(k);
+                    pixelsToPaint.push({ x: px, y: py, color });
+                }
+            }
+            if (this.isMirrorMode) {
+                const symX = bw - 1 - (cx + off.dx);
+                const py = cy + off.dy;
+                if (symX >= 0 && symX < bw && py >= 0 && py < bh) {
+                    const k = (py << 16) | symX;
+                    if (!seen.has(k)) {
+                        seen.add(k);
+                        pixelsToPaint.push({ x: symX, y: py, color });
+                    }
+                }
+            }
+        });
+
+        if (pixelsToPaint.length === 0) return;
+
+        if (this.isOfflineMode) {
+            if (this.renderWorker) {
+                this.renderWorker.postMessage({
+                    type: 'PUSH_PIXELS',
+                    payload: {
+                        pixels: pixelsToPaint,
+                        strokePhase: isStart ? 'start' : 'step'
+                    }
+                });
+            }
+            if (this.offscreenCtx) {
+                this.offscreenCtx.fillStyle = color;
+                pixelsToPaint.forEach(p => {
+                    this.offscreenCtx.fillRect(p.x, p.y, 1, 1);
+                });
+            }
+        }
+    },
+
+    applyShadingAt(cx, cy, isStart = false) {
+        const size = this.shadingSize || 1;
+        const mode = this.shadingMode || 'shadow';
+        const offsets = this.getBrushOffsets(size, 'square');
+        const bw = this.boardWidth || 64;
+        const bh = this.boardHeight || 64;
+        const pixelsToPaint = [];
+        if (!this.shadingTouchedInStroke) this.shadingTouchedInStroke = new Set();
+
+        const processCoord = (px, py) => {
+            if (px < 0 || px >= bw || py < 0 || py >= bh) return;
+            const key = (py << 16) | px;
+            if (this.shadingTouchedInStroke.has(key)) return;
+            this.shadingTouchedInStroke.add(key);
+
+            let currentHex = '#FFFFFF';
+            if (this.offscreenCtx) {
+                const img = this.offscreenCtx.getImageData(px, py, 1, 1);
+                const val = new Uint32Array(img.data.buffer)[0];
+                if (val !== 0) {
+                    currentHex = abgrToHex(val);
+                }
+            }
+
+            const hsv = hexToHsv(currentHex);
+            let h = hsv.h;
+            let s = hsv.s;
+            let v = hsv.v;
+
+            if (mode === 'highlight') {
+                v = Math.min(100, v + 8);
+                if (v >= 96) {
+                    s = Math.max(0, s - 8);
+                }
+            } else {
+                v = Math.max(0, v - 8);
+                if (v <= 20) {
+                    s = Math.min(100, s + 4);
+                }
+            }
+
+            const newHex = hsvToHex(h, s, v);
+            pixelsToPaint.push({ x: px, y: py, color: newHex });
+        };
+
+        offsets.forEach(off => {
+            processCoord(cx + off.dx, cy + off.dy);
+            if (this.isMirrorMode) {
+                const symX = bw - 1 - (cx + off.dx);
+                processCoord(symX, cy + off.dy);
+            }
+        });
+
+        if (pixelsToPaint.length === 0) return;
+
+        if (this.isOfflineMode) {
+            if (this.renderWorker) {
+                this.renderWorker.postMessage({
+                    type: 'PUSH_PIXELS',
+                    payload: {
+                        pixels: pixelsToPaint,
+                        strokePhase: isStart ? 'start' : 'step'
+                    }
+                });
+            }
+            if (this.offscreenCtx) {
+                pixelsToPaint.forEach(p => {
+                    this.offscreenCtx.fillStyle = p.color;
+                    this.offscreenCtx.fillRect(p.x, p.y, 1, 1);
+                });
+            }
+        }
     },
 
     handleResize() {
@@ -2908,6 +3575,20 @@ export const DesignInteractions = {
         } else if (forTool === 'dither') {
             const btns = toolbar.querySelectorAll('[data-action="setDitherSize"]');
             const currentSize = this.ditherSize || 1;
+            btns.forEach(btn => {
+                const s = btn.getAttribute('data-size');
+                btn.classList.toggle('active', s == currentSize);
+            });
+        } else if (forTool === 'brush') {
+            const btns = toolbar.querySelectorAll('[data-action="setBrushSize"]');
+            const currentSize = this.brushSize || 1;
+            btns.forEach(btn => {
+                const s = btn.getAttribute('data-size');
+                btn.classList.toggle('active', s == currentSize);
+            });
+        } else if (forTool === 'shading') {
+            const btns = toolbar.querySelectorAll('[data-action="setShadingSize"]');
+            const currentSize = this.shadingSize || 1;
             btns.forEach(btn => {
                 const s = btn.getAttribute('data-size');
                 btn.classList.toggle('active', s == currentSize);
@@ -3964,6 +4645,24 @@ export const DesignInteractions = {
 
     handleInput(e) {
         if (!e.target) return;
+
+        const isCustomHexInput = e.target.matches('[data-ref="customHexInput"]');
+        if (isCustomHexInput) {
+            let hex = e.target.value.trim();
+            if (!hex.startsWith('#')) hex = '#' + hex;
+            if (/^#[0-9A-F]{6}$/i.test(hex) || /^#[0-9A-F]{3}$/i.test(hex)) {
+                const picker = e.target.closest('[data-ref="customColorPicker"]') || document.querySelector('[data-ref="customColorPicker"]');
+                if (picker) {
+                    const hsv = hexToHsv(hex);
+                    picker.dataset.h = hsv.h;
+                    picker.dataset.s = hsv.s;
+                    picker.dataset.v = hsv.v;
+                    this.updateCustomPickerUI(picker);
+                }
+            }
+            return;
+        }
+
         const isMenuInput = e.target.matches('[data-ref="text-menu-input"]');
         const isFloatingInput = e.target.matches('[data-ref="floating-text-input"]');
 
@@ -4743,5 +5442,120 @@ export const DesignInteractions = {
                 this.updatePerkBadges();
             }
         }, 1000);
+    },
+
+    loadCustomColors() {
+        try {
+            const key = this.canvasId ? `rosaura_custom_colors_${this.canvasId}` : 'rosaura_offline_custom_colors';
+            const saved = localStorage.getItem(key) || localStorage.getItem('rosaura_offline_custom_colors');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) return parsed.slice(0, 18);
+            }
+        } catch (e) {
+            console.warn('Failed to load custom colors from localStorage:', e);
+        }
+        return [];
+    },
+
+    saveCustomColors() {
+        try {
+            const key = this.canvasId ? `rosaura_custom_colors_${this.canvasId}` : 'rosaura_offline_custom_colors';
+            if (Array.isArray(this.customPickedColors)) {
+                localStorage.setItem(key, JSON.stringify(this.customPickedColors.slice(0, 18)));
+                localStorage.setItem('rosaura_offline_custom_colors', JSON.stringify(this.customPickedColors.slice(0, 18)));
+            }
+        } catch (e) {
+            console.warn('Failed to save custom colors to localStorage:', e);
+        }
+    },
+
+    selectAndAddCustomColor(hex) {
+        if (!hex || typeof hex !== 'string') return;
+        hex = hex.trim().toUpperCase();
+        if (!hex.startsWith('#')) hex = '#' + hex;
+        if (!/^#[0-9A-F]{6}$/i.test(hex) && !/^#[0-9A-F]{3}$/i.test(hex)) return;
+
+        if (!Array.isArray(this.customPickedColors)) {
+            this.customPickedColors = [];
+        }
+
+        const idx = this.customPickedColors.indexOf(hex);
+        if (idx > -1) {
+            this.customPickedColors.splice(idx, 1);
+        }
+        this.customPickedColors.unshift(hex);
+        if (this.customPickedColors.length > 18) {
+            this.customPickedColors = this.customPickedColors.slice(0, 18);
+        }
+
+        this.saveCustomColors();
+
+        this.currentColor = hex;
+        if (this.btnColorPalette) {
+            this.btnColorPalette.style.setProperty('--active-color', this.currentColor);
+            this.applyColorBorderStyle(this.btnColorPalette, this.currentColor);
+        }
+
+        this.renderCustomPickedColors();
+        this.updateActiveColorPreview();
+        this.syncActiveColorHighlight();
+        this.requestRender();
+
+        if (window.ModuleManager && typeof window.ModuleManager.close === 'function') {
+            window.ModuleManager.close('moduleCustomColorPicker');
+        }
+    },
+
+    updateCustomPickerUI(pickerNode) {
+        if (!pickerNode) pickerNode = document.querySelector('[data-ref="customColorPicker"]');
+        if (!pickerNode) return;
+
+        let h = Math.max(0, Math.min(360, parseFloat(pickerNode.dataset.h) || 0));
+        let s = Math.max(0, Math.min(100, parseFloat(pickerNode.dataset.s) || 0));
+        let v = Math.max(0, Math.min(100, parseFloat(pickerNode.dataset.v) || 0));
+        const hex = hsvToHex(h, s, v);
+
+        const svArea = pickerNode.querySelector('[data-action="dragCustomSV"]');
+        if (svArea) svArea.style.backgroundColor = `hsl(${h}, 100%, 50%)`;
+
+        const svThumb = pickerNode.querySelector('[data-ref="customSvThumb"]');
+        if (svThumb) {
+            svThumb.style.left = `${s}%`;
+            svThumb.style.top = `${100 - v}%`;
+        }
+
+        const hueThumb = pickerNode.querySelector('[data-ref="customHueThumb"]');
+        if (hueThumb) hueThumb.style.left = `${(h / 360) * 100}%`;
+
+        const hexInput = pickerNode.querySelector('[data-ref="customHexInput"]');
+        if (hexInput && document.activeElement !== hexInput) {
+            hexInput.value = hex;
+        }
+
+        const hexInputPreview = pickerNode.querySelector('[data-ref="customHexInputPreview"]');
+        if (hexInputPreview) {
+            hexInputPreview.style.backgroundColor = hex;
+        }
+    },
+
+    updateCustomColorFromEvent(e, container) {
+        if (!container) return;
+        const pickerNode = container.closest('[data-ref="customColorPicker"]');
+        if (!pickerNode) return;
+
+        const rect = container.getBoundingClientRect();
+        const coords = getEventCoords(e);
+        let x = Math.max(0, Math.min(coords.clientX - rect.left, rect.width));
+        let y = Math.max(0, Math.min(coords.clientY - rect.top, rect.height));
+
+        if (this.isDraggingCustomPicker === 'sv') {
+            pickerNode.dataset.s = (x / rect.width) * 100;
+            pickerNode.dataset.v = 100 - ((y / rect.height) * 100);
+        } else if (this.isDraggingCustomPicker === 'hue') {
+            pickerNode.dataset.h = (x / rect.width) * 360;
+        }
+
+        this.updateCustomPickerUI(pickerNode);
     },
 }

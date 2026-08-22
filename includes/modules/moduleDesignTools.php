@@ -16,6 +16,59 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
             </div>
         </div>
 
+        <div class="component-menu-section-parent disabled" data-ref="custom-colors-section">
+            <div class="component-menu-section-header">
+                <div class="component-menu-header-box">
+                    <span class="material-symbols-rounded">palette</span>
+                    <span class="component-menu-header-title"><?php echo __('dt_custom_colors'); ?></span>
+                </div>
+            </div>
+            
+            <div class="component-menu-section-body">
+                <div class="component-items-grid" data-ref="custom-colors-container">
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--fit component-dropdown-wrapper--grid-item" data-ref="custom-color-dropdown-wrapper">
+                        <button type="button" class="component-color-btn component-color-btn--rainbow" data-action="toggleModule" data-target="moduleCustomColorPicker" data-tooltip="<?php echo __('dt_add_custom_color'); ?>" data-position="right-start">
+                            <div class="component-color-btn--rainbow-inner">
+                                <span class="material-symbols-rounded">add</span>
+                            </div>
+                        </button>
+                        
+                        <div class="component-module component-module--dropdown disabled" data-module="moduleCustomColorPicker" data-ref="custom-color-picker-module">
+                            <div class="component-menu component-menu--w220 component-menu--h-auto component-menu--padding-md">
+                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                <div class="component-menu-header">
+                                    <div class="component-menu-header-box">
+                                        <span class="material-symbols-rounded">colorize</span>
+                                        <span class="component-menu-header-title"><?php echo __('dt_custom_color_picker'); ?></span>
+                                    </div>
+                                </div>
+                                <div class="component-color-picker" data-ref="customColorPicker" data-h="0" data-s="100" data-v="100">
+                                    <div class="component-color-picker__sv-area" data-action="dragCustomSV" style="background-color: hsl(0, 100%, 50%);">
+                                        <div class="component-color-picker__sv-bg"></div>
+                                        <div class="component-color-picker__sv-thumb" data-ref="customSvThumb" style="left: 100%; top: 0%;"></div>
+                                    </div>
+                                    <div class="component-color-picker__hue-area" data-action="dragCustomHue">
+                                        <div class="component-color-picker__hue-thumb" data-ref="customHueThumb" style="left: 0%;"></div>
+                                    </div>
+                                    <div class="component-input-group component-input-group--h34 component-input-group--color">
+                                        <div class="component-color-swatch component-color-swatch--sm" data-ref="customHexInputPreview" style="background-color: #FF0000;"></div>
+                                        <input type="text" class="component-input-field component-input-field--mono" data-ref="customHexInput" value="#FF0000" maxlength="7" placeholder="#000000">
+                                    </div>
+                                    <button type="button" class="component-button component-button--primary component-button--full component-button--h34" data-action="applyCustomColor">
+                                        <span class="material-symbols-rounded">check</span>
+                                        <?php echo __('btn_select') ?: 'Seleccionar'; ?>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="component-color-btn component-color-btn--eyedropper" data-action="toggleEyedropper" data-tooltip="<?php echo __('dt_eyedropper'); ?>">
+                        <span class="material-symbols-rounded">colorize</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div class="component-menu-section-parent component-menu-section-parent--scrollable">
             <div class="component-menu-section-header">
                 <div class="component-menu-header-box">

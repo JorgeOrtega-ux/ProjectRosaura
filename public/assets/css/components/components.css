@@ -1828,6 +1828,10 @@ html.dark-theme .component-avatar__overlay {
     padding: 8px;
 }
 
+.component-menu--w220 {
+    width: 220px;
+}
+
 .component-menu--w265 {
     width: 265px;
 }
@@ -2212,6 +2216,15 @@ html.dark-theme .component-menu-header.shadow {
 
 .component-dropdown-wrapper--fit {
     max-width: fit-content;
+}
+
+.component-dropdown-wrapper--grid-item {
+    width: 100%;
+    max-width: 100%;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .component-dropdown-wrapper.component-dropdown-wrapper--auto {
@@ -5839,28 +5852,89 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    outline: none;
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease;
 }
 
 .component-color-btn--rainbow-inner {
-    width: 90%;
-    height: 90%;
-    background-color: var(--bg-surface, #0c0d0e);
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-surface, #ffffff);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-color, #ffffff);
+    color: var(--text-primary, #111827);
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .component-color-btn--rainbow-inner span {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
 }
 
 .component-color-btn--rainbow:hover,
 .component-color-btn--rainbow.active {
     box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--text-primary), inset 0 0 0 1px rgba(0, 0, 0, 0.15);
     transform: scale(0.82);
+}
+
+.component-color-btn--rainbow:active {
+    transform: scale(0.75);
+}
+
+.component-color-btn--eyedropper {
+    background-color: var(--bg-surface, #ffffff);
+    border: 1px solid var(--border-color);
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    cursor: pointer;
+    outline: none;
+    color: var(--text-primary, #111827);
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.component-color-btn--eyedropper span {
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.component-color-btn--eyedropper:hover {
+    background-color: var(--bg-surface-alt, #f3f4f6);
+    border-color: var(--text-secondary);
+}
+
+.component-color-btn--eyedropper.active {
+    background-color: var(--color-primary, #6366f1);
+    color: #ffffff;
+    border-color: var(--color-primary, #6366f1);
+    box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--color-primary, #6366f1);
+    transform: scale(0.82);
+}
+
+.component-color-btn--eyedropper:active {
+    transform: scale(0.75);
+}
+
+.component-cursor-eyedropper {
+    cursor: crosshair !important;
 }
 
 /* ─── Adaptive borders for extreme-luminance swatches ─────────────────────── */
@@ -6333,6 +6407,24 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     background: rgba(245, 158, 11, 0.2);
     border-color: #f59e0b;
     color: #f59e0b;
+}
+
+.canvas-design-toolbar-vertical [data-action="toggleOfflineBrush"].active {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: var(--color-primary, #6366f1);
+    color: var(--color-primary, #6366f1);
+}
+
+.canvas-design-toolbar-vertical [data-action="toggleOfflineShading"].active {
+    background: rgba(234, 179, 8, 0.2);
+    border-color: #eab308;
+    color: #eab308;
+}
+
+.canvas-design-toolbar-vertical [data-action="toggleTileGrid"].active {
+    background: rgba(14, 165, 233, 0.2);
+    border-color: #0ea5e9;
+    color: #0ea5e9;
 }
 
 .canvas-design-toolbar-vertical [data-menu-target="menu-text"].active,

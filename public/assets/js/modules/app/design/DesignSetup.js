@@ -1,4 +1,4 @@
-﻿import { getPaletteById } from './utils/DesignPaletteUtils.js';
+import { getPaletteById } from './utils/DesignPaletteUtils.js';
 import { showMessage } from '../../../core/utils/uiUtils.js';
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiService.js';
@@ -120,6 +120,23 @@ export const DesignSetup = {
             this.canvasPaletteId = wrapper.getAttribute('data-palette') || 'default';
             this.allowCustomColors = wrapper.getAttribute('data-allow-custom-colors') === '1';
             
+            const customSection = document.querySelector('[data-ref="custom-colors-section"]');
+            if (customSection) {
+                if (this.isOfflineMode) {
+                    customSection.classList.remove('disabled');
+                    customSection.classList.add('active');
+                } else {
+                    customSection.classList.remove('active');
+                    customSection.classList.add('disabled');
+                }
+            }
+
+            if (this.isOfflineMode && typeof this.loadCustomColors === 'function') {
+                this.customPickedColors = this.loadCustomColors();
+            } else {
+                this.customPickedColors = [];
+            }
+
             this.setupCanvas();
             this.centerBoard();
             this.setCanvasBadge('coords', 'my_location', '- , -', 'left');
@@ -624,6 +641,15 @@ export const DesignSetup = {
                                 }
                                 if (typeof this.requestRender === 'function') {
                                     this.requestRender();
+                                }
+                            }
+                        }
+                        if (e.data?.type === 'PIXEL_COLOR_PICKED') {
+                            const hex = e.data.payload?.hex;
+                            if (hex && typeof this.selectAndAddCustomColor === 'function') {
+                                this.selectAndAddCustomColor(hex);
+                                if (this.interactionMode === 'offline_eyedropper' && typeof this.toggleEyedropper === 'function') {
+                                    this.toggleEyedropper();
                                 }
                             }
                         }

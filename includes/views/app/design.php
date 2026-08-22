@@ -173,6 +173,9 @@ extract($designData);
 
             <?php if (!$isOnlineModeActive): ?>
             <div class="canvas-design-toolbar-vertical <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="offline-tools-vertical">
+                <button class="component-button component-button--icon component-button--h32" data-action="toggleOfflineBrush" data-ref="btn-offline-brush" data-tooltip="<?php echo __('tooltip_brush'); ?> [B]" data-position="right">
+                    <span class="material-symbols-rounded">brush</span>
+                </button>
                 <button class="component-button component-button--icon component-button--h32" data-action="toggleOfflineMirror" data-ref="btn-offline-mirror" data-tooltip="<?php echo __('tooltip_mirror_mode'); ?> [X]" data-position="right">
                     <span class="material-symbols-rounded">flip</span>
                 </button>
@@ -191,6 +194,9 @@ extract($designData);
                 <button class="component-button component-button--icon component-button--h32" data-action="toggleOfflineDither" data-ref="btn-offline-dither" data-tooltip="<?php echo __('tooltip_dither'); ?> [D]" data-position="right">
                     <span class="material-symbols-rounded">texture</span>
                 </button>
+                <button class="component-button component-button--icon component-button--h32" data-action="toggleOfflineShading" data-ref="btn-offline-shading" data-tooltip="<?php echo __('tooltip_shading'); ?> [S]" data-position="right">
+                    <span class="material-symbols-rounded">exposure</span>
+                </button>
                 <button class="component-button component-button--icon component-button--h32" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-shapes" data-ref="btn-offline-shapes" data-tooltip="<?php echo __('tooltip_shapes'); ?> [V]" data-position="right">
                     <span class="material-symbols-rounded">shapes</span>
                 </button>
@@ -200,9 +206,24 @@ extract($designData);
                 <button class="component-button component-button--icon component-button--h32" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-stickers" data-ref="btn-offline-stickers" data-tooltip="<?php echo __('tooltip_stickers'); ?> [F]" data-position="right">
                     <span class="material-symbols-rounded">category</span>
                 </button>
+                <button class="component-button component-button--icon component-button--h32" data-action="toggleTileGrid" data-ref="btn-tile-grid" data-tooltip="<?php echo __('tooltip_tile_grid'); ?> [Z]" data-position="right">
+                    <span class="material-symbols-rounded">grid_on</span>
+                </button>
             </div>
 
             <div class="canvas-design-subtoolbar-vertical disabled" data-ref="offline-subtoolbar-vertical">
+                <div class="canvas-design-subtoolbar-group disabled" data-subtoolbar="brush">
+                    <button class="component-button component-button--icon component-button--h32 active" data-action="setBrushShape" data-brush-shape="square" data-tooltip="<?php echo __('tooltip_brush_square'); ?>" data-position="right">
+                        <span class="material-symbols-rounded">square</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setBrushShape" data-brush-shape="circle" data-tooltip="<?php echo __('tooltip_brush_circle'); ?>" data-position="right">
+                        <span class="material-symbols-rounded">circle</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setBrushShape" data-brush-shape="slash" data-tooltip="<?php echo __('tooltip_brush_slash'); ?>" data-position="right">
+                        <span class="material-symbols-rounded">edit</span>
+                    </button>
+                </div>
+
                 <div class="canvas-design-subtoolbar-group disabled" data-subtoolbar="eraser">
                     <button class="component-button component-button--icon component-button--h32 active" data-action="setOfflineEraserMode" data-eraser-mode="box" data-ref="btn-eraser-mode-box" data-tooltip="<?php echo __('tooltip_eraser_box'); ?>" data-position="right">
                         <span class="material-symbols-rounded">highlight_alt</span>
@@ -237,9 +258,25 @@ extract($designData);
                         <span class="material-symbols-rounded">reorder</span>
                     </button>
                 </div>
+
+                <div class="canvas-design-subtoolbar-group disabled" data-subtoolbar="shading">
+                    <button class="component-button component-button--icon component-button--h32 active" data-action="setShadingMode" data-shading-mode="shadow" data-tooltip="<?php echo __('tooltip_shading_shadow'); ?>" data-position="right">
+                        <span class="material-symbols-rounded">brightness_low</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setShadingMode" data-shading-mode="highlight" data-tooltip="<?php echo __('tooltip_shading_highlight'); ?>" data-position="right">
+                        <span class="material-symbols-rounded">brightness_high</span>
+                    </button>
+                </div>
             </div>
 
             <div class="canvas-design-sizes-subtoolbar-vertical disabled" data-ref="brush-size-toolbar">
+                <div class="canvas-design-sizes-group disabled" data-sizes-for="brush">
+                    <button class="component-button component-button--icon component-button--h32 active" data-action="setBrushSize" data-size="1" data-tooltip="1x1 px" data-position="right">1</button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setBrushSize" data-size="2" data-tooltip="2x2 px" data-position="right">2</button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setBrushSize" data-size="3" data-tooltip="3x3 px" data-position="right">3</button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setBrushSize" data-size="4" data-tooltip="4x4 px" data-position="right">4</button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setBrushSize" data-size="6" data-tooltip="6x6 px" data-position="right">6</button>
+                </div>
                 <div class="canvas-design-sizes-group active" data-sizes-for="eraser">
                     <button class="component-button component-button--icon component-button--h32 active" data-action="setBrushEraserSize" data-size="1" data-tooltip="1x1 px" data-position="right">1</button>
                     <button class="component-button component-button--icon component-button--h32" data-action="setBrushEraserSize" data-size="5" data-tooltip="5x5 px" data-position="right">5</button>
@@ -253,6 +290,12 @@ extract($designData);
                     <button class="component-button component-button--icon component-button--h32" data-action="setDitherSize" data-size="5" data-tooltip="5x5 px" data-position="right">5</button>
                     <button class="component-button component-button--icon component-button--h32" data-action="setDitherSize" data-size="10" data-tooltip="10x10 px" data-position="right">10</button>
                     <button class="component-button component-button--icon component-button--h32" data-action="setDitherSize" data-size="20" data-tooltip="20x20 px" data-position="right">20</button>
+                </div>
+                <div class="canvas-design-sizes-group disabled" data-sizes-for="shading">
+                    <button class="component-button component-button--icon component-button--h32 active" data-action="setShadingSize" data-size="1" data-tooltip="1x1 px" data-position="right">1</button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setShadingSize" data-size="2" data-tooltip="2x2 px" data-position="right">2</button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setShadingSize" data-size="3" data-tooltip="3x3 px" data-position="right">3</button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setShadingSize" data-size="5" data-tooltip="5x5 px" data-position="right">5</button>
                 </div>
             </div>
             <?php endif; ?>

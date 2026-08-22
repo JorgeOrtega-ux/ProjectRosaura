@@ -42,6 +42,10 @@ let textPreviewBox = null;
 
 let isOfflineMode = false;
 let isMirrorMode = false;
+let isEyedropperActive = false;
+let tileGridSize = 0;
+let brushSize = 1;
+let brushShape = 'square';
 const MAX_HISTORY = 50;
 let undoStack = [];
 let redoStack = [];
@@ -232,6 +236,18 @@ function colorToAbgr(color) {
     return 0;
 }
 
+function abgrToHex(val) {
+    if (!val || val === 0) return '#FFFFFF';
+    const r = val & 0xFF;
+    const g = (val >> 8) & 0xFF;
+    const b = (val >> 16) & 0xFF;
+    const a = (val >> 24) & 0xFF;
+    if (a === 255) {
+        return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('').toUpperCase();
+    }
+    return `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(2)})`;
+}
+
 // ---------------------------------------------------------
 // FUNCIONES DE DESCOMPRESIÓN E HIDRATACIÓN
 // ---------------------------------------------------------
@@ -363,11 +379,62 @@ function updateSelectionBitmask() {
     if (hoveredPixelKey >= 0 && !isSpectator && !isResetLocked && !(isFrozen && !isOwner)) {
         const hx = hoveredPixelKey & 0xFFFF;
         const hy = hoveredPixelKey >> 16;
-        if (hx >= 0 && hx < boardWidth && hy >= 0 && hy < boardHeight) {
-            selectedBitmask[hy * boardWidth + hx] = 1;
+        if (isOfflineMode && (brushSize > 1 || brushShape !== 'square')) {
+            const offsets = getBrushOffsetsWorker(brushSize, brushShape);
+            for (let i = 0; i < offsets.length; i++) {
+                const px = hx + offsets[i].dx;
+                const py = hy + offsets[i].dy;
+                if (px >= 0 && px < boardWidth && py >= 0 && py < boardHeight) {
+                    selectedBitmask[py * boardWidth + px] = 1;
+                }
+            }
+        } else {
+            if (hx >= 0 && hx < boardWidth && hy >= 0 && hy < boardHeight) {
+                selectedBitmask[hy * boardWidth + hx] = 1;
+            }
         }
     }
     selectionBitmaskDirty = false;
+}
+
+function getBrushOffsetsWorker(size = 1, shape = 'square') {
+    const offsets = [];
+    if (size <= 1) return [{ dx: 0, dy: 0 }];
+    const half1 = Math.floor((size - 1) / 2);
+    const half2 = Math.floor(size / 2);
+
+    if (shape === 'circle') {
+        if (size === 2) {
+            for (let dy = 0; dy < 2; dy++) {
+                for (let dx = 0; dx < 2; dx++) offsets.push({ dx, dy });
+            }
+        } else if (size % 2 === 1) {
+            const r = (size - 1) / 2;
+            const maxDistSq = r * r + 0.45;
+            for (let dy = -r; dy <= r; dy++) {
+                for (let dx = -r; dx <= r; dx++) {
+                    if (dx * dx + dy * dy <= maxDistSq) offsets.push({ dx, dy });
+                }
+            }
+        } else {
+            const half = size / 2;
+            const maxDistSq = (half - 0.5) * (half - 0.5) + (half - 0.85);
+            for (let dy = -half; dy < half; dy++) {
+                for (let dx = -half; dx < half; dx++) {
+                    const cx = dx + 0.5;
+                    const cy = dy + 0.5;
+                    if (cx * cx + cy * cy <= maxDistSq) offsets.push({ dx, dy });
+                }
+            }
+        }
+    } else if (shape === 'slash') {
+        for (let i = -half1; i <= half2; i++) offsets.push({ dx: i, dy: -i });
+    } else {
+        for (let dy = -half1; dy <= half2; dy++) {
+            for (let dx = -half1; dx <= half2; dx++) offsets.push({ dx, dy });
+        }
+    }
+    return offsets.length > 0 ? offsets : [{ dx: 0, dy: 0 }];
 }
 
 function processPixelQueue() {
@@ -848,6 +915,26 @@ function render() {
     }
     
     ctx.restore();
+
+    // Cuadrícula de Tiles / Bloques (8x8 / 16x16 / 32x32)
+    if (tileGridSize > 0 && boardWidth > 0 && boardHeight > 0) {
+        ctx.save();
+        ctx.lineWidth = Math.max(1 / transform.scale, 1.5 / transform.scale);
+        ctx.strokeStyle = isDarkMode ? 'rgba(99, 102, 241, 0.7)' : 'rgba(79, 70, 229, 0.6)';
+        ctx.setLineDash([3 / transform.scale, 2 / transform.scale]);
+        ctx.beginPath();
+
+        for (let x = tileGridSize; x < drawW; x += tileGridSize) {
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, drawH);
+        }
+        for (let y = tileGridSize; y < drawH; y += tileGridSize) {
+            ctx.moveTo(0, y);
+            ctx.lineTo(drawW, y);
+        }
+        ctx.stroke();
+        ctx.restore();
+    }
 
     // Render all templates concurrently
     if (templatesList && templatesList.length > 0 && !isSpectator && !isResetLocked && !(isFrozen && !isOwner)) {
@@ -1997,6 +2084,118 @@ function render() {
 
 
     ctx.restore();
+
+    if (isEyedropperActive && hoveredPixelKey >= 0) {
+        drawEyedropperLoupe();
+    }
+}
+
+function drawEyedropperLoupe() {
+    if (!isEyedropperActive || hoveredPixelKey < 0) return;
+    const hx = hoveredPixelKey & 0xFFFF;
+    const hy = hoveredPixelKey >> 16;
+    if (hx < 0 || hx >= boardWidth || hy < 0 || hy >= boardHeight) return;
+
+    ctx.save();
+    ctx.scale(dpr, dpr);
+
+    const screenX = transform.x + (hx + 0.5) * transform.scale;
+    const screenY = transform.y + (hy + 0.5) * transform.scale;
+
+    const gridRadius = 4; // 9x9 grid (-4 to +4)
+    const gridSize = 9;
+    const cellSize = 12; // 12px per cell
+    const loupeRadius = (gridSize * cellSize) / 2; // 54px radius
+
+    // Read sampled color at center
+    let centerHex = '#FFFFFF';
+    if (pixelBuffer) {
+        const val = pixelBuffer[hy * boardWidth + hx];
+        if (val !== 0) centerHex = abgrToHex(val);
+    }
+
+    // Shadow for the loupe
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(screenX, screenY, loupeRadius + 3, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+    ctx.fill();
+
+    // Clip to circle for magnifying lens
+    ctx.beginPath();
+    ctx.arc(screenX, screenY, loupeRadius, 0, Math.PI * 2);
+    ctx.clip();
+
+    // Background
+    ctx.fillStyle = isDarkMode ? '#1f2937' : '#ffffff';
+    ctx.fillRect(screenX - loupeRadius, screenY - loupeRadius, loupeRadius * 2, loupeRadius * 2);
+
+    // Draw magnified grid cells
+    for (let gy = -gridRadius; gy <= gridRadius; gy++) {
+        for (let gx = -gridRadius; gx <= gridRadius; gx++) {
+            const bx = hx + gx;
+            const by = hy + gy;
+            let cellColor = '#FFFFFF';
+            if (bx >= 0 && bx < boardWidth && by >= 0 && by < boardHeight) {
+                if (pixelBuffer) {
+                    const val = pixelBuffer[by * boardWidth + bx];
+                    if (val !== 0) cellColor = abgrToHex(val);
+                }
+            } else {
+                cellColor = isDarkMode ? '#111827' : '#e5e7eb';
+            }
+
+            const cellX = screenX + gx * cellSize - cellSize / 2;
+            const cellY = screenY + gy * cellSize - cellSize / 2;
+
+            ctx.fillStyle = cellColor;
+            ctx.fillRect(cellX, cellY, cellSize, cellSize);
+
+            // Cell grid border
+            ctx.strokeStyle = isDarkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(cellX, cellY, cellSize, cellSize);
+        }
+    }
+
+    // Highlight center pixel with a dual-contrast square border (as shown in reference image)
+    const centerX = screenX - cellSize / 2;
+    const centerY = screenY - cellSize / 2;
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(centerX, centerY, cellSize, cellSize);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(centerX + 0.5, centerY + 0.5, cellSize - 1, cellSize - 1);
+
+    ctx.restore();
+
+    // Outer circular rings
+    ctx.beginPath();
+    ctx.arc(screenX, screenY, loupeRadius, 0, Math.PI * 2);
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(screenX, screenY, loupeRadius, 0, Math.PI * 2);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Color preview badge on top of loupe
+    ctx.beginPath();
+    ctx.arc(screenX, screenY - loupeRadius - 14, 10, 0, Math.PI * 2);
+    ctx.fillStyle = centerHex;
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.restore();
 }
 
 self.onmessage = function (e) {
@@ -2167,9 +2366,35 @@ self.onmessage = function (e) {
             textPreviewBox = payload.textPreviewBox || null;
             topBarCenterX = payload.topBarCenterX || 0;
             topBarBottomY = payload.topBarBottomY || 0;
+            if (payload.isEyedropperActive !== undefined) {
+                isEyedropperActive = !!payload.isEyedropperActive;
+            }
+            if (payload.tileGridSize !== undefined) {
+                tileGridSize = parseInt(payload.tileGridSize, 10) || 0;
+            }
+            if (payload.brushSize !== undefined) {
+                brushSize = parseInt(payload.brushSize, 10) || 1;
+            }
+            if (payload.brushShape !== undefined) {
+                brushShape = payload.brushShape || 'square';
+            }
             selectionBitmaskDirty = true;
             requestRender();
             break;
+
+        case 'PICK_PIXEL_COLOR': {
+            const { x, y } = payload;
+            let hex = '#FFFFFF';
+            if (pixelBuffer && x >= 0 && x < boardWidth && y >= 0 && y < boardHeight) {
+                const val = pixelBuffer[y * boardWidth + x];
+                hex = (val === 0) ? '#FFFFFF' : abgrToHex(val);
+            }
+            self.postMessage({
+                type: 'PIXEL_COLOR_PICKED',
+                payload: { x, y, hex }
+            });
+            break;
+        }
 
         case 'CLEAR_AREA': {
             const { x1, y1, x2, y2 } = e.data.payload;
