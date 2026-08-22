@@ -66,9 +66,9 @@ $maxMB = $maxUploadMB ?? 10;
             </div>
             
             <div class="component-menu-bottom component-chat-input-area">
-                <div class="component-search component-search--w-auto">
-                    <div class="component-search-input <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled-interaction' : ''; ?>">
-                        
+                <div class="component-chat-box <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled-interaction' : ''; ?>" data-ref="chat-box-container">
+                    
+                    <div class="component-chat-box__actions-left">
                         <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
                             <button class="component-chat-attach-btn" data-action="toggleModule" data-target="chat-attach-menu" data-position="top" <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled' : ''; ?>>
                                 <span class="material-symbols-rounded">add</span>
@@ -89,9 +89,10 @@ $maxMB = $maxUploadMB ?? 10;
                                 </div>
                             </div>
                         </div>
-
                         <input type="file" id="chat-file-input" class="disabled" multiple accept="image/jpeg, image/png, image/webp, image/gif">
+                    </div>
 
+                    <div class="component-chat-box__input-wrapper">
                         <?php 
                         $placeholder = __('chat_placeholder');
                         if (isset($isChatRestricted) && $isChatRestricted) {
@@ -102,11 +103,15 @@ $maxMB = $maxUploadMB ?? 10;
                             }
                         }
                         ?>
-                        <input type="text" data-ref="chat-input-message" placeholder="<?php echo htmlspecialchars($placeholder); ?>" maxlength="255" <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled' : ''; ?>>
+                        <textarea data-ref="chat-input-message" class="component-chat-textarea" placeholder="<?php echo htmlspecialchars($placeholder); ?>" maxlength="1000" rows="1" <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled' : ''; ?>></textarea>
+                    </div>
+
+                    <div class="component-chat-box__actions-right">
                         <button class="component-chat-send-btn" data-action="sendChatMessage" data-ref="chat-btn-send" <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled' : ''; ?>>
                             <span class="material-symbols-rounded">send</span>
                         </button>
                     </div>
+
                 </div>
             </div>
         </div>

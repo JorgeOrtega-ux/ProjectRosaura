@@ -119,7 +119,7 @@ class AdminMessagesController {
             searchToolbar.classList.add('active');
         }
 
-        this.backToMainFilters();
+        backToMainFilters('menuMainFilters', 'moduleMessageFilters');
         this.updateFilterButtonsState();
         this.deselectMessage();
     }

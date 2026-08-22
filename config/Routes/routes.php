@@ -73,7 +73,6 @@ return [
     '/admin/user-profile/:uuid' => ['view' => 'admin/users/edit-user.php', 'auth' => true, 'permissions' => [PC::EDIT_USERS], 'requires_2fa' => false],
     '/admin/user-moderation/:uuid' => ['view' => 'admin/users/edit-status.php', 'auth' => true, 'permissions' => [PC::MODERATE_USERS], 'requires_2fa' => false],
     '/admin/user-activity/:uuid' => ['view' => 'admin/users/user-history.php', 'auth' => true, 'permissions' => [PC::VIEW_KARDEX], 'requires_2fa' => false],
-    '/admin/user-purchases/:uuid' => ['view' => 'admin/users/user-purchases.php', 'auth' => true, 'permissions' => [PC::VIEW_USER_PURCHASES], 'requires_2fa' => false],
     '/admin/roles' => ['view' => 'admin/roles/manage-roles.php', 'auth' => true, 'permissions' => [PC::VIEW_ROLES], 'requires_2fa' => false],
     '/admin/role-create' => ['view' => 'admin/roles/role-builder.php', 'auth' => true, 'permissions' => [PC::MANAGE_ROLES_STRUCTURE], 'requires_2fa' => false],
     '/admin/role-edit/:uuid' => ['view' => 'admin/roles/role-builder.php', 'auth' => true, 'permissions' => [PC::MANAGE_ROLES_STRUCTURE], 'requires_2fa' => false],

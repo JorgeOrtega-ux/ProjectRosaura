@@ -57,11 +57,11 @@ class SubscriptionFeatureConfig {
                 'title_short_key' => 'plan_feat_no_ads_short',
                 'desc_key'        => 'plan_feat_no_ads_desc'
             ],
-            'feat_download_4k' => [
-                'icon'            => 'high_quality',
-                'title_key'       => 'plan_feat_download_4k_title',
-                'title_short_key' => 'plan_feat_download_4k_short',
-                'desc_key'        => 'plan_feat_download_4k_desc'
+            'feat_export_timelapse' => [
+                'icon'            => 'movie',
+                'title_key'       => 'plan_feat_export_timelapse_title',
+                'title_short_key' => 'plan_feat_export_timelapse_short',
+                'desc_key'        => 'plan_feat_export_timelapse_desc'
             ]
         ];
     }

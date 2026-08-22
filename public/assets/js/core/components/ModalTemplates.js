@@ -2164,12 +2164,12 @@ export const ModalTemplates = {
                 '4k': 'video_file'
             };
 
-            const lock4k = (typeof getLockDetails === 'function') 
-                ? getLockDetails('feat_download_4k', 'link') 
+            const lockVideo = (typeof getLockDetails === 'function') 
+                ? getLockDetails('feat_export_timelapse', 'link') 
                 : { isLocked: false, classStr: '', attributesStr: '', badgeHtml: '' };
 
-            const is4kActive = (videoQuality === '4k');
-            const link4kClasses = ['component-menu-link', is4kActive ? 'active' : '', lock4k.classStr].filter(Boolean).join(' ');
+            const isVideoActive = (exportType === 'video');
+            const linkVideoClasses = ['component-menu-link', isVideoActive ? 'active' : '', lockVideo.classStr].filter(Boolean).join(' ');
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
@@ -2199,9 +2199,9 @@ export const ModalTemplates = {
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">image</span></div>
                                         <div class="component-menu-link-text"><span>${__('lbl_export_type_image')}</span></div>
                                     </div>
-                                    <div class="component-menu-link ${exportType === 'video' ? 'active' : ''}" data-action="selectSnapshotExportType" data-value="video" data-icon="movie" data-text="${__('lbl_export_type_video')}">
+                                    <div class="${linkVideoClasses}" data-action="selectSnapshotExportType" data-value="video" data-icon="movie" data-text="${__('lbl_export_type_video')}"${lockVideo.attributesStr}>
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">movie</span></div>
-                                        <div class="component-menu-link-text"><span>${__('lbl_export_type_video')}</span></div>
+                                        <div class="component-menu-link-text"><span>${__('lbl_export_type_video')}</span>${lockVideo.badgeHtml}</div>
                                     </div>
                                 </div>
                             </div>
@@ -2287,9 +2287,9 @@ export const ModalTemplates = {
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">high_quality</span></div>
                                         <div class="component-menu-link-text"><span>${qualityLabels['1080p']}</span></div>
                                     </div>
-                                    <div class="${link4kClasses}" data-action="selectSnapshotVideoQuality" data-value="4k" data-icon="video_file" data-text="${qualityLabels['4k']}"${lock4k.attributesStr}>
+                                    <div class="component-menu-link ${videoQuality === '4k' ? 'active' : ''}" data-action="selectSnapshotVideoQuality" data-value="4k" data-icon="video_file" data-text="${qualityLabels['4k']}">
                                         <div class="component-menu-link-icon"><span class="material-symbols-rounded">video_file</span></div>
-                                        <div class="component-menu-link-text"><span>${qualityLabels['4k']}</span>${lock4k.badgeHtml}</div>
+                                        <div class="component-menu-link-text"><span>${qualityLabels['4k']}</span></div>
                                     </div>
                                 </div>
                             </div>

@@ -448,7 +448,7 @@ class AdminViewService {
     /**
 
      */
-    public function getUserHistoryData(?string $targetUserUuid, int $page = 1): array {
+    public function getUserHistoryData(?string $targetUserUuid, int $page = 1, array $categoryFilter = []): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
         if (empty($targetUserUuid)) {
@@ -471,30 +471,171 @@ class AdminViewService {
         $limit = 20;
         if ($page < 1) $page = 1;
 
-        $totalHistory = 0;
-        try {
-            $stmtCount = $pdo->prepare("SELECT COUNT(id) FROM user_security_history WHERE user_id = :uid");
-            $stmtCount->execute(['uid' => $targetUserId]);
-            $totalHistory = (int)$stmtCount->fetchColumn();
-        } catch (\Throwable $e) {
-            Logger::error("getUserHistoryData totalHistory error: " . $e->getMessage(), ['exception' => $e]);
+        $validCategories = ['moderation', 'role', 'profile', 'security', 'finance'];
+        if (empty($categoryFilter)) {
+            $checkedCategories = $validCategories;
+        } else {
+            $checkedCategories = array_values(array_intersect($validCategories, $categoryFilter));
+            if (empty($checkedCategories)) {
+                $checkedCategories = $validCategories;
+            }
         }
 
-        $totalPages = ceil($totalHistory / $limit);
-        if ($totalPages < 1) $totalPages = 1;
-        if ($page > $totalPages) $page = $totalPages;
-        $offset = ($page - 1) * $limit;
+        $subqueries = [];
 
+        if (in_array('moderation', $checkedCategories) || in_array('role', $checkedCategories)) {
+            $modFilter = "";
+            if (!in_array('role', $checkedCategories)) {
+                $modFilter = " AND ml.action_type != 'role_changed'";
+            } elseif (!in_array('moderation', $checkedCategories)) {
+                $modFilter = " AND ml.action_type = 'role_changed'";
+            }
+            $subqueries[] = "
+                SELECT 
+                    'moderation' AS source_table,
+                    CASE WHEN ml.action_type = 'role_changed' THEN 'role' ELSE 'moderation' END AS category,
+                    ml.action_type,
+                    ml.reason,
+                    ml.end_date,
+                    ml.admin_notes,
+                    ml.admin_id,
+                    u_adm.username AS admin_username,
+                    u_adm.profile_picture AS admin_profile_picture,
+                    st_adm.color AS admin_subscription_color,
+                    r_adm.color AS admin_role_color,
+                    r_adm.name AS admin_role,
+                    NULL AS ip_address,
+                    NULL AS asn,
+                    NULL AS amount,
+                    NULL AS currency,
+                    NULL AS status,
+                    ml.created_at
+                FROM moderation_logs ml
+                LEFT JOIN users u_adm ON ml.admin_id = u_adm.id
+                LEFT JOIN user_roles ur_adm ON u_adm.id = ur_adm.user_id
+                LEFT JOIN roles r_adm ON ur_adm.role_id = r_adm.id
+                LEFT JOIN subscriptions s_adm ON u_adm.id = s_adm.user_id AND s_adm.status = 'active'
+                LEFT JOIN subscription_tiers st_adm ON s_adm.subscription_tier_id = st_adm.id
+                WHERE ml.user_id = :uid {$modFilter}
+            ";
+        }
+
+        if (in_array('profile', $checkedCategories) || in_array('security', $checkedCategories)) {
+            $pclFilter = "";
+            if (!in_array('security', $checkedCategories)) {
+                $pclFilter = " AND pcl.change_type NOT IN ('password', '2fa')";
+            } elseif (!in_array('profile', $checkedCategories)) {
+                $pclFilter = " AND pcl.change_type IN ('password', '2fa')";
+            }
+            $subqueries[] = "
+                SELECT 
+                    'profile' AS source_table,
+                    CASE WHEN pcl.change_type IN ('password', '2fa') THEN 'security' ELSE 'profile' END AS category,
+                    CONCAT('profile_', pcl.change_type) AS action_type,
+                    JSON_OBJECT('field', pcl.change_type, 'old', pcl.old_value, 'new', pcl.new_value) AS reason,
+                    NULL AS end_date,
+                    NULL AS admin_notes,
+                    NULL AS admin_id,
+                    'user_action' AS admin_username,
+                    NULL AS admin_profile_picture,
+                    NULL AS admin_subscription_color,
+                    NULL AS admin_role_color,
+                    'user' AS admin_role,
+                    pcl.ip_address,
+                    pcl.asn,
+                    NULL AS amount,
+                    NULL AS currency,
+                    NULL AS status,
+                    pcl.created_at
+                FROM profile_changes_log pcl
+                WHERE pcl.user_id = :uid {$pclFilter}
+            ";
+        }
+
+        if (in_array('finance', $checkedCategories)) {
+            $subqueries[] = "
+                SELECT 
+                    'finance' AS source_table,
+                    'finance' AS category,
+                    CONCAT('payment_', ph.status) AS action_type,
+                    ph.description AS reason,
+                    NULL AS end_date,
+                    NULL AS admin_notes,
+                    NULL AS admin_id,
+                    'user_action' AS admin_username,
+                    NULL AS admin_profile_picture,
+                    NULL AS admin_subscription_color,
+                    NULL AS admin_role_color,
+                    'user' AS admin_role,
+                    NULL AS ip_address,
+                    NULL AS asn,
+                    (ph.amount_cents / 100.0) AS amount,
+                    ph.currency,
+                    ph.status,
+                    ph.created_at
+                FROM payment_history ph
+                WHERE ph.user_id = :uid
+            ";
+        }
+
+        if (in_array('security', $checkedCategories)) {
+            $subqueries[] = "
+                SELECT 
+                    'security' AS source_table,
+                    'security' AS category,
+                    'login_session' AS action_type,
+                    CONCAT(IFNULL(at.user_agent, 'Navegador Web'), IF(at.location IS NOT NULL AND at.location != '', CONCAT(' (', at.location, ')'), '')) AS reason,
+                    at.expires_at AS end_date,
+                    NULL AS admin_notes,
+                    NULL AS admin_id,
+                    'user_action' AS admin_username,
+                    NULL AS admin_profile_picture,
+                    NULL AS admin_subscription_color,
+                    NULL AS admin_role_color,
+                    'user' AS admin_role,
+                    at.ip_address,
+                    at.asn,
+                    NULL AS amount,
+                    NULL AS currency,
+                    NULL AS status,
+                    at.created_at
+                FROM auth_tokens at
+                WHERE at.user_id = :uid
+            ";
+        }
+
+        $totalHistory = 0;
         $historyItems = [];
-        try {
-            $stmt = $pdo->prepare("SELECT * FROM user_security_history WHERE user_id = :uid ORDER BY created_at DESC LIMIT :limit OFFSET :offset");
-            $stmt->bindValue(':uid', $targetUserId, \PDO::PARAM_INT);
-            $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
-            $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
-            $stmt->execute();
-            $historyItems = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        } catch (\Throwable $e) {
-            Logger::error("getUserHistoryData historyItems error: " . $e->getMessage(), ['exception' => $e]);
+
+        if (!empty($subqueries)) {
+            $unionSql = implode(" UNION ALL ", $subqueries);
+
+            try {
+                $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM ({$unionSql}) AS u_hist");
+                $stmtCount->bindValue(':uid', $targetUserId, \PDO::PARAM_INT);
+                $stmtCount->execute();
+                $totalHistory = (int)$stmtCount->fetchColumn();
+            } catch (\Throwable $e) {
+                Logger::error("getUserHistoryData totalHistory error: " . $e->getMessage(), ['exception' => $e]);
+            }
+
+            $totalPages = ceil($totalHistory / $limit);
+            if ($totalPages < 1) $totalPages = 1;
+            if ($page > $totalPages) $page = $totalPages;
+            $offset = ($page - 1) * $limit;
+
+            try {
+                $stmt = $pdo->prepare("SELECT * FROM ({$unionSql}) AS u_hist ORDER BY created_at DESC LIMIT :limit OFFSET :offset");
+                $stmt->bindValue(':uid', $targetUserId, \PDO::PARAM_INT);
+                $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+                $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
+                $stmt->execute();
+                $historyItems = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            } catch (\Throwable $e) {
+                Logger::error("getUserHistoryData historyItems error: " . $e->getMessage(), ['exception' => $e]);
+            }
+        } else {
+            $totalPages = 1;
         }
 
         return [
@@ -506,6 +647,7 @@ class AdminViewService {
             'totalHistory' => $totalHistory,
             'totalPages' => $totalPages,
             'page' => $page,
+            'categoryFilter' => $checkedCategories,
             'appUrl' => defined('APP_URL') ? APP_URL : ''
         ];
     }

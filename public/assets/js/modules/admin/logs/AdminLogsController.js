@@ -166,7 +166,7 @@ class AdminLogsController {
             searchToolbar.classList.add('active');
         }
 
-        this.backToMainFilters();
+        backToMainFilters('menuMainFilters', 'moduleLogFilters');
         this.updateFilterButtonsState();
         this.deselectLogs();
     }

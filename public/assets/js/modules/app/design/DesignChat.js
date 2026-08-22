@@ -97,6 +97,8 @@ export class DesignChat {
         }
 
         if (this.chatInput) {
+            this.autoResizeTextarea();
+
             this.chatInput.addEventListener('keydown', (e) => {
                 if (this.autocompleteContainer && !this.autocompleteContainer.classList.contains('disabled')) {
                     const items = Array.from(this.autocompleteContainer.querySelectorAll('.chat-autocomplete-item'));
@@ -145,6 +147,8 @@ export class DesignChat {
             });
 
             this.chatInput.addEventListener('input', () => {
+                this.autoResizeTextarea();
+
                 if (this.btnSend) {
                     if (this.chatInput.value.trim().length > 0) {
                         this.btnSend.classList.add('active');
@@ -681,6 +685,7 @@ export class DesignChat {
         this.appendMessage(optimisticMsg);
         
         this.chatInput.value = '';
+        this.autoResizeTextarea();
         this.selectedFiles = [];
         this.renderPreview();
         this.clearReplyTarget();
@@ -1226,29 +1231,6 @@ export class DesignChat {
     }
 
     initAutocomplete() {
-        const style = document.createElement('style');
-        style.innerHTML = `
-            .component-chat-input-area {
-                position: relative;
-            }
-            .chat-autocomplete-module {
-                position: absolute !important;
-                bottom: calc(100% + 4px) !important;
-                left: 8px !important;
-                right: 8px !important;
-                top: auto !important;
-                width: auto !important;
-                z-index: 100 !important;
-            }
-            .chat-autocomplete-module.disabled {
-                display: none !important;
-            }
-            .component-menu-link.chat-autocomplete-item.active {
-                background: var(--bg-hover, rgba(255, 255, 255, 0.05)) !important;
-            }
-        `;
-        document.head.appendChild(style);
-
         this.autocompleteContainer = document.createElement('div');
         this.autocompleteContainer.className = 'component-module component-module--dropdown component-module--dropdown-top chat-autocomplete-module disabled';
         
@@ -1549,6 +1531,43 @@ export class DesignChat {
                     ${window.__('err_generic')}
                 </div>
             `;
+        }
+    }
+
+    autoResizeTextarea() {
+        if (!this.chatInput) return;
+        const container = document.querySelector('[data-ref="chat-box-container"]');
+        const text = this.chatInput.value;
+
+        if (!text || text.trim().length === 0) {
+            if (container) container.classList.remove('is-multiline');
+            this.chatInput.style.height = '';
+            return;
+        }
+
+        if (text.includes('\n')) {
+            if (container) container.classList.add('is-multiline');
+            this.chatInput.style.height = 'auto';
+            const nextH = Math.min(Math.max(this.chatInput.scrollHeight, 24), 120);
+            this.chatInput.style.height = `${nextH}px`;
+            return;
+        }
+
+        const wasMultiline = container && container.classList.contains('is-multiline');
+        if (wasMultiline) {
+            container.classList.remove('is-multiline');
+        }
+        this.chatInput.style.height = 'auto';
+        const singleRowScrollH = this.chatInput.scrollHeight;
+
+        if (singleRowScrollH > 28) {
+            if (container) container.classList.add('is-multiline');
+            this.chatInput.style.height = 'auto';
+            const nextH = Math.min(Math.max(this.chatInput.scrollHeight, 24), 120);
+            this.chatInput.style.height = `${nextH}px`;
+        } else {
+            if (container) container.classList.remove('is-multiline');
+            this.chatInput.style.height = '';
         }
     }
 }

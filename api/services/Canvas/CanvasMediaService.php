@@ -443,29 +443,27 @@ class CanvasMediaService {
                 $quality = '1080p';
             }
 
-            if ($quality === '4k') {
-                $userTier = (int)($_SESSION['subscription_tier'] ?? 0);
-                if ($userTier === 0 && $userId !== null) {
-                    try {
-                        $userDb = (new DatabaseManager())->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
-                        $uStmt = $userDb->prepare("SELECT subscription_tier, is_admin FROM users WHERE id = :uid LIMIT 1");
-                        $uStmt->execute([':uid' => $userId]);
-                        $uRow = $uStmt->fetch(\PDO::FETCH_ASSOC);
-                        if ($uRow) {
-                            $userTier = (int)($uRow['subscription_tier'] ?? 0);
-                            if (!empty($uRow['is_admin'])) {
-                                $userTier = 99;
-                            }
+            $userTier = (int)($_SESSION['subscription_tier'] ?? 0);
+            if ($userTier === 0 && $userId !== null) {
+                try {
+                    $userDb = (new DatabaseManager())->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+                    $uStmt = $userDb->prepare("SELECT subscription_tier, is_admin FROM users WHERE id = :uid LIMIT 1");
+                    $uStmt->execute([':uid' => $userId]);
+                    $uRow = $uStmt->fetch(\PDO::FETCH_ASSOC);
+                    if ($uRow) {
+                        $userTier = (int)($uRow['subscription_tier'] ?? 0);
+                        if (!empty($uRow['is_admin'])) {
+                            $userTier = 99;
                         }
-                    } catch (\Throwable $e) {}
-                }
-                $isAdmin = !empty($_SESSION['is_admin']) || ($userTier >= 99);
-                if (!$isAdmin && !SubscriptionPlanConstants::hasFeature($userTier, 'download_4k')) {
-                    return [
-                        'success' => false,
-                        'message' => __('err_4k_download_requires_premium')
-                    ];
-                }
+                    }
+                } catch (\Throwable $e) {}
+            }
+            $isAdmin = !empty($_SESSION['is_admin']) || ($userTier >= 99);
+            if (!$isAdmin && !SubscriptionPlanConstants::hasFeature($userTier, 'export_timelapse')) {
+                return [
+                    'success' => false,
+                    'message' => __('err_timelapse_export_requires_premium')
+                ];
             }
 
             $qualityMap = [

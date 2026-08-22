@@ -229,7 +229,7 @@ class ChatServices
             }
         }
 
-        if (mb_strlen($messageText) > 255) {
+        if (mb_strlen($messageText) > 1000) {
             return ['success' => false, 'message' => __('err_message_too_long'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
         }
 

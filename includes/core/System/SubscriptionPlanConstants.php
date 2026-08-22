@@ -39,10 +39,10 @@ class SubscriptionPlanConstants {
             'name' => 'Experiencia Sin Anuncios',
             'desc' => 'Navegación fluida y sin publicidad en toda la plataforma'
         ],
-        'feat_download_4k' => [
-            'key' => 'feat_download_4k',
-            'name' => 'Descargas en 4K Ultra HD',
-            'desc' => 'Permite exportar videos timelapse en resolución 4K Ultra HD'
+        'feat_export_timelapse' => [
+            'key' => 'feat_export_timelapse',
+            'name' => 'Videos Timelapse',
+            'desc' => 'Permite exportar y descargar videos timelapse del lienzo'
         ],
     ];
 
@@ -85,14 +85,14 @@ class SubscriptionPlanConstants {
                     'feat_inject_templates' => (bool)($row['feat_inject_templates'] ?? false),
                     'feat_live_share' => (bool)($row['feat_live_share'] ?? false),
                     'feat_no_ads' => (bool)($row['feat_no_ads'] ?? false),
-                    'feat_download_4k' => (bool)($row['feat_download_4k'] ?? false),
+                    'feat_export_timelapse' => (bool)($row['feat_export_timelapse'] ?? false),
                     'max_template_tokens' => (int)($row['max_template_tokens'] ?? 0),
                     'max_upload_mb' => (int)($row['max_upload_mb'] ?? 10),
                     'max_pixels_per_batch' => (int)($row['max_pixels_per_batch'] ?? 5),
                     'allow_live_chat' => (bool)$row['feat_chat_restriction'],
                     'custom_palettes' => (bool)$row['feat_custom_palettes'],
                     'no_ads' => (bool)($row['feat_no_ads'] ?? false),
-                    'download_4k' => (bool)($row['feat_download_4k'] ?? false)
+                    'export_timelapse' => (bool)($row['feat_export_timelapse'] ?? false)
                 ];
                 
                 self::$tierLimitsCache[$tier] = $limits;
@@ -116,13 +116,13 @@ class SubscriptionPlanConstants {
             'feat_inject_templates' => false,
             'feat_live_share' => false,
             'feat_no_ads' => false,
-            'feat_download_4k' => false,
+            'feat_export_timelapse' => false,
             'max_template_tokens' => 0,
             'max_pixels_per_batch' => 5,
             'allow_live_chat' => false,
             'custom_palettes' => false,
             'no_ads' => false,
-            'download_4k' => false
+            'export_timelapse' => false
         ];
         self::$tierLimitsCache[$tier] = $default;
         return $default;
@@ -217,7 +217,7 @@ class SubscriptionPlanConstants {
                 $row['feat_inject_templates'] = (int)($row['feat_inject_templates'] ?? 0);
                 $row['feat_live_share'] = (int)($row['feat_live_share'] ?? 0);
                 $row['feat_no_ads'] = (int)($row['feat_no_ads'] ?? 0);
-                $row['feat_download_4k'] = (int)($row['feat_download_4k'] ?? 0);
+                $row['feat_export_timelapse'] = (int)($row['feat_export_timelapse'] ?? ($row['feat_download_4k'] ?? 0));
                 $row['color'] = is_string($row['color'] ?? null) ? (json_decode($row['color'], true) ?? []) : ($row['color'] ?? []);
                 $tiers[] = $row;
             }

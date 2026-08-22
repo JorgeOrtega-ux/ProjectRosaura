@@ -149,7 +149,7 @@ class AdminBackupsController {
             searchToolbar.classList.add('active');
         }
 
-        this.backToMainFilters();
+        backToMainFilters('menuMainFilters', 'moduleBackupFilters');
         this.updateFilterButtonsState();
         this.deselectBackup();
     }

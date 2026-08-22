@@ -175,6 +175,280 @@ export class OnboardingTourManager {
                         icons: ['group_add']
                     }
                 ]
+            },
+            '/design/:id': {
+                modalId: 'onboarding-canvas-studio',
+                flagKey: 'onboarding_canvas_studio_seen',
+                steps: [
+                    {
+                        titleKey: 'onboarding_canvas_studio_step1_title',
+                        defaultTitle: 'Herramientas de dibujo y paleta',
+                        descKey: 'onboarding_canvas_studio_step1_desc',
+                        defaultDesc: 'Utilice el lápiz, borrador, cuentagotas y el selector de colores para pintar sobre la cuadrícula. Puede hacer zoom y desplazarse libremente.',
+                        icons: ['brush', 'palette']
+                    },
+                    {
+                        titleKey: 'onboarding_canvas_studio_step2_title',
+                        defaultTitle: 'Colaboración en vivo y chat',
+                        descKey: 'onboarding_canvas_studio_step2_desc',
+                        defaultDesc: 'Observe los trazos de otros colaboradores en tiempo real y comuníquese mediante el chat integrado de la sala.',
+                        icons: ['group', 'chat']
+                    },
+                    {
+                        titleKey: 'onboarding_canvas_studio_step3_title',
+                        defaultTitle: 'Snapshots y atajos',
+                        descKey: 'onboarding_canvas_studio_step3_desc',
+                        defaultDesc: 'Guarde instantáneas de su progreso para generar timelapses automáticos y utilice atajos de teclado para mayor agilidad.',
+                        icons: ['photo_camera', 'keyboard']
+                    }
+                ]
+            },
+            '/design': {
+                modalId: 'onboarding-canvas-studio',
+                flagKey: 'onboarding_canvas_studio_seen',
+                steps: [
+                    {
+                        titleKey: 'onboarding_canvas_studio_step1_title',
+                        defaultTitle: 'Herramientas de dibujo y paleta',
+                        descKey: 'onboarding_canvas_studio_step1_desc',
+                        defaultDesc: 'Utilice el lápiz, borrador, cuentagotas y el selector de colores para pintar sobre la cuadrícula. Puede hacer zoom y desplazarse libremente.',
+                        icons: ['brush', 'palette']
+                    },
+                    {
+                        titleKey: 'onboarding_canvas_studio_step2_title',
+                        defaultTitle: 'Colaboración en vivo y chat',
+                        descKey: 'onboarding_canvas_studio_step2_desc',
+                        defaultDesc: 'Observe los trazos de otros colaboradores en tiempo real y comuníquese mediante el chat integrado de la sala.',
+                        icons: ['group', 'chat']
+                    },
+                    {
+                        titleKey: 'onboarding_canvas_studio_step3_title',
+                        defaultTitle: 'Snapshots y atajos',
+                        descKey: 'onboarding_canvas_studio_step3_desc',
+                        defaultDesc: 'Guarde instantáneas de su progreso para generar timelapses automáticos y utilice atajos de teclado para mayor agilidad.',
+                        icons: ['photo_camera', 'keyboard']
+                    }
+                ]
+            },
+            '/design/s/:uuid': {
+                modalId: 'onboarding-snapshots-gallery',
+                flagKey: 'onboarding_snapshots_gallery_seen',
+                steps: [
+                    {
+                        titleKey: 'onboarding_snapshots_gallery_step1_title',
+                        defaultTitle: 'Línea temporal del lienzo',
+                        descKey: 'onboarding_snapshots_gallery_step1_desc',
+                        defaultDesc: 'Visualice las capturas guardadas automática o manualmente a lo largo del tiempo para apreciar la evolución del dibujo.',
+                        icons: ['history', 'photo_library']
+                    },
+                    {
+                        titleKey: 'onboarding_snapshots_gallery_step2_title',
+                        defaultTitle: 'Reproducción y exportación',
+                        descKey: 'onboarding_snapshots_gallery_step2_desc',
+                        defaultDesc: 'Reproduzca el timelapse animado paso a paso de la creación del arte y expórtelo en video o compártalo con otros usuarios.',
+                        icons: ['movie', 'share']
+                    }
+                ]
+            },
+            '/canvases/create': {
+                modalId: 'onboarding-canvas-create',
+                flagKey: 'onboarding_canvas_create_seen',
+                steps: [
+                    {
+                        titleKey: 'onboarding_canvas_create_step1_title',
+                        defaultTitle: 'Dimensiones y paleta base',
+                        descKey: 'onboarding_canvas_create_step1_desc',
+                        defaultDesc: 'Seleccione el tamaño de la cuadrícula y la paleta de colores inicial que estará disponible para todos los colaboradores.',
+                        icons: ['grid_view', 'palette']
+                    },
+                    {
+                        titleKey: 'onboarding_canvas_create_step2_title',
+                        defaultTitle: 'Privacidad y tiempos de espera',
+                        descKey: 'onboarding_canvas_create_step2_desc',
+                        defaultDesc: 'Establezca si el lienzo será público o privado, el límite de participantes y el cooldown entre colocación de píxeles.',
+                        icons: ['lock', 'timer']
+                    }
+                ]
+            },
+            '/canvases/palettes/create': {
+                modalId: 'onboarding-palette-builder',
+                flagKey: 'onboarding_palette_builder_seen',
+                steps: [
+                    {
+                        titleKey: 'onboarding_palette_builder_step1_title',
+                        defaultTitle: 'Composición de colores',
+                        descKey: 'onboarding_palette_builder_step1_desc',
+                        defaultDesc: 'Mezcle y añada tonos personalizados en formato HEX o RGB asignando nombres descriptivos para su biblioteca.',
+                        icons: ['colorize', 'format_color_fill']
+                    },
+                    {
+                        titleKey: 'onboarding_palette_builder_step2_title',
+                        defaultTitle: 'Disponibilidad en el taller',
+                        descKey: 'onboarding_palette_builder_step2_desc',
+                        defaultDesc: 'Guarde su paleta personalizada para usarla directamente en cualquier lienzo compatible durante sus sesiones de dibujo.',
+                        icons: ['bookmark', 'brush']
+                    }
+                ]
+            },
+            '/canvases/trash': {
+                modalId: 'onboarding-canvas-trash',
+                flagKey: 'onboarding_canvas_trash_seen',
+                steps: [
+                    {
+                        titleKey: 'onboarding_canvas_trash_step1_title',
+                        defaultTitle: 'Retención de 30 días',
+                        descKey: 'onboarding_canvas_trash_step1_desc',
+                        defaultDesc: 'Los lienzos enviados a la papelera se conservan de forma segura durante 30 días antes de su eliminación permanente.',
+                        icons: ['delete', 'schedule']
+                    },
+                    {
+                        titleKey: 'onboarding_canvas_trash_step2_title',
+                        defaultTitle: 'Restauración inmediata',
+                        descKey: 'onboarding_canvas_trash_step2_desc',
+                        defaultDesc: 'Restaure cualquier lienzo con todos sus píxeles, roles, miembros e historial intactos con solo un clic.',
+                        icons: ['restore_from_trash', 'check_circle']
+                    }
+                ]
+            },
+            '/trash': {
+                modalId: 'onboarding-canvas-trash',
+                flagKey: 'onboarding_canvas_trash_seen',
+                steps: [
+                    {
+                        titleKey: 'onboarding_canvas_trash_step1_title',
+                        defaultTitle: 'Retención de 30 días',
+                        descKey: 'onboarding_canvas_trash_step1_desc',
+                        defaultDesc: 'Los lienzos enviados a la papelera se conservan de forma segura durante 30 días antes de su eliminación permanente.',
+                        icons: ['delete', 'schedule']
+                    },
+                    {
+                        titleKey: 'onboarding_canvas_trash_step2_title',
+                        defaultTitle: 'Restauración inmediata',
+                        descKey: 'onboarding_canvas_trash_step2_desc',
+                        defaultDesc: 'Restaure cualquier lienzo con todos sus píxeles, roles, miembros e historial intactos con solo un clic.',
+                        icons: ['restore_from_trash', 'check_circle']
+                    }
+                ]
+            },
+            '/admin/dashboard': {
+                modalId: 'onboarding-admin-dashboard',
+                flagKey: 'onboarding_admin_dashboard_seen',
+                steps: [
+                    {
+                        titleKey: 'onboarding_admin_dashboard_step1_title',
+                        defaultTitle: 'Métricas del sistema',
+                        descKey: 'onboarding_admin_dashboard_step1_desc',
+                        defaultDesc: 'Supervise en tiempo real el tráfico de la plataforma, conexiones activas, consumo de almacenamiento y estado de la infraestructura.',
+                        icons: ['dashboard', 'monitoring']
+                    },
+                    {
+                        titleKey: 'onboarding_admin_dashboard_step2_title',
+                        defaultTitle: 'Monitoreo y accesos rápidos',
+                        descKey: 'onboarding_admin_dashboard_step2_desc',
+                        defaultDesc: 'Navegue rápidamente a las secciones críticas de moderación, auditoría de eventos y tareas de mantenimiento del servidor.',
+                        icons: ['tune', 'speed']
+                    }
+                ]
+            },
+            '/admin': {
+                modalId: 'onboarding-admin-dashboard',
+                flagKey: 'onboarding_admin_dashboard_seen',
+                steps: [
+                    {
+                        titleKey: 'onboarding_admin_dashboard_step1_title',
+                        defaultTitle: 'Métricas del sistema',
+                        descKey: 'onboarding_admin_dashboard_step1_desc',
+                        defaultDesc: 'Supervise en tiempo real el tráfico de la plataforma, conexiones activas, consumo de almacenamiento y estado de la infraestructura.',
+                        icons: ['dashboard', 'monitoring']
+                    },
+                    {
+                        titleKey: 'onboarding_admin_dashboard_step2_title',
+                        defaultTitle: 'Monitoreo y accesos rápidos',
+                        descKey: 'onboarding_admin_dashboard_step2_desc',
+                        defaultDesc: 'Navegue rápidamente a las secciones críticas de moderación, auditoría de eventos y tareas de mantenimiento del servidor.',
+                        icons: ['tune', 'speed']
+                    }
+                ]
+            },
+            '/admin/users': {
+                modalId: 'onboarding-admin-users',
+                flagKey: 'onboarding_admin_users_seen',
+                steps: [
+                    {
+                        titleKey: 'onboarding_admin_users_step1_title',
+                        defaultTitle: 'Búsqueda y expediente',
+                        descKey: 'onboarding_admin_users_step1_desc',
+                        defaultDesc: 'Consulte la lista de usuarios registrados, filtre por rol o estado y acceda al historial de cambios de perfil y compras realizadas.',
+                        icons: ['manage_accounts', 'history_edu']
+                    },
+                    {
+                        titleKey: 'onboarding_admin_users_step2_title',
+                        defaultTitle: 'Sanciones y jerarquía',
+                        descKey: 'onboarding_admin_users_step2_desc',
+                        defaultDesc: 'Aplique suspensiones temporales o definitivas, edite perfiles y asigne roles respetando la jerarquía de pesos de seguridad.',
+                        icons: ['gavel', 'shield_person']
+                    }
+                ]
+            },
+            '/admin/backups': {
+                modalId: 'onboarding-admin-backups',
+                flagKey: 'onboarding_admin_backups_seen',
+                steps: [
+                    {
+                        titleKey: 'onboarding_admin_backups_step1_title',
+                        defaultTitle: 'Copias de seguridad cifradas',
+                        descKey: 'onboarding_admin_backups_step1_desc',
+                        defaultDesc: 'Genere respaldos manuales o programados de las bases de datos relacionales, NoSQL y archivos multimedia con cifrado AES.',
+                        icons: ['backup', 'lock']
+                    },
+                    {
+                        titleKey: 'onboarding_admin_backups_step2_title',
+                        defaultTitle: 'Restauración del sistema',
+                        descKey: 'onboarding_admin_backups_step2_desc',
+                        defaultDesc: 'Restaure esquemas específicos de forma segura mediante workers en segundo plano con activación automática de modo mantenimiento.',
+                        icons: ['settings_backup_restore', 'warning']
+                    }
+                ]
+            },
+            '/admin/advertisements': {
+                modalId: 'onboarding-admin-ads',
+                flagKey: 'onboarding_admin_ads_seen',
+                steps: [
+                    {
+                        titleKey: 'onboarding_admin_ads_step1_title',
+                        defaultTitle: 'Proveedores y campañas',
+                        descKey: 'onboarding_admin_ads_step1_desc',
+                        defaultDesc: 'Administre proveedores de anuncios, formatos de banners e intersticiales y active o pause campañas publicitarias.',
+                        icons: ['campaign', 'ad_units']
+                    },
+                    {
+                        titleKey: 'onboarding_admin_ads_step2_title',
+                        defaultTitle: 'Métricas y reportes PDF',
+                        descKey: 'onboarding_admin_ads_step2_desc',
+                        defaultDesc: 'Analice impresiones, clics y porcentaje de interacción (CTR) en distintos períodos y descargue informes formales en PDF.',
+                        icons: ['analytics', 'picture_as_pdf']
+                    }
+                ]
+            },
+            '/admin/messages': {
+                modalId: 'onboarding-admin-messages',
+                flagKey: 'onboarding_admin_messages_seen',
+                steps: [
+                    {
+                        titleKey: 'onboarding_admin_messages_step1_title',
+                        defaultTitle: 'Bandeja de reportes',
+                        descKey: 'onboarding_admin_messages_step1_desc',
+                        defaultDesc: 'Inspeccione los mensajes denunciados por los usuarios en los chats de los lienzos junto con los motivos y detalles aportados.',
+                        icons: ['report', 'chat']
+                    },
+                    {
+                        titleKey: 'onboarding_admin_messages_step2_title',
+                        defaultTitle: 'Moderación de contenido',
+                        descKey: 'onboarding_admin_messages_step2_desc',
+                        defaultDesc: 'Oculte mensajes inapropiados, descarte reportes inválidos o aplique sanciones a infractores de forma centralizada.',
+                        icons: ['visibility_off', 'done_all']
+                    }
+                ]
             }
         };
     }

@@ -66,7 +66,6 @@ export const RouteModulesMap = {
 
     '/admin/user-moderation/:uuid': { path: './modules/admin/users/AdminStatusEditController.js', className: 'AdminStatusEditController', requiresAdminLang: true, skeletonType: 'layout-basic' },
     '/admin/user-activity/:uuid': { path: './modules/admin/users/AdminUserHistoryController.js', className: 'AdminUserHistoryController', requiresAdminLang: true, skeletonType: 'layout-basic' },
-    '/admin/user-purchases/:uuid': { path: './modules/admin/users/AdminUserPurchasesController.js', className: 'AdminUserPurchasesController', requiresAdminLang: true, skeletonType: 'layout-table' },
 
     '/admin/system-settings': { path: './modules/admin/server/AdminServerConfigController.js', className: 'AdminServerConfigController', requiresAdminLang: true, skeletonType: 'layout-basic' },
 

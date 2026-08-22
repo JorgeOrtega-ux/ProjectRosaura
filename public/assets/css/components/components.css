@@ -1915,7 +1915,7 @@ html.dark-theme .component-menu-header.shadow {
 .component-menu-header-box {
     padding: 8px 12px;
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -6150,11 +6150,113 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     border-top: 1px solid var(--border-color);
     background: var(--bg-surface);
     flex: 0 0 auto;
+    position: relative;
 }
 
-.component-chat-input-wrapper {
+/* Single-row state (default / 1-line) */
+.component-chat-box {
     display: flex;
-    gap: 8px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-surface-alt, var(--surface-hover));
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 4px 6px;
+    gap: 6px;
+    transition: border-color 0.2s ease, border-radius 0.2s ease, box-shadow 0.2s ease;
+}
+
+.component-chat-box:focus-within {
+    border-color: var(--border-color-focus, var(--primary-color));
+}
+
+.component-chat-box__actions-left {
+    order: 1;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.component-chat-box__input-wrapper {
+    order: 2;
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+}
+
+.component-chat-box__actions-right {
+    order: 3;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.component-chat-textarea {
+    width: 100%;
+    min-height: 22px;
+    max-height: 24px;
+    height: 22px;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 2px 4px;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    font-family: inherit;
+    color: var(--text-primary);
+    resize: none;
+    overflow-y: hidden;
+    word-break: break-word;
+    white-space: pre-wrap;
+    box-sizing: border-box;
+}
+
+.component-chat-textarea::placeholder {
+    color: var(--text-secondary);
+}
+
+.component-chat-textarea::-webkit-scrollbar {
+    width: 4px;
+}
+
+.component-chat-textarea::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.component-chat-textarea::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+}
+
+/* Multiline / Expanded state (when text overflows 1 row or has newlines) */
+.component-chat-box.is-multiline {
+    flex-wrap: wrap;
+    border-radius: 16px;
+    padding: 8px 8px 6px 8px;
+    gap: 6px;
+}
+
+.component-chat-box.is-multiline .component-chat-box__input-wrapper {
+    order: 1;
+    width: 100%;
+    flex: 1 0 100%;
+}
+
+.component-chat-box.is-multiline .component-chat-textarea {
+    min-height: 24px;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.component-chat-box.is-multiline .component-chat-box__actions-left {
+    order: 2;
+}
+
+.component-chat-box.is-multiline .component-chat-box__actions-right {
+    order: 3;
+    margin-left: auto;
 }
 
 .component-chat-attach-btn {
@@ -6170,8 +6272,6 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     background-color: transparent;
     color: var(--text-secondary);
     transition: all 0.2s ease;
-    margin-left: 6px;
-    margin-right: 6px;
     flex-shrink: 0;
 }
 
@@ -6194,7 +6294,6 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     background-color: var(--surface-hover);
     color: var(--text-secondary);
     transition: all 0.2s ease;
-    margin-right: 6px;
     flex-shrink: 0;
 }
 
@@ -6206,6 +6305,24 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
 .component-chat-attach-btn .material-symbols-rounded,
 .component-chat-send-btn .material-symbols-rounded {
     font-size: 1rem;
+}
+
+.chat-autocomplete-module {
+    position: absolute !important;
+    bottom: calc(100% + 4px) !important;
+    left: 8px !important;
+    right: 8px !important;
+    top: auto !important;
+    width: auto !important;
+    z-index: 100 !important;
+}
+
+.chat-autocomplete-module.disabled {
+    display: none !important;
+}
+
+.component-menu-link.chat-autocomplete-item.active {
+    background: var(--surface-hover, rgba(255, 255, 255, 0.05)) !important;
 }
 
 /* ==========================================

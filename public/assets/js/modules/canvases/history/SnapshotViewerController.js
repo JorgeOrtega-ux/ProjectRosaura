@@ -378,6 +378,16 @@ class SnapshotViewerController {
     }
 
     handleSelectSnapshotExportType(btn) {
+        if (btn.hasAttribute('data-requires-premium') || btn.classList.contains('premium-locked')) {
+            const premiumMsg = window.__ ? window.__('err_timelapse_export_requires_premium') : 'La exportación de videos timelapse requiere una suscripción activa.';
+            showMessage(premiumMsg, 'warning');
+            if (window.modalSystem) window.modalSystem.closeCurrent();
+            if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
+                window.spaRouter.navigate('/upgrade');
+            }
+            return;
+        }
+
         const val = btn.getAttribute('data-value') || 'image';
         const icon = btn.getAttribute('data-icon') || (val === 'video' ? 'movie' : 'image');
         const text = btn.getAttribute('data-text') || (val === 'video' ? 'Video Timelapse' : 'Imagen');
@@ -466,16 +476,6 @@ class SnapshotViewerController {
     }
 
     handleSelectSnapshotVideoQuality(btn) {
-        if (btn.hasAttribute('data-requires-premium') || btn.classList.contains('premium-locked')) {
-            const premiumMsg = window.__ ? window.__('err_4k_download_requires_premium') : 'La exportación en calidad 4K Ultra HD requiere una suscripción premium.';
-            showMessage(premiumMsg, 'warning');
-            if (window.modalSystem) window.modalSystem.closeCurrent();
-            if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
-                window.spaRouter.navigate('/upgrade');
-            }
-            return;
-        }
-
         const val = btn.getAttribute('data-value') || '1080p';
         const icon = btn.getAttribute('data-icon') || (val === '720p' ? 'hd' : (val === '4k' ? 'video_file' : 'high_quality'));
         const text = btn.getAttribute('data-text') || val;
