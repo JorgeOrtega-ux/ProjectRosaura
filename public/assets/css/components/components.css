@@ -6010,6 +6010,97 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     }
 }
 
+/* ── Canvas Design Toolbar Vertical (Left-center floating pill for offline tools) ── */
+.canvas-design-toolbar-vertical {
+    position: absolute;
+    top: 50%;
+    left: 16px;
+    transform: translateY(-50%);
+    z-index: 50;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    background: #0d0d10;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 9999px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    pointer-events: auto;
+    color: #ffffff;
+}
+
+.canvas-design-toolbar-vertical.active {
+    display: flex;
+}
+
+.canvas-design-toolbar-vertical.disabled {
+    display: none !important;
+}
+
+.canvas-design-toolbar-vertical .component-button--icon {
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+    border-radius: 9999px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.canvas-design-toolbar-vertical .component-button--icon:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.45);
+}
+
+.canvas-design-toolbar-vertical .component-button--icon.active {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.6);
+    color: #ffffff;
+}
+
+.canvas-design-toolbar-vertical [data-action="toggleOfflineEraser"].active {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: var(--color-danger, #ef4444);
+    color: var(--color-danger, #ef4444);
+}
+
+.canvas-design-toolbar-vertical [data-action="toggleOfflineMirror"].active {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: #10b981;
+    color: #10b981;
+}
+
+.canvas-design-toolbar-vertical [data-action="toggleOfflineMoveArea"].active {
+    background: rgba(6, 182, 212, 0.2);
+    border-color: #06b6d4;
+    color: #06b6d4;
+}
+
+.canvas-design-toolbar-vertical [data-action="toggleOfflineBucket"].active {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: var(--color-primary, #3b82f6);
+    color: var(--color-primary, #3b82f6);
+}
+
+.canvas-design-toolbar-vertical [data-action="toggleOfflineSpray"].active {
+    background: rgba(168, 85, 247, 0.2);
+    border-color: #a855f7;
+    color: #a855f7;
+}
+
+.canvas-design-toolbar-vertical .material-symbols-rounded {
+    font-size: 1.1rem;
+    color: inherit;
+}
+
+@media (max-width: 768px) {
+    .canvas-design-toolbar-vertical {
+        left: 8px;
+    }
+}
+
 /* ── Timelapse Status & Pulse ── */
 .component-timelapse-pulse {
     width: 8px;

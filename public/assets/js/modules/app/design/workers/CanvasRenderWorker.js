@@ -30,8 +30,16 @@ let protectedPixelsDirty = true;
 let isOwnerProtecting = false;
 let hoveredPixelKey = -1;
 let ownerEraserBox = null;
+let moveAreaBox = null;
 let myMinesArray = new Uint32Array(0);
 let isPlacingMines = false;
+
+let isOfflineMode = false;
+let isMirrorMode = false;
+const MAX_HISTORY = 50;
+let undoStack = [];
+let redoStack = [];
+let activeSprayStrokeDiffs = null;
 
 function updateProtectedOffscreen() {
     if (typeof OffscreenCanvas === 'undefined') return;
@@ -212,7 +220,7 @@ function colorToAbgr(color) {
             b = parseInt(hex.substring(4, 6), 16);
             a = parseInt(hex.substring(6, 8), 16);
         }
-        return (a << 24) | (b << 16) | (g << 8) | r;
+        return ((a << 24) | (b << 16) | (g << 8) | r) >>> 0;
     }
     return 0;
 }
@@ -933,6 +941,49 @@ function render() {
         
         ctx.fillRect(ownerEraserBox.x1, ownerEraserBox.y1, w, h);
         ctx.strokeRect(ownerEraserBox.x1, ownerEraserBox.y1, w, h);
+    } else if (moveAreaBox) {
+        const { x1, y1, x2, y2, dx = 0, dy = 0, state = 1 } = moveAreaBox;
+        const minX = Math.min(x1, x2);
+        const maxX = Math.max(x1, x2);
+        const minY = Math.min(y1, y2);
+        const maxY = Math.max(y1, y2);
+        const w = maxX - minX + 1;
+        const h = maxY - minY + 1;
+
+        if (w > 0 && h > 0) {
+            ctx.save();
+            if (state === 3 && (dx !== 0 || dy !== 0)) {
+                // Source cut-out overlay
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(minX, minY, w, h);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = 1 / transform.scale;
+                ctx.setLineDash([2 / transform.scale, 2 / transform.scale]);
+                ctx.strokeRect(minX, minY, w, h);
+
+                // Draw floating sliced pixels at destination
+                if (offscreenCanvas) {
+                    ctx.drawImage(offscreenCanvas, minX, minY, w, h, minX + dx, minY + dy, w, h);
+                }
+
+                // Destination selection box
+                ctx.strokeStyle = '#06b6d4';
+                ctx.lineWidth = 1.5 / transform.scale;
+                ctx.setLineDash([4 / transform.scale, 4 / transform.scale]);
+                ctx.fillStyle = 'rgba(6, 182, 212, 0.12)';
+                ctx.fillRect(minX + dx, minY + dy, w, h);
+                ctx.strokeRect(minX + dx, minY + dy, w, h);
+            } else {
+                // Selection box during defining or fixed state
+                ctx.strokeStyle = '#06b6d4';
+                ctx.lineWidth = 1.5 / transform.scale;
+                ctx.setLineDash([4 / transform.scale, 4 / transform.scale]);
+                ctx.fillStyle = 'rgba(6, 182, 212, 0.18)';
+                ctx.fillRect(minX, minY, w, h);
+                ctx.strokeRect(minX, minY, w, h);
+            }
+            ctx.restore();
+        }
     } else if ((selLen > 0 || hasHover) && !isSpectator && !isResetLocked && !(isFrozen && !isOwner)) {
         ctx.strokeStyle = currentColor;
         ctx.lineWidth = 1 / transform.scale;
@@ -964,6 +1015,19 @@ function render() {
             drawPixelContour(hoveredPixelKey);
         }
         ctx.stroke();
+    }
+
+    if (isMirrorMode && boardWidth > 0 && boardHeight > 0) {
+        ctx.save();
+        const midX = boardWidth / 2;
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 1.5 / transform.scale;
+        ctx.setLineDash([4 / transform.scale, 4 / transform.scale]);
+        ctx.beginPath();
+        ctx.moveTo(midX, 0);
+        ctx.lineTo(midX, boardHeight);
+        ctx.stroke();
+        ctx.restore();
     }
 
     // Nuclear Warnings (Mira telescópica + Círculo cerrado progresivo de color)
@@ -1799,6 +1863,7 @@ self.onmessage = function (e) {
             boardHeight = payload.boardHeight || 64;
             dpr = payload.dpr || 1;
             isProgressive = !!payload.isProgressive;
+            isOfflineMode = !!payload.isOfflineMode;
 
             offscreenCanvas = new OffscreenCanvas(boardWidth, boardHeight);
             offscreenCtx = offscreenCanvas.getContext('2d', { alpha: true });
@@ -1806,6 +1871,15 @@ self.onmessage = function (e) {
             initMemoryEngine(boardWidth, boardHeight);
             
             selectionBitmaskDirty = true;
+            requestRender();
+            break;
+
+        case 'SET_OFFLINE_MODE':
+            isOfflineMode = !!payload.isOfflineMode;
+            break;
+
+        case 'SET_MIRROR_MODE':
+            isMirrorMode = !!payload.isMirrorMode;
             requestRender();
             break;
 
@@ -1902,6 +1976,7 @@ self.onmessage = function (e) {
             isResetLocked = payload.isResetLocked;
             isFrozen = !!payload.isFrozen;
             isOwner = !!payload.isOwner;
+            if (payload.isMirrorMode !== undefined) isMirrorMode = !!payload.isMirrorMode;
             if (isOwnerProtecting !== !!payload.isOwnerProtecting) {
                 isOwnerProtecting = !!payload.isOwnerProtecting;
                 protectedPixelsDirty = true;
@@ -1932,6 +2007,29 @@ self.onmessage = function (e) {
             const h = maxY - minY + 1;
             
             if (w > 0 && h > 0) {
+                if (isOfflineMode && pixelBuffer) {
+                    processPixelQueue();
+                    const diffs = [];
+                    for (let y = minY; y <= maxY; y++) {
+                        for (let x = minX; x <= maxX; x++) {
+                            const idx = y * boardWidth + x;
+                            const prev = pixelBuffer[idx];
+                            if (prev !== 0) {
+                                diffs.push({ x, y, prev, next: 0 });
+                            }
+                        }
+                    }
+                    if (diffs.length > 0) {
+                        undoStack.push({ type: 'clear', diffs });
+                        redoStack.length = 0;
+                        if (undoStack.length > MAX_HISTORY) undoStack.shift();
+                        self.postMessage({
+                            type: 'HISTORY_CHANGED',
+                            payload: { canUndo: undoStack.length > 0, canRedo: false, action: 'clear' }
+                        });
+                    }
+                }
+
                 eraserAnimations.push({
                     startTime: Date.now(),
                     duration: 1000,
@@ -1963,6 +2061,31 @@ self.onmessage = function (e) {
 
         case 'PUSH_PIXELS': {
             const pixels = e.data.payload.pixels;
+            if (isOfflineMode && pixelBuffer && pixels && pixels.length > 0) {
+                processPixelQueue();
+                const diffs = [];
+                for (let i = 0; i < pixels.length; i++) {
+                    const p = pixels[i];
+                    if (p.x >= 0 && p.x < boardWidth && p.y >= 0 && p.y < boardHeight) {
+                        const idx = p.y * boardWidth + p.x;
+                        const prev = pixelBuffer[idx];
+                        const next = colorToAbgr(p.color);
+                        if (prev !== next) {
+                            diffs.push({ x: p.x, y: p.y, prev, next });
+                        }
+                    }
+                }
+                if (diffs.length > 0) {
+                    undoStack.push({ type: 'pixels', diffs });
+                    redoStack.length = 0;
+                    if (undoStack.length > MAX_HISTORY) undoStack.shift();
+                    self.postMessage({
+                        type: 'HISTORY_CHANGED',
+                        payload: { canUndo: undoStack.length > 0, canRedo: false, action: 'push' }
+                    });
+                }
+            }
+
             if (isProgressive) {
                 pixels.forEach(p => {
                     const cx = Math.floor(p.x / 512);
@@ -1998,6 +2121,38 @@ self.onmessage = function (e) {
                     } catch (e) {
                     }
                 }
+
+                if (isOfflineMode && pixelBuffer && templatePixels) {
+                    processPixelQueue();
+                    const diffs = [];
+                    for (let y = 0; y < tc.h; y++) {
+                        for (let x = 0; x < tc.w; x++) {
+                            const absX = tc.x + x;
+                            const absY = tc.y + y;
+                            if (absX >= 0 && absX < boardWidth && absY >= 0 && absY < boardHeight) {
+                                const bufferIdx = absY * boardWidth + absX;
+                                const templateIdx = y * tc.w + x;
+                                const nextColor = templatePixels[templateIdx];
+                                if ((nextColor & 0xFF000000) !== 0) {
+                                    const prevColor = pixelBuffer[bufferIdx];
+                                    if (prevColor !== nextColor) {
+                                        diffs.push({ x: absX, y: absY, prev: prevColor, next: nextColor });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (diffs.length > 0) {
+                        undoStack.push({ type: 'inject', diffs });
+                        redoStack.length = 0;
+                        if (undoStack.length > MAX_HISTORY) undoStack.shift();
+                        self.postMessage({
+                            type: 'HISTORY_CHANGED',
+                            payload: { canUndo: undoStack.length > 0, canRedo: false, action: 'inject' }
+                        });
+                    }
+                }
+
                 injectAnimation = {
                     startTime: Date.now(),
                     duration: 1200,
@@ -2115,28 +2270,334 @@ self.onmessage = function (e) {
             break;
         }
 
-        case 'CLEAR_AREA': {
-            if (payload && offscreenCtx) {
-                const x1 = Math.max(0, Math.min(parseInt(payload.x1, 10), parseInt(payload.x2, 10)));
-                const y1 = Math.max(0, Math.min(parseInt(payload.y1, 10), parseInt(payload.y2, 10)));
-                const x2 = Math.min(boardWidth - 1, Math.max(parseInt(payload.x1, 10), parseInt(payload.x2, 10)));
-                const y2 = Math.min(boardHeight - 1, Math.max(parseInt(payload.y1, 10), parseInt(payload.y2, 10)));
-                
-                offscreenCtx.clearRect(x1, y1, x2 - x1 + 1, y2 - y1 + 1);
-                if (mainImageData) {
-                    const w = boardWidth;
-                    for (let y = y1; y <= y2; y++) {
-                        for (let x = x1; x <= x2; x++) {
-                            const idx = (y * w + x) * 4;
-                            mainImageData.data[idx] = 0;
-                            mainImageData.data[idx + 1] = 0;
-                            mainImageData.data[idx + 2] = 0;
-                            mainImageData.data[idx + 3] = 0;
+        case 'FLOOD_FILL': {
+            if (!pixelBuffer || !payload) break;
+            const startX = Math.floor(payload.startX);
+            const startY = Math.floor(payload.startY);
+            const fillColor = colorToAbgr(payload.color);
+
+            if (startX < 0 || startX >= boardWidth || startY < 0 || startY >= boardHeight) break;
+
+            processPixelQueue();
+
+            const startIdx = startY * boardWidth + startX;
+            const targetColor = pixelBuffer[startIdx];
+
+            if (targetColor === fillColor) break;
+
+            const totalPixels = boardWidth * boardHeight;
+            const queue = new Int32Array(totalPixels);
+            let head = 0;
+            let tail = 0;
+
+            const diffs = isOfflineMode ? [] : null;
+
+            pixelBuffer[startIdx] = fillColor;
+            markDirty(startX, startY);
+            if (diffs) diffs.push({ x: startX, y: startY, prev: targetColor, next: fillColor });
+            queue[tail++] = startIdx;
+
+            const bw = boardWidth;
+            const bh = boardHeight;
+
+            while (head < tail) {
+                const idx = queue[head++];
+                const cx = idx % bw;
+                const cy = (idx / bw) | 0;
+
+                // Left
+                if (cx > 0) {
+                    const nIdx = idx - 1;
+                    if (pixelBuffer[nIdx] === targetColor) {
+                        pixelBuffer[nIdx] = fillColor;
+                        markDirty(cx - 1, cy);
+                        if (diffs) diffs.push({ x: cx - 1, y: cy, prev: targetColor, next: fillColor });
+                        queue[tail++] = nIdx;
+                    }
+                }
+                // Right
+                if (cx < bw - 1) {
+                    const nIdx = idx + 1;
+                    if (pixelBuffer[nIdx] === targetColor) {
+                        pixelBuffer[nIdx] = fillColor;
+                        markDirty(cx + 1, cy);
+                        if (diffs) diffs.push({ x: cx + 1, y: cy, prev: targetColor, next: fillColor });
+                        queue[tail++] = nIdx;
+                    }
+                }
+                // Up
+                if (cy > 0) {
+                    const nIdx = idx - bw;
+                    if (pixelBuffer[nIdx] === targetColor) {
+                        pixelBuffer[nIdx] = fillColor;
+                        markDirty(cx, cy - 1);
+                        if (diffs) diffs.push({ x: cx, y: cy - 1, prev: targetColor, next: fillColor });
+                        queue[tail++] = nIdx;
+                    }
+                }
+                // Down
+                if (cy < bh - 1) {
+                    const nIdx = idx + bw;
+                    if (pixelBuffer[nIdx] === targetColor) {
+                        pixelBuffer[nIdx] = fillColor;
+                        markDirty(cx, cy + 1);
+                        if (diffs) diffs.push({ x: cx, y: cy + 1, prev: targetColor, next: fillColor });
+                        queue[tail++] = nIdx;
+                    }
+                }
+            }
+
+            if (isOfflineMode && diffs && diffs.length > 0) {
+                undoStack.push({ type: 'flood_fill', diffs });
+                redoStack.length = 0;
+                if (undoStack.length > MAX_HISTORY) undoStack.shift();
+                self.postMessage({
+                    type: 'HISTORY_CHANGED',
+                    payload: { canUndo: undoStack.length > 0, canRedo: false, action: 'flood_fill' }
+                });
+            }
+
+            flushDirtyRect();
+            requestRender();
+            break;
+        }
+
+        case 'SPRAY_BURST': {
+            if (!pixelBuffer || !payload) break;
+            const centerX = Math.floor(payload.centerX);
+            const centerY = Math.floor(payload.centerY);
+            const radius = Math.max(1, payload.radius || 4);
+            const density = Math.max(1, payload.density || 5);
+            const fillColor = colorToAbgr(payload.color);
+
+            if (centerX < -radius || centerX >= boardWidth + radius || centerY < -radius || centerY >= boardHeight + radius) break;
+
+            processPixelQueue();
+
+            if (isOfflineMode && activeSprayStrokeDiffs === null) {
+                activeSprayStrokeDiffs = new Map();
+            }
+
+            for (let i = 0; i < density; i++) {
+                const theta = Math.random() * 2 * Math.PI;
+                const r = Math.sqrt(Math.random()) * radius;
+                const px = Math.round(centerX + r * Math.cos(theta));
+                const py = Math.round(centerY + r * Math.sin(theta));
+
+                if (px >= 0 && px < boardWidth && py >= 0 && py < boardHeight) {
+                    const idx = py * boardWidth + px;
+                    const prevColor = pixelBuffer[idx];
+                    if (prevColor !== fillColor) {
+                        if (isOfflineMode && activeSprayStrokeDiffs) {
+                            if (!activeSprayStrokeDiffs.has(idx)) {
+                                activeSprayStrokeDiffs.set(idx, { x: px, y: py, prev: prevColor, next: fillColor });
+                            } else {
+                                activeSprayStrokeDiffs.get(idx).next = fillColor;
+                            }
+                        }
+                        pixelBuffer[idx] = fillColor;
+                        markDirty(px, py);
+                    }
+
+                    if (isMirrorMode) {
+                        const symX = (boardWidth - 1) - px;
+                        const symY = py;
+                        if (symX >= 0 && symX < boardWidth && symY >= 0 && symY < boardHeight && symX !== px) {
+                            const symIdx = symY * boardWidth + symX;
+                            const symPrev = pixelBuffer[symIdx];
+                            if (symPrev !== fillColor) {
+                                if (isOfflineMode && activeSprayStrokeDiffs) {
+                                    if (!activeSprayStrokeDiffs.has(symIdx)) {
+                                        activeSprayStrokeDiffs.set(symIdx, { x: symX, y: symY, prev: symPrev, next: fillColor });
+                                    } else {
+                                        activeSprayStrokeDiffs.get(symIdx).next = fillColor;
+                                    }
+                                }
+                                pixelBuffer[symIdx] = fillColor;
+                                markDirty(symX, symY);
+                            }
                         }
                     }
                 }
-                requestRender();
             }
+
+            flushDirtyRect();
+            requestRender();
+            break;
+        }
+
+        case 'SPRAY_END': {
+            if (isOfflineMode && activeSprayStrokeDiffs && activeSprayStrokeDiffs.size > 0) {
+                const diffs = Array.from(activeSprayStrokeDiffs.values());
+                undoStack.push({ type: 'spray', diffs });
+                redoStack.length = 0;
+                if (undoStack.length > MAX_HISTORY) undoStack.shift();
+                self.postMessage({
+                    type: 'HISTORY_CHANGED',
+                    payload: { canUndo: undoStack.length > 0, canRedo: false, action: 'spray' }
+                });
+            }
+            activeSprayStrokeDiffs = null;
+            break;
+        }
+
+        case 'SET_MOVE_AREA': {
+            moveAreaBox = payload.moveAreaBox || null;
+            requestRender();
+            break;
+        }
+
+        case 'COMMIT_MOVE_AREA': {
+            if (!pixelBuffer || !payload) break;
+            const { x1, y1, x2, y2, dx = 0, dy = 0 } = payload;
+            const minX = Math.max(0, Math.min(x1, x2));
+            const maxX = Math.min(boardWidth - 1, Math.max(x1, x2));
+            const minY = Math.max(0, Math.min(y1, y2));
+            const maxY = Math.min(boardHeight - 1, Math.max(y1, y2));
+            const w = maxX - minX + 1;
+            const h = maxY - minY + 1;
+
+            if (w <= 0 || h <= 0) break;
+            processPixelQueue();
+
+            if (dx === 0 && dy === 0) {
+                moveAreaBox = null;
+                requestRender();
+                break;
+            }
+
+            // 1. Copy source slice
+            const srcPixels = new Uint32Array(w * h);
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const srcIdx = (minY + y) * boardWidth + (minX + x);
+                    srcPixels[y * w + x] = pixelBuffer[srcIdx];
+                }
+            }
+
+            // 2. Track diffs and apply changes
+            const diffMap = new Map();
+
+            // First: clear source area
+            for (let y = 0; y < h; y++) {
+                const py = minY + y;
+                for (let x = 0; x < w; x++) {
+                    const px = minX + x;
+                    const idx = py * boardWidth + px;
+                    const prev = pixelBuffer[idx];
+                    diffMap.set(idx, { x: px, y: py, prev, next: 0 });
+                    pixelBuffer[idx] = 0;
+                    markDirty(px, py);
+                }
+            }
+
+            // Second: paste onto destination (overwriting destination with source slice)
+            for (let y = 0; y < h; y++) {
+                const py = minY + y + dy;
+                if (py < 0 || py >= boardHeight) continue;
+                for (let x = 0; x < w; x++) {
+                    const px = minX + x + dx;
+                    if (px < 0 || px >= boardWidth) continue;
+
+                    const idx = py * boardWidth + px;
+                    const next = srcPixels[y * w + x];
+                    
+                    if (diffMap.has(idx)) {
+                        diffMap.get(idx).next = next;
+                    } else {
+                        const prev = pixelBuffer[idx];
+                        diffMap.set(idx, { x: px, y: py, prev, next });
+                    }
+                    pixelBuffer[idx] = next;
+                    markDirty(px, py);
+                }
+            }
+
+            // Filter out no-op diffs where prev === next
+            const diffs = [];
+            diffMap.forEach(d => {
+                if (d.prev !== d.next) diffs.push(d);
+            });
+
+            if (isOfflineMode && diffs.length > 0) {
+                undoStack.push({ type: 'move_area', diffs });
+                redoStack.length = 0;
+                if (undoStack.length > MAX_HISTORY) undoStack.shift();
+                self.postMessage({
+                    type: 'HISTORY_CHANGED',
+                    payload: { canUndo: undoStack.length > 0, canRedo: false, action: 'move_area' }
+                });
+            }
+
+            moveAreaBox = null;
+            flushDirtyRect();
+            requestRender();
+            break;
+        }
+
+        case 'UNDO': {
+            if (undoStack.length > 0 && pixelBuffer) {
+                processPixelQueue();
+                eraserAnimations = [];
+                injectAnimation = null;
+                const action = undoStack.pop();
+                const diffs = action.diffs;
+                for (let i = 0; i < diffs.length; i++) {
+                    const d = diffs[i];
+                    const idx = d.y * boardWidth + d.x;
+                    if (idx >= 0 && idx < pixelBuffer.length) {
+                        pixelBuffer[idx] = d.prev;
+                        markDirty(d.x, d.y);
+                    }
+                }
+                redoStack.push(action);
+                flushDirtyRect();
+                requestRender();
+                self.postMessage({
+                    type: 'HISTORY_CHANGED',
+                    payload: {
+                        canUndo: undoStack.length > 0,
+                        canRedo: redoStack.length > 0,
+                        action: 'undo'
+                    }
+                });
+            }
+            break;
+        }
+
+        case 'REDO': {
+            if (redoStack.length > 0 && pixelBuffer) {
+                processPixelQueue();
+                eraserAnimations = [];
+                injectAnimation = null;
+                const action = redoStack.pop();
+                const diffs = action.diffs;
+                for (let i = 0; i < diffs.length; i++) {
+                    const d = diffs[i];
+                    const idx = d.y * boardWidth + d.x;
+                    if (idx >= 0 && idx < pixelBuffer.length) {
+                        pixelBuffer[idx] = d.next;
+                        markDirty(d.x, d.y);
+                    }
+                }
+                undoStack.push(action);
+                flushDirtyRect();
+                requestRender();
+                self.postMessage({
+                    type: 'HISTORY_CHANGED',
+                    payload: {
+                        canUndo: undoStack.length > 0,
+                        canRedo: redoStack.length > 0,
+                        action: 'redo'
+                    }
+                });
+            }
+            break;
+        }
+
+        case 'CLEAR_HISTORY': {
+            undoStack.length = 0;
+            redoStack.length = 0;
             break;
         }
 

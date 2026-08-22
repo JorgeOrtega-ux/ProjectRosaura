@@ -151,9 +151,11 @@ extract($designData);
                 <button class="component-button component-button--icon component-button--h32" data-action="toggleOnlineMode" data-tooltip="<?php echo ($isOnlineModeActive ? __('tooltip_deactivate_online') : __('tooltip_activate_online')); ?>" data-position="bottom">
                     <span class="material-symbols-rounded <?php echo $isOnlineModeActive ? 'component-text-success' : ''; ?>"><?php echo $isOnlineModeActive ? 'sensors' : 'sensors_off'; ?></span>
                 </button>
+                <?php if ($isOnlineModeActive): ?>
                 <button class="component-button component-button--icon component-button--h32" data-action="toggleOwnerTools" data-ref="btn-owner-tools" data-tooltip="<?php echo __('tooltip_owner_tools'); ?> [O]" data-position="bottom">
                     <span class="material-symbols-rounded">construction</span>
                 </button>
+                <?php endif; ?>
                 <?php endif; ?>
 
                 <?php if ($isOnlineModeActive): ?>
@@ -168,6 +170,26 @@ extract($designData);
                 </button>
                 <?php endif; ?>
             </div>
+
+            <?php if (!$isOnlineModeActive): ?>
+            <div class="canvas-design-toolbar-vertical <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="offline-tools-vertical">
+                <button class="component-button component-button--icon component-button--h32" data-action="toggleOfflineMirror" data-ref="btn-offline-mirror" data-tooltip="<?php echo __('tooltip_mirror_mode'); ?> [X]" data-position="right">
+                    <span class="material-symbols-rounded">flip</span>
+                </button>
+                <button class="component-button component-button--icon component-button--h32" data-action="toggleOfflineMoveArea" data-ref="btn-offline-move-area" data-tooltip="<?php echo __('tooltip_move_area'); ?> [M]" data-position="right">
+                    <span class="material-symbols-rounded">crop_free</span>
+                </button>
+                <button class="component-button component-button--icon component-button--h32" data-action="toggleOfflineBucket" data-ref="btn-offline-bucket" data-tooltip="<?php echo __('tooltip_bucket'); ?> [G]" data-position="right">
+                    <span class="material-symbols-rounded">format_color_fill</span>
+                </button>
+                <button class="component-button component-button--icon component-button--h32" data-action="toggleOfflineSpray" data-ref="btn-offline-spray" data-tooltip="<?php echo __('tooltip_spray'); ?> [A]" data-position="right">
+                    <span class="material-symbols-rounded">grain</span>
+                </button>
+                <button class="component-button component-button--icon component-button--h32" data-action="toggleOfflineEraser" data-ref="btn-offline-eraser" data-tooltip="<?php echo __('tooltip_eraser'); ?> [E]" data-position="right">
+                    <span class="material-symbols-rounded">cleaning_services</span>
+                </button>
+            </div>
+            <?php endif; ?>
             <?php endif; ?>
 
             <div class="component-badge component-badge--dark component-badge--toolbar" data-ref="template-floating-toolbar">

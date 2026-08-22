@@ -5,6 +5,38 @@ import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { soundManager } from './SoundManager.js';
 import { CanvasSyncChannel } from '../../../core/services/CanvasSyncChannel.js';
 
+function colorToAbgr(color) {
+    if (!color || color === 'transparent') return 0;
+    let hex = color.replace('#', '');
+    let r = 0, g = 0, b = 0, a = 255;
+    if (hex.length === 3) {
+        r = parseInt(hex[0] + hex[0], 16);
+        g = parseInt(hex[1] + hex[1], 16);
+        b = parseInt(hex[2] + hex[2], 16);
+    } else if (hex.length === 6) {
+        r = parseInt(hex.substring(0, 2), 16);
+        g = parseInt(hex.substring(2, 4), 16);
+        b = parseInt(hex.substring(4, 6), 16);
+    } else if (hex.length === 8) {
+        r = parseInt(hex.substring(0, 2), 16);
+        g = parseInt(hex.substring(2, 4), 16);
+        b = parseInt(hex.substring(4, 6), 16);
+        a = parseInt(hex.substring(6, 8), 16);
+    }
+    return ((a << 24) | (b << 16) | (g << 8) | r) >>> 0;
+}
+
+function abgrToHex(val) {
+    const r = val & 0xFF;
+    const g = (val >> 8) & 0xFF;
+    const b = (val >> 16) & 0xFF;
+    const a = (val >> 24) & 0xFF;
+    if (a === 255) {
+        return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+    }
+    return `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(2)})`;
+}
+
 export const DesignInteractions = {
     bindEvents() {
         document.addEventListener('wheel', this.handleWheelBound, { passive: false });
@@ -110,6 +142,55 @@ export const DesignInteractions = {
         if (btnOwnerEraser) {
             e.preventDefault();
             this.toggleOwnerEraser();
+            return;
+        }
+
+        const btnOfflineMirror = e.target.closest('[data-action="toggleOfflineMirror"]');
+        if (btnOfflineMirror) {
+            e.preventDefault();
+            this.toggleOfflineMirror();
+            return;
+        }
+
+        const btnOfflineMoveArea = e.target.closest('[data-action="toggleOfflineMoveArea"]');
+        if (btnOfflineMoveArea) {
+            e.preventDefault();
+            this.toggleOfflineMoveArea();
+            return;
+        }
+
+        const btnConfirmMove = e.target.closest('[data-action="confirmMoveArea"]');
+        if (btnConfirmMove) {
+            e.preventDefault();
+            this.commitMoveArea();
+            return;
+        }
+
+        const btnCancelMove = e.target.closest('[data-action="cancelMoveArea"]');
+        if (btnCancelMove) {
+            e.preventDefault();
+            this.cancelMoveArea();
+            return;
+        }
+
+        const btnOfflineBucket = e.target.closest('[data-action="toggleOfflineBucket"]');
+        if (btnOfflineBucket) {
+            e.preventDefault();
+            this.toggleOfflineBucket();
+            return;
+        }
+
+        const btnOfflineSpray = e.target.closest('[data-action="toggleOfflineSpray"]');
+        if (btnOfflineSpray) {
+            e.preventDefault();
+            this.toggleOfflineSpray();
+            return;
+        }
+
+        const btnOfflineEraser = e.target.closest('[data-action="toggleOfflineEraser"]');
+        if (btnOfflineEraser) {
+            e.preventDefault();
+            this.toggleOfflineEraser();
             return;
         }
 
@@ -278,11 +359,30 @@ export const DesignInteractions = {
                 return;
             }
         }
+
+        // Allow Ctrl+Z / Cmd+Z (Undo) and Ctrl+Y / Cmd+Y / Ctrl+Shift+Z (Redo) in offline mode
+        if (this.isOfflineMode && (e.ctrlKey || e.metaKey) && !e.altKey) {
+            if (e.key === 'z' || e.key === 'Z') {
+                e.preventDefault();
+                if (e.shiftKey) {
+                    if (typeof this.redo === 'function') this.redo();
+                } else {
+                    if (typeof this.undo === 'function') this.undo();
+                }
+                return;
+            } else if (e.key === 'y' || e.key === 'Y') {
+                e.preventDefault();
+                if (typeof this.redo === 'function') this.redo();
+                return;
+            }
+        }
         
         if (e.ctrlKey || e.metaKey || e.altKey) return;
         
         if (e.key === 'Escape') {
-            if (this.interactionMode !== 'normal') {
+            if (this.interactionMode === 'offline_moving_area') {
+                this.cancelMoveArea();
+            } else if (this.interactionMode !== 'normal') {
                 this.cancelInteractionMode();
             } else {
                 this.isSelecting = false;
@@ -297,9 +397,27 @@ export const DesignInteractions = {
             return;
         }
 
+        if (e.key === 'Enter') {
+            if (this.interactionMode === 'offline_moving_area' && this.moveAreaBox) {
+                e.preventDefault();
+                this.commitMoveArea();
+                return;
+            }
+        }
+
         const keyUpper = e.key.toUpperCase();
 
-        if (keyUpper === 'J') {
+        if (keyUpper === 'X') {
+            if (this.isOfflineMode && typeof this.toggleOfflineMirror === 'function') {
+                e.preventDefault();
+                this.toggleOfflineMirror();
+            }
+        } else if (keyUpper === 'M') {
+            if (this.isOfflineMode && typeof this.toggleOfflineMoveArea === 'function') {
+                e.preventDefault();
+                this.toggleOfflineMoveArea();
+            }
+        } else if (keyUpper === 'J') {
             const btn = document.querySelector('[data-action="openJoinLiveModal"]');
             if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
         } else if (keyUpper === 'S') {
@@ -309,8 +427,26 @@ export const DesignInteractions = {
             const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-colors"]');
             if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
         } else if (keyUpper === 'T') {
+            const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-templates"]');
+            if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
+        } else if (keyUpper === 'O') {
             const btn = document.querySelector('[data-action="toggleOwnerTools"]');
             if (btn && !btn.classList.contains('disabled') && !btn.classList.contains('disabled-interaction')) { e.preventDefault(); btn.click(); }
+        } else if (keyUpper === 'E') {
+            if (this.isOfflineMode && typeof this.toggleOfflineEraser === 'function') {
+                e.preventDefault();
+                this.toggleOfflineEraser();
+            }
+        } else if (keyUpper === 'G') {
+            if (this.isOfflineMode && typeof this.toggleOfflineBucket === 'function') {
+                e.preventDefault();
+                this.toggleOfflineBucket();
+            }
+        } else if (keyUpper === 'A') {
+            if (this.isOfflineMode && typeof this.toggleOfflineSpray === 'function') {
+                e.preventDefault();
+                this.toggleOfflineSpray();
+            }
         } else if (keyUpper === 'H') {
             const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-chat"]');
             if (btn && !btn.classList.contains('disabled') && !btn.classList.contains('disabled-interaction')) { 
@@ -452,6 +588,44 @@ export const DesignInteractions = {
 
         const coords = this.getBoardCoords(e.clientX, e.clientY);
         if (coords) {
+            if (this.interactionMode === 'offline_moving_area') {
+                const box = this.moveAreaBox;
+                if (this.moveAreaStep === 2 && box) {
+                    const curX1 = Math.min(box.x1, box.x2) + (box.dx || 0);
+                    const curX2 = Math.max(box.x1, box.x2) + (box.dx || 0);
+                    const curY1 = Math.min(box.y1, box.y2) + (box.dy || 0);
+                    const curY2 = Math.max(box.y1, box.y2) + (box.dy || 0);
+
+                    if (coords.x >= curX1 && coords.x <= curX2 && coords.y >= curY1 && coords.y <= curY2) {
+                        this.moveAreaStep = 3;
+                        this.moveAreaDragAnchor = {
+                            startX: coords.x,
+                            startY: coords.y,
+                            initialDx: box.dx || 0,
+                            initialDy: box.dy || 0
+                        };
+                        this.selectMoveArea(box.x1, box.y1, box.x2, box.y2, box.dx || 0, box.dy || 0, 3);
+                        this.canvas.classList.add('component-cursor-grabbing');
+                        return;
+                    }
+                }
+
+                this.moveAreaStep = 1;
+                this.moveAreaStart = { x: coords.x, y: coords.y };
+                this.selectMoveArea(coords.x, coords.y, coords.x, coords.y, 0, 0, 1);
+                return;
+            }
+
+            if (this.interactionMode === 'offline_spray') {
+                this.startSpray(coords.x, coords.y);
+                return;
+            }
+
+            if (this.interactionMode === 'offline_bucket') {
+                this.executeOfflineBucket(coords.x, coords.y);
+                return;
+            }
+
             if (this.interactionMode === 'owner_erasing' || this.interactionMode === 'owner_protecting') {
                 const bw = this.boardWidth || 64;
                 const offset = (coords.y * bw) + coords.x;
@@ -492,15 +666,24 @@ export const DesignInteractions = {
                 return;
             }
 
+            const bw = this.boardWidth || 64;
             const key = (coords.y << 16) | coords.x;
+            const symX = bw - 1 - coords.x;
+            const symKey = (coords.y << 16) | symX;
+            const hasSym = this.isMirrorMode && symX >= 0 && symX < bw && symX !== coords.x;
+
             if (this.selectedPixels.has(key)) {
                 this.selectionMode = 'remove';
                 this.selectedPixels.delete(key);
+                if (hasSym) this.selectedPixels.delete(symKey);
             } else {
                 this.selectionMode = 'add';
                 const maxBalance = this.getMaxBalance();
                 if (this.selectedPixels.size < maxBalance) {
                     this.selectedPixels.add(key);
+                    if (hasSym && this.selectedPixels.size < maxBalance) {
+                        this.selectedPixels.add(symKey);
+                    }
                 } else {
                     showMessage(__('err_pixel_limit')?.replace(':limit', maxBalance === Infinity ? '∞' : maxBalance), 'warning');
                 }
@@ -512,6 +695,30 @@ export const DesignInteractions = {
     },
 
     handleMouseMove(e) {
+        if (this.interactionMode === 'offline_moving_area') {
+            const coords = this.getBoardCoords(e.clientX, e.clientY);
+            if (coords) {
+                if (this.moveAreaStep === 1 && this.moveAreaStart) {
+                    this.selectMoveArea(this.moveAreaStart.x, this.moveAreaStart.y, coords.x, coords.y, 0, 0, 1);
+                    return;
+                }
+                if (this.moveAreaStep === 3 && this.moveAreaDragAnchor && this.moveAreaBox) {
+                    const dx = this.moveAreaDragAnchor.initialDx + (coords.x - this.moveAreaDragAnchor.startX);
+                    const dy = this.moveAreaDragAnchor.initialDy + (coords.y - this.moveAreaDragAnchor.startY);
+                    this.selectMoveArea(this.moveAreaBox.x1, this.moveAreaBox.y1, this.moveAreaBox.x2, this.moveAreaBox.y2, dx, dy, 3);
+                    return;
+                }
+            }
+        }
+
+        if (this.interactionMode === 'offline_spray' && this.isSpraying) {
+            const coords = this.getBoardCoords(e.clientX, e.clientY);
+            if (coords) {
+                this.updateSpray(coords.x, coords.y);
+            }
+            return;
+        }
+
         if ((this.interactionMode === 'owner_erasing' || this.interactionMode === 'owner_protecting') && this.ownerEraserStep === 1 && this.ownerEraserStart) {
             const coords = this.getBoardCoords(e.clientX, e.clientY);
             if (coords) {
@@ -719,16 +926,24 @@ export const DesignInteractions = {
         if (this.isSelecting) {
             const coords = this.getBoardCoords(e.clientX, e.clientY);
             if (coords) {
+                const bw = this.boardWidth || 64;
                 const key = (coords.y << 16) | coords.x;
+                const symX = bw - 1 - coords.x;
+                const symKey = (coords.y << 16) | symX;
+                const hasSym = this.isMirrorMode && symX >= 0 && symX < bw && symX !== coords.x;
                 const sizeBefore = this.selectedPixels.size;
                 
                 if (this.selectionMode === 'add') {
                     const maxBalance = this.getMaxBalance();
                     if (this.selectedPixels.size < maxBalance) {
                         this.selectedPixels.add(key);
+                        if (hasSym && this.selectedPixels.size < maxBalance) {
+                            this.selectedPixels.add(symKey);
+                        }
                     }
                 } else {
                     this.selectedPixels.delete(key);
+                    if (hasSym) this.selectedPixels.delete(symKey);
                 }
                 
                 if (this.selectedPixels.size !== sizeBefore) {
@@ -806,6 +1021,30 @@ export const DesignInteractions = {
     },
 
     handleMouseUp(e) {
+        if (this.interactionMode === 'offline_moving_area') {
+            if (this.moveAreaStep === 1 && this.moveAreaBox) {
+                this.moveAreaStep = 2;
+                this.selectMoveArea(this.moveAreaBox.x1, this.moveAreaBox.y1, this.moveAreaBox.x2, this.moveAreaBox.y2, 0, 0, 2);
+                return;
+            }
+            if (this.moveAreaStep === 3 && this.moveAreaBox) {
+                this.canvas.classList.remove('component-cursor-grabbing');
+                const dx = this.moveAreaBox.dx || 0;
+                const dy = this.moveAreaBox.dy || 0;
+                if (dx !== 0 || dy !== 0) {
+                    this.commitMoveArea();
+                } else {
+                    this.moveAreaStep = 2;
+                    this.selectMoveArea(this.moveAreaBox.x1, this.moveAreaBox.y1, this.moveAreaBox.x2, this.moveAreaBox.y2, 0, 0, 2);
+                }
+                return;
+            }
+        }
+
+        if (this.interactionMode === 'offline_spray' && this.isSpraying) {
+            this.stopSpray();
+        }
+
         if (this.recentDragMode) {
             this.saveRecentColor(false);
             this.recentDragMode = null;
@@ -875,6 +1114,47 @@ export const DesignInteractions = {
 
             const isOperationalLocked = !!(this.isResetLocked || this.isResizeLocked || this.isInjectLocked || this.isClearLocked || (this.isFrozen && !this.isOwner));
 
+            if (this.interactionMode === 'offline_moving_area' && !this.isSpectator && !isOperationalLocked) {
+                const coords = this.getBoardCoords(this.touchStartX, this.touchStartY);
+                if (coords) {
+                    const box = this.moveAreaBox;
+                    if (this.moveAreaStep === 2 && box) {
+                        const curX1 = Math.min(box.x1, box.x2) + (box.dx || 0);
+                        const curX2 = Math.max(box.x1, box.x2) + (box.dx || 0);
+                        const curY1 = Math.min(box.y1, box.y2) + (box.dy || 0);
+                        const curY2 = Math.max(box.y1, box.y2) + (box.dy || 0);
+
+                        if (coords.x >= curX1 && coords.x <= curX2 && coords.y >= curY1 && coords.y <= curY2) {
+                            e.preventDefault();
+                            this.moveAreaStep = 3;
+                            this.moveAreaDragAnchor = {
+                                startX: coords.x,
+                                startY: coords.y,
+                                initialDx: box.dx || 0,
+                                initialDy: box.dy || 0
+                            };
+                            this.selectMoveArea(box.x1, box.y1, box.x2, box.y2, box.dx || 0, box.dy || 0, 3);
+                            return;
+                        }
+                    }
+
+                    e.preventDefault();
+                    this.moveAreaStep = 1;
+                    this.moveAreaStart = { x: coords.x, y: coords.y };
+                    this.selectMoveArea(coords.x, coords.y, coords.x, coords.y, 0, 0, 1);
+                    return;
+                }
+            }
+
+            if (this.interactionMode === 'offline_spray' && !this.isSpectator && !isOperationalLocked) {
+                const coords = this.getBoardCoords(this.touchStartX, this.touchStartY);
+                if (coords) {
+                    e.preventDefault();
+                    this.startSpray(coords.x, coords.y);
+                    return;
+                }
+            }
+
             const exact = this.getExactBoardCoords(this.touchStartX, this.touchStartY);
             if (exact && !this.isSpectator && !isOperationalLocked) {
                 let hit = null;
@@ -908,6 +1188,33 @@ export const DesignInteractions = {
     },
 
     handleTouchMove(e) {
+        if (this.interactionMode === 'offline_moving_area' && e.touches.length === 1) {
+            const coords = this.getBoardCoords(e.touches[0].clientX, e.touches[0].clientY);
+            if (coords) {
+                if (this.moveAreaStep === 1 && this.moveAreaStart) {
+                    e.preventDefault();
+                    this.selectMoveArea(this.moveAreaStart.x, this.moveAreaStart.y, coords.x, coords.y, 0, 0, 1);
+                    return;
+                }
+                if (this.moveAreaStep === 3 && this.moveAreaDragAnchor && this.moveAreaBox) {
+                    e.preventDefault();
+                    const dx = this.moveAreaDragAnchor.initialDx + (coords.x - this.moveAreaDragAnchor.startX);
+                    const dy = this.moveAreaDragAnchor.initialDy + (coords.y - this.moveAreaDragAnchor.startY);
+                    this.selectMoveArea(this.moveAreaBox.x1, this.moveAreaBox.y1, this.moveAreaBox.x2, this.moveAreaBox.y2, dx, dy, 3);
+                    return;
+                }
+            }
+        }
+
+        if (this.interactionMode === 'offline_spray' && this.isSpraying && e.touches.length === 1) {
+            e.preventDefault();
+            const coords = this.getBoardCoords(e.touches[0].clientX, e.touches[0].clientY);
+            if (coords) {
+                this.updateSpray(coords.x, coords.y);
+            }
+            return;
+        }
+
         if (this.recentDragMode && this.recentDragArea) {
             this.updateRecentColorFromEvent(e.touches[0]);
             e.preventDefault();
@@ -1064,6 +1371,31 @@ export const DesignInteractions = {
             this.recentDragArea = null;
             return;
         }
+
+        if (this.interactionMode === 'offline_moving_area') {
+            if (this.moveAreaStep === 1 && this.moveAreaBox) {
+                this.moveAreaStep = 2;
+                this.selectMoveArea(this.moveAreaBox.x1, this.moveAreaBox.y1, this.moveAreaBox.x2, this.moveAreaBox.y2, 0, 0, 2);
+                return;
+            }
+            if (this.moveAreaStep === 3 && this.moveAreaBox) {
+                const dx = this.moveAreaBox.dx || 0;
+                const dy = this.moveAreaBox.dy || 0;
+                if (dx !== 0 || dy !== 0) {
+                    this.commitMoveArea();
+                } else {
+                    this.moveAreaStep = 2;
+                    this.selectMoveArea(this.moveAreaBox.x1, this.moveAreaBox.y1, this.moveAreaBox.x2, this.moveAreaBox.y2, 0, 0, 2);
+                }
+                return;
+            }
+        }
+
+        if (this.interactionMode === 'offline_spray' && this.isSpraying) {
+            this.stopSpray();
+            return;
+        }
+
         if (this.isPinching) {
             if (e.touches.length < 2) {
                 this.isPinching = false;
@@ -1092,15 +1424,29 @@ export const DesignInteractions = {
                 if (!this.isSpectator && !this.isResetLocked && !this.isResizeLocked) {
                     const coords = this.getBoardCoords(this.touchStartX, this.touchStartY);
                     if (coords) {
+                        if (this.interactionMode === 'offline_bucket') {
+                            this.executeOfflineBucket(coords.x, coords.y);
+                            return;
+                        }
+
+                        const bw = this.boardWidth || 64;
                         const key = (coords.y << 16) | coords.x;
+                        const symX = bw - 1 - coords.x;
+                        const symKey = (coords.y << 16) | symX;
+                        const hasSym = this.isMirrorMode && symX >= 0 && symX < bw && symX !== coords.x;
+
                         if (this.selectedPixels.has(key)) {
                             this.selectionMode = 'remove';
                             this.selectedPixels.delete(key);
+                            if (hasSym) this.selectedPixels.delete(symKey);
                         } else {
                             this.selectionMode = 'add';
                             const maxBalance = this.getMaxBalance();
                             if (this.selectedPixels.size < maxBalance) {
                                 this.selectedPixels.add(key);
+                                if (hasSym && this.selectedPixels.size < maxBalance) {
+                                    this.selectedPixels.add(symKey);
+                                }
                             } else {
                                 showMessage(__('err_pixel_limit')?.replace(':limit', maxBalance === Infinity ? '∞' : maxBalance), 'warning');
                             }
@@ -1375,6 +1721,23 @@ export const DesignInteractions = {
             }));
             this.renderWorker.postMessage({ type: 'PUSH_PIXELS', payload: { pixels: pixelsToPush } });
         } else if (this.offscreenCtx) {
+            if (this.isOfflineMode) {
+                if (!this.undoStack) this.undoStack = [];
+                const diffs = [];
+                validPixels.forEach(p => {
+                    const img = this.offscreenCtx.getImageData(p.x, p.y, 1, 1);
+                    const prevVal = new Uint32Array(img.data.buffer)[0];
+                    const nextVal = colorToAbgr(this.currentColor);
+                    if (prevVal !== nextVal) {
+                        diffs.push({ x: p.x, y: p.y, prev: prevVal, next: nextVal });
+                    }
+                });
+                if (diffs.length > 0) {
+                    this.undoStack.push({ type: 'pixels', diffs });
+                    this.redoStack = [];
+                    if (this.undoStack.length > 50) this.undoStack.shift();
+                }
+            }
             validPixels.forEach(p => {
                 this.offscreenCtx.fillStyle = this.currentColor;
                 this.offscreenCtx.clearRect(p.x, p.y, 1, 1);
@@ -1519,7 +1882,16 @@ export const DesignInteractions = {
         this.ownerEraserStep = 0;
         this.ownerEraserStart = null;
         this.activeBomb = null;
-        this.perkBombReady = null;
+        const btnMoveArea = document.querySelector('[data-action="toggleOfflineMoveArea"]');
+        if (btnMoveArea) btnMoveArea.classList.remove('active');
+        if (typeof this.cancelMoveArea === 'function') this.cancelMoveArea(true);
+        const btnEraser = document.querySelector('[data-action="toggleOfflineEraser"]');
+        if (btnEraser) btnEraser.classList.remove('active');
+        const btnBucket = document.querySelector('[data-action="toggleOfflineBucket"]');
+        if (btnBucket) btnBucket.classList.remove('active');
+        const btnSpray = document.querySelector('[data-action="toggleOfflineSpray"]');
+        if (btnSpray) btnSpray.classList.remove('active');
+        if (typeof this.stopSpray === 'function') this.stopSpray();
         this.updateSelectionUI();
         if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
         if (typeof this.requestRender === 'function') this.requestRender();
@@ -1686,7 +2058,7 @@ export const DesignInteractions = {
             const protectCooldownLeft = this.ownerCooldowns && this.ownerCooldowns.protect && this.ownerCooldowns.protect > now ? Math.ceil((this.ownerCooldowns.protect - now) / 1000) : 0;
             const freezeCooldownLeft = this.ownerCooldowns && this.ownerCooldowns.freeze && this.ownerCooldowns.freeze > now ? Math.ceil((this.ownerCooldowns.freeze - now) / 1000) : 0;
 
-            if (this.showOwnerTools || this.interactionMode === 'owner_erasing') {
+            if (!this.isOfflineMode && (this.showOwnerTools || this.interactionMode === 'owner_erasing')) {
                 const isToggledOn = (this.interactionMode === 'owner_erasing');
                 const colorClass = isToggledOn ? 'component-text-danger' : '';
                 const badgeEl = document.createElement('div');
@@ -1766,12 +2138,14 @@ export const DesignInteractions = {
     toggleOwnerEraser() {
         if (!this.isOwner || this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
 
+        const btnEraser = document.querySelector('[data-action="toggleOfflineEraser"]');
         if (this.interactionMode === 'owner_erasing') {
             this.interactionMode = 'normal';
             this.selectedPixels.clear();
             this.ownerEraserBox = null;
             this.ownerEraserStep = 0;
             this.ownerEraserStart = null;
+            if (btnEraser) btnEraser.classList.remove('active');
             if (typeof showMessage === 'function') showMessage(window.__('msg_eraser_mode_off'), 'info');
         } else {
             this.interactionMode = 'owner_erasing';
@@ -1780,11 +2154,519 @@ export const DesignInteractions = {
             this.ownerEraserBox = null;
             this.ownerEraserStep = 0;
             this.ownerEraserStart = null;
+            if (btnEraser) btnEraser.classList.add('active');
             if (typeof showMessage === 'function') showMessage('Modo Borrador de Lienzo activado. Haz clic en la primera esquina para definir la zona.', 'info');
         }
         this.updateSelectionUI();
         if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
         this.requestRender();
+    },
+
+    toggleOfflineMirror() {
+        if (this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+
+        this.isMirrorMode = !this.isMirrorMode;
+        const btnMirror = document.querySelector('[data-action="toggleOfflineMirror"]');
+        if (btnMirror) {
+            if (this.isMirrorMode) {
+                btnMirror.classList.add('active');
+            } else {
+                btnMirror.classList.remove('active');
+            }
+        }
+
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({
+                type: 'SET_MIRROR_MODE',
+                payload: { isMirrorMode: this.isMirrorMode }
+            });
+        }
+
+        if (typeof showMessage === 'function') {
+            showMessage(
+                this.isMirrorMode 
+                    ? (window.__('msg_mirror_mode_on') || 'Modo Espejo activado. Dibuja para pintar en ambos lados a la vez.')
+                    : (window.__('msg_mirror_mode_off') || 'Modo Espejo desactivado.'),
+                'info'
+            );
+        }
+
+        this.requestRender();
+    },
+
+    toggleOfflineEraser() {
+        if (this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+
+        const btnEraser = document.querySelector('[data-action="toggleOfflineEraser"]');
+        const btnBucket = document.querySelector('[data-action="toggleOfflineBucket"]');
+        const btnSpray = document.querySelector('[data-action="toggleOfflineSpray"]');
+        const btnMoveArea = document.querySelector('[data-action="toggleOfflineMoveArea"]');
+        if (btnBucket) btnBucket.classList.remove('active');
+        if (btnSpray) btnSpray.classList.remove('active');
+        if (btnMoveArea) btnMoveArea.classList.remove('active');
+        if (typeof this.stopSpray === 'function') this.stopSpray();
+        if (this.interactionMode === 'offline_moving_area') this.cancelMoveArea(true);
+
+        if (this.interactionMode === 'owner_erasing') {
+            this.interactionMode = 'normal';
+            this.selectedPixels.clear();
+            this.ownerEraserBox = null;
+            this.ownerEraserStep = 0;
+            this.ownerEraserStart = null;
+            if (btnEraser) btnEraser.classList.remove('active');
+            if (typeof showMessage === 'function') showMessage(window.__('msg_eraser_mode_off') || 'Modo borrador desactivado.', 'info');
+        } else {
+            this.interactionMode = 'owner_erasing';
+            this.activeBomb = null;
+            this.selectedPixels.clear();
+            this.ownerEraserBox = null;
+            this.ownerEraserStep = 0;
+            this.ownerEraserStart = null;
+            if (btnEraser) btnEraser.classList.add('active');
+            if (typeof showMessage === 'function') showMessage('Modo Borrador de Lienzo activado. Haz clic en la primera esquina para definir la zona.', 'info');
+        }
+        this.updateSelectionUI();
+        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        this.requestRender();
+    },
+
+    toggleOfflineBucket() {
+        if (this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+
+        const btnBucket = document.querySelector('[data-action="toggleOfflineBucket"]');
+        const btnEraser = document.querySelector('[data-action="toggleOfflineEraser"]');
+        const btnSpray = document.querySelector('[data-action="toggleOfflineSpray"]');
+        const btnMoveArea = document.querySelector('[data-action="toggleOfflineMoveArea"]');
+        if (btnEraser) btnEraser.classList.remove('active');
+        if (btnSpray) btnSpray.classList.remove('active');
+        if (btnMoveArea) btnMoveArea.classList.remove('active');
+        if (typeof this.stopSpray === 'function') this.stopSpray();
+        if (this.interactionMode === 'offline_moving_area') this.cancelMoveArea(true);
+
+        if (this.interactionMode === 'offline_bucket') {
+            this.interactionMode = 'normal';
+            this.selectedPixels.clear();
+            if (btnBucket) btnBucket.classList.remove('active');
+            if (typeof showMessage === 'function') showMessage(window.__('msg_bucket_mode_off') || 'Modo Bote de Pintura desactivado.', 'info');
+        } else {
+            this.interactionMode = 'offline_bucket';
+            this.activeBomb = null;
+            this.selectedPixels.clear();
+            this.ownerEraserBox = null;
+            this.ownerEraserStep = 0;
+            this.ownerEraserStart = null;
+            if (btnBucket) btnBucket.classList.add('active');
+            if (typeof showMessage === 'function') showMessage(window.__('msg_bucket_mode_on') || 'Modo Bote de Pintura activado. Haz clic en una zona para rellenar.', 'info');
+        }
+        this.updateSelectionUI();
+        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        this.requestRender();
+    },
+
+    toggleOfflineSpray() {
+        if (this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+
+        const btnSpray = document.querySelector('[data-action="toggleOfflineSpray"]');
+        const btnBucket = document.querySelector('[data-action="toggleOfflineBucket"]');
+        const btnEraser = document.querySelector('[data-action="toggleOfflineEraser"]');
+        const btnMoveArea = document.querySelector('[data-action="toggleOfflineMoveArea"]');
+        if (btnBucket) btnBucket.classList.remove('active');
+        if (btnEraser) btnEraser.classList.remove('active');
+        if (btnMoveArea) btnMoveArea.classList.remove('active');
+        if (this.interactionMode === 'offline_moving_area') this.cancelMoveArea(true);
+
+        if (this.interactionMode === 'offline_spray') {
+            this.stopSpray();
+            this.interactionMode = 'normal';
+            this.selectedPixels.clear();
+            if (btnSpray) btnSpray.classList.remove('active');
+            if (typeof showMessage === 'function') showMessage(window.__('msg_spray_mode_off') || 'Modo Spray desactivado.', 'info');
+        } else {
+            this.interactionMode = 'offline_spray';
+            this.activeBomb = null;
+            this.selectedPixels.clear();
+            this.ownerEraserBox = null;
+            this.ownerEraserStep = 0;
+            this.ownerEraserStart = null;
+            if (btnSpray) btnSpray.classList.add('active');
+            if (typeof showMessage === 'function') showMessage(window.__('msg_spray_mode_on') || 'Modo Spray activado. Mantén presionado y arrastra para pintar.', 'info');
+        }
+        this.updateSelectionUI();
+        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        this.requestRender();
+    },
+
+    toggleOfflineMoveArea() {
+        if (this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+
+        const btnMoveArea = document.querySelector('[data-action="toggleOfflineMoveArea"]');
+        const btnBucket = document.querySelector('[data-action="toggleOfflineBucket"]');
+        const btnSpray = document.querySelector('[data-action="toggleOfflineSpray"]');
+        const btnEraser = document.querySelector('[data-action="toggleOfflineEraser"]');
+
+        if (btnBucket) btnBucket.classList.remove('active');
+        if (btnSpray) btnSpray.classList.remove('active');
+        if (btnEraser) btnEraser.classList.remove('active');
+        if (typeof this.stopSpray === 'function') this.stopSpray();
+
+        if (this.interactionMode === 'offline_moving_area') {
+            this.cancelMoveArea(false);
+            if (typeof showMessage === 'function') showMessage('Modo mover selección desactivado.', 'info');
+        } else {
+            this.interactionMode = 'offline_moving_area';
+            this.activeBomb = null;
+            this.selectedPixels.clear();
+            this.ownerEraserBox = null;
+            this.ownerEraserStep = 0;
+            this.ownerEraserStart = null;
+            this.moveAreaBox = null;
+            this.moveAreaStep = 0;
+            this.moveAreaStart = null;
+            this.moveAreaDragAnchor = null;
+            if (btnMoveArea) btnMoveArea.classList.add('active');
+            this.updateMoveAreaFloatingToolbar();
+            if (typeof showMessage === 'function') showMessage(window.__('msg_move_area_on') || 'Modo Mover activado. Selecciona un área para moverla.', 'info');
+        }
+        this.updateSelectionUI();
+        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        this.requestRender();
+    },
+
+    selectMoveArea(x1, y1, x2, y2, dx = 0, dy = 0, state = 1) {
+        const bw = this.boardWidth || 64;
+        const bh = this.boardHeight || 64;
+        const minX = Math.max(0, Math.min(x1, x2));
+        const maxX = Math.min(bw - 1, Math.max(x1, x2));
+        const minY = Math.max(0, Math.min(y1, y2));
+        const maxY = Math.min(bh - 1, Math.max(y1, y2));
+
+        this.moveAreaBox = { x1: minX, y1: minY, x2: maxX, y2: maxY, dx, dy, state };
+
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({
+                type: 'SET_MOVE_AREA',
+                payload: { moveAreaBox: this.moveAreaBox }
+            });
+        }
+
+        this.updateMoveAreaFloatingToolbar();
+        this.requestRender();
+    },
+
+    updateMoveAreaFloatingToolbar() {
+        const tb = document.querySelector('[data-ref="move-area-floating-toolbar"]');
+        if (!tb) return;
+
+        if (this.interactionMode === 'offline_moving_area' && this.moveAreaBox && this.moveAreaStep >= 2) {
+            const box = this.moveAreaBox;
+            const curX1 = Math.min(box.x1, box.x2) + (box.dx || 0);
+            const curX2 = Math.max(box.x1, box.x2) + (box.dx || 0);
+            const curY1 = Math.min(box.y1, box.y2) + (box.dy || 0);
+            const centerX = ((curX1 + curX2 + 1) / 2) * this.transform.scale + this.transform.x;
+            const topY = curY1 * this.transform.scale + this.transform.y - 44;
+
+            tb.style.position = 'absolute';
+            tb.style.left = '0px';
+            tb.style.top = '0px';
+            tb.style.transform = `translate3d(calc(${Math.round(centerX)}px - 50%), ${Math.round(topY)}px, 0)`;
+            tb.style.display = 'flex';
+            tb.style.zIndex = '60';
+        } else {
+            tb.style.display = 'none';
+        }
+    },
+
+    commitMoveArea() {
+        if (!this.moveAreaBox) return;
+        const { x1, y1, x2, y2, dx = 0, dy = 0 } = this.moveAreaBox;
+
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({
+                type: 'COMMIT_MOVE_AREA',
+                payload: { x1, y1, x2, y2, dx, dy }
+            });
+        }
+
+        this.moveAreaBox = null;
+        this.moveAreaStep = 0;
+        this.moveAreaStart = null;
+        this.moveAreaDragAnchor = null;
+        this.updateMoveAreaFloatingToolbar();
+        this.canvas.classList.remove('component-cursor-grabbing');
+
+        if (typeof showMessage === 'function') {
+            showMessage(window.__('msg_move_area_applied') || 'Área movida con éxito.', 'success');
+        }
+        if (typeof this.saveOfflineCanvasState === 'function') {
+            this.saveOfflineCanvasState(false);
+        }
+        this.requestRender();
+    },
+
+    cancelMoveArea(keepMode = false) {
+        this.moveAreaBox = null;
+        this.moveAreaStep = 0;
+        this.moveAreaStart = null;
+        this.moveAreaDragAnchor = null;
+
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({
+                type: 'SET_MOVE_AREA',
+                payload: { moveAreaBox: null }
+            });
+        }
+
+        this.updateMoveAreaFloatingToolbar();
+        this.canvas.classList.remove('component-cursor-grabbing');
+
+        if (!keepMode) {
+            this.interactionMode = 'normal';
+            const btnMoveArea = document.querySelector('[data-action="toggleOfflineMoveArea"]');
+            if (btnMoveArea) btnMoveArea.classList.remove('active');
+        }
+
+        this.requestRender();
+    },
+
+    startSpray(x, y) {
+        if (!this.isOfflineMode || this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+        this.isSpraying = true;
+        this.sprayCenter = { x, y };
+
+        this.fireSprayBurst(x, y);
+
+        if (this.sprayTimer) clearInterval(this.sprayTimer);
+        this.sprayTimer = setInterval(() => {
+            if (this.isSpraying && this.sprayCenter) {
+                this.fireSprayBurst(this.sprayCenter.x, this.sprayCenter.y);
+            }
+        }, 35);
+    },
+
+    updateSpray(x, y) {
+        if (!this.isSpraying) return;
+        this.sprayCenter = { x, y };
+        this.fireSprayBurst(x, y);
+    },
+
+    fireSprayBurst(centerX, centerY) {
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({
+                type: 'SPRAY_BURST',
+                payload: {
+                    centerX,
+                    centerY,
+                    radius: 4,
+                    density: 5,
+                    color: this.currentColor
+                }
+            });
+        } else if (this.offscreenCtx) {
+            const radius = 4;
+            const density = 5;
+            const bw = this.boardWidth || 64;
+            const bh = this.boardHeight || 64;
+            if (!this._sprayDiffsMap) this._sprayDiffsMap = new Map();
+
+            for (let i = 0; i < density; i++) {
+                const theta = Math.random() * 2 * Math.PI;
+                const r = Math.sqrt(Math.random()) * radius;
+                const px = Math.round(centerX + r * Math.cos(theta));
+                const py = Math.round(centerY + r * Math.sin(theta));
+
+                if (px >= 0 && px < bw && py >= 0 && py < bh) {
+                    const idx = py * bw + px;
+                    const img = this.offscreenCtx.getImageData(px, py, 1, 1);
+                    const prevVal = new Uint32Array(img.data.buffer)[0];
+                    const nextVal = colorToAbgr(this.currentColor);
+                    if (prevVal !== nextVal) {
+                        if (!this._sprayDiffsMap.has(idx)) {
+                            this._sprayDiffsMap.set(idx, { x: px, y: py, prev: prevVal, next: nextVal });
+                        }
+                        this.offscreenCtx.fillStyle = this.currentColor;
+                        this.offscreenCtx.clearRect(px, py, 1, 1);
+                        this.offscreenCtx.fillRect(px, py, 1, 1);
+                    }
+                }
+            }
+            this.requestRender();
+        }
+    },
+
+    stopSpray() {
+        if (!this.isSpraying && !this.sprayTimer) return;
+        this.isSpraying = false;
+        if (this.sprayTimer) {
+            clearInterval(this.sprayTimer);
+            this.sprayTimer = null;
+        }
+        this.sprayCenter = null;
+
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({ type: 'SPRAY_END' });
+            if (typeof this.saveOfflineCanvasState === 'function') {
+                this.saveOfflineCanvasState(false);
+            }
+        } else if (this.offscreenCtx && this._sprayDiffsMap) {
+            if (this._sprayDiffsMap.size > 0 && this.undoStack) {
+                const diffs = Array.from(this._sprayDiffsMap.values());
+                this.undoStack.push({ type: 'spray', diffs });
+                this.redoStack = [];
+                if (this.undoStack.length > 50) this.undoStack.shift();
+            }
+            this._sprayDiffsMap = null;
+            if (typeof this.saveOfflineCanvasState === 'function') {
+                this.saveOfflineCanvasState(false);
+            }
+            this.requestRender();
+        }
+    },
+
+    executeOfflineBucket(startX, startY) {
+        if (!this.isOfflineMode || this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+        if (startX < 0 || startX >= this.boardWidth || startY < 0 || startY >= this.boardHeight) return;
+
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({
+                type: 'FLOOD_FILL',
+                payload: {
+                    startX,
+                    startY,
+                    color: this.currentColor
+                }
+            });
+            if (typeof this.saveOfflineCanvasState === 'function') {
+                this.saveOfflineCanvasState(false);
+            }
+        } else if (this.offscreenCtx) {
+            const bw = this.boardWidth || 64;
+            const bh = this.boardHeight || 64;
+            const imgData = this.offscreenCtx.getImageData(0, 0, bw, bh);
+            const buf32 = new Uint32Array(imgData.data.buffer);
+            const startIdx = startY * bw + startX;
+            const targetColor = buf32[startIdx];
+            const fillColor = colorToAbgr(this.currentColor);
+
+            if (targetColor !== fillColor) {
+                const total = bw * bh;
+                const queue = new Int32Array(total);
+                let head = 0;
+                let tail = 0;
+                const diffs = [];
+
+                buf32[startIdx] = fillColor;
+                diffs.push({ x: startX, y: startY, prev: targetColor, next: fillColor });
+                queue[tail++] = startIdx;
+
+                while (head < tail) {
+                    const idx = queue[head++];
+                    const cx = idx % bw;
+                    const cy = (idx / bw) | 0;
+
+                    if (cx > 0) {
+                        const nIdx = idx - 1;
+                        if (buf32[nIdx] === targetColor) {
+                            buf32[nIdx] = fillColor;
+                            diffs.push({ x: cx - 1, y: cy, prev: targetColor, next: fillColor });
+                            queue[tail++] = nIdx;
+                        }
+                    }
+                    if (cx < bw - 1) {
+                        const nIdx = idx + 1;
+                        if (buf32[nIdx] === targetColor) {
+                            buf32[nIdx] = fillColor;
+                            diffs.push({ x: cx + 1, y: cy, prev: targetColor, next: fillColor });
+                            queue[tail++] = nIdx;
+                        }
+                    }
+                    if (cy > 0) {
+                        const nIdx = idx - bw;
+                        if (buf32[nIdx] === targetColor) {
+                            buf32[nIdx] = fillColor;
+                            diffs.push({ x: cx, y: cy - 1, prev: targetColor, next: fillColor });
+                            queue[tail++] = nIdx;
+                        }
+                    }
+                    if (cy < bh - 1) {
+                        const nIdx = idx + bw;
+                        if (buf32[nIdx] === targetColor) {
+                            buf32[nIdx] = fillColor;
+                            diffs.push({ x: cx, y: cy + 1, prev: targetColor, next: fillColor });
+                            queue[tail++] = nIdx;
+                        }
+                    }
+                }
+
+                this.offscreenCtx.putImageData(imgData, 0, 0);
+
+                if (this.undoStack && diffs.length > 0) {
+                    this.undoStack.push({ type: 'flood_fill', diffs });
+                    this.redoStack = [];
+                    if (this.undoStack.length > 50) this.undoStack.shift();
+                }
+
+                if (typeof this.saveOfflineCanvasState === 'function') {
+                    this.saveOfflineCanvasState(false);
+                }
+                this.requestRender();
+            }
+        }
+    },
+
+    undo() {
+        if (!this.isOfflineMode || this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({ type: 'UNDO' });
+        } else if (this.offscreenCtx && this.undoStack && this.undoStack.length > 0) {
+            const action = this.undoStack.pop();
+            const diffs = action.diffs;
+            if (!this.redoStack) this.redoStack = [];
+            for (let i = 0; i < diffs.length; i++) {
+                const d = diffs[i];
+                if (d.prev === 0) {
+                    this.offscreenCtx.clearRect(d.x, d.y, 1, 1);
+                } else {
+                    const hex = abgrToHex(d.prev);
+                    this.offscreenCtx.fillStyle = hex;
+                    this.offscreenCtx.clearRect(d.x, d.y, 1, 1);
+                    this.offscreenCtx.fillRect(d.x, d.y, 1, 1);
+                }
+            }
+            this.redoStack.push(action);
+            if (typeof this.saveOfflineCanvasState === 'function') {
+                this.saveOfflineCanvasState(false);
+            }
+            this.requestRender();
+            if (typeof showMessage === 'function') showMessage(window.__('msg_undo') || 'Acción deshecha', 'info');
+        }
+    },
+
+    redo() {
+        if (!this.isOfflineMode || this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({ type: 'REDO' });
+        } else if (this.offscreenCtx && this.redoStack && this.redoStack.length > 0) {
+            const action = this.redoStack.pop();
+            const diffs = action.diffs;
+            if (!this.undoStack) this.undoStack = [];
+            for (let i = 0; i < diffs.length; i++) {
+                const d = diffs[i];
+                if (d.next === 0) {
+                    this.offscreenCtx.clearRect(d.x, d.y, 1, 1);
+                } else {
+                    const hex = abgrToHex(d.next);
+                    this.offscreenCtx.fillStyle = hex;
+                    this.offscreenCtx.clearRect(d.x, d.y, 1, 1);
+                    this.offscreenCtx.fillRect(d.x, d.y, 1, 1);
+                }
+            }
+            this.undoStack.push(action);
+            if (typeof this.saveOfflineCanvasState === 'function') {
+                this.saveOfflineCanvasState(false);
+            }
+            this.requestRender();
+            if (typeof showMessage === 'function') showMessage(window.__('msg_redo') || 'Acción rehecha', 'info');
+        }
     },
 
     selectOwnerArea(x1, y1, x2, y2, append = false) {
@@ -1842,6 +2724,24 @@ export const DesignInteractions = {
             if (this.offscreenCtx) {
                 const w = Math.max(1, maxX - minX + 1);
                 const h = Math.max(1, maxY - minY + 1);
+                if (this.undoStack) {
+                    const imgData = this.offscreenCtx.getImageData(minX, minY, w, h);
+                    const bytes32 = new Uint32Array(imgData.data.buffer);
+                    const diffs = [];
+                    for (let y = 0; y < h; y++) {
+                        for (let x = 0; x < w; x++) {
+                            const val = bytes32[y * w + x];
+                            if (val !== 0) {
+                                diffs.push({ x: minX + x, y: minY + y, prev: val, next: 0 });
+                            }
+                        }
+                    }
+                    if (diffs.length > 0) {
+                        this.undoStack.push({ type: 'clear', diffs });
+                        this.redoStack = [];
+                        if (this.undoStack.length > 50) this.undoStack.shift();
+                    }
+                }
                 this.offscreenCtx.clearRect(minX, minY, w, h);
             }
             if (typeof this.saveOfflineCanvasState === 'function') {
@@ -1870,6 +2770,8 @@ export const DesignInteractions = {
         this.ownerEraserBox = null;
         this.ownerEraserStep = 0;
         this.ownerEraserStart = null;
+        const btnEraser = document.querySelector('[data-action="toggleOfflineEraser"]');
+        if (btnEraser) btnEraser.classList.remove('active');
         this.updateSelectionUI();
         if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
         this.requestRender();

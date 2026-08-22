@@ -83,6 +83,12 @@ export const DesignSetup = {
             this.canvasMode = wrapper.getAttribute('data-mode') || 'offline';
             this.isOnlineActive = wrapper.getAttribute('data-online-active') === '1';
             this.isOfflineMode = (this.canvasMode === 'offline' && !this.isOnlineActive);
+            if (this.renderWorker) {
+                this.renderWorker.postMessage({
+                    type: 'SET_OFFLINE_MODE',
+                    payload: { isOfflineMode: this.isOfflineMode }
+                });
+            }
             this.isPrivateBlocked = wrapper.getAttribute('data-is-blocked') === '1';
             this.isSubscriptionLocked = wrapper.getAttribute('data-subscription-locked') === '1';
             this.isSpectator = wrapper.getAttribute('data-is-spectator') === '1';
@@ -605,6 +611,21 @@ export const DesignSetup = {
                     const workerVersion = window.__ASSETS_VERSION__ || '2.1.' + Date.now();
                     const workerPath = `${this.basePath}/assets/js/modules/app/design/workers/CanvasRenderWorker.js?v=${workerVersion}`;
                     this.renderWorker = new Worker(workerPath);
+                    
+                    this.renderWorker.addEventListener('message', (e) => {
+                        if (e.data?.type === 'HISTORY_CHANGED') {
+                            const act = e.data.payload?.action;
+                            if (act === 'undo' || act === 'redo') {
+                                if (typeof this.saveOfflineCanvasState === 'function') {
+                                    this.saveOfflineCanvasState(false);
+                                }
+                                if (typeof this.requestRender === 'function') {
+                                    this.requestRender();
+                                }
+                            }
+                        }
+                    });
+
                     const offscreen = this.canvas.transferControlToOffscreen();
                     const dpr = window.devicePixelRatio || 1;
                     
@@ -615,7 +636,8 @@ export const DesignSetup = {
                             boardWidth: this.boardWidth,
                             boardHeight: this.boardHeight,
                             dpr: dpr,
-                            isProgressive: this.isProgressive
+                            isProgressive: this.isProgressive,
+                            isOfflineMode: !!this.isOfflineMode
                         }
                     }, [offscreen]);
                 } else {

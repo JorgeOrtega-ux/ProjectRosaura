@@ -185,6 +185,9 @@ export const DesignRender = {
                 if (typeof this.positionTemplateToolbar === 'function') {
                     this.positionTemplateToolbar();
                 }
+                if (typeof this.updateMoveAreaFloatingToolbar === 'function') {
+                    this.updateMoveAreaFloatingToolbar();
+                }
                 this.updateOrbitalCannonBallPosition();
                 if (!this.renderWorker) return;
 
@@ -220,6 +223,8 @@ export const DesignRender = {
                         selectedPixels: selArray,
                         hoveredPixelKey: hoverKey,
                         ownerEraserBox: this.ownerEraserBox || null,
+                        moveAreaBox: this.moveAreaBox || null,
+                        isMirrorMode: !!this.isMirrorMode,
                         topBarCenterX: topBarCenterX,
                         topBarBottomY: topBarBottomY
                     }
@@ -475,6 +480,9 @@ export const DesignRender = {
         
         if (typeof this.positionTemplateToolbar === 'function') {
             this.positionTemplateToolbar();
+        }
+        if (typeof this.updateMoveAreaFloatingToolbar === 'function') {
+            this.updateMoveAreaFloatingToolbar();
         }
 
         const selCount = this.selectedPixels ? this.selectedPixels.size : 0;

@@ -58,6 +58,9 @@ class DesignController {
         this.offscreenCtx = null;
         this.renderWorker = null;
         
+        this.undoStack = [];
+        this.redoStack = [];
+
         this.needsRender = false;
         this.animationFrameId = null;
         
@@ -184,6 +187,8 @@ class DesignController {
         this.ownerEraserBox = null;
         this.ownerEraserStep = 0;
         this.ownerEraserStart = null;
+        this.undoStack = [];
+        this.redoStack = [];
         this.templates = [];
         this.activeTemplateId = null;
         this.templateInteraction = null;
