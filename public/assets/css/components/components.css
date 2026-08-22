@@ -6255,6 +6255,17 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     display: none !important;
 }
 
+.canvas-design-sizes-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.canvas-design-sizes-group.disabled {
+    display: none !important;
+}
+
 .canvas-design-sizes-subtoolbar-vertical .component-button--icon {
     width: 32px;
     height: 32px;

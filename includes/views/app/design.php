@@ -188,6 +188,9 @@ extract($designData);
                 <button class="component-button component-button--icon component-button--h32" data-action="toggleOfflineEraser" data-ref="btn-offline-eraser" data-tooltip="<?php echo __('tooltip_eraser'); ?> [E]" data-position="right">
                     <span class="material-symbols-rounded">cleaning_services</span>
                 </button>
+                <button class="component-button component-button--icon component-button--h32" data-action="toggleOfflineDither" data-ref="btn-offline-dither" data-tooltip="<?php echo __('tooltip_dither'); ?> [D]" data-position="right">
+                    <span class="material-symbols-rounded">texture</span>
+                </button>
                 <button class="component-button component-button--icon component-button--h32" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-stickers" data-ref="btn-offline-stickers" data-tooltip="<?php echo __('tooltip_stickers'); ?> [F]" data-position="right">
                     <span class="material-symbols-rounded">category</span>
                 </button>
@@ -210,14 +213,41 @@ extract($designData);
                     <button class="component-button component-button--icon component-button--h32" data-action="setSpraySize" data-size="20" data-tooltip="Radio 20 px" data-position="right">20</button>
                     <button class="component-button component-button--icon component-button--h32" data-action="setSpraySize" data-size="35" data-tooltip="Radio 35 px" data-position="right">35</button>
                 </div>
+
+                <div class="canvas-design-subtoolbar-group disabled" data-subtoolbar="dither">
+                    <button class="component-button component-button--icon component-button--h32 active" data-action="setDitherPattern" data-dither-pattern="checker_50" data-tooltip="<?php echo __('tooltip_dither_checker'); ?>" data-position="right">
+                        <span class="material-symbols-rounded">grid_view</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setDitherPattern" data-dither-pattern="dots_25" data-tooltip="<?php echo __('tooltip_dither_dots25'); ?>" data-position="right">
+                        <span class="material-symbols-rounded">blur_on</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setDitherPattern" data-dither-pattern="dots_75" data-tooltip="<?php echo __('tooltip_dither_dots75'); ?>" data-position="right">
+                        <span class="material-symbols-rounded">gradient</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setDitherPattern" data-dither-pattern="diag_lines" data-tooltip="<?php echo __('tooltip_dither_diag'); ?>" data-position="right">
+                        <span class="material-symbols-rounded">line_axis</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setDitherPattern" data-dither-pattern="h_lines" data-tooltip="<?php echo __('tooltip_dither_hlines'); ?>" data-position="right">
+                        <span class="material-symbols-rounded">reorder</span>
+                    </button>
+                </div>
             </div>
 
             <div class="canvas-design-sizes-subtoolbar-vertical disabled" data-ref="brush-size-toolbar">
-                <button class="component-button component-button--icon component-button--h32 active" data-action="setBrushEraserSize" data-size="1" data-tooltip="1x1 px" data-position="right">1</button>
-                <button class="component-button component-button--icon component-button--h32" data-action="setBrushEraserSize" data-size="5" data-tooltip="5x5 px" data-position="right">5</button>
-                <button class="component-button component-button--icon component-button--h32" data-action="setBrushEraserSize" data-size="10" data-tooltip="10x10 px" data-position="right">10</button>
-                <button class="component-button component-button--icon component-button--h32" data-action="setBrushEraserSize" data-size="25" data-tooltip="25x25 px" data-position="right">25</button>
-                <button class="component-button component-button--icon component-button--h32" data-action="setBrushEraserSize" data-size="50" data-tooltip="50x50 px" data-position="right">50</button>
+                <div class="canvas-design-sizes-group active" data-sizes-for="eraser">
+                    <button class="component-button component-button--icon component-button--h32 active" data-action="setBrushEraserSize" data-size="1" data-tooltip="1x1 px" data-position="right">1</button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setBrushEraserSize" data-size="5" data-tooltip="5x5 px" data-position="right">5</button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setBrushEraserSize" data-size="10" data-tooltip="10x10 px" data-position="right">10</button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setBrushEraserSize" data-size="25" data-tooltip="25x25 px" data-position="right">25</button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setBrushEraserSize" data-size="50" data-tooltip="50x50 px" data-position="right">50</button>
+                </div>
+                <div class="canvas-design-sizes-group disabled" data-sizes-for="dither">
+                    <button class="component-button component-button--icon component-button--h32 active" data-action="setDitherSize" data-size="1" data-tooltip="1x1 px" data-position="right">1</button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setDitherSize" data-size="3" data-tooltip="3x3 px" data-position="right">3</button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setDitherSize" data-size="5" data-tooltip="5x5 px" data-position="right">5</button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setDitherSize" data-size="10" data-tooltip="10x10 px" data-position="right">10</button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setDitherSize" data-size="20" data-tooltip="20x20 px" data-position="right">20</button>
+                </div>
             </div>
             <?php endif; ?>
             <?php endif; ?>

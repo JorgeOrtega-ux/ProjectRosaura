@@ -3,13 +3,13 @@ import { showMessage, setButtonLoading, restoreButton } from '../../../core/util
 import { CardTemplates } from '../../../core/components/CardTemplates.js';
 import { PromoService } from '../../../core/services/PromoCardService.js';
 import { DesignChat } from './DesignChat.js';
-import { DesignInteractions } from './DesignInteractions.js?v=11';
-import { DesignNetwork } from './DesignNetwork.js?v=11';
-import { DesignRender } from './DesignRender.js?v=11';
-import { DesignSetup } from './DesignSetup.js?v=11';
+import { DesignInteractions } from './DesignInteractions.js?v=12';
+import { DesignNetwork } from './DesignNetwork.js?v=12';
+import { DesignRender } from './DesignRender.js?v=12';
+import { DesignSetup } from './DesignSetup.js?v=12';
 import { PerksRegistry } from './PerksRegistry.js';
 import { soundManager } from './SoundManager.js';
-import { DesignTemplates } from './templates/DesignTemplates.js?v=11';
+import { DesignTemplates } from './templates/DesignTemplates.js?v=12';
 
 class DesignController {
     constructor() {

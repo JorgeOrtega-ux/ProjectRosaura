@@ -257,6 +257,35 @@ export const DesignInteractions = {
             return;
         }
 
+        const btnToggleDither = e.target.closest('[data-action="toggleOfflineDither"]');
+        if (btnToggleDither) {
+            e.preventDefault();
+            if (typeof this.toggleOfflineDither === 'function') {
+                this.toggleOfflineDither();
+            }
+            return;
+        }
+
+        const btnSetDitherPattern = e.target.closest('[data-action="setDitherPattern"]');
+        if (btnSetDitherPattern) {
+            e.preventDefault();
+            const pattern = btnSetDitherPattern.getAttribute('data-dither-pattern') || 'checker_50';
+            if (typeof this.setDitherPattern === 'function') {
+                this.setDitherPattern(pattern);
+            }
+            return;
+        }
+
+        const btnSetDitherSize = e.target.closest('[data-action="setDitherSize"]');
+        if (btnSetDitherSize) {
+            e.preventDefault();
+            const size = btnSetDitherSize.getAttribute('data-size') || '1';
+            if (typeof this.setDitherSize === 'function') {
+                this.setDitherSize(size);
+            }
+            return;
+        }
+
 
 
         const btnJoin = e.target.closest('[data-action="joinCanvasDirectly"]');
@@ -563,6 +592,11 @@ export const DesignInteractions = {
                 e.preventDefault();
                 this.toggleOfflineSpray();
             }
+        } else if (keyUpper === 'D') {
+            if (this.isOfflineMode && typeof this.toggleOfflineDither === 'function') {
+                e.preventDefault();
+                this.toggleOfflineDither();
+            }
         } else if (keyUpper === 'H') {
             const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-chat"]');
             if (btn && !btn.classList.contains('disabled') && !btn.classList.contains('disabled-interaction')) { 
@@ -749,6 +783,13 @@ export const DesignInteractions = {
                 return;
             }
 
+            if (this.interactionMode === 'offline_dither') {
+                this.isDitherPainting = true;
+                this.ditherLastCoords = { x: coords.x, y: coords.y };
+                this.applyDitherAt(coords.x, coords.y, true);
+                return;
+            }
+
             if (this.interactionMode === 'owner_erasing' || this.interactionMode === 'owner_protecting') {
                 const bw = this.boardWidth || 64;
                 const offset = (coords.y * bw) + coords.x;
@@ -851,6 +892,20 @@ export const DesignInteractions = {
                         this.applyBrushEraseAt(line[i].x, line[i].y, false);
                     }
                     this.brushEraserLastCoords = { x: coords.x, y: coords.y };
+                }
+            }
+            return;
+        }
+
+        if (this.interactionMode === 'offline_dither' && this.isDitherPainting) {
+            const coords = this.getBoardCoords(e.clientX, e.clientY);
+            if (coords && this.ditherLastCoords) {
+                if (coords.x !== this.ditherLastCoords.x || coords.y !== this.ditherLastCoords.y) {
+                    const line = getBresenhamLine(this.ditherLastCoords.x, this.ditherLastCoords.y, coords.x, coords.y);
+                    for (let i = 1; i < line.length; i++) {
+                        this.applyDitherAt(line[i].x, line[i].y, false);
+                    }
+                    this.ditherLastCoords = { x: coords.x, y: coords.y };
                 }
             }
             return;
@@ -1198,6 +1253,22 @@ export const DesignInteractions = {
             }
         }
 
+        if (this.isDitherPainting) {
+            this.isDitherPainting = false;
+            this.ditherLastCoords = null;
+            if (this.isOfflineMode) {
+                if (this.renderWorker) {
+                    this.renderWorker.postMessage({
+                        type: 'PUSH_PIXELS',
+                        payload: { pixels: [], strokePhase: 'end' }
+                    });
+                }
+                if (typeof this.saveOfflineCanvasState === 'function') {
+                    this.saveOfflineCanvasState(false);
+                }
+            }
+        }
+
         if (this.recentDragMode) {
             this.saveRecentColor(false);
             this.recentDragMode = null;
@@ -1319,6 +1390,17 @@ export const DesignInteractions = {
                 }
             }
 
+            if (this.interactionMode === 'offline_dither' && !this.isSpectator && !isOperationalLocked) {
+                const coords = this.getBoardCoords(this.touchStartX, this.touchStartY);
+                if (coords) {
+                    e.preventDefault();
+                    this.isDitherPainting = true;
+                    this.ditherLastCoords = { x: coords.x, y: coords.y };
+                    this.applyDitherAt(coords.x, coords.y, true);
+                    return;
+                }
+            }
+
             const exact = this.getExactBoardCoords(this.touchStartX, this.touchStartY);
             if (exact && !this.isSpectator && !isOperationalLocked) {
                 let hit = null;
@@ -1389,6 +1471,21 @@ export const DesignInteractions = {
                         this.applyBrushEraseAt(line[i].x, line[i].y, false);
                     }
                     this.brushEraserLastCoords = { x: coords.x, y: coords.y };
+                }
+            }
+            return;
+        }
+
+        if (this.interactionMode === 'offline_dither' && this.isDitherPainting && e.touches.length === 1) {
+            e.preventDefault();
+            const coords = this.getBoardCoords(e.touches[0].clientX, e.touches[0].clientY);
+            if (coords && this.ditherLastCoords) {
+                if (coords.x !== this.ditherLastCoords.x || coords.y !== this.ditherLastCoords.y) {
+                    const line = getBresenhamLine(this.ditherLastCoords.x, this.ditherLastCoords.y, coords.x, coords.y);
+                    for (let i = 1; i < line.length; i++) {
+                        this.applyDitherAt(line[i].x, line[i].y, false);
+                    }
+                    this.ditherLastCoords = { x: coords.x, y: coords.y };
                 }
             }
             return;
@@ -1578,6 +1675,23 @@ export const DesignInteractions = {
         if (this.isBrushErasing) {
             this.isBrushErasing = false;
             this.brushEraserLastCoords = null;
+            if (this.isOfflineMode) {
+                if (this.renderWorker) {
+                    this.renderWorker.postMessage({
+                        type: 'PUSH_PIXELS',
+                        payload: { pixels: [], strokePhase: 'end' }
+                    });
+                }
+                if (typeof this.saveOfflineCanvasState === 'function') {
+                    this.saveOfflineCanvasState(false);
+                }
+            }
+            return;
+        }
+
+        if (this.isDitherPainting) {
+            this.isDitherPainting = false;
+            this.ditherLastCoords = null;
             if (this.isOfflineMode) {
                 if (this.renderWorker) {
                     this.renderWorker.postMessage({
@@ -2087,7 +2201,12 @@ export const DesignInteractions = {
         if (btnBucket) btnBucket.classList.remove('active');
         const btnSpray = document.querySelector('[data-action="toggleOfflineSpray"]');
         if (btnSpray) btnSpray.classList.remove('active');
+        const btnDither = document.querySelector('[data-action="toggleOfflineDither"]');
+        if (btnDither) btnDither.classList.remove('active');
         if (typeof this.stopSpray === 'function') this.stopSpray();
+        if (typeof this.closeSubtoolbar === 'function') this.closeSubtoolbar();
+        this.isDitherPainting = false;
+        this.ditherLastCoords = null;
         this.updateSelectionUI();
         if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
         if (typeof this.requestRender === 'function') this.requestRender();
@@ -2419,17 +2538,38 @@ export const DesignInteractions = {
         this.closeBrushSizeToolbar();
     },
 
-    openBrushSizeToolbar() {
+    openBrushSizeToolbar(forTool = 'eraser') {
         const toolbar = document.querySelector('[data-ref="brush-size-toolbar"]');
         if (!toolbar) return;
         toolbar.classList.remove('disabled');
         toolbar.classList.add('active');
-        const btns = toolbar.querySelectorAll('[data-action="setBrushEraserSize"]');
-        const currentSize = this.brushEraserSize || 1;
-        btns.forEach(btn => {
-            const s = btn.getAttribute('data-size');
-            btn.classList.toggle('active', s == currentSize);
+
+        const groups = toolbar.querySelectorAll('.canvas-design-sizes-group');
+        groups.forEach(g => {
+            if (g.getAttribute('data-sizes-for') === forTool) {
+                g.classList.remove('disabled');
+                g.classList.add('active');
+            } else {
+                g.classList.remove('active');
+                g.classList.add('disabled');
+            }
         });
+
+        if (forTool === 'eraser') {
+            const btns = toolbar.querySelectorAll('[data-action="setBrushEraserSize"]');
+            const currentSize = this.brushEraserSize || 1;
+            btns.forEach(btn => {
+                const s = btn.getAttribute('data-size');
+                btn.classList.toggle('active', s == currentSize);
+            });
+        } else if (forTool === 'dither') {
+            const btns = toolbar.querySelectorAll('[data-action="setDitherSize"]');
+            const currentSize = this.ditherSize || 1;
+            btns.forEach(btn => {
+                const s = btn.getAttribute('data-size');
+                btn.classList.toggle('active', s == currentSize);
+            });
+        }
     },
 
     closeBrushSizeToolbar() {
@@ -2461,12 +2601,16 @@ export const DesignInteractions = {
         const btnEraser = document.querySelector('[data-action="toggleOfflineEraser"]');
         const btnBucket = document.querySelector('[data-action="toggleOfflineBucket"]');
         const btnSpray = document.querySelector('[data-action="toggleOfflineSpray"]');
+        const btnDither = document.querySelector('[data-action="toggleOfflineDither"]');
         const btnMoveArea = document.querySelector('[data-action="toggleOfflineMoveArea"]');
         if (btnBucket) btnBucket.classList.remove('active');
         if (btnSpray) btnSpray.classList.remove('active');
+        if (btnDither) btnDither.classList.remove('active');
         if (btnMoveArea) btnMoveArea.classList.remove('active');
         if (typeof this.stopSpray === 'function') this.stopSpray();
         if (this.interactionMode === 'offline_moving_area') this.cancelMoveArea(true);
+        this.isDitherPainting = false;
+        this.ditherLastCoords = null;
 
         const isEraserActive = (this.interactionMode === 'owner_erasing' || this.interactionMode === 'offline_eraser_brush');
 
@@ -2498,12 +2642,16 @@ export const DesignInteractions = {
         const btnEraser = document.querySelector('[data-action="toggleOfflineEraser"]');
         const btnBucket = document.querySelector('[data-action="toggleOfflineBucket"]');
         const btnSpray = document.querySelector('[data-action="toggleOfflineSpray"]');
+        const btnDither = document.querySelector('[data-action="toggleOfflineDither"]');
         const btnMoveArea = document.querySelector('[data-action="toggleOfflineMoveArea"]');
         if (btnBucket) btnBucket.classList.remove('active');
         if (btnSpray) btnSpray.classList.remove('active');
+        if (btnDither) btnDither.classList.remove('active');
         if (btnMoveArea) btnMoveArea.classList.remove('active');
         if (typeof this.stopSpray === 'function') this.stopSpray();
         if (this.interactionMode === 'offline_moving_area') this.cancelMoveArea(true);
+        this.isDitherPainting = false;
+        this.ditherLastCoords = null;
 
         const btnBox = document.querySelector('[data-ref="btn-eraser-mode-box"]');
         const btnBrush = document.querySelector('[data-ref="btn-eraser-mode-brush"]');
@@ -2527,7 +2675,7 @@ export const DesignInteractions = {
             }
         } else {
             this.interactionMode = 'offline_eraser_brush';
-            this.openBrushSizeToolbar();
+            this.openBrushSizeToolbar('eraser');
             if (typeof showMessage === 'function') {
                 showMessage(`Borrador de Pincel Continuo (${this.brushEraserSize || 1}x${this.brushEraserSize || 1} px) activado. Haz clic y arrastra sobre el lienzo para borrar.`, 'info');
             }
@@ -2596,13 +2744,17 @@ export const DesignInteractions = {
         const btnBucket = document.querySelector('[data-action="toggleOfflineBucket"]');
         const btnEraser = document.querySelector('[data-action="toggleOfflineEraser"]');
         const btnSpray = document.querySelector('[data-action="toggleOfflineSpray"]');
+        const btnDither = document.querySelector('[data-action="toggleOfflineDither"]');
         const btnMoveArea = document.querySelector('[data-action="toggleOfflineMoveArea"]');
         if (btnEraser) btnEraser.classList.remove('active');
         if (btnSpray) btnSpray.classList.remove('active');
+        if (btnDither) btnDither.classList.remove('active');
         if (btnMoveArea) btnMoveArea.classList.remove('active');
         if (typeof this.stopSpray === 'function') this.stopSpray();
         if (this.interactionMode === 'offline_moving_area') this.cancelMoveArea(true);
         this.closeSubtoolbar();
+        this.isDitherPainting = false;
+        this.ditherLastCoords = null;
 
         if (this.interactionMode === 'offline_bucket') {
             this.interactionMode = 'normal';
@@ -2630,12 +2782,16 @@ export const DesignInteractions = {
         const btnSpray = document.querySelector('[data-action="toggleOfflineSpray"]');
         const btnBucket = document.querySelector('[data-action="toggleOfflineBucket"]');
         const btnEraser = document.querySelector('[data-action="toggleOfflineEraser"]');
+        const btnDither = document.querySelector('[data-action="toggleOfflineDither"]');
         const btnMoveArea = document.querySelector('[data-action="toggleOfflineMoveArea"]');
         if (btnBucket) btnBucket.classList.remove('active');
         if (btnEraser) btnEraser.classList.remove('active');
+        if (btnDither) btnDither.classList.remove('active');
         if (btnMoveArea) btnMoveArea.classList.remove('active');
         if (this.interactionMode === 'offline_moving_area') this.cancelMoveArea(true);
         this.closeSubtoolbar();
+        this.isDitherPainting = false;
+        this.ditherLastCoords = null;
 
         if (this.interactionMode === 'offline_spray') {
             this.stopSpray();
@@ -2686,6 +2842,163 @@ export const DesignInteractions = {
         }
     },
 
+    toggleOfflineDither() {
+        if (this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+
+        const btnDither = document.querySelector('[data-action="toggleOfflineDither"]');
+        const btnEraser = document.querySelector('[data-action="toggleOfflineEraser"]');
+        const btnBucket = document.querySelector('[data-action="toggleOfflineBucket"]');
+        const btnSpray = document.querySelector('[data-action="toggleOfflineSpray"]');
+        const btnMoveArea = document.querySelector('[data-action="toggleOfflineMoveArea"]');
+
+        if (btnEraser) btnEraser.classList.remove('active');
+        if (btnBucket) btnBucket.classList.remove('active');
+        if (btnSpray) btnSpray.classList.remove('active');
+        if (btnMoveArea) btnMoveArea.classList.remove('active');
+        if (typeof this.stopSpray === 'function') this.stopSpray();
+        if (this.interactionMode === 'offline_moving_area') this.cancelMoveArea(true);
+
+        if (this.interactionMode === 'offline_dither') {
+            this.interactionMode = 'normal';
+            this.selectedPixels.clear();
+            this.isDitherPainting = false;
+            this.ditherLastCoords = null;
+            if (btnDither) btnDither.classList.remove('active');
+            this.closeSubtoolbar();
+            this.closeBrushSizeToolbar();
+            if (typeof showMessage === 'function') showMessage(window.__('msg_dither_mode_off') || 'Modo Dithering desactivado.', 'info');
+        } else {
+            this.interactionMode = 'offline_dither';
+            this.activeBomb = null;
+            this.selectedPixels.clear();
+            this.ownerEraserBox = null;
+            this.ownerEraserStep = 0;
+            this.ownerEraserStart = null;
+            this.isDitherPainting = false;
+            this.ditherLastCoords = null;
+            if (btnDither) btnDither.classList.add('active');
+
+            this.openSubtoolbar('dither');
+            this.openBrushSizeToolbar('dither');
+
+            const currentPattern = this.ditherPattern || 'checker_50';
+            this.setDitherPattern(currentPattern, false);
+
+            if (typeof showMessage === 'function') showMessage(window.__('msg_dither_mode_on') || 'Modo Dithering activado. Pinta sombras y texturas retro.', 'info');
+        }
+        this.updateSelectionUI();
+        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        this.requestRender();
+    },
+
+    setDitherPattern(pattern, notify = true) {
+        this.ditherPattern = pattern || 'checker_50';
+        const group = document.querySelector('[data-subtoolbar="dither"]');
+        if (group) {
+            const btns = group.querySelectorAll('[data-action="setDitherPattern"]');
+            btns.forEach(btn => {
+                const p = btn.getAttribute('data-dither-pattern');
+                btn.classList.toggle('active', p === this.ditherPattern);
+            });
+        }
+        if (notify && typeof showMessage === 'function') {
+            const names = {
+                'checker_50': 'Ajedrez 50%',
+                'dots_25': 'Puntos 25%',
+                'dots_75': 'Densidad 75%',
+                'diag_lines': 'Líneas Diagonales',
+                'h_lines': 'Scanlines Horizontales'
+            };
+            showMessage(`Trama seleccionada: ${names[pattern] || pattern}`, 'info');
+        }
+    },
+
+    setDitherSize(size) {
+        this.ditherSize = parseInt(size, 10) || 1;
+        const toolbar = document.querySelector('[data-ref="brush-size-toolbar"]');
+        if (toolbar) {
+            const btns = toolbar.querySelectorAll('[data-action="setDitherSize"]');
+            btns.forEach(btn => {
+                const s = btn.getAttribute('data-size');
+                btn.classList.toggle('active', s == this.ditherSize);
+            });
+        }
+        if (typeof showMessage === 'function') {
+            showMessage(`Brocha de dithering: ${this.ditherSize}x${this.ditherSize} px`, 'info');
+        }
+    },
+
+    isDitherPixel(x, y, pattern = 'checker_50') {
+        switch (pattern) {
+            case 'checker_50':
+                return (x + y) % 2 === 0;
+            case 'dots_25':
+                return (x % 2 === 0 && y % 2 === 0);
+            case 'dots_75':
+                return !(x % 2 === 1 && y % 2 === 1);
+            case 'diag_lines':
+                return ((x + y) % 3 === 0);
+            case 'h_lines':
+                return (y % 2 === 0);
+            default:
+                return (x + y) % 2 === 0;
+        }
+    },
+
+    applyDitherAt(cx, cy, isStart = false) {
+        const size = this.ditherSize || 1;
+        const pattern = this.ditherPattern || 'checker_50';
+        const color = this.currentColor;
+        const half1 = Math.floor((size - 1) / 2);
+        const half2 = Math.floor(size / 2);
+
+        const minX = Math.max(0, cx - half1);
+        const maxX = Math.min((this.boardWidth || 64) - 1, cx + half2);
+        const minY = Math.max(0, cy - half1);
+        const maxY = Math.min((this.boardHeight || 64) - 1, cy + half2);
+
+        if (minX > maxX || minY > maxY) return;
+
+        const pixelsToPaint = [];
+        const bw = this.boardWidth || 64;
+
+        for (let y = minY; y <= maxY; y++) {
+            for (let x = minX; x <= maxX; x++) {
+                if (this.isDitherPixel(x, y, pattern)) {
+                    pixelsToPaint.push({ x, y, color });
+                }
+                if (this.isMirrorMode) {
+                    const symX = bw - 1 - x;
+                    if (symX >= 0 && symX < bw && symX !== x) {
+                        if (this.isDitherPixel(symX, y, pattern)) {
+                            pixelsToPaint.push({ x: symX, y, color });
+                        }
+                    }
+                }
+            }
+        }
+
+        if (pixelsToPaint.length === 0) return;
+
+        if (this.isOfflineMode) {
+            if (this.renderWorker) {
+                this.renderWorker.postMessage({
+                    type: 'PUSH_PIXELS',
+                    payload: {
+                        pixels: pixelsToPaint,
+                        strokePhase: isStart ? 'start' : 'step'
+                    }
+                });
+            }
+            if (this.offscreenCtx) {
+                this.offscreenCtx.fillStyle = color;
+                pixelsToPaint.forEach(p => {
+                    this.offscreenCtx.fillRect(p.x, p.y, 1, 1);
+                });
+            }
+        }
+    },
+
     toggleOfflineMoveArea() {
         if (this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
 
@@ -2693,12 +3006,16 @@ export const DesignInteractions = {
         const btnBucket = document.querySelector('[data-action="toggleOfflineBucket"]');
         const btnSpray = document.querySelector('[data-action="toggleOfflineSpray"]');
         const btnEraser = document.querySelector('[data-action="toggleOfflineEraser"]');
+        const btnDither = document.querySelector('[data-action="toggleOfflineDither"]');
 
         if (btnBucket) btnBucket.classList.remove('active');
         if (btnSpray) btnSpray.classList.remove('active');
         if (btnEraser) btnEraser.classList.remove('active');
+        if (btnDither) btnDither.classList.remove('active');
         if (typeof this.stopSpray === 'function') this.stopSpray();
         this.closeSubtoolbar();
+        this.isDitherPainting = false;
+        this.ditherLastCoords = null;
 
         if (this.interactionMode === 'offline_moving_area') {
             this.cancelMoveArea(false);
