@@ -202,6 +202,22 @@ extract($designData);
                         <span class="material-symbols-rounded">draw</span>
                     </button>
                 </div>
+
+                <div class="canvas-design-subtoolbar-group disabled" data-subtoolbar="spray">
+                    <button class="component-button component-button--icon component-button--h32" data-action="setSpraySize" data-size="2" data-tooltip="Radio 2 px" data-position="right">2</button>
+                    <button class="component-button component-button--icon component-button--h32 active" data-action="setSpraySize" data-size="5" data-tooltip="Radio 5 px" data-position="right">5</button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setSpraySize" data-size="10" data-tooltip="Radio 10 px" data-position="right">10</button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setSpraySize" data-size="20" data-tooltip="Radio 20 px" data-position="right">20</button>
+                    <button class="component-button component-button--icon component-button--h32" data-action="setSpraySize" data-size="35" data-tooltip="Radio 35 px" data-position="right">35</button>
+                </div>
+            </div>
+
+            <div class="canvas-design-sizes-subtoolbar-vertical disabled" data-ref="brush-size-toolbar">
+                <button class="component-button component-button--icon component-button--h32 active" data-action="setBrushEraserSize" data-size="1" data-tooltip="1x1 px" data-position="right">1</button>
+                <button class="component-button component-button--icon component-button--h32" data-action="setBrushEraserSize" data-size="5" data-tooltip="5x5 px" data-position="right">5</button>
+                <button class="component-button component-button--icon component-button--h32" data-action="setBrushEraserSize" data-size="10" data-tooltip="10x10 px" data-position="right">10</button>
+                <button class="component-button component-button--icon component-button--h32" data-action="setBrushEraserSize" data-size="25" data-tooltip="25x25 px" data-position="right">25</button>
+                <button class="component-button component-button--icon component-button--h32" data-action="setBrushEraserSize" data-size="50" data-tooltip="50x50 px" data-position="right">50</button>
             </div>
             <?php endif; ?>
             <?php endif; ?>

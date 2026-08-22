@@ -237,6 +237,26 @@ export const DesignInteractions = {
             return;
         }
 
+        const btnSetBrushSize = e.target.closest('[data-action="setBrushEraserSize"]');
+        if (btnSetBrushSize) {
+            e.preventDefault();
+            const size = btnSetBrushSize.getAttribute('data-size') || '1';
+            if (typeof this.setBrushEraserSize === 'function') {
+                this.setBrushEraserSize(size);
+            }
+            return;
+        }
+
+        const btnSetSpraySize = e.target.closest('[data-action="setSpraySize"]');
+        if (btnSetSpraySize) {
+            e.preventDefault();
+            const size = btnSetSpraySize.getAttribute('data-size') || '5';
+            if (typeof this.setSpraySize === 'function') {
+                this.setSpraySize(size);
+            }
+            return;
+        }
+
 
 
         const btnJoin = e.target.closest('[data-action="joinCanvasDirectly"]');
@@ -2370,6 +2390,71 @@ export const DesignInteractions = {
         this.requestRender();
     },
 
+    openSubtoolbar(name) {
+        const subtoolbar = document.querySelector('[data-ref="offline-subtoolbar-vertical"]');
+        if (!subtoolbar) return;
+        subtoolbar.classList.remove('disabled');
+        subtoolbar.classList.add('active');
+
+        const groups = subtoolbar.querySelectorAll('.canvas-design-subtoolbar-group');
+        groups.forEach(g => {
+            if (g.getAttribute('data-subtoolbar') === name) {
+                g.classList.remove('disabled');
+            } else {
+                g.classList.add('disabled');
+            }
+        });
+        this.activeSubtoolbar = name;
+    },
+
+    closeSubtoolbar() {
+        const subtoolbar = document.querySelector('[data-ref="offline-subtoolbar-vertical"]');
+        if (subtoolbar) {
+            subtoolbar.classList.remove('active');
+            subtoolbar.classList.add('disabled');
+            const groups = subtoolbar.querySelectorAll('.canvas-design-subtoolbar-group');
+            groups.forEach(g => g.classList.add('disabled'));
+        }
+        this.activeSubtoolbar = null;
+        this.closeBrushSizeToolbar();
+    },
+
+    openBrushSizeToolbar() {
+        const toolbar = document.querySelector('[data-ref="brush-size-toolbar"]');
+        if (!toolbar) return;
+        toolbar.classList.remove('disabled');
+        toolbar.classList.add('active');
+        const btns = toolbar.querySelectorAll('[data-action="setBrushEraserSize"]');
+        const currentSize = this.brushEraserSize || 1;
+        btns.forEach(btn => {
+            const s = btn.getAttribute('data-size');
+            btn.classList.toggle('active', s == currentSize);
+        });
+    },
+
+    closeBrushSizeToolbar() {
+        const toolbar = document.querySelector('[data-ref="brush-size-toolbar"]');
+        if (toolbar) {
+            toolbar.classList.remove('active');
+            toolbar.classList.add('disabled');
+        }
+    },
+
+    setBrushEraserSize(size) {
+        this.brushEraserSize = parseInt(size, 10) || 1;
+        const toolbar = document.querySelector('[data-ref="brush-size-toolbar"]');
+        if (toolbar) {
+            const btns = toolbar.querySelectorAll('[data-action="setBrushEraserSize"]');
+            btns.forEach(btn => {
+                const s = btn.getAttribute('data-size');
+                btn.classList.toggle('active', s == this.brushEraserSize);
+            });
+        }
+        if (typeof showMessage === 'function') {
+            showMessage(`Tamaño de borrador: ${this.brushEraserSize}x${this.brushEraserSize} px`, 'info');
+        }
+    },
+
     toggleOfflineEraser() {
         if (this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
 
@@ -2383,27 +2468,126 @@ export const DesignInteractions = {
         if (typeof this.stopSpray === 'function') this.stopSpray();
         if (this.interactionMode === 'offline_moving_area') this.cancelMoveArea(true);
 
-        if (this.interactionMode === 'owner_erasing') {
+        const isEraserActive = (this.interactionMode === 'owner_erasing' || this.interactionMode === 'offline_eraser_brush');
+
+        if (isEraserActive) {
             this.interactionMode = 'normal';
             this.selectedPixels.clear();
             this.ownerEraserBox = null;
             this.ownerEraserStep = 0;
             this.ownerEraserStart = null;
+            this.isBrushErasing = false;
+            this.brushEraserLastCoords = null;
             if (btnEraser) btnEraser.classList.remove('active');
+            this.closeSubtoolbar();
+            this.closeBrushSizeToolbar();
             if (typeof showMessage === 'function') showMessage(window.__('msg_eraser_mode_off') || 'Modo borrador desactivado.', 'info');
         } else {
-            this.interactionMode = 'owner_erasing';
-            this.activeBomb = null;
-            this.selectedPixels.clear();
-            this.ownerEraserBox = null;
-            this.ownerEraserStep = 0;
-            this.ownerEraserStart = null;
-            if (btnEraser) btnEraser.classList.add('active');
-            if (typeof showMessage === 'function') showMessage('Modo Borrador de Lienzo activado. Haz clic en la primera esquina para definir la zona.', 'info');
+            const currentMode = this.offlineEraserMode || 'box';
+            this.setOfflineEraserMode(currentMode);
         }
         this.updateSelectionUI();
         if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
         this.requestRender();
+    },
+
+    setOfflineEraserMode(mode) {
+        if (this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+        this.offlineEraserMode = mode;
+
+        const btnEraser = document.querySelector('[data-action="toggleOfflineEraser"]');
+        const btnBucket = document.querySelector('[data-action="toggleOfflineBucket"]');
+        const btnSpray = document.querySelector('[data-action="toggleOfflineSpray"]');
+        const btnMoveArea = document.querySelector('[data-action="toggleOfflineMoveArea"]');
+        if (btnBucket) btnBucket.classList.remove('active');
+        if (btnSpray) btnSpray.classList.remove('active');
+        if (btnMoveArea) btnMoveArea.classList.remove('active');
+        if (typeof this.stopSpray === 'function') this.stopSpray();
+        if (this.interactionMode === 'offline_moving_area') this.cancelMoveArea(true);
+
+        const btnBox = document.querySelector('[data-ref="btn-eraser-mode-box"]');
+        const btnBrush = document.querySelector('[data-ref="btn-eraser-mode-brush"]');
+        if (btnBox) btnBox.classList.toggle('active', mode === 'box');
+        if (btnBrush) btnBrush.classList.toggle('active', mode === 'brush');
+        if (btnEraser) btnEraser.classList.add('active');
+
+        this.activeBomb = null;
+        this.selectedPixels.clear();
+        this.ownerEraserBox = null;
+        this.ownerEraserStep = 0;
+        this.ownerEraserStart = null;
+        this.isBrushErasing = false;
+        this.brushEraserLastCoords = null;
+
+        if (mode === 'box') {
+            this.interactionMode = 'owner_erasing';
+            this.closeBrushSizeToolbar();
+            if (typeof showMessage === 'function') {
+                showMessage('Borrador de Selección / Área activado. Haz clic en la primera esquina para definir la zona.', 'info');
+            }
+        } else {
+            this.interactionMode = 'offline_eraser_brush';
+            this.openBrushSizeToolbar();
+            if (typeof showMessage === 'function') {
+                showMessage(`Borrador de Pincel Continuo (${this.brushEraserSize || 1}x${this.brushEraserSize || 1} px) activado. Haz clic y arrastra sobre el lienzo para borrar.`, 'info');
+            }
+        }
+
+        this.openSubtoolbar('eraser');
+        this.updateSelectionUI();
+        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        this.requestRender();
+    },
+
+    applyBrushEraseAt(cx, cy, isStart = false) {
+        const size = this.brushEraserSize || 1;
+        const half1 = Math.floor((size - 1) / 2);
+        const half2 = Math.floor(size / 2);
+
+        const minX = Math.max(0, cx - half1);
+        const maxX = Math.min((this.boardWidth || 64) - 1, cx + half2);
+        const minY = Math.max(0, cy - half1);
+        const maxY = Math.min((this.boardHeight || 64) - 1, cy + half2);
+
+        if (minX > maxX || minY > maxY) return;
+
+        const pixelsToErase = [];
+        const bw = this.boardWidth || 64;
+
+        for (let y = minY; y <= maxY; y++) {
+            for (let x = minX; x <= maxX; x++) {
+                pixelsToErase.push({ x, y, color: 'transparent' });
+                if (this.isMirrorMode) {
+                    const symX = bw - 1 - x;
+                    if (symX >= 0 && symX < bw && symX !== x) {
+                        pixelsToErase.push({ x: symX, y, color: 'transparent' });
+                    }
+                }
+            }
+        }
+
+        if (pixelsToErase.length === 0) return;
+
+        if (this.isOfflineMode) {
+            if (this.renderWorker) {
+                this.renderWorker.postMessage({
+                    type: 'PUSH_PIXELS',
+                    payload: {
+                        pixels: pixelsToErase,
+                        strokePhase: isStart ? 'start' : 'step'
+                    }
+                });
+            }
+            if (this.offscreenCtx) {
+                const w = maxX - minX + 1;
+                const h = maxY - minY + 1;
+                this.offscreenCtx.clearRect(minX, minY, w, h);
+                if (this.isMirrorMode) {
+                    const symMinX = bw - 1 - maxX;
+                    this.offscreenCtx.clearRect(symMinX, minY, w, h);
+                }
+            }
+        }
     },
 
     toggleOfflineBucket() {
@@ -2418,6 +2602,7 @@ export const DesignInteractions = {
         if (btnMoveArea) btnMoveArea.classList.remove('active');
         if (typeof this.stopSpray === 'function') this.stopSpray();
         if (this.interactionMode === 'offline_moving_area') this.cancelMoveArea(true);
+        this.closeSubtoolbar();
 
         if (this.interactionMode === 'offline_bucket') {
             this.interactionMode = 'normal';
@@ -2450,12 +2635,14 @@ export const DesignInteractions = {
         if (btnEraser) btnEraser.classList.remove('active');
         if (btnMoveArea) btnMoveArea.classList.remove('active');
         if (this.interactionMode === 'offline_moving_area') this.cancelMoveArea(true);
+        this.closeSubtoolbar();
 
         if (this.interactionMode === 'offline_spray') {
             this.stopSpray();
             this.interactionMode = 'normal';
             this.selectedPixels.clear();
             if (btnSpray) btnSpray.classList.remove('active');
+            this.closeSubtoolbar();
             if (typeof showMessage === 'function') showMessage(window.__('msg_spray_mode_off') || 'Modo Spray desactivado.', 'info');
         } else {
             this.interactionMode = 'offline_spray';
@@ -2465,11 +2652,38 @@ export const DesignInteractions = {
             this.ownerEraserStep = 0;
             this.ownerEraserStart = null;
             if (btnSpray) btnSpray.classList.add('active');
+            this.openSubtoolbar('spray');
+            const currentSpraySize = this.sprayRadius || 5;
+            const sprayGroup = document.querySelector('[data-subtoolbar="spray"]');
+            if (sprayGroup) {
+                const btns = sprayGroup.querySelectorAll('[data-action="setSpraySize"]');
+                btns.forEach(btn => {
+                    const val = btn.getAttribute('data-size');
+                    btn.classList.toggle('active', val == currentSpraySize);
+                });
+            }
             if (typeof showMessage === 'function') showMessage(window.__('msg_spray_mode_on') || 'Modo Spray activado. Mantén presionado y arrastra para pintar.', 'info');
         }
         this.updateSelectionUI();
         if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
         this.requestRender();
+    },
+
+    setSpraySize(size) {
+        const s = parseInt(size, 10) || 5;
+        this.sprayRadius = s;
+        this.sprayDensity = Math.max(3, Math.round(s * 1.5));
+        const group = document.querySelector('[data-subtoolbar="spray"]');
+        if (group) {
+            const btns = group.querySelectorAll('[data-action="setSpraySize"]');
+            btns.forEach(btn => {
+                const val = btn.getAttribute('data-size');
+                btn.classList.toggle('active', val == s);
+            });
+        }
+        if (typeof showMessage === 'function') {
+            showMessage(`Spray ajustado a radio de ${s} px`, 'info');
+        }
     },
 
     toggleOfflineMoveArea() {
@@ -2484,6 +2698,7 @@ export const DesignInteractions = {
         if (btnSpray) btnSpray.classList.remove('active');
         if (btnEraser) btnEraser.classList.remove('active');
         if (typeof this.stopSpray === 'function') this.stopSpray();
+        this.closeSubtoolbar();
 
         if (this.interactionMode === 'offline_moving_area') {
             this.cancelMoveArea(false);
@@ -2626,20 +2841,21 @@ export const DesignInteractions = {
     },
 
     fireSprayBurst(centerX, centerY) {
+        const radius = this.sprayRadius || 5;
+        const density = this.sprayDensity || Math.max(3, Math.round(radius * 1.5));
+
         if (this.renderWorker) {
             this.renderWorker.postMessage({
                 type: 'SPRAY_BURST',
                 payload: {
                     centerX,
                     centerY,
-                    radius: 4,
-                    density: 5,
+                    radius,
+                    density,
                     color: this.currentColor
                 }
             });
         } else if (this.offscreenCtx) {
-            const radius = 4;
-            const density = 5;
             const bw = this.boardWidth || 64;
             const bh = this.boardHeight || 64;
             if (!this._sprayDiffsMap) this._sprayDiffsMap = new Map();

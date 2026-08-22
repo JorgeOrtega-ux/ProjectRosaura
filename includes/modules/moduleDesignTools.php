@@ -149,12 +149,18 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
         </div>
         
         <div class="component-menu-section-parent component-menu-section-parent--scrollable">
+            <div class="component-menu-section-header">
+                <div class="component-menu-header-box">
+                    <span class="material-symbols-rounded">interests</span>
+                    <span class="component-menu-header-title">Colección de Figuras (<span data-ref="stickers-count"><?php echo count($presetStickers); ?></span>)</span>
+                </div>
+            </div>
             <div class="component-menu-section-body">
-                <div class="component-items-grid component-items-grid--4 active" data-ref="stickers-grid">
+                <div class="component-items-grid component-items-grid--5 active" data-ref="stickers-grid">
                     <?php foreach ($presetStickers as $stk): 
                         $svgPath = ($basePath ?? '') . '/assets/img/stickers/' . $stk['file'];
                     ?>
-                    <div class="component-library-card component-sticker-card" 
+                    <div class="component-library-card" 
                          data-action="addStickerToCanvas" 
                          data-sticker-id="<?php echo htmlspecialchars($stk['id']); ?>" 
                          data-sticker-category="<?php echo htmlspecialchars($stk['category']); ?>"
@@ -163,8 +169,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                         <img src="<?php echo $svgPath; ?>" 
                              alt="<?php echo htmlspecialchars($stk['name']); ?>" 
                              class="component-library-card__image image-loaded" 
-                             loading="lazy" 
-                             style="image-rendering: pixelated; object-fit: contain; padding: 4px;" />
+                             loading="lazy" />
                     </div>
                     <?php endforeach; ?>
                 </div>

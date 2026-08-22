@@ -378,7 +378,7 @@ export const DesignTemplates = {
 
         stickers.forEach(sticker => {
             const card = document.createElement('div');
-            card.className = 'component-library-card component-sticker-card';
+            card.className = 'component-library-card';
             card.setAttribute('data-action', 'addStickerToCanvas');
             card.setAttribute('data-sticker-id', sticker.id);
             card.setAttribute('data-sticker-category', sticker.category || 'all');
@@ -390,9 +390,6 @@ export const DesignTemplates = {
             img.alt = sticker.name;
             img.className = 'component-library-card__image image-loaded';
             img.loading = 'lazy';
-            img.style.imageRendering = 'pixelated';
-            img.style.objectFit = 'contain';
-            img.style.padding = '4px';
 
             card.appendChild(img);
             container.appendChild(card);
@@ -734,10 +731,21 @@ export const DesignTemplates = {
     },
 
     updateTemplateUI() {
-        const cards = document.querySelectorAll('.component-library-card');
-        cards.forEach(card => {
+        const userTemplateCards = document.querySelectorAll('[data-ref="user-templates-grid"] .component-library-card');
+        userTemplateCards.forEach(card => {
             const img = card.querySelector('img');
-            if (img && img.getAttribute('data-url') === this.activeTemplateId) {
+            const url = img ? img.getAttribute('data-url') : null;
+            if (this.activeTemplateId && url && url === this.activeTemplateId) {
+                card.classList.add('active');
+            } else {
+                card.classList.remove('active');
+            }
+        });
+
+        const stickerCards = document.querySelectorAll('[data-ref="stickers-grid"] .component-library-card');
+        stickerCards.forEach(card => {
+            const stickerId = card.getAttribute('data-sticker-id');
+            if (this.activeTemplateId && stickerId && stickerId === this.activeTemplateId) {
                 card.classList.add('active');
             } else {
                 card.classList.remove('active');

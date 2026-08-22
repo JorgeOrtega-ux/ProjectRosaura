@@ -5558,7 +5558,6 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
     gap: 8px;
-    justify-items: center;
     width: 100%;
 }
 
@@ -5576,23 +5575,6 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
 
 .component-items-grid--4 {
     grid-template-columns: repeat(4, 1fr);
-}
-
-.component-sticker-card {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--bg-surface-alt);
-    padding: 6px;
-}
-
-.component-sticker-card .component-library-card__image {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    image-rendering: pixelated;
-    image-rendering: -moz-crisp-edges;
-    image-rendering: crisp-edges;
 }
 
 .component-stickers-category-bar {
@@ -5766,6 +5748,7 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
 
 .component-library-card {
     position: relative;
+    width: 100%;
     border-radius: 8px;
     overflow: hidden;
     cursor: pointer;
@@ -5775,6 +5758,9 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     background-color: var(--bg-surface-alt);
     transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease;
     box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .component-library-card:not(.component-skeleton):hover,
@@ -5792,6 +5778,9 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     height: 100%;
     object-fit: cover;
     display: block;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
 }
 
 .component-library-card__delete {
@@ -6206,6 +6195,9 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     background: transparent;
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    font-family: var(--sl-font-mono, monospace);
     transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
@@ -6228,6 +6220,69 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
 @media (max-width: 768px) {
     .canvas-design-subtoolbar-vertical {
         left: 52px;
+    }
+}
+
+/* ── Canvas Design Sizes Subtoolbar Vertical (Appears to the right of 1st subtoolbar) ── */
+.canvas-design-sizes-subtoolbar-vertical {
+    position: absolute;
+    top: 50%;
+    left: 112px;
+    transform: translateY(-50%) translateX(-8px);
+    z-index: 48;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    background: #0d0d10;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 9999px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    pointer-events: auto;
+    color: #ffffff;
+    opacity: 0;
+    transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.canvas-design-sizes-subtoolbar-vertical.active {
+    display: flex;
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+}
+
+.canvas-design-sizes-subtoolbar-vertical.disabled {
+    display: none !important;
+}
+
+.canvas-design-sizes-subtoolbar-vertical .component-button--icon {
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+    border-radius: 9999px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    font-family: var(--sl-font-mono, monospace);
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.canvas-design-sizes-subtoolbar-vertical .component-button--icon:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.45);
+}
+
+.canvas-design-sizes-subtoolbar-vertical .component-button--icon.active {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: var(--color-danger, #ef4444);
+    color: var(--color-danger, #ef4444);
+}
+
+@media (max-width: 768px) {
+    .canvas-design-sizes-subtoolbar-vertical {
+        left: 88px;
     }
 }
 
