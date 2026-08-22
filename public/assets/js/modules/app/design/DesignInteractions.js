@@ -1,9 +1,12 @@
-import { getPaletteById } from './utils/DesignPaletteUtils.js';
-import { showMessage, hexToHsv, hsvToHex, getEventCoords } from '../../../core/utils/uiUtils.js';
-import { PerksRegistry } from './PerksRegistry.js';
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
-import { soundManager } from './SoundManager.js';
 import { CanvasSyncChannel } from '../../../core/services/CanvasSyncChannel.js';
+import { generateShapePixels } from './utils/GeometricShapesUtils.js';
+import { renderPixelText } from './utils/PixelTextUtils.js';
+import { getPixelFont } from './data/PixelFontsData.js';
+import { getPaletteById } from './utils/DesignPaletteUtils.js';
+import { PerksRegistry } from './PerksRegistry.js';
+import { showMessage, hexToHsv, hsvToHex, getEventCoords } from '../../../core/utils/uiUtils.js';
+import { soundManager } from './SoundManager.js';
 
 function colorToAbgr(color) {
     if (!color || color === 'transparent') return 0;
@@ -71,6 +74,7 @@ export const DesignInteractions = {
         document.addEventListener('mouseup', this.handleMouseUpBound);
         document.addEventListener('keydown', this.handleKeyDownBound);
         document.addEventListener('click', this.handleClickBound);
+        document.addEventListener('input', this.handleInputBound);
         window.addEventListener('resize', this.handleResizeBound);
 
         if (this.canvas && this.canvas.parentElement && typeof ResizeObserver !== 'undefined') {
@@ -355,6 +359,82 @@ export const DesignInteractions = {
             return;
         }
 
+        const btnSelectShape = e.target.closest('[data-action="selectGeometricShape"]');
+        if (btnSelectShape) {
+            e.preventDefault();
+            const shapeId = btnSelectShape.getAttribute('data-shape-id');
+            if (shapeId && typeof this.selectGeometricShape === 'function') {
+                this.selectGeometricShape(shapeId, btnSelectShape);
+            }
+            return;
+        }
+
+        const btnSetShapeFill = e.target.closest('[data-action="setGeometricShapeFill"]');
+        if (btnSetShapeFill) {
+            e.preventDefault();
+            const isFill = btnSetShapeFill.getAttribute('data-fill') === '1';
+            if (typeof this.setGeometricShapeFill === 'function') {
+                this.setGeometricShapeFill(isFill, btnSetShapeFill);
+            }
+            return;
+        }
+
+        const btnSelectFont = e.target.closest('[data-action="selectPixelFont"]');
+        if (btnSelectFont) {
+            e.preventDefault();
+            const fontId = btnSelectFont.getAttribute('data-font-id');
+            if (fontId && typeof this.selectPixelFont === 'function') {
+                this.selectPixelFont(fontId, btnSelectFont);
+            }
+            return;
+        }
+
+        const btnSetTextScale = e.target.closest('[data-action="setPixelTextScale"]');
+        if (btnSetTextScale) {
+            e.preventDefault();
+            const scale = parseInt(btnSetTextScale.getAttribute('data-scale'), 10) || 1;
+            if (typeof this.setPixelTextScale === 'function') {
+                this.setPixelTextScale(scale, btnSetTextScale);
+            }
+            return;
+        }
+
+        const btnToggleOutline = e.target.closest('[data-action="togglePixelTextOutline"]');
+        if (btnToggleOutline) {
+            e.preventDefault();
+            if (typeof this.togglePixelTextOutline === 'function') {
+                this.togglePixelTextOutline(btnToggleOutline);
+            }
+            return;
+        }
+
+        const btnToggleShadow = e.target.closest('[data-action="togglePixelTextShadow"]');
+        if (btnToggleShadow) {
+            e.preventDefault();
+            if (typeof this.togglePixelTextShadow === 'function') {
+                this.togglePixelTextShadow(btnToggleShadow);
+            }
+            return;
+        }
+
+        const btnCommitText = e.target.closest('[data-action="commitPixelText"]');
+        if (btnCommitText) {
+            e.preventDefault();
+            if (typeof this.commitPixelText === 'function') {
+                this.commitPixelText();
+            }
+            return;
+        }
+
+        const btnCancelText = e.target.closest('[data-action="cancelPixelText"]');
+        if (btnCancelText) {
+            e.preventDefault();
+            if (typeof this.cancelPixelText === 'function') {
+                this.cancelPixelText();
+            }
+            return;
+        }
+
         const btnDelServer = e.target.closest('[data-action="deleteServerTemplate"]');
         if (btnDelServer) {
             e.preventDefault();
@@ -514,6 +594,22 @@ export const DesignInteractions = {
         if (e.ctrlKey || e.metaKey || e.altKey) return;
         
         if (e.key === 'Escape') {
+            if (this.isShapeDrawing) {
+                this.isShapeDrawing = false;
+                this.shapeStart = null;
+                this.shapeCurrent = null;
+                this.shapePreviewPixels = null;
+                if (typeof this.requestRender === 'function') this.requestRender();
+                return;
+            }
+            if (this.interactionMode === 'offline_shape') {
+                this.deactivateGeometricShapeMode();
+                return;
+            }
+            if (this.interactionMode === 'offline_text') {
+                this.cancelPixelText();
+                return;
+            }
             if (this.interactionMode === 'offline_moving_area') {
                 this.cancelMoveArea();
             } else if (this.interactionMode !== 'normal') {
@@ -532,9 +628,38 @@ export const DesignInteractions = {
         }
 
         if (e.key === 'Enter') {
+            if (this.interactionMode === 'offline_text') {
+                e.preventDefault();
+                this.commitPixelText();
+                return;
+            }
             if (this.interactionMode === 'offline_moving_area' && this.moveAreaBox) {
                 e.preventDefault();
                 this.commitMoveArea();
+                return;
+            }
+        }
+
+        if (this.interactionMode === 'offline_text' && this.textPosition && !(e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'))) {
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                this.textPosition.y = Math.max(0, this.textPosition.y - 1);
+                this.updatePixelTextPreview();
+                return;
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                this.textPosition.y = Math.min((this.boardHeight || 64) - 1, this.textPosition.y + 1);
+                this.updatePixelTextPreview();
+                return;
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                this.textPosition.x = Math.max(0, this.textPosition.x - 1);
+                this.updatePixelTextPreview();
+                return;
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                this.textPosition.x = Math.min((this.boardWidth || 64) - 1, this.textPosition.x + 1);
+                this.updatePixelTextPreview();
                 return;
             }
         }
@@ -550,6 +675,22 @@ export const DesignInteractions = {
             if (this.isOfflineMode && typeof this.toggleOfflineMoveArea === 'function') {
                 e.preventDefault();
                 this.toggleOfflineMoveArea();
+            }
+        } else if (keyUpper === 'V') {
+            if (this.isOfflineMode) {
+                const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-shapes"]');
+                if (btn && !btn.classList.contains('disabled')) {
+                    e.preventDefault();
+                    btn.click();
+                }
+            }
+        } else if (keyUpper === 'Y') {
+            if (this.isOfflineMode) {
+                const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-text"]');
+                if (btn && !btn.classList.contains('disabled')) {
+                    e.preventDefault();
+                    btn.click();
+                }
             }
         } else if (keyUpper === 'J') {
             const btn = document.querySelector('[data-action="openJoinLiveModal"]');
@@ -665,6 +806,9 @@ export const DesignInteractions = {
 
         if (typeof this.limitBounds === 'function') this.limitBounds();
         this.calculateHoverPixel(e.clientX, e.clientY);
+        if (this.interactionMode === 'offline_text' && typeof this.updateFloatingTextPosition === 'function') {
+            this.updateFloatingTextPosition();
+        }
         this.requestRender();
 
         if (this.isProgressive && typeof this.updateVisibleChunks === 'function') {
@@ -790,6 +934,33 @@ export const DesignInteractions = {
                 return;
             }
 
+            if (this.interactionMode === 'offline_shape') {
+                this.isShapeDrawing = true;
+                this.shapeStart = { x: coords.x, y: coords.y };
+                this.shapeCurrent = { x: coords.x, y: coords.y };
+                this.updateShapePreview();
+                return;
+            }
+
+            if (this.interactionMode === 'offline_text') {
+                const box = this.textPreviewBox;
+                if (box && coords.x >= box.minX && coords.x <= box.maxX && coords.y >= box.minY && coords.y <= box.maxY) {
+                    this.isTextDragging = true;
+                    this.textDragStart = {
+                        offsetX: coords.x - (this.textPosition ? this.textPosition.x : box.originX),
+                        offsetY: coords.y - (this.textPosition ? this.textPosition.y : box.originY)
+                    };
+                } else {
+                    this.textPosition = { x: coords.x, y: coords.y };
+                    this.updatePixelTextPreview();
+                    const floatingInput = document.querySelector('[data-ref="floating-text-input"]');
+                    if (floatingInput) {
+                        floatingInput.focus();
+                    }
+                }
+                return;
+            }
+
             if (this.interactionMode === 'owner_erasing' || this.interactionMode === 'owner_protecting') {
                 const bw = this.boardWidth || 64;
                 const offset = (coords.y * bw) + coords.x;
@@ -911,6 +1082,48 @@ export const DesignInteractions = {
             return;
         }
 
+        if (this.interactionMode === 'offline_shape' && this.isShapeDrawing && this.shapeStart) {
+            let coords = this.getBoardCoords(e.clientX, e.clientY);
+            if (!coords && this.canvas) {
+                const rect = this.canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                const bw = this.boardWidth || 64;
+                const bh = this.boardHeight || 64;
+                const boardX = Math.max(0, Math.min(bw - 1, Math.floor((mouseX - this.transform.x) / this.transform.scale)));
+                const boardY = Math.max(0, Math.min(bh - 1, Math.floor((mouseY - this.transform.y) / this.transform.scale)));
+                coords = { x: boardX, y: boardY };
+            }
+            if (coords && (!this.shapeCurrent || coords.x !== this.shapeCurrent.x || coords.y !== this.shapeCurrent.y)) {
+                this.shapeCurrent = { x: coords.x, y: coords.y };
+                this.updateShapePreview();
+            }
+            return;
+        }
+
+        if (this.interactionMode === 'offline_text' && this.isTextDragging && this.textDragStart) {
+            let coords = this.getBoardCoords(e.clientX, e.clientY);
+            if (!coords && this.canvas) {
+                const rect = this.canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                const bw = this.boardWidth || 64;
+                const bh = this.boardHeight || 64;
+                const boardX = Math.max(0, Math.min(bw - 1, Math.floor((mouseX - this.transform.x) / this.transform.scale)));
+                const boardY = Math.max(0, Math.min(bh - 1, Math.floor((mouseY - this.transform.y) / this.transform.scale)));
+                coords = { x: boardX, y: boardY };
+            }
+            if (coords) {
+                const newX = Math.max(0, coords.x - this.textDragStart.offsetX);
+                const newY = Math.max(0, coords.y - this.textDragStart.offsetY);
+                if (!this.textPosition || this.textPosition.x !== newX || this.textPosition.y !== newY) {
+                    this.textPosition = { x: newX, y: newY };
+                    this.updatePixelTextPreview();
+                }
+            }
+            return;
+        }
+
         if ((this.interactionMode === 'owner_erasing' || this.interactionMode === 'owner_protecting') && this.ownerEraserStep === 1 && this.ownerEraserStart) {
             const coords = this.getBoardCoords(e.clientX, e.clientY);
             if (coords) {
@@ -928,6 +1141,9 @@ export const DesignInteractions = {
             
             if (typeof this.limitBounds === 'function') this.limitBounds();
             this.calculateHoverPixel(e.clientX, e.clientY);
+            if (this.interactionMode === 'offline_text' && typeof this.updateFloatingTextPosition === 'function') {
+                this.updateFloatingTextPosition();
+            }
             this.requestRender();
 
             if (this.isProgressive && typeof this.updateVisibleChunks === 'function') {
@@ -1213,6 +1429,15 @@ export const DesignInteractions = {
     },
 
     handleMouseUp(e) {
+        if (this.interactionMode === 'offline_text' && this.isTextDragging) {
+            this.isTextDragging = false;
+            this.textDragStart = null;
+        }
+
+        if (this.interactionMode === 'offline_shape' && this.isShapeDrawing) {
+            this.commitShapeDrawing();
+        }
+
         if (this.interactionMode === 'offline_moving_area') {
             if (this.moveAreaStep === 1 && this.moveAreaBox) {
                 this.moveAreaStep = 2;
@@ -1401,6 +1626,41 @@ export const DesignInteractions = {
                 }
             }
 
+            if (this.interactionMode === 'offline_shape' && !this.isSpectator && !isOperationalLocked) {
+                const coords = this.getBoardCoords(this.touchStartX, this.touchStartY);
+                if (coords) {
+                    e.preventDefault();
+                    this.isShapeDrawing = true;
+                    this.shapeStart = { x: coords.x, y: coords.y };
+                    this.shapeCurrent = { x: coords.x, y: coords.y };
+                    this.updateShapePreview();
+                    return;
+                }
+            }
+
+            if (this.interactionMode === 'offline_text' && !this.isSpectator && !isOperationalLocked) {
+                const coords = this.getBoardCoords(this.touchStartX, this.touchStartY);
+                if (coords) {
+                    e.preventDefault();
+                    const box = this.textPreviewBox;
+                    if (box && coords.x >= box.minX && coords.x <= box.maxX && coords.y >= box.minY && coords.y <= box.maxY) {
+                        this.isTextDragging = true;
+                        this.textDragStart = {
+                            offsetX: coords.x - (this.textPosition ? this.textPosition.x : box.originX),
+                            offsetY: coords.y - (this.textPosition ? this.textPosition.y : box.originY)
+                        };
+                    } else {
+                        this.textPosition = { x: coords.x, y: coords.y };
+                        this.updatePixelTextPreview();
+                        const floatingInput = document.querySelector('[data-ref="floating-text-input"]');
+                        if (floatingInput) {
+                            floatingInput.focus();
+                        }
+                    }
+                    return;
+                }
+            }
+
             const exact = this.getExactBoardCoords(this.touchStartX, this.touchStartY);
             if (exact && !this.isSpectator && !isOperationalLocked) {
                 let hit = null;
@@ -1486,6 +1746,50 @@ export const DesignInteractions = {
                         this.applyDitherAt(line[i].x, line[i].y, false);
                     }
                     this.ditherLastCoords = { x: coords.x, y: coords.y };
+                }
+            }
+            return;
+        }
+
+        if (this.interactionMode === 'offline_shape' && this.isShapeDrawing && this.shapeStart && e.touches.length === 1) {
+            e.preventDefault();
+            let coords = this.getBoardCoords(e.touches[0].clientX, e.touches[0].clientY);
+            if (!coords && this.canvas) {
+                const rect = this.canvas.getBoundingClientRect();
+                const mouseX = e.touches[0].clientX - rect.left;
+                const mouseY = e.touches[0].clientY - rect.top;
+                const bw = this.boardWidth || 64;
+                const bh = this.boardHeight || 64;
+                const boardX = Math.max(0, Math.min(bw - 1, Math.floor((mouseX - this.transform.x) / this.transform.scale)));
+                const boardY = Math.max(0, Math.min(bh - 1, Math.floor((mouseY - this.transform.y) / this.transform.scale)));
+                coords = { x: boardX, y: boardY };
+            }
+            if (coords && (!this.shapeCurrent || coords.x !== this.shapeCurrent.x || coords.y !== this.shapeCurrent.y)) {
+                this.shapeCurrent = { x: coords.x, y: coords.y };
+                this.updateShapePreview();
+            }
+            return;
+        }
+
+        if (this.interactionMode === 'offline_text' && this.isTextDragging && this.textDragStart && e.touches.length === 1) {
+            e.preventDefault();
+            let coords = this.getBoardCoords(e.touches[0].clientX, e.touches[0].clientY);
+            if (!coords && this.canvas) {
+                const rect = this.canvas.getBoundingClientRect();
+                const mouseX = e.touches[0].clientX - rect.left;
+                const mouseY = e.touches[0].clientY - rect.top;
+                const bw = this.boardWidth || 64;
+                const bh = this.boardHeight || 64;
+                const boardX = Math.max(0, Math.min(bw - 1, Math.floor((mouseX - this.transform.x) / this.transform.scale)));
+                const boardY = Math.max(0, Math.min(bh - 1, Math.floor((mouseY - this.transform.y) / this.transform.scale)));
+                coords = { x: boardX, y: boardY };
+            }
+            if (coords) {
+                const newX = Math.max(0, coords.x - this.textDragStart.offsetX);
+                const newY = Math.max(0, coords.y - this.textDragStart.offsetY);
+                if (!this.textPosition || this.textPosition.x !== newX || this.textPosition.y !== newY) {
+                    this.textPosition = { x: newX, y: newY };
+                    this.updatePixelTextPreview();
                 }
             }
             return;
@@ -1635,6 +1939,9 @@ export const DesignInteractions = {
                 this.lastMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
                 
                 if (typeof this.limitBounds === 'function') this.limitBounds();
+                if (this.interactionMode === 'offline_text' && typeof this.updateFloatingTextPosition === 'function') {
+                    this.updateFloatingTextPosition();
+                }
                 this.requestRender();
             }
         }
@@ -1645,6 +1952,16 @@ export const DesignInteractions = {
             this.saveRecentColor(false);
             this.recentDragMode = null;
             this.recentDragArea = null;
+            return;
+        }
+
+        if (this.interactionMode === 'offline_text' && this.isTextDragging) {
+            this.isTextDragging = false;
+            this.textDragStart = null;
+        }
+
+        if (this.interactionMode === 'offline_shape' && this.isShapeDrawing) {
+            this.commitShapeDrawing();
             return;
         }
 
@@ -2203,6 +2520,29 @@ export const DesignInteractions = {
         if (btnSpray) btnSpray.classList.remove('active');
         const btnDither = document.querySelector('[data-action="toggleOfflineDither"]');
         if (btnDither) btnDither.classList.remove('active');
+        const btnShapes = document.querySelector('[data-ref="btn-offline-shapes"]');
+        if (btnShapes) btnShapes.classList.remove('active');
+        const shapesGrid = document.querySelector('[data-ref="shapes-grid"]');
+        if (shapesGrid) {
+            shapesGrid.querySelectorAll('.component-shape-card').forEach(c => c.classList.remove('active'));
+        }
+        this.isShapeDrawing = false;
+        this.shapeStart = null;
+        this.shapeCurrent = null;
+        this.shapePreviewPixels = null;
+        this.shapePreviewBox = null;
+
+        const btnText = document.querySelector('[data-ref="btn-offline-text"]');
+        if (btnText) btnText.classList.remove('active');
+        const floatingTextEl = document.querySelector('[data-ref="canvas-floating-text"]');
+        if (floatingTextEl) floatingTextEl.classList.add('disabled');
+        this.textPreviewPixels = null;
+        this.textPreviewShadow = null;
+        this.textPreviewOutline = null;
+        this.textPreviewBox = null;
+        this.isTextDragging = false;
+        this.textDragStart = null;
+
         if (typeof this.stopSpray === 'function') this.stopSpray();
         if (typeof this.closeSubtoolbar === 'function') this.closeSubtoolbar();
         this.isDitherPainting = false;
@@ -2217,6 +2557,9 @@ export const DesignInteractions = {
         if (this.isResizeLocked) return;
         if (typeof this.updateCanvasDimensions === 'function') this.updateCanvasDimensions();
         if (typeof this.limitBounds === 'function') this.limitBounds();
+        if (this.interactionMode === 'offline_text' && typeof this.updateFloatingTextPosition === 'function') {
+            this.updateFloatingTextPosition();
+        }
         this.requestRender();
     },
 
@@ -2995,6 +3338,655 @@ export const DesignInteractions = {
                 pixelsToPaint.forEach(p => {
                     this.offscreenCtx.fillRect(p.x, p.y, 1, 1);
                 });
+            }
+        }
+    },
+
+    selectGeometricShape(shapeId, targetEl) {
+        if (this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+
+        if (!this.activeGeometricShape) {
+            this.activeGeometricShape = { shape: shapeId, fill: false, strokeWidth: 1 };
+        } else {
+            this.activeGeometricShape.shape = shapeId;
+        }
+
+        const btnEraser = document.querySelector('[data-action="toggleOfflineEraser"]');
+        const btnBucket = document.querySelector('[data-action="toggleOfflineBucket"]');
+        const btnSpray = document.querySelector('[data-action="toggleOfflineSpray"]');
+        const btnDither = document.querySelector('[data-action="toggleOfflineDither"]');
+        const btnMoveArea = document.querySelector('[data-action="toggleOfflineMoveArea"]');
+        if (btnBucket) btnBucket.classList.remove('active');
+        if (btnEraser) btnEraser.classList.remove('active');
+        if (btnSpray) btnSpray.classList.remove('active');
+        if (btnDither) btnDither.classList.remove('active');
+        if (btnMoveArea) btnMoveArea.classList.remove('active');
+        if (typeof this.stopSpray === 'function') this.stopSpray();
+        if (this.interactionMode === 'offline_moving_area') this.cancelMoveArea(true);
+        if (typeof this.closeSubtoolbar === 'function') this.closeSubtoolbar();
+
+        this.interactionMode = 'offline_shape';
+        this.isShapeDrawing = false;
+        this.shapeStart = null;
+        this.shapeCurrent = null;
+        this.shapePreviewPixels = null;
+        this.selectedPixels.clear();
+
+        const btnShapes = document.querySelector('[data-ref="btn-offline-shapes"]');
+        if (btnShapes) btnShapes.classList.add('active');
+
+        const grid = document.querySelector('[data-ref="shapes-grid"]');
+        if (grid) {
+            grid.querySelectorAll('.component-shape-card').forEach(c => {
+                const cId = c.getAttribute('data-shape-id');
+                c.classList.toggle('active', cId === shapeId);
+            });
+        }
+
+        const shapeNames = {
+            'line': __('shape_line'),
+            'rectangle': __('shape_rectangle'),
+            'circle': __('shape_circle'),
+            'triangle': __('shape_triangle'),
+            'diamond': __('shape_diamond')
+        };
+        const sName = shapeNames[shapeId] || shapeId;
+        showMessage(__('msg_shape_selected').replace(':shape', sName), 'info');
+
+        this.updateShapeCardSVGs();
+        this.updateSelectionUI();
+        this.requestRender();
+    },
+
+    setGeometricShapeFill(isFill, targetEl) {
+        if (!this.activeGeometricShape) {
+            this.activeGeometricShape = { shape: 'rectangle', fill: !!isFill, strokeWidth: 1 };
+        } else {
+            this.activeGeometricShape.fill = !!isFill;
+        }
+
+        const bar = document.querySelector('[data-ref="shape-modes"]');
+        if (bar) {
+            bar.querySelectorAll('.component-shape-mode-pill').forEach(btn => {
+                const f = btn.getAttribute('data-fill') === '1';
+                btn.classList.toggle('active', f === isFill);
+            });
+        }
+
+        this.updateShapeCardSVGs();
+        if (this.isShapeDrawing) {
+            this.updateShapePreview();
+        }
+    },
+
+    updateShapeCardSVGs() {
+        const isFill = !!this.activeGeometricShape?.fill;
+        const grid = document.querySelector('[data-ref="shapes-grid"]');
+        if (!grid) return;
+
+        grid.querySelectorAll('.component-shape-card').forEach(card => {
+            const supportsFill = card.getAttribute('data-supports-fill') === '1';
+            const img = card.querySelector('img');
+            if (img) {
+                const outlineUrl = card.getAttribute('data-svg-outline');
+                const fillUrl = card.getAttribute('data-svg-fill');
+                if (isFill && supportsFill && fillUrl) {
+                    img.src = fillUrl;
+                } else if (outlineUrl) {
+                    img.src = outlineUrl;
+                }
+            }
+        });
+    },
+
+    deactivateGeometricShapeMode() {
+        this.interactionMode = 'normal';
+        this.isShapeDrawing = false;
+        this.shapeStart = null;
+        this.shapeCurrent = null;
+        this.shapePreviewPixels = null;
+        this.shapePreviewBox = null;
+        this.selectedPixels.clear();
+
+        const btnShapes = document.querySelector('[data-ref="btn-offline-shapes"]');
+        if (btnShapes) btnShapes.classList.remove('active');
+
+        const grid = document.querySelector('[data-ref="shapes-grid"]');
+        if (grid) {
+            grid.querySelectorAll('.component-shape-card').forEach(c => c.classList.remove('active'));
+        }
+
+        showMessage(__('msg_shape_mode_off'), 'info');
+        this.updateSelectionUI();
+        this.requestRender();
+    },
+
+    updateShapePreview() {
+        if (!this.isShapeDrawing || !this.shapeStart || !this.shapeCurrent) {
+            this.shapePreviewPixels = null;
+            this.shapePreviewBox = null;
+            this.requestRender();
+            return;
+        }
+
+        const shapeType = this.activeGeometricShape?.shape || 'line';
+        const isFill = !!this.activeGeometricShape?.fill;
+        const strokeWidth = this.activeGeometricShape?.strokeWidth || 1;
+        const bw = this.boardWidth || 64;
+        const bh = this.boardHeight || 64;
+
+        const x0 = this.shapeStart.x;
+        const y0 = this.shapeStart.y;
+        const x1 = this.shapeCurrent.x;
+        const y1 = this.shapeCurrent.y;
+
+        const points = generateShapePixels(shapeType, x0, y0, x1, y1, isFill, strokeWidth, bw, bh);
+
+        const previewKeys = [];
+        const seen = new Set();
+
+        const addKey = (px, py) => {
+            if (px >= 0 && px < bw && py >= 0 && py < bh) {
+                const key = (py << 16) | (px & 0xFFFF);
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    previewKeys.push(key);
+                }
+            }
+        };
+
+        for (let i = 0; i < points.length; i++) {
+            const p = points[i];
+            addKey(p.x, p.y);
+            if (this.isMirrorMode) {
+                const symX = bw - 1 - p.x;
+                if (symX >= 0 && symX < bw && symX !== p.x) {
+                    addKey(symX, p.y);
+                }
+            }
+        }
+
+        const minX = Math.min(x0, x1);
+        const maxX = Math.max(x0, x1);
+        const minY = Math.min(y0, y1);
+        const maxY = Math.max(y0, y1);
+        const w = maxX - minX + 1;
+        const h = maxY - minY + 1;
+
+        this.shapePreviewBox = {
+            shape: shapeType,
+            x0, y0, x1, y1,
+            minX, minY, maxX, maxY,
+            w, h,
+            isFill,
+            strokeWidth
+        };
+
+        this.shapePreviewPixels = previewKeys;
+        this.setCanvasBadge('coords', 'shapes', `${w} × ${h} px`, 'left');
+        this.requestRender();
+    },
+
+    commitShapeDrawing() {
+        if (!this.isShapeDrawing || !this.shapeStart) {
+            this.isShapeDrawing = false;
+            this.shapeStart = null;
+            this.shapeCurrent = null;
+            this.shapePreviewPixels = null;
+            this.shapePreviewBox = null;
+            this.requestRender();
+            return;
+        }
+
+        const start = this.shapeStart;
+        const current = this.shapeCurrent || this.shapeStart;
+        this.isShapeDrawing = false;
+        this.shapeStart = null;
+        this.shapeCurrent = null;
+        this.shapePreviewPixels = null;
+        this.shapePreviewBox = null;
+
+        const shapeType = this.activeGeometricShape?.shape || 'line';
+        const isFill = !!this.activeGeometricShape?.fill;
+        const strokeWidth = this.activeGeometricShape?.strokeWidth || 1;
+        const bw = this.boardWidth || 64;
+        const bh = this.boardHeight || 64;
+
+        const points = generateShapePixels(shapeType, start.x, start.y, current.x, current.y, isFill, strokeWidth, bw, bh);
+        if (!points || points.length === 0) {
+            this.setCanvasBadge('coords', 'my_location', `${current.x} , ${current.y}`, 'left');
+            this.requestRender();
+            return;
+        }
+
+        const pixelsToPush = [];
+        const seen = new Set();
+
+        const addPixel = (px, py) => {
+            if (px >= 0 && px < bw && py >= 0 && py < bh) {
+                const key = (py << 16) | (px & 0xFFFF);
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    pixelsToPush.push({ x: px, y: py, color: this.currentColor });
+                }
+            }
+        };
+
+        for (let i = 0; i < points.length; i++) {
+            const p = points[i];
+            addPixel(p.x, p.y);
+            if (this.isMirrorMode) {
+                const symX = bw - 1 - p.x;
+                if (symX >= 0 && symX < bw && symX !== p.x) {
+                    addPixel(symX, p.y);
+                }
+            }
+        }
+
+        if (pixelsToPush.length > 0 && this.isOfflineMode) {
+            if (this.renderWorker) {
+                this.renderWorker.postMessage({
+                    type: 'PUSH_PIXELS',
+                    payload: {
+                        pixels: pixelsToPush
+                    }
+                });
+            }
+            if (this.offscreenCtx) {
+                this.offscreenCtx.fillStyle = this.currentColor;
+                for (let i = 0; i < pixelsToPush.length; i++) {
+                    const pt = pixelsToPush[i];
+                    this.offscreenCtx.fillRect(pt.x, pt.y, 1, 1);
+                }
+            }
+            if (typeof this.saveOfflineCanvasState === 'function') {
+                this.saveOfflineCanvasState(false);
+            }
+        }
+
+        this.setCanvasBadge('coords', 'my_location', `${current.x} , ${current.y}`, 'left');
+        this.requestRender();
+    },
+
+    activatePixelTextMode() {
+        if (this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+
+        const btnEraser = document.querySelector('[data-action="toggleOfflineEraser"]');
+        const btnBucket = document.querySelector('[data-action="toggleOfflineBucket"]');
+        const btnSpray = document.querySelector('[data-action="toggleOfflineSpray"]');
+        const btnDither = document.querySelector('[data-action="toggleOfflineDither"]');
+        const btnMoveArea = document.querySelector('[data-action="toggleOfflineMoveArea"]');
+        const btnShapes = document.querySelector('[data-ref="btn-offline-shapes"]');
+        if (btnBucket) btnBucket.classList.remove('active');
+        if (btnEraser) btnEraser.classList.remove('active');
+        if (btnSpray) btnSpray.classList.remove('active');
+        if (btnDither) btnDither.classList.remove('active');
+        if (btnMoveArea) btnMoveArea.classList.remove('active');
+        if (btnShapes) btnShapes.classList.remove('active');
+        if (typeof this.stopSpray === 'function') this.stopSpray();
+        if (this.interactionMode === 'offline_moving_area') this.cancelMoveArea(true);
+        if (typeof this.closeSubtoolbar === 'function') this.closeSubtoolbar();
+
+        this.interactionMode = 'offline_text';
+        this.selectedPixels.clear();
+
+        const btnText = document.querySelector('[data-ref="btn-offline-text"]');
+        if (btnText) btnText.classList.add('active');
+
+        if (!this.activePixelText) {
+            this.activePixelText = {
+                text: '',
+                fontId: 'arcade_5x7',
+                scale: 1,
+                letterSpacing: 1,
+                lineSpacing: 2,
+                hasOutline: false,
+                hasShadow: false
+            };
+        }
+
+        if (!this.textPosition) {
+            const bw = this.boardWidth || 64;
+            const bh = this.boardHeight || 64;
+            this.textPosition = {
+                x: Math.max(0, Math.floor(bw / 4)),
+                y: Math.max(0, Math.floor(bh / 3))
+            };
+        }
+
+        const floatingEl = document.querySelector('[data-ref="canvas-floating-text"]');
+        const floatingInput = document.querySelector('[data-ref="floating-text-input"]');
+        const menuInput = document.querySelector('[data-ref="text-menu-input"]');
+        if (floatingInput && this.activePixelText.text) {
+            floatingInput.value = this.activePixelText.text;
+        }
+        if (menuInput && this.activePixelText.text) {
+            menuInput.value = this.activePixelText.text;
+        }
+
+        if (floatingEl) {
+            floatingEl.classList.remove('disabled');
+            this.updateFloatingTextPosition();
+        }
+
+        showMessage(__('msg_text_selected'), 'info');
+        this.updateSelectionUI();
+        this.updatePixelTextPreview();
+    },
+
+    deactivatePixelTextMode() {
+        this.interactionMode = 'normal';
+        this.textPreviewPixels = null;
+        this.textPreviewShadow = null;
+        this.textPreviewOutline = null;
+        this.textPreviewBox = null;
+        this.isTextDragging = false;
+        this.textDragStart = null;
+        this.selectedPixels.clear();
+
+        const btnText = document.querySelector('[data-ref="btn-offline-text"]');
+        if (btnText) btnText.classList.remove('active');
+
+        const floatingEl = document.querySelector('[data-ref="canvas-floating-text"]');
+        if (floatingEl) floatingEl.classList.add('disabled');
+
+        showMessage(__('msg_text_mode_off'), 'info');
+        this.updateSelectionUI();
+        this.requestRender();
+    },
+
+    selectPixelFont(fontId, targetEl) {
+        if (!this.activePixelText) {
+            this.activePixelText = { text: '', fontId, scale: 1, letterSpacing: 1, lineSpacing: 2, hasOutline: false, hasShadow: false };
+        } else {
+            this.activePixelText.fontId = fontId;
+        }
+
+        const grid = document.querySelector('[data-ref="fonts-grid"]');
+        if (grid) {
+            grid.querySelectorAll('.component-font-card').forEach(c => {
+                const cId = c.getAttribute('data-font-id');
+                c.classList.toggle('active', cId === fontId);
+            });
+        }
+
+        this.updatePixelTextPreview();
+    },
+
+    setPixelTextScale(scale, targetEl) {
+        if (!this.activePixelText) {
+            this.activePixelText = { text: '', fontId: 'arcade_5x7', scale, letterSpacing: 1, lineSpacing: 2, hasOutline: false, hasShadow: false };
+        } else {
+            this.activePixelText.scale = scale;
+        }
+
+        const bar = document.querySelector('[data-ref="text-scale-bar"]');
+        if (bar) {
+            bar.querySelectorAll('.component-shape-mode-pill').forEach(btn => {
+                const s = parseInt(btn.getAttribute('data-scale'), 10) || 1;
+                btn.classList.toggle('active', s === scale);
+            });
+        }
+
+        this.updatePixelTextPreview();
+    },
+
+    togglePixelTextOutline(targetEl) {
+        if (!this.activePixelText) {
+            this.activePixelText = { text: '', fontId: 'arcade_5x7', scale: 1, letterSpacing: 1, lineSpacing: 2, hasOutline: true, hasShadow: false };
+        } else {
+            this.activePixelText.hasOutline = !this.activePixelText.hasOutline;
+        }
+
+        const btnOutline = document.querySelector('[data-ref="btn-text-outline"]');
+        if (btnOutline) {
+            btnOutline.classList.toggle('active', !!this.activePixelText.hasOutline);
+        }
+
+        this.updatePixelTextPreview();
+    },
+
+    togglePixelTextShadow(targetEl) {
+        if (!this.activePixelText) {
+            this.activePixelText = { text: '', fontId: 'arcade_5x7', scale: 1, letterSpacing: 1, lineSpacing: 2, hasOutline: false, hasShadow: true };
+        } else {
+            this.activePixelText.hasShadow = !this.activePixelText.hasShadow;
+        }
+
+        const btnShadow = document.querySelector('[data-ref="btn-text-shadow"]');
+        if (btnShadow) {
+            btnShadow.classList.toggle('active', !!this.activePixelText.hasShadow);
+        }
+
+        this.updatePixelTextPreview();
+    },
+
+    updateFloatingTextPosition() {
+        const floatingEl = document.querySelector('[data-ref="canvas-floating-text"]');
+        if (!floatingEl || !this.canvas || !this.textPosition) return;
+
+        const rect = this.canvas.getBoundingClientRect();
+        const screenX = rect.left + this.transform.x + (this.textPosition.x * this.transform.scale);
+        const screenY = rect.top + this.transform.y + (this.textPosition.y * this.transform.scale) - 38;
+
+        floatingEl.style.left = `${Math.max(10, Math.min(window.innerWidth - 240, screenX))}px`;
+        floatingEl.style.top = `${Math.max(60, Math.min(window.innerHeight - 50, screenY))}px`;
+    },
+
+    updatePixelTextPreview() {
+        if (this.interactionMode !== 'offline_text') return;
+
+        const text = this.activePixelText?.text || '';
+        const fontId = this.activePixelText?.fontId || 'arcade_5x7';
+        const scale = this.activePixelText?.scale || 1;
+        const letterSpacing = this.activePixelText?.letterSpacing || 1;
+        const lineSpacing = this.activePixelText?.lineSpacing || 2;
+        const hasOutline = !!this.activePixelText?.hasOutline;
+        const hasShadow = !!this.activePixelText?.hasShadow;
+        const bw = this.boardWidth || 64;
+        const bh = this.boardHeight || 64;
+
+        if (!this.textPosition) {
+            this.textPosition = {
+                x: Math.max(0, Math.floor(bw / 4)),
+                y: Math.max(0, Math.floor(bh / 3))
+            };
+        }
+
+        if (!text || text.trim().length === 0) {
+            this.textPreviewPixels = null;
+            this.textPreviewShadow = null;
+            this.textPreviewOutline = null;
+            this.textPreviewBox = {
+                minX: this.textPosition.x,
+                minY: this.textPosition.y,
+                maxX: this.textPosition.x + 8,
+                maxY: this.textPosition.y + 8,
+                w: 8,
+                h: 8,
+                originX: this.textPosition.x,
+                originY: this.textPosition.y
+            };
+            this.updateFloatingTextPosition();
+            this.requestRender();
+            return;
+        }
+
+        const result = renderPixelText({
+            text,
+            fontId,
+            scale,
+            letterSpacing,
+            lineSpacing,
+            hasOutline,
+            hasShadow,
+            originX: this.textPosition.x,
+            originY: this.textPosition.y,
+            boardW: bw,
+            boardH: bh
+        });
+
+        const toKeyList = (pts) => {
+            const keys = [];
+            const seen = new Set();
+            for (let i = 0; i < pts.length; i++) {
+                const pt = pts[i];
+                if (pt.x >= 0 && pt.x < bw && pt.y >= 0 && pt.y < bh) {
+                    const key = (pt.y << 16) | (pt.x & 0xFFFF);
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        keys.push(key);
+                    }
+                    if (this.isMirrorMode) {
+                        const symX = bw - 1 - pt.x;
+                        if (symX >= 0 && symX < bw && symX !== pt.x) {
+                            const symKey = (pt.y << 16) | (symX & 0xFFFF);
+                            if (!seen.has(symKey)) {
+                                seen.add(symKey);
+                                keys.push(symKey);
+                            }
+                        }
+                    }
+                }
+            }
+            return keys;
+        };
+
+        this.textPreviewPixels = toKeyList(result.points);
+        this.textPreviewShadow = toKeyList(result.shadowPoints);
+        this.textPreviewOutline = toKeyList(result.outlinePoints);
+        this.textPreviewBox = {
+            ...result.bounds,
+            originX: this.textPosition.x,
+            originY: this.textPosition.y
+        };
+
+        this.updateFloatingTextPosition();
+        this.setCanvasBadge('coords', 'title', `${result.bounds.w} × ${result.bounds.h} px`, 'left');
+        this.requestRender();
+    },
+
+    commitPixelText() {
+        if (this.interactionMode !== 'offline_text' || !this.activePixelText) return;
+
+        const text = this.activePixelText.text || '';
+        if (!text || text.trim().length === 0) {
+            this.deactivatePixelTextMode();
+            return;
+        }
+
+        const fontId = this.activePixelText.fontId || 'arcade_5x7';
+        const scale = this.activePixelText.scale || 1;
+        const letterSpacing = this.activePixelText.letterSpacing || 1;
+        const lineSpacing = this.activePixelText.lineSpacing || 2;
+        const hasOutline = !!this.activePixelText.hasOutline;
+        const hasShadow = !!this.activePixelText.hasShadow;
+        const bw = this.boardWidth || 64;
+        const bh = this.boardHeight || 64;
+        const origin = this.textPosition || { x: 0, y: 0 };
+
+        const result = renderPixelText({
+            text,
+            fontId,
+            scale,
+            letterSpacing,
+            lineSpacing,
+            hasOutline,
+            hasShadow,
+            originX: origin.x,
+            originY: origin.y,
+            boardW: bw,
+            boardH: bh
+        });
+
+        const pixelsToPush = [];
+        const seen = new Set();
+
+        const addPoints = (pts, col) => {
+            for (let i = 0; i < pts.length; i++) {
+                const pt = pts[i];
+                if (pt.x >= 0 && pt.x < bw && pt.y >= 0 && pt.y < bh) {
+                    const key = (pt.y << 16) | (pt.x & 0xFFFF);
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        pixelsToPush.push({ x: pt.x, y: pt.y, color: col });
+                    }
+                    if (this.isMirrorMode) {
+                        const symX = bw - 1 - pt.x;
+                        if (symX >= 0 && symX < bw && symX !== pt.x) {
+                            const symKey = (pt.y << 16) | (symX & 0xFFFF);
+                            if (!seen.has(symKey)) {
+                                seen.add(symKey);
+                                pixelsToPush.push({ x: symX, y: pt.y, color: col });
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        if (hasShadow) {
+            addPoints(result.shadowPoints, '#000000');
+        }
+        if (hasOutline) {
+            addPoints(result.outlinePoints, '#000000');
+        }
+        addPoints(result.points, this.currentColor);
+
+        if (pixelsToPush.length > 0 && this.isOfflineMode) {
+            if (this.renderWorker) {
+                this.renderWorker.postMessage({
+                    type: 'PUSH_PIXELS',
+                    payload: {
+                        pixels: pixelsToPush
+                    }
+                });
+            }
+            if (this.offscreenCtx) {
+                for (let i = 0; i < pixelsToPush.length; i++) {
+                    const pt = pixelsToPush[i];
+                    this.offscreenCtx.fillStyle = pt.color;
+                    this.offscreenCtx.fillRect(pt.x, pt.y, 1, 1);
+                }
+            }
+            if (typeof this.saveOfflineCanvasState === 'function') {
+                this.saveOfflineCanvasState(false);
+            }
+        }
+
+        showMessage(__('msg_text_stamped'), 'success');
+        this.deactivatePixelTextMode();
+    },
+
+    cancelPixelText() {
+        this.deactivatePixelTextMode();
+    },
+
+    handleInput(e) {
+        if (!e.target) return;
+        const isMenuInput = e.target.matches('[data-ref="text-menu-input"]');
+        const isFloatingInput = e.target.matches('[data-ref="floating-text-input"]');
+
+        if (isMenuInput || isFloatingInput) {
+            const val = e.target.value;
+            if (!this.activePixelText) {
+                this.activePixelText = { text: val, fontId: 'arcade_5x7', scale: 1, letterSpacing: 1, lineSpacing: 2, hasOutline: false, hasShadow: false };
+            } else {
+                this.activePixelText.text = val;
+            }
+
+            if (isMenuInput) {
+                const floatingInput = document.querySelector('[data-ref="floating-text-input"]');
+                if (floatingInput && floatingInput !== e.target) floatingInput.value = val;
+            } else if (isFloatingInput) {
+                const menuInput = document.querySelector('[data-ref="text-menu-input"]');
+                if (menuInput && menuInput !== e.target) menuInput.value = val;
+            }
+
+            if (this.interactionMode !== 'offline_text') {
+                this.activatePixelTextMode();
+            } else {
+                this.updatePixelTextPreview();
             }
         }
     },

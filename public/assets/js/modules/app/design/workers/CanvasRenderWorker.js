@@ -33,6 +33,12 @@ let ownerEraserBox = null;
 let moveAreaBox = null;
 let myMinesArray = new Uint32Array(0);
 let isPlacingMines = false;
+let shapePreviewPixelsArray = new Uint32Array(0);
+let shapePreviewBox = null;
+let textPreviewPixelsArray = new Uint32Array(0);
+let textPreviewShadowArray = new Uint32Array(0);
+let textPreviewOutlineArray = new Uint32Array(0);
+let textPreviewBox = null;
 
 let isOfflineMode = false;
 let isMirrorMode = false;
@@ -934,6 +940,147 @@ function render() {
             ctx.rect(x, y, 1, 1);
         }
         ctx.stroke();
+    }
+
+    if (shapePreviewBox || (shapePreviewPixelsArray && shapePreviewPixelsArray.length > 0)) {
+        ctx.save();
+        
+        if (shapePreviewPixelsArray && shapePreviewPixelsArray.length > 0) {
+            ctx.fillStyle = currentColor;
+            for (let i = 0; i < shapePreviewPixelsArray.length; i++) {
+                const key = shapePreviewPixelsArray[i];
+                const px = key & 0xFFFF;
+                const py = key >> 16;
+                if (px >= 0 && px < boardWidth && py >= 0 && py < boardHeight) {
+                    ctx.fillRect(px, py, 1, 1);
+                }
+            }
+        }
+
+        if (shapePreviewBox) {
+            const { minX, minY, maxX, maxY, w, h, x0, y0, x1, y1 } = shapePreviewBox;
+
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 1 / transform.scale;
+            ctx.setLineDash([3 / transform.scale, 3 / transform.scale]);
+            ctx.strokeRect(minX, minY, w, h);
+
+            if (isMirrorMode) {
+                const symMinX = boardWidth - 1 - maxX;
+                if (symMinX >= 0 && symMinX < boardWidth) {
+                    ctx.strokeRect(symMinX, minY, w, h);
+                }
+            }
+
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#f59e0b';
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1 / transform.scale;
+            const handleR = Math.max(0.6, 2.5 / transform.scale);
+
+            ctx.beginPath();
+            ctx.arc(x0 + 0.5, y0 + 0.5, handleR, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(x1 + 0.5, y1 + 0.5, handleR, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            if (isMirrorMode) {
+                const symX0 = boardWidth - 1 - x0;
+                const symX1 = boardWidth - 1 - x1;
+                ctx.beginPath();
+                ctx.arc(symX0 + 0.5, y0 + 0.5, handleR, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(symX1 + 0.5, y1 + 0.5, handleR, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            }
+        }
+
+        ctx.restore();
+    }
+
+    if (textPreviewBox || (textPreviewPixelsArray && textPreviewPixelsArray.length > 0)) {
+        ctx.save();
+
+        if (textPreviewShadowArray && textPreviewShadowArray.length > 0) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+            for (let i = 0; i < textPreviewShadowArray.length; i++) {
+                const key = textPreviewShadowArray[i];
+                const px = key & 0xFFFF;
+                const py = key >> 16;
+                if (px >= 0 && px < boardWidth && py >= 0 && py < boardHeight) {
+                    ctx.fillRect(px, py, 1, 1);
+                }
+            }
+        }
+
+        if (textPreviewOutlineArray && textPreviewOutlineArray.length > 0) {
+            ctx.fillStyle = '#000000';
+            for (let i = 0; i < textPreviewOutlineArray.length; i++) {
+                const key = textPreviewOutlineArray[i];
+                const px = key & 0xFFFF;
+                const py = key >> 16;
+                if (px >= 0 && px < boardWidth && py >= 0 && py < boardHeight) {
+                    ctx.fillRect(px, py, 1, 1);
+                }
+            }
+        }
+
+        if (textPreviewPixelsArray && textPreviewPixelsArray.length > 0) {
+            ctx.fillStyle = currentColor;
+            for (let i = 0; i < textPreviewPixelsArray.length; i++) {
+                const key = textPreviewPixelsArray[i];
+                const px = key & 0xFFFF;
+                const py = key >> 16;
+                if (px >= 0 && px < boardWidth && py >= 0 && py < boardHeight) {
+                    ctx.fillRect(px, py, 1, 1);
+                }
+            }
+        }
+
+        if (textPreviewBox) {
+            const { minX, minY, maxX, maxY, w, h, originX, originY } = textPreviewBox;
+
+            ctx.strokeStyle = '#8b5cf6';
+            ctx.lineWidth = 1 / transform.scale;
+            ctx.setLineDash([3 / transform.scale, 3 / transform.scale]);
+            ctx.strokeRect(minX, minY, w, h);
+
+            if (isMirrorMode) {
+                const symMinX = boardWidth - 1 - maxX;
+                if (symMinX >= 0 && symMinX < boardWidth) {
+                    ctx.strokeRect(symMinX, minY, w, h);
+                }
+            }
+
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#8b5cf6';
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1 / transform.scale;
+            const handleR = Math.max(0.6, 2.5 / transform.scale);
+
+            ctx.beginPath();
+            ctx.arc(originX + 0.5, originY + 0.5, handleR, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            if (isMirrorMode) {
+                const symOriginX = boardWidth - 1 - originX;
+                ctx.beginPath();
+                ctx.arc(symOriginX + 0.5, originY + 0.5, handleR, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            }
+        }
+
+        ctx.restore();
     }
 
     if (ownerEraserBox) {
@@ -1996,6 +2143,28 @@ self.onmessage = function (e) {
             }
             hoveredPixelKey = payload.hoveredPixelKey !== undefined ? payload.hoveredPixelKey : -1;
             ownerEraserBox = payload.ownerEraserBox || null;
+            if (payload.shapePreviewPixels) {
+                shapePreviewPixelsArray = new Uint32Array(payload.shapePreviewPixels);
+            } else {
+                shapePreviewPixelsArray = new Uint32Array(0);
+            }
+            shapePreviewBox = payload.shapePreviewBox || null;
+            if (payload.textPreviewPixels) {
+                textPreviewPixelsArray = new Uint32Array(payload.textPreviewPixels);
+            } else {
+                textPreviewPixelsArray = new Uint32Array(0);
+            }
+            if (payload.textPreviewShadow) {
+                textPreviewShadowArray = new Uint32Array(payload.textPreviewShadow);
+            } else {
+                textPreviewShadowArray = new Uint32Array(0);
+            }
+            if (payload.textPreviewOutline) {
+                textPreviewOutlineArray = new Uint32Array(payload.textPreviewOutline);
+            } else {
+                textPreviewOutlineArray = new Uint32Array(0);
+            }
+            textPreviewBox = payload.textPreviewBox || null;
             topBarCenterX = payload.topBarCenterX || 0;
             topBarBottomY = payload.topBarBottomY || 0;
             selectionBitmaskDirty = true;

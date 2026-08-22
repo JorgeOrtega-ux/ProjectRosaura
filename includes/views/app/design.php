@@ -191,6 +191,12 @@ extract($designData);
                 <button class="component-button component-button--icon component-button--h32" data-action="toggleOfflineDither" data-ref="btn-offline-dither" data-tooltip="<?php echo __('tooltip_dither'); ?> [D]" data-position="right">
                     <span class="material-symbols-rounded">texture</span>
                 </button>
+                <button class="component-button component-button--icon component-button--h32" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-shapes" data-ref="btn-offline-shapes" data-tooltip="<?php echo __('tooltip_shapes'); ?> [V]" data-position="right">
+                    <span class="material-symbols-rounded">shapes</span>
+                </button>
+                <button class="component-button component-button--icon component-button--h32" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-text" data-ref="btn-offline-text" data-tooltip="<?php echo __('tooltip_text_tool'); ?> [Y]" data-position="right">
+                    <span class="material-symbols-rounded">title</span>
+                </button>
                 <button class="component-button component-button--icon component-button--h32" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-stickers" data-ref="btn-offline-stickers" data-tooltip="<?php echo __('tooltip_stickers'); ?> [F]" data-position="right">
                     <span class="material-symbols-rounded">category</span>
                 </button>
@@ -267,6 +273,19 @@ extract($designData);
                 </button>
                 <button class="component-button component-button--icon component-button--h24" data-action="deleteTemplate" data-ref="btn-template-delete" data-tooltip="<?php echo __('tooltip_remove_template'); ?> [Supr]" data-position="top">
                     <span class="material-symbols-rounded">delete</span>
+                </button>
+            </div>
+
+            <div class="component-canvas-floating-text disabled" data-ref="canvas-floating-text">
+                <div class="component-canvas-floating-text__handle" data-action="dragFloatingText">
+                    <span class="material-symbols-rounded">drag_indicator</span>
+                </div>
+                <input class="component-canvas-floating-text__input" data-ref="floating-text-input" type="text" placeholder="<?php echo __('placeholder_text_input'); ?>" maxlength="60" />
+                <button class="component-button component-button--icon component-button--h24 component-button--success" data-action="commitPixelText" data-tooltip="<?php echo __('lbl_stamp_text'); ?> [Enter]" data-position="top">
+                    <span class="material-symbols-rounded">check</span>
+                </button>
+                <button class="component-button component-button--icon component-button--h24" data-action="cancelPixelText" data-tooltip="<?php echo __('lbl_cancel_text'); ?> [Esc]" data-position="top">
+                    <span class="material-symbols-rounded">close</span>
                 </button>
             </div>
 

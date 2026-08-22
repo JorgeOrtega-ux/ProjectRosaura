@@ -224,6 +224,12 @@ export const DesignRender = {
                         hoveredPixelKey: hoverKey,
                         ownerEraserBox: this.ownerEraserBox || null,
                         moveAreaBox: this.moveAreaBox || null,
+                        shapePreviewPixels: this.shapePreviewPixels || null,
+                        shapePreviewBox: this.shapePreviewBox || null,
+                        textPreviewPixels: this.textPreviewPixels || null,
+                        textPreviewShadow: this.textPreviewShadow || null,
+                        textPreviewOutline: this.textPreviewOutline || null,
+                        textPreviewBox: this.textPreviewBox || null,
                         isMirrorMode: !!this.isMirrorMode,
                         topBarCenterX: topBarCenterX,
                         topBarBottomY: topBarBottomY
@@ -483,6 +489,146 @@ export const DesignRender = {
         }
         if (typeof this.updateMoveAreaFloatingToolbar === 'function') {
             this.updateMoveAreaFloatingToolbar();
+        }
+
+        if (this.shapePreviewBox || (this.shapePreviewPixels && this.shapePreviewPixels.length > 0)) {
+            this.ctx.save();
+            if (this.shapePreviewPixels && this.shapePreviewPixels.length > 0) {
+                this.ctx.fillStyle = this.currentColor;
+                for (let i = 0; i < this.shapePreviewPixels.length; i++) {
+                    const key = this.shapePreviewPixels[i];
+                    const px = key & 0xFFFF;
+                    const py = key >> 16;
+                    if (px >= 0 && px < this.boardWidth && py >= 0 && py < this.boardHeight) {
+                        this.ctx.fillRect(px, py, 1, 1);
+                    }
+                }
+            }
+
+            if (this.shapePreviewBox) {
+                const { minX, minY, maxX, maxY, w, h, x0, y0, x1, y1 } = this.shapePreviewBox;
+
+                this.ctx.strokeStyle = '#f59e0b';
+                this.ctx.lineWidth = 1 / this.transform.scale;
+                this.ctx.setLineDash([3 / this.transform.scale, 3 / this.transform.scale]);
+                this.ctx.strokeRect(minX, minY, w, h);
+
+                if (this.isMirrorMode) {
+                    const symMinX = this.boardWidth - 1 - maxX;
+                    if (symMinX >= 0 && symMinX < this.boardWidth) {
+                        this.ctx.strokeRect(symMinX, minY, w, h);
+                    }
+                }
+
+                this.ctx.setLineDash([]);
+                this.ctx.fillStyle = '#f59e0b';
+                this.ctx.strokeStyle = '#ffffff';
+                this.ctx.lineWidth = 1 / this.transform.scale;
+                const handleR = Math.max(0.6, 2.5 / this.transform.scale);
+
+                this.ctx.beginPath();
+                this.ctx.arc(x0 + 0.5, y0 + 0.5, handleR, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.stroke();
+
+                this.ctx.beginPath();
+                this.ctx.arc(x1 + 0.5, y1 + 0.5, handleR, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.stroke();
+
+                if (this.isMirrorMode) {
+                    const symX0 = this.boardWidth - 1 - x0;
+                    const symX1 = this.boardWidth - 1 - x1;
+                    this.ctx.beginPath();
+                    this.ctx.arc(symX0 + 0.5, y0 + 0.5, handleR, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    this.ctx.stroke();
+
+                    this.ctx.beginPath();
+                    this.ctx.arc(symX1 + 0.5, y1 + 0.5, handleR, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    this.ctx.stroke();
+                }
+            }
+
+            this.ctx.restore();
+        }
+
+        if (this.textPreviewBox || (this.textPreviewPixels && this.textPreviewPixels.length > 0)) {
+            this.ctx.save();
+
+            if (this.textPreviewShadow && this.textPreviewShadow.length > 0) {
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+                for (let i = 0; i < this.textPreviewShadow.length; i++) {
+                    const key = this.textPreviewShadow[i];
+                    const px = key & 0xFFFF;
+                    const py = key >> 16;
+                    if (px >= 0 && px < this.boardWidth && py >= 0 && py < this.boardHeight) {
+                        this.ctx.fillRect(px, py, 1, 1);
+                    }
+                }
+            }
+
+            if (this.textPreviewOutline && this.textPreviewOutline.length > 0) {
+                this.ctx.fillStyle = '#000000';
+                for (let i = 0; i < this.textPreviewOutline.length; i++) {
+                    const key = this.textPreviewOutline[i];
+                    const px = key & 0xFFFF;
+                    const py = key >> 16;
+                    if (px >= 0 && px < this.boardWidth && py >= 0 && py < this.boardHeight) {
+                        this.ctx.fillRect(px, py, 1, 1);
+                    }
+                }
+            }
+
+            if (this.textPreviewPixels && this.textPreviewPixels.length > 0) {
+                this.ctx.fillStyle = this.currentColor;
+                for (let i = 0; i < this.textPreviewPixels.length; i++) {
+                    const key = this.textPreviewPixels[i];
+                    const px = key & 0xFFFF;
+                    const py = key >> 16;
+                    if (px >= 0 && px < this.boardWidth && py >= 0 && py < this.boardHeight) {
+                        this.ctx.fillRect(px, py, 1, 1);
+                    }
+                }
+            }
+
+            if (this.textPreviewBox) {
+                const { minX, minY, maxX, maxY, w, h, originX, originY } = this.textPreviewBox;
+
+                this.ctx.strokeStyle = '#8b5cf6';
+                this.ctx.lineWidth = 1 / this.transform.scale;
+                this.ctx.setLineDash([3 / this.transform.scale, 3 / this.transform.scale]);
+                this.ctx.strokeRect(minX, minY, w, h);
+
+                if (this.isMirrorMode) {
+                    const symMinX = this.boardWidth - 1 - maxX;
+                    if (symMinX >= 0 && symMinX < this.boardWidth) {
+                        this.ctx.strokeRect(symMinX, minY, w, h);
+                    }
+                }
+
+                this.ctx.setLineDash([]);
+                this.ctx.fillStyle = '#8b5cf6';
+                this.ctx.strokeStyle = '#ffffff';
+                this.ctx.lineWidth = 1 / this.transform.scale;
+                const handleR = Math.max(0.6, 2.5 / this.transform.scale);
+
+                this.ctx.beginPath();
+                this.ctx.arc(originX + 0.5, originY + 0.5, handleR, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.stroke();
+
+                if (this.isMirrorMode) {
+                    const symOriginX = this.boardWidth - 1 - originX;
+                    this.ctx.beginPath();
+                    this.ctx.arc(symOriginX + 0.5, originY + 0.5, handleR, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    this.ctx.stroke();
+                }
+            }
+
+            this.ctx.restore();
         }
 
         const selCount = this.selectedPixels ? this.selectedPixels.size : 0;

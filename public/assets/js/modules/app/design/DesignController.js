@@ -1,4 +1,4 @@
-﻿import { ApiService } from '../../../core/api/ApiService.js';
+import { ApiService } from '../../../core/api/ApiService.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 import { CardTemplates } from '../../../core/components/CardTemplates.js';
 import { PromoService } from '../../../core/services/PromoCardService.js';
@@ -41,6 +41,20 @@ class DesignController {
         this.isSelecting = false;
         this.selectionMode = 'add';
         this.interactionMode = 'normal'; 
+        this.activeGeometricShape = { shape: 'line', fill: false, strokeWidth: 1 };
+        this.isShapeDrawing = false;
+        this.shapeStart = null;
+        this.shapeCurrent = null;
+        this.shapePreviewPixels = null;
+        this.shapePreviewBox = null;
+        this.activePixelText = { text: '', fontId: 'arcade_5x7', scale: 1, letterSpacing: 1, lineSpacing: 2, hasOutline: false, hasShadow: false };
+        this.textPosition = null;
+        this.isTextDragging = false;
+        this.textDragStart = null;
+        this.textPreviewPixels = null;
+        this.textPreviewShadow = null;
+        this.textPreviewOutline = null;
+        this.textPreviewBox = null;
         this.btnPlacePixels = null;
         this.txtPlacePixels = null;
         
@@ -109,6 +123,7 @@ class DesignController {
         this.handleResizeBound = this.handleResize.bind(this);
         this.handleKeyDownBound = this.handleKeyDown.bind(this);
         this.handleClickBound = this.handleClick.bind(this);
+        this.handleInputBound = this.handleInput.bind(this);
         this.handleFileUploadBound = this.handleFileUpload.bind(this);
         this.renderBound = this.render.bind(this);
 
@@ -183,6 +198,11 @@ class DesignController {
         this.initSelectedPixelsProxy();
         this.isSelecting = false;
         this.interactionMode = 'normal';
+        this.activeGeometricShape = { shape: 'line', fill: false, strokeWidth: 1 };
+        this.isShapeDrawing = false;
+        this.shapeStart = null;
+        this.shapeCurrent = null;
+        this.shapePreviewPixels = null;
         this.showOwnerTools = false;
         this.ownerEraserBox = null;
         this.ownerEraserStep = 0;
@@ -417,6 +437,7 @@ class DesignController {
         document.removeEventListener('mouseup', this.handleMouseUpBound);
         document.removeEventListener('keydown', this.handleKeyDownBound);
         document.removeEventListener('click', this.handleClickBound);
+        document.removeEventListener('input', this.handleInputBound);
         window.removeEventListener('resize', this.handleResizeBound);
         
         document.removeEventListener('touchstart', this.handleTouchStartBound);
@@ -489,6 +510,8 @@ class DesignController {
         this._lastDpr = null;
         this.loadedChunks = null;
         this.pixelQueue = null;
+        this.activeGeometricShape = null;
+        this.shapePreviewPixels = null;
     }
 }
 
