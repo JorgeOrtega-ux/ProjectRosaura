@@ -26,6 +26,10 @@ class AdminProviderAdvertisementsController extends BaseListController {
             status: 'all'
         };
         this.handleChangeBound = this.handleGlobalChange.bind(this);
+        this.handleDragStartBound = this.handleGlobalDragStart.bind(this);
+        this.handleDragOverBound = this.handleGlobalDragOver.bind(this);
+        this.handleDragEndBound = this.handleGlobalDragEnd.bind(this);
+        this.draggedRow = null;
     }
 
     getViewPath() {
@@ -51,11 +55,17 @@ class AdminProviderAdvertisementsController extends BaseListController {
     bindEvents() {
         super.bindEvents();
         document.addEventListener('change', this.handleChangeBound);
+        document.addEventListener('dragstart', this.handleDragStartBound);
+        document.addEventListener('dragover', this.handleDragOverBound);
+        document.addEventListener('dragend', this.handleDragEndBound);
     }
 
     destroy() {
         super.destroy();
         document.removeEventListener('change', this.handleChangeBound);
+        document.removeEventListener('dragstart', this.handleDragStartBound);
+        document.removeEventListener('dragover', this.handleDragOverBound);
+        document.removeEventListener('dragend', this.handleDragEndBound);
     }
 
     handleViewLoaded(e) {
@@ -169,10 +179,15 @@ class AdminProviderAdvertisementsController extends BaseListController {
         const openCreateAdBtn = e.target.closest('[data-action="openCreateAdModal"]');
         const selectAdFmtBtn = e.target.closest('[data-action="selectAdFormat"]');
         const selectGeoModeBtn = e.target.closest('[data-action="selectGeoMode"]');
+        const toggleAdExpBtn = e.target.closest('[data-action="toggleAdExpiration"]');
         const adNextBtn = e.target.closest('[data-action="adNextStep"]');
         const adPrevBtn = e.target.closest('[data-action="adPrevStep"]');
         const addResourceBtn = e.target.closest('[data-action="addResourceRow"]');
         const removeResourceBtn = e.target.closest('[data-action="removeResourceRow"]');
+        const moveResUpBtn = e.target.closest('[data-action="moveResourceUp"]');
+        const moveResDownBtn = e.target.closest('[data-action="moveResourceDown"]');
+        const openMediaLibBtn = e.target.closest('[data-action="openServerMediaLibrary"]');
+        const selectMediaItemBtn = e.target.closest('[data-action="selectMediaItem"]');
         const submitAdBtn = e.target.closest('[data-action="submitAd"], [data-action="submitCreateAd"], [data-action="submitEditAd"]');
 
         const openCreateSlotBtn = e.target.closest('[data-action="openCreateNetworkSlotModal"]');
@@ -199,10 +214,15 @@ class AdminProviderAdvertisementsController extends BaseListController {
         if (openCreateAdBtn) this.openCreateAdModal(openCreateAdBtn.getAttribute('data-provider-uuid'));
         if (selectAdFmtBtn) this.handleAdFormatDropdownSelection(selectAdFmtBtn);
         if (selectGeoModeBtn) this.handleGeoModeDropdownSelection(selectGeoModeBtn);
+        if (toggleAdExpBtn) this.toggleAdExpirationFields(toggleAdExpBtn);
         if (adNextBtn) this.handleAdNextStep(adNextBtn);
         if (adPrevBtn) this.handleAdPrevStep(adPrevBtn);
         if (addResourceBtn) this.addResourceRow(addResourceBtn);
         if (removeResourceBtn) this.removeResourceRow(removeResourceBtn);
+        if (moveResUpBtn) this.moveResourceRow(moveResUpBtn, 'up');
+        if (moveResDownBtn) this.moveResourceRow(moveResDownBtn, 'down');
+        if (openMediaLibBtn) this.openServerMediaLibraryModal(openMediaLibBtn);
+        if (selectMediaItemBtn) this.handleMediaItemSelection(selectMediaItemBtn);
         if (submitAdBtn) this.submitAd(submitAdBtn);
 
         if (openCreateSlotBtn) this.openCreateNetworkSlotModal(openCreateSlotBtn.getAttribute('data-provider-uuid'));
@@ -225,9 +245,23 @@ class AdminProviderAdvertisementsController extends BaseListController {
         if (e.target && e.target.getAttribute('data-action') === 'filterCountryList') {
             this.filterCountryList(e.target);
         }
+        if (e.target && e.target.getAttribute('data-action') === 'resourceInputUrlChange') {
+            this.updateResourceThumbnail(e.target);
+        }
     }
 
     handleGlobalChange(e) {
+        const fileInput = e.target.closest('[data-action="uploadResourceFile"]');
+        if (fileInput) {
+            this.handleResourceFileUpload(fileInput);
+            return;
+        }
+
+        const urlInput = e.target.closest('[data-action="resourceInputUrlChange"]');
+        if (urlInput) {
+            this.updateResourceThumbnail(urlInput);
+        }
+
         const countryCheckbox = e.target.closest('.geo-country-checkbox');
         if (countryCheckbox) {
             this.updateSelectedCountriesLabel(countryCheckbox);
@@ -336,6 +370,10 @@ class AdminProviderAdvertisementsController extends BaseListController {
             settings = {};
         }
 
+        const hasExpiration = selectedRow.getAttribute('data-ad-has-expiration') || '0';
+        const startDate = selectedRow.getAttribute('data-ad-start-date') || '';
+        const expirationDate = selectedRow.getAttribute('data-ad-expiration-date') || '';
+
         const adData = {
             uuid: this.selectedAdUuid,
             name: name,
@@ -344,6 +382,9 @@ class AdminProviderAdvertisementsController extends BaseListController {
             target_url: targetUrl,
             sponsor_label: sponsorLabel,
             format: format,
+            has_expiration: hasExpiration,
+            start_date: startDate,
+            expiration_date: expirationDate,
             resources: resources,
             settings: settings
         };
@@ -540,6 +581,8 @@ class AdminProviderAdvertisementsController extends BaseListController {
             this._setAdModalStep(5, modal);
         } else if (this.currentAdModalStep === 5) {
             this._setAdModalStep(6, modal);
+        } else if (this.currentAdModalStep === 6) {
+            this._setAdModalStep(7, modal);
         }
     }
 
@@ -569,7 +612,7 @@ class AdminProviderAdvertisementsController extends BaseListController {
 
         if (btnPrev) btnPrev.classList.toggle('disabled', step === 1);
 
-        if (step === 6) {
+        if (step === 7) {
             if (btnNext) btnNext.classList.add('disabled');
             if (btnFinish) btnFinish.classList.remove('disabled');
             if (descEl) descEl.textContent = _t('step_ad_targeting_desc');
@@ -582,7 +625,225 @@ class AdminProviderAdvertisementsController extends BaseListController {
                 else if (step === 3) descEl.textContent = _t('step_ad_description_desc');
                 else if (step === 4) descEl.textContent = _t('step_ad_target_desc');
                 else if (step === 5) descEl.textContent = _t('step_ad_creatives_desc');
+                else if (step === 6) descEl.textContent = _t('step_ad_validity_desc');
             }
+        }
+    }
+
+    moveResourceRow(btn, direction) {
+        const row = btn.closest('.component-resource-row');
+        if (!row) return;
+        if (direction === 'up' && row.previousElementSibling) {
+            row.previousElementSibling.before(row);
+        } else if (direction === 'down' && row.nextElementSibling) {
+            row.nextElementSibling.after(row);
+        }
+    }
+
+    handleGlobalDragStart(e) {
+        const row = e.target.closest('.component-resource-row');
+        if (row) {
+            this.draggedRow = row;
+            row.classList.add('dragging');
+            if (e.dataTransfer) {
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', row.getAttribute('data-index') || '');
+            }
+        }
+    }
+
+    handleGlobalDragOver(e) {
+        if (!this.draggedRow) return;
+        const row = e.target.closest('.component-resource-row');
+        if (row && row !== this.draggedRow) {
+            e.preventDefault();
+            if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+            const rect = row.getBoundingClientRect();
+            const midY = rect.top + rect.height / 2;
+            if (e.clientY < midY) {
+                row.before(this.draggedRow);
+            } else {
+                row.after(this.draggedRow);
+            }
+        }
+    }
+
+    handleGlobalDragEnd(e) {
+        if (this.draggedRow) {
+            this.draggedRow.classList.remove('dragging');
+            this.draggedRow = null;
+        }
+    }
+
+    toggleAdExpirationFields(target) {
+        const modal = target.closest('.component-modal-box') || this._getActiveModal();
+        if (!modal) return;
+        const fields = modal.querySelector('[data-ref="ad-expiration-fields"]');
+        if (fields) {
+            fields.classList.toggle('disabled', !target.checked);
+        }
+    }
+
+    async openServerMediaLibraryModal(btn) {
+        const row = btn.closest('.component-resource-row');
+        const targetRowIndex = row ? row.getAttribute('data-index') : (btn.getAttribute('data-index') || '0');
+
+        try {
+            const res = await this.api.post(ApiRoutes.Admin.ListAdvertisementMediaLibrary, {});
+            if (res && res.success && window.modalSystem) {
+                window.modalSystem.show('serverMediaLibraryModal', {
+                    media: res.media || [],
+                    targetRowIndex: targetRowIndex
+                });
+            } else {
+                showMessage(res.message || _t(res.message_key || 'err_default'), 'error');
+            }
+        } catch (err) {
+            showMessage(_t('err_default'), 'error');
+        }
+    }
+
+    handleMediaItemSelection(itemEl) {
+        const url = itemEl.getAttribute('data-url') || '';
+        const targetIndex = itemEl.getAttribute('data-target-index') || '0';
+
+        const row = document.querySelector(`.component-resource-row[data-index="${targetIndex}"]`);
+        if (row) {
+            const urlInput = row.querySelector('[data-action="resourceInputUrlChange"], [data-ref^="res-url-"]');
+            if (urlInput) {
+                urlInput.value = url;
+                this.updateResourceThumbnail(urlInput);
+            }
+        }
+        if (window.modalSystem) {
+            window.modalSystem.closeCurrent();
+        }
+    }
+
+    async handleResourceFileUpload(input) {
+        const file = input.files && input.files[0];
+        if (!file) return;
+
+        const row = input.closest('.component-resource-row');
+        const labelBtn = input.closest('label');
+        if (labelBtn) setButtonLoading(labelBtn);
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await this.api.postForm(ApiRoutes.Admin.UploadAdvertisementMedia, formData);
+            if (res && res.success && res.url) {
+                if (row) {
+                    const urlInput = row.querySelector('[data-action="resourceInputUrlChange"], [data-ref^="res-url-"]');
+                    if (urlInput) {
+                        urlInput.value = res.url;
+                        this.updateResourceThumbnail(urlInput);
+                    }
+                }
+                showMessage(_t(res.message_key || 'msg_media_uploaded_success'), 'success');
+            } else {
+                showMessage(res.message || _t(res.message_key || 'err_media_upload_failed'), 'error');
+            }
+        } catch (err) {
+            showMessage(_t('err_media_upload_failed'), 'error');
+        } finally {
+            if (labelBtn) restoreButton(labelBtn);
+            input.value = '';
+        }
+    }
+
+    updateResourceThumbnail(input) {
+        const row = input.closest('.component-resource-row');
+        if (!row) return;
+
+        const url = (input.value || '').trim();
+        const thumbBox = row.querySelector('.component-resource-thumb-box');
+        if (!thumbBox) return;
+
+        const img = thumbBox.querySelector('.component-resource-thumb-img');
+        const video = thumbBox.querySelector('.component-resource-thumb-video');
+        const fallback = thumbBox.querySelector('.component-resource-thumb-fallback');
+
+        const isVideo = url.endsWith('.mp4') || url.endsWith('.webm');
+
+        if (!url) {
+            if (img) { img.src = ''; img.classList.add('hidden'); }
+            if (video) { video.src = ''; video.classList.add('hidden'); }
+            if (fallback) fallback.classList.remove('hidden');
+            return;
+        }
+
+        if (isVideo) {
+            if (img) { img.src = ''; img.classList.add('hidden'); }
+            if (video) { video.src = url; video.classList.remove('hidden'); }
+            if (fallback) fallback.classList.add('hidden');
+        } else {
+            if (video) { video.src = ''; video.classList.add('hidden'); }
+            if (img) {
+                img.src = url;
+                img.classList.remove('hidden');
+            }
+            if (fallback) fallback.classList.add('hidden');
+        }
+    }
+
+    addResourceRow(btn = null) {
+        const modal = btn ? btn.closest('.component-modal-box') : this._getActiveModal();
+        if (!modal) return;
+        const container = modal.querySelector('[data-ref="resources-builder-container"]');
+        if (!container) return;
+
+        const idx = this.resourceIndexCounter++;
+        const row = document.createElement('div');
+        row.className = 'component-resource-row';
+        row.setAttribute('data-index', idx.toString());
+        row.setAttribute('draggable', 'true');
+        row.innerHTML = `
+            <div class="component-resource-drag-handle" data-action="dragHandle" title="${_t('lbl_drag_to_reorder')}">
+                <span class="material-symbols-rounded">drag_indicator</span>
+            </div>
+            <div class="component-resource-order-actions">
+                <button type="button" class="component-button component-button--icon component-button--h24" data-action="moveResourceUp" title="${_t('btn_move_up')}">
+                    <span class="material-symbols-rounded">keyboard_arrow_up</span>
+                </button>
+                <button type="button" class="component-button component-button--icon component-button--h24" data-action="moveResourceDown" title="${_t('btn_move_down')}">
+                    <span class="material-symbols-rounded">keyboard_arrow_down</span>
+                </button>
+            </div>
+            <div class="component-resource-thumb-box" data-ref="thumb-box-${idx}">
+                <img class="component-resource-thumb-img hidden" src="" alt="" onerror="this.classList.add('hidden'); this.parentElement.querySelector('.component-resource-thumb-fallback').classList.remove('hidden');">
+                <video class="component-resource-thumb-video hidden" src="" muted playsinline></video>
+                <span class="material-symbols-rounded component-resource-thumb-fallback">image</span>
+            </div>
+            <div class="component-input-group component-input-group--flex">
+                <input class="component-input-field" data-action="resourceInputUrlChange" data-ref="res-url-${idx}" type="text" placeholder=" " value="/assets/img/showcase/creative_tools.jpg" required>
+                <label class="component-input-label">${_t('lbl_resource_url')}</label>
+            </div>
+            <div class="component-resource-row-actions">
+                <label class="component-button component-button--icon component-button--h34" data-tooltip="${_t('btn_upload_media')}" data-position="bottom">
+                    <span class="material-symbols-rounded">upload_file</span>
+                    <input type="file" class="hidden-file-input" data-action="uploadResourceFile" data-index="${idx}" accept="image/*,video/mp4,video/webm" style="display:none;">
+                </label>
+                <button type="button" class="component-button component-button--icon component-button--h34" data-action="openServerMediaLibrary" data-index="${idx}" data-tooltip="${_t('btn_media_library')}" data-position="bottom">
+                    <span class="material-symbols-rounded">photo_library</span>
+                </button>
+                <button type="button" class="component-button component-button--icon component-button--h34 component-button--danger" data-action="removeResourceRow" data-index="${idx}" data-tooltip="${_t('btn_delete')}" data-position="bottom">
+                    <span class="material-symbols-rounded">delete</span>
+                </button>
+            </div>
+        `;
+        container.appendChild(row);
+        this.updateResourceThumbnail(row.querySelector('[data-action="resourceInputUrlChange"]'));
+    }
+
+    removeResourceRow(btn) {
+        const row = btn.closest('.component-resource-row');
+        if (!row) return;
+        const container = row.parentElement;
+        row.remove();
+        if (container && container.children.length === 0) {
+            this.addResourceRow(container.parentElement.querySelector('[data-action="addResourceRow"]'));
         }
     }
 
@@ -648,139 +909,7 @@ class AdminProviderAdvertisementsController extends BaseListController {
         }
     }
 
-    addResourceRow(btn = null) {
-        const modal = btn ? btn.closest('.component-modal-box') : this._getActiveModal();
-        if (!modal) return;
 
-        const container = modal.querySelector('[data-ref="resources-builder-container"]');
-        if (!container) return;
-
-        const idx = this.resourceIndexCounter++;
-        const row = document.createElement('div');
-        row.className = 'component-resource-row';
-        row.setAttribute('data-index', idx);
-        row.innerHTML = `
-            <div class="component-input-group">
-                <input class="component-input-field" data-ref="res-url-${idx}" type="text" placeholder=" " value="/assets/img/showcase/creative_tools.jpg" required>
-                <label class="component-input-label">${_t('lbl_resource_url')}</label>
-            </div>
-            <button class="component-button component-button--icon component-button--h34 component-button--danger" data-action="removeResourceRow" data-index="${idx}" type="button">
-                <span class="material-symbols-rounded">delete</span>
-            </button>
-        `;
-        container.appendChild(row);
-    }
-
-    removeResourceRow(btn) {
-        const row = btn.closest('.component-resource-row');
-        if (row) row.remove();
-    }
-
-    _collectAdSettings(modal) {
-        const geoModeText = modal.querySelector('[data-ref="geo-mode-text"], [data-ref="slot-geo-mode-text"]');
-        const geoMode = geoModeText ? (geoModeText.getAttribute('data-value') || 'all') : 'all';
-
-        const selectedCountries = [];
-        modal.querySelectorAll('.geo-country-checkbox:checked').forEach(cb => {
-            const val = (cb.value || '').toUpperCase().trim();
-            if (val) selectedCountries.push(val);
-        });
-
-        const blockDcCheckbox = modal.querySelector('[data-ref="block-datacenters-checkbox"], [data-ref="slot-block-datacenters-checkbox"]');
-        const blockDatacenters = blockDcCheckbox ? blockDcCheckbox.checked : false;
-
-        return {
-            geo_mode: geoMode,
-            geo_countries: selectedCountries,
-            block_datacenters: blockDatacenters
-        };
-    }
-
-    _collectAdResources(modal, defaultAlt) {
-        const resources = [];
-        modal.querySelectorAll('.component-resource-row').forEach((row, idx) => {
-            const urlInput = row.querySelector('[data-ref^="res-url-"]');
-            const url = urlInput ? urlInput.value.trim() : '';
-            if (url) {
-                const isVideo = url.endsWith('.mp4') || url.endsWith('.webm');
-                resources.push({
-                    resource_type: isVideo ? 'video' : 'image',
-                    content_url: url,
-                    alt_text: defaultAlt,
-                    sort_order: idx
-                });
-            }
-        });
-        return resources;
-    }
-
-    async submitAd(btn = null) {
-        const modal = btn ? btn.closest('.component-modal-box') : this._getActiveModal();
-        if (!modal) return;
-
-        const form = modal.querySelector('[data-ref="ad-form"]');
-        if (!form) return;
-
-        const adUuid = form.getAttribute('data-ad-uuid');
-        const isEdit = form.getAttribute('data-mode') === 'edit' && !!adUuid;
-        const providerUuid = form.getAttribute('data-provider-uuid') || this.providerUuid;
-
-        const name = (modal.querySelector('[data-ref="ad-name"]')?.value || '').trim();
-        const desc = (modal.querySelector('[data-ref="ad-description"]')?.value || '').trim();
-        const targetUrl = (modal.querySelector('[data-ref="ad-target-url"]')?.value || '').trim();
-        const sponsorLabel = (modal.querySelector('[data-ref="ad-sponsor-label"]')?.value || '').trim();
-        const format = this.selectedAdFormat || 'feed';
-        const settings = this._collectAdSettings(modal);
-
-        if (!name) {
-            showMessage(_t('err_ad_name_required'), 'error');
-            return;
-        }
-
-        const resources = this._collectAdResources(modal, name);
-
-        const payload = {
-            ad: {
-                name: name,
-                title: name,
-                description: desc,
-                target_url: targetUrl || '/upgrade',
-                sponsor_label: sponsorLabel,
-                format: format,
-                status: 'active',
-                settings: settings
-            },
-            resources: resources
-        };
-
-        if (isEdit) {
-            payload.uuid = adUuid;
-        } else {
-            payload.provider_uuid = providerUuid;
-        }
-
-        const route = isEdit ? ApiRoutes.Admin.UpdateAdvertisement : ApiRoutes.Admin.CreateAdvertisement;
-        const successMsgKey = isEdit ? 'msg_ad_updated_success' : 'msg_ad_created_success';
-
-        if (btn) setButtonLoading(btn);
-
-        try {
-            const res = await this.api.post(route, payload, this.abortController.signal);
-            if (res.aborted) return;
-            if (res.success) {
-                showMessage(_t(successMsgKey), 'success');
-                PromoService.loadActiveAds(true).catch(() => {});
-                if (window.modalSystem) window.modalSystem.closeCurrent();
-                await this.handlePagination(window.location.href);
-            } else {
-                showMessage(res.message || _t(res.message_key || 'err_default'), 'error');
-            }
-        } catch (err) {
-            if (err.name !== 'AbortError') showMessage(_t('err_default'), 'error');
-        } finally {
-            if (btn) restoreButton(btn);
-        }
-    }
 
     async submitNetworkSlot(btn = null) {
         const modal = btn ? btn.closest('.component-modal-box') : this._getActiveModal();

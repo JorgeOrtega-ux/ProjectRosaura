@@ -183,9 +183,6 @@ class AdminController extends BaseController {
             $this->requirePermission(PermissionsConstants::MANAGE_ROLES_STRUCTURE);
             $safeInput = [
                 'name' => $input['name'] ?? null,
-                'color_type' => $input['color_type'] ?? null,
-                'angle' => $input['angle'] ?? null,
-                'colors' => $input['colors'] ?? null,
                 'weight' => $input['weight'] ?? null
             ];
             return $this->respond($this->adminServices->createRole($safeInput)); 
@@ -199,9 +196,6 @@ class AdminController extends BaseController {
             $safeInput = [
                 'id' => $input['id'] ?? null,
                 'name' => $input['name'] ?? null,
-                'color_type' => $input['color_type'] ?? null,
-                'angle' => $input['angle'] ?? null,
-                'colors' => $input['colors'] ?? null,
                 'weight' => $input['weight'] ?? null
             ];
             return $this->respond($this->adminServices->editRole($safeInput)); 
@@ -664,6 +658,26 @@ class AdminController extends BaseController {
             $period = isset($input['period']) ? (string)$input['period'] : '30';
             $this->getAdsService()->downloadGeneralMetricsPdf($period);
             exit;
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function upload_ad_media($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::MANAGE_ADVERTISEMENTS);
+            $file = $_FILES['file'] ?? ($input['_files']['file'] ?? null);
+            if (!$file) {
+                return $this->respond(['success' => false, 'message_key' => 'err_no_file_uploaded']);
+            }
+            return $this->respond($this->getAdsService()->uploadAdMedia($file));
+        }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function list_ad_media_library($input) {
+        try {
+            $this->requirePermission(PermissionsConstants::MANAGE_ADVERTISEMENTS);
+            return $this->respond($this->getAdsService()->getAvailableMediaLibrary());
         }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }

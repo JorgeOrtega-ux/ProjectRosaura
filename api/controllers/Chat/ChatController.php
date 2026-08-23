@@ -163,4 +163,30 @@ class ChatController extends BaseController
             return $this->handleException($e, __FUNCTION__);
         }
     }
+
+    public function react($request)
+    {
+        try {
+            $userId = $this->sessionManager->getActiveAccountId();
+            if (!$userId) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
+            }
+
+            $canvasId = $request['canvas_id'] ?? 0;
+            if (!is_numeric($canvasId) && !empty($canvasId)) {
+                $canvasId = $this->chatServices->resolveCanvasIntId($canvasId);
+            } else {
+                $canvasId = (int)$canvasId;
+            }
+
+            $messageId = $request['message_id'] ?? '';
+            $emoji = $request['emoji'] ?? '';
+
+            $result = $this->chatServices->react($userId, $canvasId, $messageId, $emoji);
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
 }
+

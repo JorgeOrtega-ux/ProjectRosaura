@@ -1,4 +1,4 @@
-﻿import { ApiService } from './core/api/ApiService.js';
+import { ApiService } from './core/api/ApiService.js';
 import { ApiRoutes } from './core/api/ApiRoutes.js';
 import { showMessage, setButtonLoading, restoreButton, formatNumber } from './core/utils/uiUtils.js';
 import { ThemeManager } from './core/managers/ThemeManager.js';
@@ -340,6 +340,41 @@ export class MainController {
                 );
             }
             
+            else if (action === 'openImageViewer') {
+                e.preventDefault();
+                let images = [];
+                const rawImages = btn.getAttribute('data-images');
+                const src = btn.getAttribute('data-src') || btn.getAttribute('data-url') || (btn.querySelector('img') ? btn.querySelector('img').src : null);
+                if (rawImages) {
+                    try {
+                        images = JSON.parse(rawImages);
+                    } catch(err) {
+                        images = rawImages.split(',').map(s => s.trim());
+                    }
+                } else if (src) {
+                    images = [src];
+                }
+                const initialIndex = parseInt(btn.getAttribute('data-index') || '0', 10);
+                const title = btn.getAttribute('data-title') || (window.__ ? window.__('lbl_attached_image') : 'Foto adjunta');
+                const senderName = btn.getAttribute('data-sender') || '';
+                const senderDate = btn.getAttribute('data-date') || '';
+                const senderAvatar = btn.getAttribute('data-avatar') || '';
+
+                if (window.modalSystem && images.length > 0) {
+                    window.modalSystem.show('imageViewer', {
+                        images: images,
+                        initialIndex: initialIndex,
+                        title: title,
+                        sender: {
+                            name: senderName,
+                            username: senderName,
+                            date: senderDate,
+                            avatar: senderAvatar
+                        }
+                    });
+                }
+                return;
+            }
             else if (action === 'toggleAccordion') {
                 const accordion = btn.closest('.component-accordion');
                 if (accordion) accordion.classList.toggle('active');

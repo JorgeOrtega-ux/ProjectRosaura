@@ -11,47 +11,39 @@ $maxMB = $maxUploadMB ?? 10;
         <div class="pill-container"><div class="drag-handle"></div></div>
         
         <div class="component-menu-header">
-            <div class="component-menu-header-box">
-                <div class="chat-header-title-box">
-                    <span class="material-symbols-rounded">chat</span>
-                    <span class="component-menu-header-title"><?php echo __('chat_live'); ?></span>
+            <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
+                <div class="component-menu-header-box component-dropdown-trigger component-dropdown-trigger--chat-header chat-header-trigger" data-action="toggleModule" data-target="chat-options-menu">
+                    <div class="chat-header-title-box">
+                        <span class="material-symbols-rounded">chat</span>
+                        <span class="component-menu-header-title"><?php echo __('chat_live'); ?></span>
+                    </div>
+                    <span class="material-symbols-rounded msr-expand_more">expand_more</span>
                 </div>
                 
-                <div class="chat-active-only">
-                    <?php if (isset($isOwner) && $isOwner): ?>
-                    <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
-                        <button class="component-button component-button--icon component-button--h32" data-action="toggleModule" data-target="chat-options-menu">
-                            <span class="material-symbols-rounded">more_vert</span>
-                        </button>
-                        <div class="component-module component-module--dropdown chat-dropdown-module disabled" data-module="chat-options-menu">
-                            <div class="component-menu component-menu--w200 component-menu--h-auto active" data-menu="chat-options-list">
-                                <div class="pill-container"><div class="drag-handle"></div></div>
-                                <div class="component-menu-list">
-                                    <div class="component-menu-link component-menu-link--danger" data-action="deactivateChatOption">
-                                        <div class="component-menu-link-icon">
-                                            <span class="material-symbols-rounded">chat_bubble_outline</span>
-                                        </div>
-                                        <div class="component-menu-link-text">
-                                            <span><?php echo __('btn_deactivate_chat'); ?></span>
-                                        </div>
-                                    </div>
-                                    <div class="component-menu-link" data-action="showGeneralInfoOption">
-                                        <div class="component-menu-link-icon">
-                                            <span class="material-symbols-rounded">info</span>
-                                        </div>
-                                        <div class="component-menu-link-text">
-                                            <span><?php echo __('btn_general_info'); ?></span>
-                                        </div>
-                                    </div>
+                <div class="component-module component-module--dropdown chat-dropdown-module disabled" data-module="chat-options-menu">
+                    <div class="component-menu component-menu--w-full component-menu--h-auto active" data-menu="chat-options-list">
+                        <div class="pill-container"><div class="drag-handle"></div></div>
+                        <div class="component-menu-list">
+                            <?php if (isset($isOwner) && $isOwner): ?>
+                            <div class="component-menu-link component-menu-link--danger" data-action="deactivateChatOption">
+                                <div class="component-menu-link-icon">
+                                    <span class="material-symbols-rounded">chat_bubble_outline</span>
+                                </div>
+                                <div class="component-menu-link-text">
+                                    <span><?php echo __('btn_deactivate_chat'); ?></span>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+                            <div class="component-menu-link" data-action="showGeneralInfoOption">
+                                <div class="component-menu-link-icon">
+                                    <span class="material-symbols-rounded">info</span>
+                                </div>
+                                <div class="component-menu-link-text">
+                                    <span><?php echo __('btn_general_info'); ?></span>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <?php else: ?>
-                    <button class="component-button component-button--icon component-button--h32" data-action="showGeneralInfoOption" data-tooltip="<?php echo __('btn_general_info'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">info</span>
-                    </button>
-                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -146,26 +138,51 @@ $maxMB = $maxUploadMB ?? 10;
         </div>
         
         <div class="component-menu-section-parent">
-            <div class="chat-info-details">
-                <div class="chat-info-item">
-                    <span class="chat-info-label"><?php echo __('lbl_canvas_name'); ?></span>
-                    <span class="chat-info-value"><?php echo htmlspecialchars($canvasName ?? ''); ?></span>
+            <div class="component-details-card">
+                <div class="component-details-card-top">
+                    <button type="button" class="component-menu-link component-menu-link--bordered nav-item component-details-toggle-btn" data-action="toggleInfoDetails">
+                        <span><?php echo __('lbl_canvas_details') ?? 'Detalles del lienzo'; ?></span>
+                        <span class="material-symbols-rounded component-details-toggle-arrow msr-expand_more">expand_more</span>
+                    </button>
                 </div>
-                <div class="chat-info-item">
-                    <span class="chat-info-label"><?php echo __('lbl_canvas_owner'); ?></span>
-                    <span class="chat-info-value"><?php echo htmlspecialchars($ownerUsername ?? __('user')); ?></span>
-                </div>
-                <div class="chat-info-item">
-                    <span class="chat-info-label"><?php echo __('lbl_members'); ?></span>
-                    <span class="chat-info-value"><?php echo htmlspecialchars($membersCount ?? '1'); ?></span>
-                </div>
-                <div class="chat-info-item">
-                    <span class="chat-info-label"><?php echo __('lbl_dimensions'); ?></span>
-                    <span class="chat-info-value"><?php echo htmlspecialchars($canvasSize ?? ''); ?> x <?php echo htmlspecialchars($canvasSize ?? ''); ?></span>
-                </div>
-                <div class="chat-info-item">
-                    <span class="chat-info-label"><?php echo __('lbl_created_at'); ?></span>
-                    <span class="chat-info-value"><?php echo htmlspecialchars($canvasCreatedAt ?? ''); ?></span>
+                
+                <div class="component-details-rows-container collapsed">
+                    <div class="component-details-row">
+                        <span class="component-details-label"><?php echo __('lbl_type') ?? 'Tipo'; ?></span>
+                        <span data-ref="canvas-info-type" class="component-details-value"><?php echo ($canvasMode ?? 'offline') === 'online' ? 'Lienzo en vivo' : 'Lienzo personal'; ?></span>
+                    </div>
+                    <div class="component-details-row">
+                        <span class="component-details-label"><?php echo __('lbl_dimensions') ?? 'Dimensiones'; ?></span>
+                        <span data-ref="canvas-info-dimensions" class="component-details-value"><?php echo htmlspecialchars((string)($canvasSize ?? '')); ?> x <?php echo htmlspecialchars((string)($canvasSize ?? '')); ?> px</span>
+                    </div>
+                    <div class="component-details-row">
+                        <span class="component-details-label"><?php echo __('lbl_owner') ?? 'Titular'; ?></span>
+                        <span data-ref="canvas-info-owner" class="component-details-value"><?php echo htmlspecialchars((string)($ownerUsername ?? __('user'))); ?></span>
+                    </div>
+                    <div class="component-details-row">
+                        <span class="component-details-label"><?php echo __('lbl_created_at') ?? 'Fecha de creación'; ?></span>
+                        <span data-ref="canvas-info-created" class="component-details-value"><?php echo htmlspecialchars((string)($canvasCreatedAt ?? '')); ?></span>
+                    </div>
+                    <div class="component-details-row">
+                        <span class="component-details-label"><?php echo __('lbl_members') ?? 'Miembros'; ?></span>
+                        <span data-ref="canvas-info-members" class="component-details-value"><?php echo htmlspecialchars((string)($membersCount ?? '1')); ?></span>
+                    </div>
+                    <div class="component-details-row">
+                        <span class="component-details-label"><?php echo __('lbl_cooldown') ?? 'Tiempo de recarga'; ?></span>
+                        <span data-ref="canvas-info-cooldown" class="component-details-value"><?php echo !empty($canvasCooldownSeconds) ? ($canvasCooldownSeconds . 's') : '0s'; ?></span>
+                    </div>
+                    <div class="component-details-row">
+                        <span class="component-details-label"><?php echo __('lbl_privacy') ?? 'Privacidad'; ?></span>
+                        <span data-ref="canvas-info-privacy" class="component-details-value"><?php echo ($canvasPrivacy ?? 'public') === 'private' ? 'Privado' : 'Público'; ?></span>
+                    </div>
+                    <div class="component-details-row">
+                        <span class="component-details-label"><?php echo __('lbl_favorites') ?? 'Favoritos'; ?></span>
+                        <span data-ref="canvas-info-favorites" class="component-details-value"><?php echo htmlspecialchars((string)($favoritesCount ?? '0')); ?></span>
+                    </div>
+                    <div class="component-details-row">
+                        <span class="component-details-label"><?php echo __('lbl_total_pixels') ?? 'Píxeles colocados'; ?></span>
+                        <span data-ref="canvas-info-total-pixels" class="component-details-value"><?php echo htmlspecialchars((string)($totalPixelsPlaced ?? '0')); ?></span>
+                    </div>
                 </div>
             </div>
             

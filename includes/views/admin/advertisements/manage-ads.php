@@ -234,6 +234,9 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/advertisement-items/' . $
                             data-ad-sponsor="<?php echo htmlspecialchars($sponsor); ?>"
                             data-ad-format="<?php echo htmlspecialchars($format); ?>"
                             data-ad-status="<?php echo htmlspecialchars($status); ?>"
+                            data-ad-has-expiration="<?php echo (int)($ad['has_expiration'] ?? 0); ?>"
+                            data-ad-start-date="<?php echo htmlspecialchars($ad['start_date'] ?? ''); ?>"
+                            data-ad-expiration-date="<?php echo htmlspecialchars($ad['expiration_date'] ?? ''); ?>"
                             data-ad-resources="<?php echo htmlspecialchars($resourcesJson, ENT_QUOTES, 'UTF-8'); ?>"
                             data-ad-settings="<?php echo htmlspecialchars($settingsJson, ENT_QUOTES, 'UTF-8'); ?>">
                             <td>

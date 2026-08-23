@@ -1,4 +1,4 @@
-﻿import { showMessage, hexToHsv, hsvToHex } from '../../../../core/utils/uiUtils.js';
+import { showMessage, hexToHsv, hsvToHex } from '../../../../core/utils/uiUtils.js';
 
 export const InteractionEvents = {
     bindEvents() {
@@ -344,11 +344,9 @@ export const InteractionEvents = {
                 return;
             }
             const stickerId = btnAddSticker.getAttribute('data-sticker-id');
-            const img = btnAddSticker.querySelector('img');
-            const dataUrl = img ? img.src : null;
             const name = btnAddSticker.getAttribute('data-tooltip') || 'Figura';
             if (stickerId && typeof this.addStickerToCanvas === 'function') {
-                this.addStickerToCanvas(stickerId, dataUrl, name);
+                this.addStickerToCanvas(stickerId, null, name);
             }
             return;
         }

@@ -72,8 +72,6 @@ return [
     '/admin/user-moderation/:uuid' => ['view' => 'admin/users/edit-status.php', 'auth' => true, 'permissions' => [PC::MODERATE_USERS], 'requires_2fa' => false],
     '/admin/user-activity/:uuid' => ['view' => 'admin/users/user-history.php', 'auth' => true, 'permissions' => [PC::VIEW_KARDEX], 'requires_2fa' => false],
     '/admin/roles' => ['view' => 'admin/roles/manage-roles.php', 'auth' => true, 'permissions' => [PC::VIEW_ROLES], 'requires_2fa' => false],
-    '/admin/role-create' => ['view' => 'admin/roles/role-builder.php', 'auth' => true, 'permissions' => [PC::MANAGE_ROLES_STRUCTURE], 'requires_2fa' => false],
-    '/admin/role-edit/:uuid' => ['view' => 'admin/roles/role-builder.php', 'auth' => true, 'permissions' => [PC::MANAGE_ROLES_STRUCTURE], 'requires_2fa' => false],
     '/admin/role-permissions/:uuid' => ['view' => 'admin/roles/role-permissions.php', 'auth' => true, 'permissions' => [PC::MANAGE_ROLES_STRUCTURE], 'requires_2fa' => false],
     '/admin/backups' => ['view' => 'admin/backups/backups.php', 'auth' => true, 'permissions' => [PC::CREATE_BACKUPS, PC::RESTORE_BACKUPS], 'requires_2fa' => false],
     '/admin/backup-schedule' => ['view' => 'admin/backups/backups-automation.php', 'auth' => true, 'permissions' => [PC::CREATE_BACKUPS], 'requires_2fa' => false],

@@ -1024,5 +1024,21 @@ return [
             ['type' => 'RateLimit', 'key' => 'adm_dl_gen_metrics', 'max' => 20, 'time' => 1, 'identifier' => 'user_id'],
         ],
     ],
+    'admin.advertisements.upload_media' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'upload_ad_media',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_upload_ad_media', 'max' => 30, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'admin.advertisements.list_media_library' => [
+        'controller' => 'App\\Api\\Controllers\\Admin\\AdminController',
+        'action' => 'list_ad_media_library',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'adm_list_ad_media', 'max' => 60, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
 ];
 

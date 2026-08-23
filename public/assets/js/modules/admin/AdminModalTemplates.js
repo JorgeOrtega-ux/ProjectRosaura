@@ -329,6 +329,9 @@ export const AdminModalTemplates = {
             const adUuid = ad ? (ad.uuid || '') : '';
             const adFormat = ad ? (ad.format || 'feed') : 'feed';
             const resources = data.resources || (ad ? ad.resources : []) || [];
+            const hasExp = ad ? (ad.has_expiration == 1) : false;
+            const startDateVal = ad && ad.start_date ? ad.start_date.substring(0, 16).replace(' ', 'T') : '';
+            const expDateVal = ad && ad.expiration_date ? ad.expiration_date.substring(0, 16).replace(' ', 'T') : '';
             const settings = ad && ad.settings ? (typeof ad.settings === 'string' ? JSON.parse(ad.settings) : ad.settings) : (data.settings || {});
             const geoMode = settings.geo_mode || 'all';
             const geoCountries = Array.isArray(settings.geo_countries) ? settings.geo_countries : [];
@@ -373,25 +376,51 @@ export const AdminModalTemplates = {
                 `;
             }).join('');
 
-            const resourcesHtml = resources.length > 0 ? resources.map((res, idx) => `
-                <div class="component-resource-row" data-index="${idx}">
-                    <div class="component-input-group">
-                        <input class="component-input-field" data-ref="res-url-${idx}" type="text" placeholder=" " value="${res.content_url || ''}" required>
-                        <label class="component-input-label">${__('lbl_resource_url')}</label>
+            const renderResourceRow = (res, idx) => {
+                const url = res ? (res.content_url || '') : '';
+                const isVideo = url.endsWith('.mp4') || url.endsWith('.webm');
+                const hasMedia = !!url;
+                return `
+                    <div class="component-resource-row" data-index="${idx}" draggable="true">
+                        <div class="component-resource-drag-handle" data-action="dragHandle" title="${__('lbl_drag_to_reorder')}">
+                            <span class="material-symbols-rounded">drag_indicator</span>
+                        </div>
+                        <div class="component-resource-order-actions">
+                            <button type="button" class="component-button component-button--icon component-button--h24" data-action="moveResourceUp" title="${__('btn_move_up')}">
+                                <span class="material-symbols-rounded">keyboard_arrow_up</span>
+                            </button>
+                            <button type="button" class="component-button component-button--icon component-button--h24" data-action="moveResourceDown" title="${__('btn_move_down')}">
+                                <span class="material-symbols-rounded">keyboard_arrow_down</span>
+                            </button>
+                        </div>
+                        <div class="component-resource-thumb-box" data-ref="thumb-box-${idx}">
+                            <img class="component-resource-thumb-img ${hasMedia && !isVideo ? '' : 'hidden'}" src="${hasMedia && !isVideo ? url : ''}" alt="" onerror="this.classList.add('hidden'); this.parentElement.querySelector('.component-resource-thumb-fallback').classList.remove('hidden');">
+                            <video class="component-resource-thumb-video ${hasMedia && isVideo ? '' : 'hidden'}" src="${hasMedia && isVideo ? url : ''}" muted playsinline></video>
+                            <span class="material-symbols-rounded component-resource-thumb-fallback ${hasMedia ? 'hidden' : ''}">image</span>
+                        </div>
+                        <div class="component-input-group component-input-group--flex">
+                            <input class="component-input-field" data-action="resourceInputUrlChange" data-ref="res-url-${idx}" type="text" placeholder=" " value="${url}" required>
+                            <label class="component-input-label">${__('lbl_resource_url')}</label>
+                        </div>
+                        <div class="component-resource-row-actions">
+                            <label class="component-button component-button--icon component-button--h34" data-tooltip="${__('btn_upload_media')}" data-position="bottom">
+                                <span class="material-symbols-rounded">upload_file</span>
+                                <input type="file" class="hidden-file-input" data-action="uploadResourceFile" data-index="${idx}" accept="image/*,video/mp4,video/webm" style="display:none;">
+                            </label>
+                            <button type="button" class="component-button component-button--icon component-button--h34" data-action="openServerMediaLibrary" data-index="${idx}" data-tooltip="${__('btn_media_library')}" data-position="bottom">
+                                <span class="material-symbols-rounded">photo_library</span>
+                            </button>
+                            <button type="button" class="component-button component-button--icon component-button--h34 component-button--danger" data-action="removeResourceRow" data-index="${idx}" data-tooltip="${__('btn_delete')}" data-position="bottom">
+                                <span class="material-symbols-rounded">delete</span>
+                            </button>
+                        </div>
                     </div>
-                    ${idx > 0 ? `
-                    <button class="component-button component-button--icon component-button--h34 component-button--danger" data-action="removeResourceRow" data-index="${idx}" type="button">
-                        <span class="material-symbols-rounded">delete</span>
-                    </button>` : ''}
-                </div>
-            `).join('') : `
-                <div class="component-resource-row" data-index="0">
-                    <div class="component-input-group">
-                        <input class="component-input-field" data-ref="res-url-0" type="text" placeholder=" " value="/assets/img/showcase/creative_tools.jpg" required>
-                        <label class="component-input-label">${__('lbl_resource_url')}</label>
-                    </div>
-                </div>
-            `;
+                `;
+            };
+
+            const resourcesHtml = resources.length > 0 
+                ? resources.map((res, idx) => renderResourceRow(res, idx)).join('') 
+                : renderResourceRow({ content_url: '/assets/img/showcase/creative_tools.jpg' }, 0);
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
@@ -457,7 +486,7 @@ export const AdminModalTemplates = {
                     </div>
 
                     <div class="step-modal-step disabled" data-ad-step="5">
-                        <div data-ref="resources-builder-container">
+                        <div class="component-resources-container" data-ref="resources-builder-container">
                             ${resourcesHtml}
                         </div>
 
@@ -470,6 +499,27 @@ export const AdminModalTemplates = {
                     </div>
 
                     <div class="step-modal-step disabled" data-ad-step="6">
+                        <label class="component-menu-link component-menu-link--bordered nav-item">
+                            <div class="component-menu-link-icon">
+                                <input type="checkbox" data-ref="ad-has-expiration" data-action="toggleAdExpiration" ${hasExp ? 'checked' : ''}>
+                            </div>
+                            <div class="component-menu-link-text">
+                                <span>${__('lbl_ad_has_expiration')}</span>
+                            </div>
+                        </label>
+                        <div class="component-date-range-fields ${hasExp ? '' : 'disabled'}" data-ref="ad-expiration-fields">
+                            <div class="component-input-group">
+                                <input class="component-input-field" data-ref="ad-start-date" type="datetime-local" placeholder=" " value="${startDateVal}">
+                                <label class="component-input-label">${__('lbl_ad_start_date')}</label>
+                            </div>
+                            <div class="component-input-group">
+                                <input class="component-input-field" data-ref="ad-expiration-date" type="datetime-local" placeholder=" " value="${expDateVal}">
+                                <label class="component-input-label">${__('lbl_ad_expiration_date')}</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-modal-step disabled" data-ad-step="7">
                         <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
                             <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownAdGeoMode">
                                 <span class="material-symbols-rounded" data-ref="geo-mode-icon">${geoModeIcon}</span>
@@ -546,6 +596,56 @@ export const AdminModalTemplates = {
             `;
         }
     },
+    serverMediaLibraryModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const mediaList = data.media || [];
+            const targetRowIndex = data.targetRowIndex ?? 0;
+
+            const mediaCardsHtml = mediaList.length > 0 ? mediaList.map(item => {
+                const isVideo = item.type === 'video';
+                return `
+                    <div class="component-media-picker-card" data-action="selectMediaItem" data-url="${item.url}" data-type="${item.type}" data-target-index="${targetRowIndex}">
+                        <div class="component-media-picker-preview">
+                            ${isVideo 
+                                ? `<video src="${item.url}" muted playsinline></video><div class="component-media-picker-badge"><span class="material-symbols-rounded">videocam</span></div>` 
+                                : `<img src="${item.url}" alt="${item.filename}" loading="lazy">`
+                            }
+                        </div>
+                        <div class="component-media-picker-info">
+                            <span class="component-media-picker-name" title="${item.filename}">${item.filename}</span>
+                            <span class="component-media-picker-meta">${item.category || ''}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('') : `
+                <div class="component-empty-state">
+                    <span class="material-symbols-rounded component-empty-state-icon">perm_media</span>
+                    <p class="component-empty-state-text">${__('admin_ad_search_empty') || 'No hay medios disponibles en el servidor.'}</p>
+                </div>
+            `;
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${__('modal_select_server_media_title')}</h2>
+                        <p class="component-modal-desc">${__('modal_select_server_media_desc')}</p>
+                    </div>
+                </div>
+
+                <div class="component-modal-body component-modal-body--scrollable">
+                    <div class="component-media-picker-grid">
+                        ${mediaCardsHtml}
+                    </div>
+                </div>
+
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                </div>
+            `;
+        }
+    },
     createAdModal: {
         build: (data = {}) => AdminModalTemplates.adModal.build(data)
     },
@@ -570,18 +670,13 @@ export const AdminModalTemplates = {
             const title = isEdit ? __('modal_edit_network_slot_title') : __('modal_create_network_slot_title');
             const finishText = isEdit ? __('btn_save_changes') : __('btn_save_slot');
 
-            let formatIcon = 'view_carousel';
-            let formatLabel = __('admin_ad_format_feed');
-            if (slotFormat === 'module_colors') {
-                formatIcon = 'palette';
-                formatLabel = __('admin_ad_format_module_colors');
-            } else if (slotFormat === 'module_templates') {
-                formatIcon = 'dashboard_customize';
-                formatLabel = __('admin_ad_format_module_templates');
-            } else if (slotFormat === 'modules') {
-                formatIcon = 'palette';
-                formatLabel = __('admin_ad_format_modules');
-            }
+            const formatsList = (typeof window.ADVERTISEMENT_FORMATS === 'object' && Array.isArray(window.ADVERTISEMENT_FORMATS)) 
+                ? window.ADVERTISEMENT_FORMATS 
+                : ADVERTISEMENT_FORMATS;
+
+            const currentFmtDef = formatsList.find(f => f.id === slotFormat) || formatsList[0] || { id: 'feed', icon: 'view_carousel', labelKey: 'admin_ad_format_feed', defaultLabel: 'Feed: Home, Búsqueda y Capturas' };
+            const formatIcon = currentFmtDef.icon || 'view_carousel';
+            const formatLabel = __(currentFmtDef.labelKey) || currentFmtDef.label || currentFmtDef.defaultLabel;
 
             let geoModeIcon = 'public';
             let geoModeLabel = __('geo_mode_all');
@@ -632,18 +727,17 @@ export const AdminModalTemplates = {
                                 <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list">
-                                        <div class="component-menu-link ${slotFormat === 'feed' ? 'active' : ''}" data-action="selectSlotFormat" data-format="feed" data-label="${__('admin_ad_format_feed')}" data-icon="view_carousel">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">view_carousel</span></div>
-                                            <div class="component-menu-link-text"><span>${__('admin_ad_format_feed')}</span></div>
-                                        </div>
-                                        <div class="component-menu-link ${slotFormat === 'module_colors' ? 'active' : ''}" data-action="selectSlotFormat" data-format="module_colors" data-label="${__('admin_ad_format_module_colors')}" data-icon="palette">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">palette</span></div>
-                                            <div class="component-menu-link-text"><span>${__('admin_ad_format_module_colors')}</span></div>
-                                        </div>
-                                        <div class="component-menu-link ${slotFormat === 'module_templates' ? 'active' : ''}" data-action="selectSlotFormat" data-format="module_templates" data-label="${__('admin_ad_format_module_templates')}" data-icon="dashboard_customize">
-                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">dashboard_customize</span></div>
-                                            <div class="component-menu-link-text"><span>${__('admin_ad_format_module_templates')}</span></div>
-                                        </div>
+                                        ${formatsList.map(fmt => {
+                                            const isActive = (slotFormat === fmt.id) ? 'active' : '';
+                                            const itemLabel = __(fmt.labelKey) || fmt.label || fmt.defaultLabel;
+                                            const itemIcon = fmt.icon || 'view_carousel';
+                                            return `
+                                                <div class="component-menu-link ${isActive}" data-action="selectSlotFormat" data-format="${fmt.id}" data-label="${itemLabel}" data-icon="${itemIcon}">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">${itemIcon}</span></div>
+                                                    <div class="component-menu-link-text"><span>${itemLabel}</span></div>
+                                                </div>
+                                            `;
+                                        }).join('')}
                                     </div>
                                 </div>
                             </div>
@@ -988,6 +1082,75 @@ export const AdminModalTemplates = {
                         <span class="material-symbols-rounded">download</span>
                         <span>${__('btn_download_pdf')}</span>
                     </button>
+                </div>
+            `;
+        }
+    },
+    roleModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const isEdit = !!data.isEdit;
+            const roleName = data.roleName || '';
+            const roleWeight = parseInt(data.roleWeight, 10) || 1;
+            const maxWeight = parseInt(data.maxWeight, 10) || 100;
+            const roleId = data.roleId || '';
+            const isSystem = !!data.isSystem;
+
+            const title = isEdit ? __('admin_edit_role') : __('btn_add_role');
+            const desc = isEdit ? (__('modal_edit_role_desc') || __('admin_role_hierarchy_desc')) : (__('modal_create_role_desc') || __('admin_role_hierarchy_desc'));
+            const submitText = isEdit ? __('btn_save_changes') : __('btn_add_role');
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${title}</h2>
+                        <p class="component-modal-desc">${desc}</p>
+                    </div>
+                </div>
+
+                <div class="component-modal-body" data-ref="admin-role-form" data-role-id="${roleId}" data-mode="${isEdit ? 'edit' : 'create'}" data-max-weight="${maxWeight}">
+                    <div class="component-input-group">
+                        <input class="component-input-field" data-ref="modalRoleNameInput" type="text" placeholder=" " value="${roleName}" maxlength="50" autocomplete="off" ${isSystem ? 'disabled' : ''} required>
+                        <label class="component-input-label">${__('admin_role_name')}</label>
+                    </div>
+
+                    <div class="component-card--grouped component-card--flush">
+                        <div class="component-group-item component-group-item--stacked">
+                            <div class="component-card__content">
+                                <div class="component-card__text">
+                                    <h2 class="component-card__title">${__('admin_role_hierarchy_title')}</h2>
+                                    <p class="component-card__description">${__('admin_role_hierarchy_desc')}</p>
+                                </div>
+                            </div>
+                            <div class="component-card__actions component-card__actions--start">
+                                <div class="component-inline-control component-inline-control--fixed ${isSystem ? 'disabled-interaction' : ''}">
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustModalWeight" data-step="-5" data-min="1">
+                                            <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                        </button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustModalWeight" data-step="-1" data-min="1">
+                                            <span class="material-symbols-rounded">chevron_left</span>
+                                        </button>
+                                    </div>
+                                    <div class="component-inline-control__center" data-ref="modal_val_role_weight" data-value="${roleWeight}">${roleWeight}</div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustModalWeight" data-step="1" data-max="${maxWeight}">
+                                            <span class="material-symbols-rounded">chevron_right</span>
+                                        </button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustModalWeight" data-step="5" data-max="${maxWeight}">
+                                            <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button class="component-button component-button--primary component-button--h40 ${isSystem ? 'disabled-interaction' : ''}" data-action="submitRoleModal">${submitText}</button>
                 </div>
             `;
         }

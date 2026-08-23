@@ -387,20 +387,18 @@ export const DesignTemplates = {
             card.setAttribute('data-tooltip', sticker.name);
             card.setAttribute('data-position', 'top');
 
-            const img = document.createElement('img');
-            img.src = sticker.dataUrl;
-            img.alt = sticker.name;
-            img.className = 'component-library-card__image image-loaded';
-            img.loading = 'lazy';
+            const spriteEl = document.createElement('div');
+            spriteEl.className = `component-sticker-sprite ${sticker.spriteClass || ''}`;
+            spriteEl.setAttribute('aria-label', sticker.name);
 
-            card.appendChild(img);
+            card.appendChild(spriteEl);
             container.appendChild(card);
         });
 
         this.updateTemplateUI();
     },
 
-    addStickerToCanvas(stickerId, fallbackDataUrl = null, fallbackName = null) {
+    async addStickerToCanvas(stickerId, fallbackDataUrl = null, fallbackName = null) {
         if (this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
 
         let sticker = getStickerById(stickerId);
@@ -410,7 +408,11 @@ export const DesignTemplates = {
                 name: fallbackName || 'Figura',
                 dataUrl: fallbackDataUrl,
                 width: 16,
-                height: 16
+                height: 16,
+                sx: 0,
+                sy: 0,
+                sw: 16,
+                sh: 16
             };
         }
         if (!sticker) return;
@@ -431,41 +433,50 @@ export const DesignTemplates = {
             return;
         }
 
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
+        try {
+            const spriteUrl = sticker.spriteUrl || getStickersSpriteUrl();
+            
+            // Singleton cached sprite image
+            if (!this._stickersSpriteImg || !this._stickersSpriteImg.complete || this._stickersSpriteImg.src !== spriteUrl) {
+                this._stickersSpriteImg = await new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = () => reject(new Error('Error loading stickers sprite'));
+                    img.src = spriteUrl;
+                });
+            }
 
-        const loadBitmap = async (imageSource) => {
+            const offCanvas = document.createElement('canvas');
+            offCanvas.width = 16;
+            offCanvas.height = 16;
+            const offCtx = offCanvas.getContext('2d');
+            offCtx.imageSmoothingEnabled = false;
+
+            const sx = typeof sticker.sx === 'number' ? sticker.sx : 0;
+            const sy = typeof sticker.sy === 'number' ? sticker.sy : 0;
+            offCtx.drawImage(this._stickersSpriteImg, sx, sy, 16, 16, 0, 0, 16, 16);
+
+            let imageBitmap = null;
             if (typeof createImageBitmap === 'function') {
                 try {
-                    return await createImageBitmap(imageSource);
+                    imageBitmap = await createImageBitmap(offCanvas);
                 } catch (e) {}
             }
-            try {
-                const offCanvas = document.createElement('canvas');
-                offCanvas.width = imageSource.naturalWidth || 16;
-                offCanvas.height = imageSource.naturalHeight || 16;
-                const offCtx = offCanvas.getContext('2d');
-                offCtx.drawImage(imageSource, 0, 0);
-                return await createImageBitmap(offCanvas);
-            } catch (err) {
-                return null;
-            }
-        };
 
-        img.onload = async () => {
+            const stickerImg = new Image();
+            stickerImg.src = offCanvas.toDataURL();
+
             const targetSize = Math.max(16, Math.min(64, Math.floor(Math.min(this.boardWidth, this.boardHeight) / 3)));
             const w = targetSize;
             const h = targetSize;
             const x = Math.round((this.boardWidth - w) / 2);
             const y = Math.round((this.boardHeight - h) / 2);
 
-            const imageBitmap = await loadBitmap(img);
-
             this.templates.push({
                 id: sticker.id,
-                img,
+                img: stickerImg,
                 imageBitmap,
-                src: sticker.dataUrl,
+                src: stickerImg.src,
                 x,
                 y,
                 w,
@@ -479,13 +490,10 @@ export const DesignTemplates = {
 
             this.toggleTemplate(sticker.id);
             showMessage(window.__('msg_template_added') || 'Figura añadida al lienzo', 'success');
-        };
-
-        img.onerror = () => {
+        } catch (err) {
+            console.error('[DesignTemplates] Error adding sticker to canvas:', err);
             showMessage(window.__('err_download_library_image') || 'Error al cargar la figura', 'error');
-        };
-
-        img.src = sticker.dataUrl;
+        }
     },
 
     async addShapeToCanvas(shapeId, fallbackSvg = null, fallbackName = null) {

@@ -53,16 +53,16 @@ class HomeController {
         if (isGuest && this.contentArea) {
             this.contentArea.innerHTML = CardTemplates.emptyState({
                 type: 'canvas',
-                title: window.__('home_empty_guest_title', [], 'Tus murales aparecerán aquí'),
-                message: window.__('home_empty_guest_desc', [], 'Cuando crees o administres un lienzo de píxeles, podrás acceder a ellos directamente desde esta sección.'),
+                title: window.__('home_empty_guest_title'),
+                message: window.__('home_empty_guest_desc'),
                 actions: `
                     <a class="component-button component-button--h40" data-nav="${this.basePath}/login">
                         <span class="material-symbols-rounded">login</span>
-                        <span>${window.__('link_login', [], 'Iniciar sesión')}</span>
+                        <span>${window.__('link_login')}</span>
                     </a>
                     <a class="component-button component-button--secondary component-button--h40" data-nav="${this.basePath}/explore">
                         <span class="material-symbols-rounded">explore</span>
-                        <span>${window.__('btn_explore_canvases', [], 'Explorar murales')}</span>
+                        <span>${window.__('btn_explore_canvases')}</span>
                     </a>
                 `
             });

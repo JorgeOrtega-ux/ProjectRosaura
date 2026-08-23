@@ -1,6 +1,8 @@
 import { ModalTemplates } from './ModalTemplates.js';
 import { CalendarSystem } from './CalendarSystem.js';
-import { getEventCoords, hexToHsv, hsvToHex, restoreButton, setButtonLoading, showMessage } from '../utils/uiUtils.js';
+import { getEventCoords, hexToHsv, hsvToHex, restoreButton, setButtonLoading, showMessage, initCarouselScroll } from '../utils/uiUtils.js';
+import { ApiService } from '../api/ApiService.js';
+import { ApiRoutes } from '../api/ApiRoutes.js';
 
 export class ModalSystem {
     constructor() {
@@ -151,11 +153,26 @@ export class ModalSystem {
                 this.activeBox.classList.add('component-modal-box--medium');
             }
 
+            if (template.imageViewer || templateName === 'imageViewer') {
+                this.activeBox.classList.add('component-modal-box--image-viewer');
+            }
+
             const buildFn = typeof template.build === 'function' ? template.build : (typeof template.template === 'function' ? template.template : null);
             if (!buildFn) {
                 throw new Error(`Modal template '${templateName}' does not provide a build or template function.`);
             }
             this.activeBox.innerHTML = buildFn(data);
+
+            if (template.imageViewer || templateName === 'imageViewer') {
+                const root = this.activeBox.querySelector('[data-ref="modal-image-viewer-root"]');
+                if (root && data && data.images) {
+                    root._images = Array.isArray(data.images) ? data.images : [data.images];
+                }
+                const carouselWrap = this.activeBox.querySelector('[data-ref="iv-carousel-wrapper"]');
+                if (carouselWrap) {
+                    initCarouselScroll(carouselWrap);
+                }
+            }
             
             this.activeWrapper.appendChild(this.activeBox);
 
@@ -202,12 +219,29 @@ export class ModalSystem {
                     'button[data-modal-action="finish"], ' +
                     'button[data-action="confirm"], ' +
                     'button[data-action="submitJoinLive"], ' +
+                    'button[data-action="submitRoleModal"], ' +
                     '#btn_confirm_custom_backup'
                 );
 
                 if (confirmBtn && !confirmBtn.disabled && !confirmBtn.classList.contains('disabled') && !confirmBtn.classList.contains('disabled-interaction')) {
                     e.preventDefault();
                     confirmBtn.click();
+                }
+            }
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            if (this.activeTemplateName === 'imageViewer' && this.activeBox) {
+                const root = this.activeBox.querySelector('[data-ref="modal-image-viewer-root"]');
+                if (root) {
+                    const currentIdx = parseInt(root.getAttribute('data-current-index') || '0', 10);
+                    if (e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        this._updateImageViewer(root, currentIdx - 1);
+                        return;
+                    } else if (e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        this._updateImageViewer(root, currentIdx + 1);
+                        return;
+                    }
                 }
             }
         } else if (e.key === 'Escape') {
@@ -217,6 +251,7 @@ export class ModalSystem {
                 'button[data-modal-action="finish"], ' +
                 'button[data-action="confirm"], ' +
                 'button[data-action="submitJoinLive"], ' +
+                'button[data-action="submitRoleModal"], ' +
                 '#btn_confirm_custom_backup'
             ) : null;
             const isCurrentlyLoading = activeConfirmBtn && activeConfirmBtn.classList.contains('disabled-interaction');
@@ -238,6 +273,7 @@ export class ModalSystem {
             'button[data-modal-action="finish"], ' +
             'button[data-action="confirm"], ' +
             'button[data-action="submitJoinLive"], ' +
+            'button[data-action="submitRoleModal"], ' +
             '#btn_confirm_custom_backup'
         ) : null;
         const isCurrentlyLoading = activeConfirmBtn && activeConfirmBtn.classList.contains('disabled-interaction');
@@ -254,6 +290,47 @@ export class ModalSystem {
         const closeBtn = e.target.closest('.component-modal-close-btn');
         if (closeBtn) {
             this.closeCurrent(false);
+            return;
+        }
+
+        const ivPrevBtn = e.target.closest('[data-modal-action="prevImageViewer"]');
+        if (ivPrevBtn && this.activeBox) {
+            e.preventDefault();
+            const root = this.activeBox.querySelector('[data-ref="modal-image-viewer-root"]');
+            if (root) {
+                const currentIdx = parseInt(root.getAttribute('data-current-index') || '0', 10);
+                this._updateImageViewer(root, currentIdx - 1);
+            }
+            return;
+        }
+
+        const ivNextBtn = e.target.closest('[data-modal-action="nextImageViewer"]');
+        if (ivNextBtn && this.activeBox) {
+            e.preventDefault();
+            const root = this.activeBox.querySelector('[data-ref="modal-image-viewer-root"]');
+            if (root) {
+                const currentIdx = parseInt(root.getAttribute('data-current-index') || '0', 10);
+                this._updateImageViewer(root, currentIdx + 1);
+            }
+            return;
+        }
+
+        const ivThumbBtn = e.target.closest('[data-modal-action="selectImageViewerIndex"]');
+        if (ivThumbBtn && this.activeBox) {
+            e.preventDefault();
+            const root = this.activeBox.querySelector('[data-ref="modal-image-viewer-root"]');
+            const targetIdx = parseInt(ivThumbBtn.getAttribute('data-index') || '0', 10);
+            if (root) {
+                this._updateImageViewer(root, targetIdx);
+            }
+            return;
+        }
+
+        const ivDownloadBtn = e.target.closest('[data-modal-action="downloadImageViewer"]');
+        if (ivDownloadBtn && this.activeBox) {
+            e.preventDefault();
+            const root = this.activeBox.querySelector('[data-ref="modal-image-viewer-root"]');
+            this._downloadImageViewerImage(root, ivDownloadBtn);
             return;
         }
 
@@ -1098,5 +1175,185 @@ export class ModalSystem {
         });
 
         client.requestAccessToken();
+    }
+
+    _updateImageViewer(root, newIndex) {
+        if (!root) return;
+        let images = root._images;
+        if (!images || !Array.isArray(images) || images.length === 0) {
+            try {
+                let raw = root.getAttribute('data-images') || '[]';
+                if (raw.includes('&quot;')) raw = raw.replace(/&quot;/g, '"');
+                if (raw.includes('&amp;')) raw = raw.replace(/&amp;/g, '&');
+                images = JSON.parse(raw);
+            } catch(e) {
+                try {
+                    const txt = document.createElement('textarea');
+                    txt.innerHTML = root.getAttribute('data-images') || '[]';
+                    images = JSON.parse(txt.value);
+                } catch(err2) {
+                    images = [];
+                }
+            }
+            root._images = images;
+        }
+        const total = images ? images.length : 0;
+        if (total === 0) return;
+
+        const idx = Math.max(0, Math.min(newIndex, total - 1));
+        root.setAttribute('data-current-index', idx.toString());
+
+        const currentItem = images[idx];
+        const currentUrl = typeof currentItem === 'string' ? currentItem : (currentItem?.url || '');
+
+        const stageImg = root.querySelector('[data-ref="iv-stage-img"]');
+        if (stageImg && currentUrl) {
+            stageImg.classList.remove('image-loaded');
+            const preloader = new Image();
+            preloader.onload = () => {
+                stageImg.src = currentUrl;
+                stageImg.classList.add('image-loaded');
+            };
+            preloader.onerror = () => {
+                stageImg.src = (window.AppBasePath || '') + '/public/assets/img/fallbacks/canvas-default.png';
+                stageImg.classList.add('image-loaded');
+            };
+            preloader.src = currentUrl;
+        }
+
+        const titleEl = root.querySelector('[data-ref="iv-title"]');
+        if (titleEl && typeof currentItem === 'object' && currentItem.name) {
+            titleEl.textContent = currentItem.name;
+        }
+
+        const counterText = root.querySelector('[data-ref="iv-counter-text"]');
+        if (counterText) {
+            counterText.textContent = total > 1 ? `${idx + 1} de ${total} imágenes` : '1 imagen';
+        }
+
+        const senderNameEl = root.querySelector('[data-ref="iv-sender-name"]');
+        if (senderNameEl && typeof currentItem === 'object' && currentItem.sender) {
+            senderNameEl.textContent = `Por ${currentItem.sender}`;
+        }
+
+        const dateBadge = root.querySelector('[data-ref="iv-date-badge"]');
+        const senderDateEl = root.querySelector('[data-ref="iv-sender-date"]');
+        if (senderDateEl && typeof currentItem === 'object') {
+            const d = currentItem.date || '';
+            senderDateEl.textContent = d;
+            if (dateBadge) dateBadge.classList.toggle('disabled', !d);
+        }
+
+        const senderAvatarEl = root.querySelector('[data-ref="iv-sender-avatar"]');
+        if (senderAvatarEl && typeof currentItem === 'object' && currentItem.avatar) {
+            senderAvatarEl.src = currentItem.avatar;
+        }
+
+        const senderAvatarWrap = root.querySelector('[data-ref="iv-sender-avatar-wrap"]');
+        if (senderAvatarWrap && typeof currentItem === 'object') {
+            const subBg = currentItem.subBg || '';
+            senderAvatarWrap.setAttribute('data-sub-bg', subBg);
+            senderAvatarWrap.style.setProperty('--active-subscription-bg', subBg || 'transparent');
+        }
+
+        const thumbs = root.querySelectorAll('.component-image-viewer-thumb');
+        thumbs.forEach((thumb, tIdx) => {
+            const isActive = (tIdx === idx);
+            thumb.classList.toggle('active', isActive);
+            if (isActive) {
+                thumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        });
+    }
+
+    async _downloadImageViewerImage(root, btn) {
+        if (!root) return;
+        let images = root._images;
+        if (!images || !Array.isArray(images) || images.length === 0) {
+            try {
+                let raw = root.getAttribute('data-images') || '[]';
+                if (raw.includes('&quot;')) raw = raw.replace(/&quot;/g, '"');
+                if (raw.includes('&amp;')) raw = raw.replace(/&amp;/g, '&');
+                images = JSON.parse(raw);
+            } catch(e) {
+                images = [];
+            }
+        }
+
+        const idx = parseInt(root.getAttribute('data-current-index') || '0', 10);
+        const item = (images && images[idx]) ? images[idx] : null;
+        let currentUrl = typeof item === 'string' ? item : (item?.url || '');
+        if (!currentUrl) {
+            const stageImg = root.querySelector('[data-ref="iv-stage-img"]');
+            currentUrl = stageImg ? stageImg.src : '';
+        }
+        if (!currentUrl) return;
+
+        if (btn) setButtonLoading(btn);
+
+        try {
+            let fileName = 'plantilla.png';
+            try {
+                if (typeof item === 'object' && item && item.name && item.name.includes('.')) {
+                    fileName = item.name;
+                } else {
+                    const cleanName = currentUrl.split('/').pop().split('?')[0];
+                    if (cleanName && cleanName.includes('.')) {
+                        fileName = cleanName;
+                    }
+                }
+            } catch(e) {}
+
+            const response = await fetch(currentUrl);
+            if (!response.ok) throw new Error('Fetch failed');
+            const blob = await response.blob();
+
+            // 1. Download file directly to user device
+            const blobUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = blobUrl;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                window.URL.revokeObjectURL(blobUrl);
+                a.remove();
+            }, 1000);
+
+            // 2. Save template into Rosaura canvas templates library
+            try {
+                const api = new ApiService();
+                const file = new File([blob], fileName, { type: blob.type || 'image/png' });
+                const formData = new FormData();
+                formData.append('file', file);
+                const uploadRes = await api.postForm(ApiRoutes.Canvases.UploadTemplate, formData);
+                if (uploadRes && (uploadRes.success || uploadRes.status === 'success')) {
+                    if (window.showMessage) {
+                        const __ = typeof window.__ === 'function' ? window.__ : (k => k);
+                        showMessage(__('msg_template_saved') || 'Plantilla guardada en tu biblioteca', 'success');
+                    }
+                } else if (window.showMessage) {
+                    const __ = typeof window.__ === 'function' ? window.__ : (k => k);
+                    showMessage(__('lbl_download_success') || 'Descarga iniciada', 'success');
+                }
+            } catch(uploadErr) {
+                if (window.showMessage) {
+                    const __ = typeof window.__ === 'function' ? window.__ : (k => k);
+                    showMessage(__('lbl_download_success') || 'Descarga iniciada', 'success');
+                }
+            }
+        } catch(err) {
+            console.warn('[ModalSystem] Direct blob download failed, falling back:', err);
+            const a = document.createElement('a');
+            a.href = currentUrl;
+            a.download = 'plantilla.png';
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => a.remove(), 1000);
+        } finally {
+            if (btn) restoreButton(btn);
+        }
     }
 }

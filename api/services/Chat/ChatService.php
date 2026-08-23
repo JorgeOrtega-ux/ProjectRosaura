@@ -205,7 +205,15 @@ class ChatService
             } else {
                 $message['attachments'] = [];
             }
-}
+        }
+        unset($message);
+
+        $reactionsMap = $this->fetchReactionsForMessages($canvasId, $messages, $userId);
+        foreach ($messages as &$msg) {
+            $msgKey = $msg['uuid'] ?? $msg['id'] ?? '';
+            $msg['reactions'] = $reactionsMap[$msgKey] ?? [];
+        }
+        unset($msg);
 
         return [
             'success' => true,
@@ -214,7 +222,7 @@ class ChatService
                 'has_more' => count($messages) >= $limit
             ]
         ];
-}
+    }
 
     public function send($userId, $canvasId, $messageText, $files, $clientId = null, $replyTo = null)
     {
@@ -387,7 +395,8 @@ class ChatService
             'created_at' => date('Y-m-d H:i:s'),
             'reply_to' => $replyTo,
             'reply_to_username' => $replyToUsername,
-            'reply_to_message' => $replyToMessage
+            'reply_to_message' => $replyToMessage,
+            'reactions' => []
         ];
 
         if ($this->redis) {
@@ -986,4 +995,196 @@ class ChatService
         
         return ['success' => true, 'photos' => $photos];
     }
+
+    public function react($userId, $canvasId, $messageId, $emoji)
+    {
+        $emoji = trim((string)$emoji);
+        if ($canvasId <= 0 || empty($messageId) || empty($emoji)) {
+            return ['success' => false, 'message' => __('err_invalid_data'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
+        }
+
+        if (mb_strlen($emoji) > 16) {
+            return ['success' => false, 'message' => __('err_invalid_emoji'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
+        }
+
+        $stmt = $this->pdo->prepare("SELECT id, allow_chat, uuid, privacy, owner_id FROM " . DB::TBL_CANVASES . " WHERE id = ? AND deleted_at IS NULL");
+        $stmt->execute([$canvasId]);
+        $canvas = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$canvas || $canvas['allow_chat'] != 1) {
+            return ['success' => false, 'message' => __('err_chat_disabled'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
+        }
+
+        if (($canvas['privacy'] ?? '') === DB::PRIVACY_PRIVATE) {
+            $isOwner = ((int)($canvas['owner_id'] ?? 0) === (int)$userId);
+            if (!$isOwner) {
+                $checkStmt = $this->pdo->prepare("SELECT 1 FROM canvas_user_roles WHERE canvas_id = ? AND user_id = ? LIMIT 1");
+                $checkStmt->execute([$canvasId, $userId]);
+                if (!$checkStmt->fetch()) {
+                    return ['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
+                }
+            }
+        }
+
+        $stmtSanction = $this->pdo->prepare("SELECT id FROM canvas_sanctions WHERE canvas_id = ? AND user_id = ? AND sanction_scope IN ('chat_mute', 'canvas_ban') AND (suspension_type = 'permanent' OR (suspension_type = 'temporary' AND end_date > NOW()))");
+        $stmtSanction->execute([$canvasId, $userId]);
+        if ($stmtSanction->fetch()) {
+            return ['success' => false, 'message' => __('err_chat_restricted'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
+        }
+
+        $session = $this->cassandraManager->getSession();
+        if (!$session) {
+            return ['success' => false, 'message' => 'Servicio NoSQL no disponible', 'http_code' => \App\Core\System\HttpConstants::INTERNAL_SERVER_ERROR];
+        }
+
+        $cleanUuid = str_replace('pending_', '', $messageId);
+
+        try {
+            $checkStmt = $session->prepare("SELECT user_id FROM canvas_chat_reactions WHERE canvas_id = ? AND message_id = ? AND emoji = ? AND user_id = ?");
+            $existing = $session->execute($checkStmt, [(int)$canvasId, $cleanUuid, $emoji, (int)$userId])->asRowsResult();
+
+            $hasExisting = false;
+            foreach ($existing as $row) {
+                $hasExisting = true;
+                break;
+            }
+
+            $action = 'added';
+            if ($hasExisting) {
+                $delStmt = $session->prepare("DELETE FROM canvas_chat_reactions WHERE canvas_id = ? AND message_id = ? AND emoji = ? AND user_id = ?");
+                $session->execute($delStmt, [(int)$canvasId, $cleanUuid, $emoji, (int)$userId]);
+                $action = 'removed';
+            } else {
+                $insStmt = $session->prepare("INSERT INTO canvas_chat_reactions (canvas_id, message_id, emoji, user_id, created_at) VALUES (?, ?, ?, ?, toTimestamp(now()))");
+                $session->execute($insStmt, [(int)$canvasId, $cleanUuid, $emoji, (int)$userId]);
+                $action = 'added';
+            }
+        } catch (\Exception $e) {
+            Logger::error("Error toggling reaction in Cassandra", ['exception' => $e]);
+            return ['success' => false, 'message' => 'Error al procesar reacción', 'http_code' => \App\Core\System\HttpConstants::INTERNAL_SERVER_ERROR];
+        }
+
+        $fetchReactions = $this->fetchReactionsForMessages($canvasId, [['uuid' => $cleanUuid]], $userId);
+        $updatedReactions = $fetchReactions[$cleanUuid] ?? [];
+
+        if ($this->redis) {
+            $eventPayload = [
+                'type' => 'chat_reaction_updated',
+                'canvas_id' => (int)$canvasId,
+                'data' => [
+                    'message_id' => $messageId,
+                    'uuid' => $cleanUuid,
+                    'emoji' => $emoji,
+                    'user_id' => (int)$userId,
+                    'action' => $action,
+                    'reactions' => $updatedReactions
+                ]
+            ];
+            $this->redis->publish('admin:canvas_events', json_encode($eventPayload));
+        }
+
+        return [
+            'success' => true,
+            'data' => [
+                'message_id' => $messageId,
+                'uuid' => $cleanUuid,
+                'emoji' => $emoji,
+                'action' => $action,
+                'reactions' => $updatedReactions
+            ]
+        ];
+    }
+
+    private function fetchReactionsForMessages($canvasId, array $messages, $currentUserId = null)
+    {
+        if (empty($messages)) {
+            return [];
+        }
+
+        $session = $this->cassandraManager->getSession();
+        if (!$session) {
+            return [];
+        }
+
+        $msgUuids = [];
+        foreach ($messages as $m) {
+            $u = $m['uuid'] ?? $m['id'] ?? '';
+            if (!empty($u)) {
+                $clean = str_replace('pending_', '', $u);
+                $msgUuids[$clean] = $clean;
+            }
+        }
+
+        if (empty($msgUuids)) {
+            return [];
+        }
+
+        $allUserIds = [];
+        $rawReactions = [];
+
+        try {
+            $stmt = $session->prepare("SELECT message_id, emoji, user_id FROM canvas_chat_reactions WHERE canvas_id = ? AND message_id = ?");
+            foreach ($msgUuids as $uuid) {
+                $rows = $session->execute($stmt, [(int)$canvasId, $uuid])->asRowsResult();
+                foreach ($rows as $row) {
+                    $mId = $row['message_id'] ?? $uuid;
+                    $emoji = $row['emoji'] ?? '';
+                    $uId = (int)($row['user_id'] ?? 0);
+                    if (!empty($emoji) && $uId > 0) {
+                        $rawReactions[$mId][] = [
+                            'emoji' => $emoji,
+                            'user_id' => $uId
+                        ];
+                        $allUserIds[$uId] = $uId;
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            Logger::error("Error querying reactions from Cassandra", ['exception' => $e]);
+            return [];
+        }
+
+        $usersMap = [];
+        if (!empty($allUserIds)) {
+            $placeholders = implode(',', array_fill(0, count($allUserIds), '?'));
+            $uStmt = $this->identityPdo->prepare("SELECT id, username FROM users WHERE id IN ($placeholders)");
+            $uStmt->execute(array_values($allUserIds));
+            while ($r = $uStmt->fetch(PDO::FETCH_ASSOC)) {
+                $usersMap[$r['id']] = $r['username'];
+            }
+        }
+
+        $result = [];
+        foreach ($msgUuids as $uuid) {
+            $emojiGroups = [];
+            if (!empty($rawReactions[$uuid])) {
+                foreach ($rawReactions[$uuid] as $item) {
+                    $em = $item['emoji'];
+                    $uId = $item['user_id'];
+                    $uName = $usersMap[$uId] ?? __('default_user');
+                    if (!isset($emojiGroups[$em])) {
+                        $emojiGroups[$em] = [
+                            'emoji' => $em,
+                            'count' => 0,
+                            'users' => [],
+                            'user_reacted' => false
+                        ];
+                    }
+                    $emojiGroups[$em]['count']++;
+                    $emojiGroups[$em]['users'][] = [
+                        'id' => $uId,
+                        'username' => $uName
+                    ];
+                    if ($currentUserId && (int)$currentUserId === $uId) {
+                        $emojiGroups[$em]['user_reacted'] = true;
+                    }
+                }
+            }
+            $result[$uuid] = array_values($emojiGroups);
+            $result['pending_' . $uuid] = $result[$uuid];
+        }
+
+        return $result;
+    }
 }
+

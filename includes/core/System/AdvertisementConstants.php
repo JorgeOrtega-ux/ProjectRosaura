@@ -8,12 +8,16 @@ class AdvertisementConstants {
     public const FORMAT_FEED             = 'feed';
     public const FORMAT_MODULE_COLORS    = 'module_colors';
     public const FORMAT_MODULE_TEMPLATES = 'module_templates';
+    public const FORMAT_MODULE_STICKERS  = 'module_stickers';
+    public const FORMAT_MODULE_SHAPES    = 'module_shapes';
 
     // Lista estricta de formatos activos en la plataforma
     public const VALID_FORMATS = [
         self::FORMAT_FEED,
         self::FORMAT_MODULE_COLORS,
-        self::FORMAT_MODULE_TEMPLATES
+        self::FORMAT_MODULE_TEMPLATES,
+        self::FORMAT_MODULE_STICKERS,
+        self::FORMAT_MODULE_SHAPES
     ];
 
     // --- Tipos de Proveedor ---
@@ -93,6 +97,24 @@ class AdvertisementConstants {
             'icon'          => 'dashboard_customize',
             'zone'          => 'module_templates',
             'target_views'  => ['/design/:id [menu-templates]']
+        ],
+        self::FORMAT_MODULE_STICKERS => [
+            'id'            => self::FORMAT_MODULE_STICKERS,
+            'label_key'     => 'admin_ad_format_module_stickers',
+            'desc_key'      => 'admin_ad_format_module_stickers_desc',
+            'default_label' => 'Módulo: Stickers y Emoticonos',
+            'icon'          => 'sentiment_satisfied',
+            'zone'          => 'module_stickers',
+            'target_views'  => ['/design/:id [menu-stickers]']
+        ],
+        self::FORMAT_MODULE_SHAPES => [
+            'id'            => self::FORMAT_MODULE_SHAPES,
+            'label_key'     => 'admin_ad_format_module_shapes',
+            'desc_key'      => 'admin_ad_format_module_shapes_desc',
+            'default_label' => 'Módulo: Formas Geométricas',
+            'icon'          => 'category',
+            'zone'          => 'module_shapes',
+            'target_views'  => ['/design/:id [menu-shapes]']
         ]
     ];
 

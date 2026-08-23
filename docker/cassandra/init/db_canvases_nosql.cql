@@ -35,3 +35,14 @@ CREATE TABLE IF NOT EXISTS canvas_chat_messages (
 
 CREATE INDEX IF NOT EXISTS ON canvas_chat_messages (uuid);
 CREATE INDEX IF NOT EXISTS ON canvas_chat_messages (user_id);
+
+CREATE TABLE IF NOT EXISTS canvas_chat_reactions (
+    canvas_id int,
+    message_id text,
+    emoji text,
+    user_id int,
+    created_at timestamp,
+    PRIMARY KEY ((canvas_id, message_id), emoji, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS ON canvas_chat_reactions (user_id);

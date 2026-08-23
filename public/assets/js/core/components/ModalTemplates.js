@@ -794,12 +794,6 @@ export const ModalTemplates = {
                     <input type="text" data-ref="roleNameInput" class="component-input-field" placeholder=" " value="${data.nameValue || ''}" maxlength="50" autocomplete="off">
                     <label class="component-input-label">${__('lbl_role_name')}</label>
                 </div>
-                
-                <div class="component-role-color-row">
-                    <p class="component-input-label">${__('lbl_role_color')}</p>
-                    <input type="color" data-ref="roleColorInput" value="${data.colorValue || '#808080'}" class="component-role-color-preview">
-                    <span class="component-role-color-text" data-ref="roleColorDisplay">${data.colorValue || '#808080'}</span>
-                </div>
             </div>
             <div class="component-modal-actions">
                 <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
@@ -2530,6 +2524,104 @@ export const ModalTemplates = {
                 <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
                     <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${confirmBtnText}</button>
+                </div>
+            `;
+        }
+    },
+
+    imageViewer: {
+        fullScreen: false,
+        noPadding: true,
+        hideCloseBtn: false,
+        build: (data = {}) => {
+            const rawImages = Array.isArray(data.images) ? data.images : (data.images ? [data.images] : []);
+            const defaultSender = data.sender || {};
+            const normalizedImages = rawImages.map(item => {
+                if (typeof item === 'string') {
+                    return {
+                        url: item,
+                        name: data.title || __('lbl_attached_image') || 'Foto adjunta',
+                        sender: defaultSender.username || defaultSender.name || __('lbl_user') || 'Usuario',
+                        avatar: defaultSender.avatar || '',
+                        date: defaultSender.date || '',
+                        subBg: defaultSender.subBg || ''
+                    };
+                }
+                return {
+                    url: item.url || '',
+                    name: item.name || data.title || __('lbl_attached_image') || 'Foto adjunta',
+                    sender: item.sender || defaultSender.username || defaultSender.name || __('lbl_user') || 'Usuario',
+                    avatar: item.avatar || defaultSender.avatar || '',
+                    date: item.date || defaultSender.date || '',
+                    subBg: item.subBg || defaultSender.subBg || ''
+                };
+            });
+
+            const initialIndex = Math.max(0, Math.min(parseInt(data.initialIndex, 10) || 0, Math.max(0, normalizedImages.length - 1)));
+            const total = normalizedImages.length;
+            const currentItem = normalizedImages[initialIndex] || { url: '', name: 'Foto adjunta', sender: 'Usuario', avatar: '', date: '', subBg: '' };
+            const encodedImages = escapeHTML(JSON.stringify(normalizedImages));
+            const avatarUrl = currentItem.avatar || ((window.AppBasePath || '') + '/public/assets/img/fallbacks/avatar-default.png');
+            const subBg = currentItem.subBg || '';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-image-viewer-canva" data-ref="modal-image-viewer-root" data-images="${encodedImages}" data-current-index="${initialIndex}" data-canvas-uuid="${data.canvasUuid || ''}">
+                    <!-- Left Column: Stage & Bottom Thumbnails -->
+                    <div class="component-image-viewer-main-col">
+                        <div class="component-image-viewer-stage">
+                            <img src="${currentItem.url}" alt="Preview" class="component-image-viewer-img image-lazy-fade" data-ref="iv-stage-img" decoding="async" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${window.AppBasePath || ''}/public/assets/img/fallbacks/canvas-default.png'; this.classList.add('image-loaded');">
+                        </div>
+
+                        ${total > 1 ? `
+                        <div class="component-tags-carousel-wrapper component-image-viewer-carousel-wrapper" data-ref="iv-carousel-wrapper">
+                            <button type="button" class="component-tag-nav-btn component-tag-nav-left disabled" data-action="carouselLeft" title="${__('btn_prev')}">
+                                <span class="material-symbols-rounded">chevron_left</span>
+                            </button>
+                            <div class="component-tags-carousel component-image-viewer-strip" data-ref="iv-thumbs-container">
+                                ${normalizedImages.map((img, idx) => `
+                                    <div class="component-image-viewer-thumb ${idx === initialIndex ? 'active' : ''} component-skeleton" data-modal-action="selectImageViewerIndex" data-index="${idx}">
+                                        <img src="${img.url}" alt="" loading="lazy" decoding="async" class="image-lazy-fade" onload="this.classList.add('image-loaded'); this.parentElement.classList.remove('component-skeleton');" onerror="this.classList.add('image-loaded'); this.parentElement.classList.remove('component-skeleton');">
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <button type="button" class="component-tag-nav-btn component-tag-nav-right" data-action="carouselRight" title="${__('btn_next')}">
+                                <span class="material-symbols-rounded">chevron_right</span>
+                            </button>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Right Column: Sidebar -->
+                    <div class="component-image-viewer-side-col">
+                        <div class="component-image-viewer-info-header">
+                            <h2 class="component-image-viewer-title" data-ref="iv-title">${escapeHTML(currentItem.name)}</h2>
+                            <div class="component-image-viewer-meta" data-ref="iv-meta">
+                                <div class="component-badge component-badge--sm" data-ref="iv-meta-badge">
+                                    <span class="material-symbols-rounded">photo_library</span>
+                                    <span data-ref="iv-counter-text">${total > 1 ? `${initialIndex + 1} de ${total} imágenes` : '1 imagen'}</span>
+                                </div>
+                                <div class="component-badge component-badge--sm ${currentItem.date ? '' : 'disabled'}" data-ref="iv-date-badge">
+                                    <span class="material-symbols-rounded">schedule</span>
+                                    <span data-ref="iv-sender-date">${escapeHTML(currentItem.date || '')}</span>
+                                </div>
+                            </div>
+
+                            <div class="component-image-viewer-sender">
+                                <div class="component-avatar component-avatar--28 subscription-dynamic" data-ref="iv-sender-avatar-wrap" data-sub-bg="${subBg}" style="--active-subscription-bg: ${subBg};">
+                                    <img src="${avatarUrl}" alt="Avatar" data-ref="iv-sender-avatar" onerror="this.onerror=null; this.src='${window.AppBasePath || ''}/public/assets/img/fallbacks/avatar-default.png';">
+                                </div>
+                                <span class="component-image-viewer-sender-name" data-ref="iv-sender-name">Por ${escapeHTML(currentItem.sender)}</span>
+                            </div>
+
+                            <div class="component-image-viewer-actions">
+                                <button type="button" class="component-button component-button--primary component-button--h40 component-button--full" data-modal-action="downloadImageViewer">
+                                    <span class="material-symbols-rounded">download</span>
+                                    <span>${__('lbl_download_template') || 'Descargar plantilla'}</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `;
         }

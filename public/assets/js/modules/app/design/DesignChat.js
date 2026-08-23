@@ -192,12 +192,74 @@ export class DesignChat {
 
         if (this.chatContainer) {
             this.chatContainer.addEventListener('click', (e) => {
+                const btnMenu = e.target.closest('[data-action="toggleChatDropdown"], [data-action="toggleModule"][data-target^="msg-menu-"]');
+                if (btnMenu) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const targetModule = btnMenu.getAttribute('data-target');
+                    if (window.appInstance && typeof window.appInstance.toggleModule === 'function') {
+                        window.appInstance.toggleModule(targetModule, btnMenu);
+                    } else {
+                        const moduleEl = btnMenu.closest('.chat-message')?.querySelector(`[data-module="${targetModule}"]`);
+                        if (moduleEl) {
+                            const isCurrentlyActive = moduleEl.classList.contains('active');
+                            document.querySelectorAll('.chat-dropdown-module.active').forEach(d => {
+                                if (d !== moduleEl) {
+                                    d.classList.remove('active');
+                                    d.classList.add('disabled');
+                                }
+                            });
+                            moduleEl.classList.toggle('active', !isCurrentlyActive);
+                            moduleEl.classList.toggle('disabled', isCurrentlyActive);
+                        }
+                    }
+                    return;
+                }
+
                 const btnDelete = e.target.closest('[data-action="chatDeleteMessage"]');
                 if (btnDelete) {
                     const id = btnDelete.dataset.id;
                     this.deleteMessage(id);
                     const dropdown = btnDelete.closest('.chat-dropdown-module');
                     if (dropdown) { dropdown.classList.remove('active'); dropdown.classList.add('disabled'); }
+                }
+
+                const btnQuickReact = e.target.closest('[data-action="chatQuickReact"]');
+                if (btnQuickReact) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const emoji = btnQuickReact.dataset.emoji;
+                    const msgEl = btnQuickReact.closest('.chat-message');
+                    const id = msgEl?.dataset.messageId;
+                    if (id && emoji) {
+                        this.toggleReaction(id, emoji);
+                    }
+                    return;
+                }
+
+                const btnToggleReaction = e.target.closest('[data-action="chatToggleReaction"]');
+                if (btnToggleReaction) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const emoji = btnToggleReaction.dataset.emoji;
+                    const id = btnToggleReaction.dataset.messageId || btnToggleReaction.closest('.chat-message')?.dataset.messageId;
+                    if (id && emoji) {
+                        this.toggleReaction(id, emoji);
+                    }
+                    return;
+                }
+
+                const btnOpenPicker = e.target.closest('[data-action="chatOpenEmojiPicker"]');
+                if (btnOpenPicker) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const id = btnOpenPicker.dataset.id || btnOpenPicker.dataset.messageId || btnOpenPicker.closest('.chat-message')?.dataset.messageId;
+                    const dropdown = btnOpenPicker.closest('.chat-dropdown-module');
+                    if (dropdown) { dropdown.classList.remove('active'); dropdown.classList.add('disabled'); }
+                    if (id) {
+                        this.openEmojiPicker(btnOpenPicker, id);
+                    }
+                    return;
                 }
 
                 const btnReply = e.target.closest('[data-action="chatReplyMessage"]');
@@ -301,6 +363,26 @@ export class DesignChat {
                     return;
                 }
 
+                const toggleDetailsBtn = e.target.closest('[data-action="toggleInfoDetails"]');
+                if (toggleDetailsBtn) {
+                    e.preventDefault();
+                    const card = toggleDetailsBtn.closest('.component-details-card');
+                    const rowsContainer = card?.querySelector('.component-details-rows-container');
+                    if (rowsContainer) {
+                        const isCollapsed = rowsContainer.classList.contains('collapsed');
+                        if (isCollapsed) {
+                            rowsContainer.classList.remove('collapsed');
+                            rowsContainer.classList.add('expanded');
+                            toggleDetailsBtn.classList.add('expanded');
+                        } else {
+                            rowsContainer.classList.remove('expanded');
+                            rowsContainer.classList.add('collapsed');
+                            toggleDetailsBtn.classList.remove('expanded');
+                        }
+                    }
+                    return;
+                }
+
                 const activatePanelBtn = e.target.closest('[data-action="activateChatFromPanel"]');
                 if (activatePanelBtn) {
                     e.preventDefault();
@@ -343,25 +425,93 @@ export class DesignChat {
                 if (window.currentDesignChatInstance) window.currentDesignChatInstance.updateMessageVisibility(id, visibility || 'deleted');
             });
 
+            document.addEventListener('canvas:chat_reaction_updated', (e) => {
+                if (window.currentDesignChatInstance) window.currentDesignChatInstance.handleReactionEvent(e.detail);
+            });
+
             document.addEventListener('click', (e) => {
                 const attachmentItem = e.target.closest('[data-action="openChatImageViewer"]');
                 if (attachmentItem) {
                     const msgId = attachmentItem.getAttribute('data-message-id');
                     const indexStr = attachmentItem.getAttribute('data-index');
                     const canvasUuid = attachmentItem.getAttribute('data-canvas-uuid');
-                    if (msgId && indexStr) {
+                    if (msgId !== null && indexStr !== null) {
                         try {
                             const index = parseInt(indexStr, 10);
-                            
                             const msgEl = document.querySelector(`.chat-message[data-message-id="${msgId}"]`);
+                            
+                            const getSenderInfo = (el) => {
+                                const m = el ? el.closest('.chat-message') : null;
+                                const username = m?.dataset.username || m?.querySelector('.chat-message-username')?.textContent?.trim() || window.__('lbl_user') || 'Usuario';
+                                const avatar = m?.dataset.avatar || m?.querySelector('.chat-message-avatar img')?.src || '';
+                                const date = m?.dataset.date || m?.querySelector('.chat-message-time')?.textContent?.trim() || '';
+                                const subBg = m?.dataset.subBg || m?.querySelector('.subscription-dynamic')?.getAttribute('data-sub-bg') || '';
+                                return { username, avatar, date, subBg };
+                            };
+
+                            let imageItems = [];
+                            let initialIdx = index;
+
                             if (msgEl) {
-                                const imgs = Array.from(msgEl.querySelectorAll('.chat-attachment-item img')).map(img => img.src);
-                                if (imgs.length > 0) {
-                                    sessionStorage.setItem('chat_viewer_images_' + msgId, JSON.stringify(imgs));
+                                const senderInfo = getSenderInfo(msgEl);
+                                const msgImgs = Array.from(msgEl.querySelectorAll('.chat-attachment-item img'));
+                                imageItems = msgImgs.map(img => ({
+                                    url: img.src,
+                                    name: window.__('lbl_attached_image') || 'Foto adjunta',
+                                    sender: senderInfo.username,
+                                    avatar: senderInfo.avatar,
+                                    date: senderInfo.date,
+                                    subBg: senderInfo.subBg
+                                }));
+                            }
+
+                            // If this message only had 1 image, collect all attachments from the chat so the user can navigate across all images!
+                            if (imageItems.length <= 1) {
+                                const allAttachmentEls = Array.from(document.querySelectorAll('.chat-attachment-item'));
+                                if (allAttachmentEls.length > 1) {
+                                    imageItems = allAttachmentEls.map(el => {
+                                        const img = el.querySelector('img');
+                                        const senderInfo = getSenderInfo(el);
+                                        return {
+                                            url: img ? img.src : '',
+                                            name: window.__('lbl_attached_image') || 'Foto adjunta',
+                                            sender: senderInfo.username,
+                                            avatar: senderInfo.avatar,
+                                            date: senderInfo.date,
+                                            subBg: senderInfo.subBg
+                                        };
+                                    }).filter(i => !!i.url);
+
+                                    const clickedImg = attachmentItem.querySelector('img');
+                                    const clickedSrc = clickedImg ? clickedImg.src : '';
+                                    const foundIdx = imageItems.findIndex(i => i.url === clickedSrc);
+                                    initialIdx = (foundIdx !== -1) ? foundIdx : 0;
                                 }
                             }
 
-                            if (window.spaRouter) {
+                            if (imageItems.length === 0) {
+                                const singleImg = attachmentItem.querySelector('img');
+                                const senderInfo = getSenderInfo(attachmentItem);
+                                if (singleImg) {
+                                    imageItems = [{
+                                        url: singleImg.src,
+                                        name: window.__('lbl_attached_image') || 'Foto adjunta',
+                                        sender: senderInfo.username,
+                                        avatar: senderInfo.avatar,
+                                        date: senderInfo.date,
+                                        subBg: senderInfo.subBg
+                                    }];
+                                }
+                            }
+
+                            if (window.modalSystem) {
+                                window.modalSystem.show('imageViewer', {
+                                    images: imageItems,
+                                    initialIndex: initialIdx,
+                                    title: window.__('lbl_attached_image') || 'Foto adjunta',
+                                    canvasUuid: canvasUuid
+                                });
+                            } else if (window.spaRouter) {
                                 window.spaRouter.navigate(`/canvases/c/v/${canvasUuid}/${msgId}/${index}`);
                             } else {
                                 window.location.href = (window.AppBasePath || '') + `/canvases/c/v/${canvasUuid}/${msgId}/${index}`;
@@ -406,6 +556,10 @@ export class DesignChat {
         if (this.resizeObserver) {
             this.resizeObserver.disconnect();
             this.resizeObserver = null;
+        }
+        if (this.emojiPickerEl) {
+            this.emojiPickerEl.remove();
+            this.emojiPickerEl = null;
         }
     }
 
@@ -992,10 +1146,15 @@ export class DesignChat {
                 avatarUrl = `${window.AppBasePath || ''}${prefix}${msg.avatar}`;
             }
         }
+
+        const subColorCSS = this.parseSubscriptionColorCSS(msg.subscription_color);
+
+        el.dataset.username = msg.username || '';
+        el.dataset.avatar = avatarUrl;
+        el.dataset.date = `${dateDividerStr}, ${time}`;
+        el.dataset.subBg = subColorCSS || '';
         
         const fallbackUrl = `${window.AppBasePath || ''}/public/assets/img/fallbacks/avatar-default.png`;
-        
-        const subColorCSS = this.parseSubscriptionColorCSS(msg.subscription_color);
 
         const avatarStr = `
             <div class="component-button--profile subscription-dynamic component-avatar--static-sm" data-sub-bg="${subColorCSS}" style="--active-subscription-bg: ${subColorCSS};">
@@ -1006,13 +1165,21 @@ export class DesignChat {
         const uniqueId = 'msg-menu-' + msg.id;
 
         const menuBtn = `<div class="component-dropdown-wrapper component-dropdown-wrapper--fit chat-msg-actions chat-msg-actions--ml-auto">
-            <button class="component-button component-button--icon component-button--icon-sm-ghost" data-action="toggleChatDropdown" data-target="${uniqueId}">
+            <button class="component-button component-button--icon component-button--icon-sm-ghost" data-action="toggleModule" data-target="${uniqueId}">
                 <span class="material-symbols-rounded component-icon--18">more_vert</span>
             </button>
             <div class="component-module component-module--dropdown chat-dropdown-module disabled" data-module="${uniqueId}">
                 <div class="component-menu component-menu--w265 component-menu--h-auto active" data-menu="${uniqueId}-options">
                     <div class="pill-container"><div class="drag-handle"></div></div>
                     <div class="component-menu-list">
+                        <div class="component-menu-link" data-action="chatOpenEmojiPicker" data-id="${msg.id}">
+                            <div class="component-menu-link-icon">
+                                <span class="material-symbols-rounded">add_reaction</span>
+                            </div>
+                            <div class="component-menu-link-text">
+                                <span>${window.__('lbl_add_reaction') || 'Reaccionar'}</span>
+                            </div>
+                        </div>
                         <div class="component-menu-link" data-action="chatReplyMessage" data-id="${msg.id}" data-username="${msg.username}" data-message="${(msg.message || '').replace(/"/g, '&quot;')}">
                             <div class="component-menu-link-icon">
                                 <span class="material-symbols-rounded">reply</span>
@@ -1116,13 +1283,27 @@ export class DesignChat {
             messageTextHtml = `<div class="chat-message-text">${msg.message}</div>`;
         }
 
+        const quickReactionsHtml = `
+            <div class="chat-quick-reactions">
+                <button class="chat-quick-reaction-btn" data-action="chatQuickReact" data-emoji="👍" title="Me gusta">👍</button>
+                <button class="chat-quick-reaction-btn" data-action="chatQuickReact" data-emoji="❤️" title="Me encanta">❤️</button>
+                <button class="chat-quick-reaction-btn" data-action="chatQuickReact" data-emoji="😂" title="Risa">😂</button>
+                <button class="chat-quick-reaction-btn" data-action="chatQuickReact" data-emoji="😮" title="Sorpresa">😮</button>
+                <button class="chat-quick-reaction-btn" data-action="chatQuickReact" data-emoji="😢" title="Triste">😢</button>
+                <button class="chat-quick-reaction-btn" data-action="chatQuickReact" data-emoji="🎨" title="Arte">🎨</button>
+                <button class="chat-quick-reaction-btn chat-quick-reaction-btn--add" data-action="chatOpenEmojiPicker" data-id="${msg.id}" title="${window.__('lbl_more_reactions') || 'Más reacciones'}">
+                    <span class="material-symbols-rounded">add_reaction</span>
+                </button>
+            </div>
+        `;
+
         el.innerHTML = `
             ${avatarStr}
             <div class="chat-message-bubble">
                 <div class="chat-message-header">
                     <div class="chat-header-title-box">
                         <strong class="chat-message-username">${msg.username}</strong>
-                        <span >•</span>
+                        <span>•</span>
                         <span class="chat-message-time">${time}</span>
                     </div>
                     ${menuBtn}
@@ -1130,9 +1311,307 @@ export class DesignChat {
                 ${replyContextHtml}
                 ${messageTextHtml}
                 ${attachmentsHtml}
+                ${this.buildReactionsHtml(msg.id, msg.reactions)}
             </div>
+            ${quickReactionsHtml}
         `;
         return el;
+    }
+
+    buildReactionsHtml(messageId, reactions = []) {
+        const list = Array.isArray(reactions) ? reactions : [];
+        const hasReactions = list.length > 0;
+
+        const badgesHtml = list.map(r => {
+            const usersTitle = (r.users || []).map(u => u.username).join(', ');
+            const isUserReacted = (String(r.user_reacted) === 'true' || (r.users && r.users.some(u => String(u.id) === String(this.currentUserId))));
+            return `
+                <button class="chat-reaction-badge ${isUserReacted ? 'active' : ''}" data-action="chatToggleReaction" data-message-id="${messageId}" data-emoji="${r.emoji}" title="${usersTitle || ''}">
+                    <span class="chat-reaction-emoji">${r.emoji}</span>
+                    <span class="chat-reaction-count">${r.count}</span>
+                </button>
+            `;
+        }).join('');
+
+        const addBtnHtml = `
+            <button class="chat-reaction-badge chat-reaction-badge--add" data-action="chatOpenEmojiPicker" data-id="${messageId}" title="${window.__('lbl_add_reaction') || 'Reaccionar'}">
+                <span class="material-symbols-rounded">add</span>
+            </button>
+        `;
+
+        return `
+            <div class="chat-message-reactions ${hasReactions ? '' : 'disabled'}" data-reactions-container="${messageId}">
+                ${badgesHtml}
+                ${hasReactions ? addBtnHtml : ''}
+            </div>
+        `;
+    }
+
+    async toggleReaction(messageId, emoji) {
+        if (!messageId || !emoji) return;
+
+        this.applyOptimisticReaction(messageId, emoji);
+
+        try {
+            const payload = {
+                canvas_id: this.canvasId,
+                message_id: messageId,
+                emoji: emoji
+            };
+            const response = await this.api.post(ApiRoutes.Chat.React, payload);
+            if (!response || !response.success) {
+                showMessage(response?.message || __('err_reaction_failed'), 'error');
+            }
+        } catch (e) {
+            showMessage(__('err_reaction_failed'), 'error');
+        }
+    }
+
+    applyOptimisticReaction(messageId, emoji) {
+        const cleanId = String(messageId).replace('pending_', '');
+        const msgEl = this.chatContainer.querySelector(`.chat-message[data-message-id="${messageId}"], .chat-message[data-message-id="${cleanId}"], .chat-message[data-message-id="pending_${cleanId}"]`);
+        if (!msgEl) return;
+
+        const actualMsgId = msgEl.dataset.messageId;
+        let reactionsContainer = msgEl.querySelector(`[data-reactions-container]`);
+        if (!reactionsContainer) {
+            const bubble = msgEl.querySelector('.chat-message-bubble');
+            if (!bubble) return;
+            reactionsContainer = document.createElement('div');
+            reactionsContainer.className = 'chat-message-reactions';
+            reactionsContainer.setAttribute('data-reactions-container', actualMsgId);
+            bubble.appendChild(reactionsContainer);
+        }
+
+        reactionsContainer.classList.remove('disabled');
+
+        let badge = reactionsContainer.querySelector(`[data-emoji="${emoji}"]`);
+        if (badge) {
+            const countSpan = badge.querySelector('.chat-reaction-count');
+            let count = parseInt(countSpan?.textContent || '0', 10);
+            if (badge.classList.contains('active')) {
+                badge.classList.remove('active');
+                count = Math.max(0, count - 1);
+                if (count === 0) {
+                    badge.remove();
+                    const remainingBadges = reactionsContainer.querySelectorAll('.chat-reaction-badge:not(.chat-reaction-badge--add)');
+                    if (remainingBadges.length === 0) {
+                        reactionsContainer.innerHTML = '';
+                        reactionsContainer.classList.add('disabled');
+                    }
+                    return;
+                } else if (countSpan) {
+                    countSpan.textContent = count;
+                }
+            } else {
+                badge.classList.add('active');
+                count++;
+                if (countSpan) countSpan.textContent = count;
+                badge.classList.add('chat-reaction-pop');
+                setTimeout(() => badge.classList.remove('chat-reaction-pop'), 400);
+            }
+        } else {
+            const newBadge = document.createElement('button');
+            newBadge.className = 'chat-reaction-badge active chat-reaction-pop';
+            newBadge.dataset.action = 'chatToggleReaction';
+            newBadge.dataset.messageId = actualMsgId;
+            newBadge.dataset.emoji = emoji;
+            newBadge.title = this.currentUsername || window.__('user');
+            newBadge.innerHTML = `
+                <span class="chat-reaction-emoji">${emoji}</span>
+                <span class="chat-reaction-count">1</span>
+            `;
+
+            let addBtn = reactionsContainer.querySelector('.chat-reaction-badge--add');
+            if (!addBtn) {
+                addBtn = document.createElement('button');
+                addBtn.className = 'chat-reaction-badge chat-reaction-badge--add';
+                addBtn.dataset.action = 'chatOpenEmojiPicker';
+                addBtn.dataset.id = actualMsgId;
+                addBtn.title = window.__('lbl_add_reaction') || 'Reaccionar';
+                addBtn.innerHTML = `<span class="material-symbols-rounded">add</span>`;
+                reactionsContainer.appendChild(addBtn);
+            }
+            reactionsContainer.insertBefore(newBadge, addBtn);
+            setTimeout(() => newBadge.classList.remove('chat-reaction-pop'), 400);
+        }
+    }
+
+    handleReactionEvent(data) {
+        if (!data) return;
+        const msgId = data.message_id || data.uuid;
+        if (!msgId) return;
+
+        const cleanId = String(msgId).replace('pending_', '');
+        const msgEl = this.chatContainer.querySelector(`.chat-message[data-message-id="${msgId}"], .chat-message[data-message-id="${cleanId}"], .chat-message[data-message-id="pending_${cleanId}"]`);
+
+        if (!msgEl) return;
+
+        const actualMsgId = msgEl.dataset.messageId;
+        let reactionsContainer = msgEl.querySelector(`[data-reactions-container]`);
+        
+        if (!reactionsContainer) {
+            const bubble = msgEl.querySelector('.chat-message-bubble');
+            if (!bubble) return;
+            reactionsContainer = document.createElement('div');
+            reactionsContainer.className = 'chat-message-reactions';
+            reactionsContainer.setAttribute('data-reactions-container', actualMsgId);
+            bubble.appendChild(reactionsContainer);
+        }
+
+        const reactions = data.reactions || [];
+        if (reactions.length === 0) {
+            reactionsContainer.innerHTML = '';
+            reactionsContainer.classList.add('disabled');
+            return;
+        }
+
+        reactionsContainer.classList.remove('disabled');
+        
+        const badgesHtml = reactions.map(r => {
+            const usersTitle = (r.users || []).map(u => u.username).join(', ');
+            const isUserReacted = (String(r.user_reacted) === 'true' || (r.users && r.users.some(u => String(u.id) === String(this.currentUserId))));
+            return `
+                <button class="chat-reaction-badge ${isUserReacted ? 'active' : ''}" data-action="chatToggleReaction" data-message-id="${actualMsgId}" data-emoji="${r.emoji}" title="${usersTitle || ''}">
+                    <span class="chat-reaction-emoji">${r.emoji}</span>
+                    <span class="chat-reaction-count">${r.count}</span>
+                </button>
+            `;
+        }).join('');
+
+        const addBtnHtml = `
+            <button class="chat-reaction-badge chat-reaction-badge--add" data-action="chatOpenEmojiPicker" data-id="${actualMsgId}" title="${window.__('lbl_add_reaction') || 'Reaccionar'}">
+                <span class="material-symbols-rounded">add</span>
+            </button>
+        `;
+
+        reactionsContainer.innerHTML = badgesHtml + addBtnHtml;
+
+        if (data.emoji) {
+            const updatedBadge = reactionsContainer.querySelector(`[data-emoji="${data.emoji}"]`);
+            if (updatedBadge) {
+                updatedBadge.classList.add('chat-reaction-pop');
+                setTimeout(() => updatedBadge.classList.remove('chat-reaction-pop'), 400);
+            }
+        }
+    }
+
+    createEmojiPicker() {
+        if (this.emojiPickerEl) return this.emojiPickerEl;
+
+        const picker = document.createElement('div');
+        picker.className = 'component-module component-module--dropdown chat-emoji-picker-module disabled';
+        picker.innerHTML = `
+            <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-ref="chat-emoji-picker-menu">
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="chat-emoji-picker-header">
+                    <div class="chat-emoji-picker-tabs">
+                        <button class="chat-emoji-tab active" data-cat="faces" title="Caras y Emociones">😀</button>
+                        <button class="chat-emoji-tab" data-cat="gestures" title="Gestos y Personas">👍</button>
+                        <button class="chat-emoji-tab" data-cat="art" title="Pixel Art y Símbolos">🎨</button>
+                    </div>
+                </div>
+                <div class="chat-emoji-picker-grid" data-ref="chat-emoji-grid"></div>
+            </div>
+        `;
+
+        document.body.appendChild(picker);
+        this.emojiPickerEl = picker;
+
+        this.emojiCategories = {
+            faces: ['😀', '😃', '😄', '😁', '😆', '😂', '🤣', '🥹', '😊', '😍', '🥰', '😘', '😎', '🤩', '🥳', '🤔', '🤨', '😮', '😲', '😳', '😢', '😭', '😱', '🤯'],
+            gestures: ['👍', '👎', '👏', '🙌', '👐', '🤝', '🙏', '✌️', '🤞', '🤟', '🤘', '👌', '🫡', '💪', '👀', '🧠', '👑', '💯', '🔥', '✨'],
+            art: ['🎨', '🖌️', '🖍️', '🖼️', '🎯', '🚀', '⭐', '🌟', '💎', '🎉', '🎊', '🎈', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '💥', '⚡']
+        };
+
+        const tabs = picker.querySelectorAll('.chat-emoji-tab');
+        const grid = picker.querySelector('[data-ref="chat-emoji-grid"]');
+
+        const renderGrid = (categoryKey) => {
+            grid.innerHTML = '';
+            const list = this.emojiCategories[categoryKey] || this.emojiCategories.faces;
+            list.forEach(emoji => {
+                const btn = document.createElement('button');
+                btn.className = 'chat-emoji-item';
+                btn.textContent = emoji;
+                btn.dataset.emoji = emoji;
+                btn.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    if (this.currentPickerTargetMessageId) {
+                        this.toggleReaction(this.currentPickerTargetMessageId, emoji);
+                    }
+                    this.closeEmojiPicker();
+                });
+                grid.appendChild(btn);
+            });
+        };
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                renderGrid(tab.dataset.cat);
+            });
+        });
+
+        renderGrid('faces');
+
+        document.addEventListener('click', (ev) => {
+            if (this.emojiPickerEl && !this.emojiPickerEl.classList.contains('disabled')) {
+                if (!this.emojiPickerEl.contains(ev.target) && !ev.target.closest('[data-action="chatOpenEmojiPicker"]')) {
+                    this.closeEmojiPicker();
+                }
+            }
+        });
+
+        document.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Escape' && this.emojiPickerEl && !this.emojiPickerEl.classList.contains('disabled')) {
+                this.closeEmojiPicker();
+            }
+        });
+
+        return this.emojiPickerEl;
+    }
+
+    openEmojiPicker(triggerBtn, messageId) {
+        this.currentPickerTargetMessageId = messageId;
+        const picker = this.createEmojiPicker();
+
+        const rect = triggerBtn.getBoundingClientRect();
+        picker.classList.remove('disabled');
+        picker.classList.add('active');
+
+        const pickerWidth = 270;
+        const pickerHeight = 220;
+
+        let left = rect.left;
+        let top = rect.top - pickerHeight - 8;
+
+        if (left + pickerWidth > window.innerWidth - 16) {
+            left = window.innerWidth - pickerWidth - 16;
+        }
+        if (left < 16) {
+            left = 16;
+        }
+        if (top < 16) {
+            top = rect.bottom + 8;
+        }
+
+        picker.style.position = 'fixed';
+        picker.style.left = `${left}px`;
+        picker.style.top = `${top}px`;
+        picker.style.zIndex = '999999';
+    }
+
+    closeEmojiPicker() {
+        if (this.emojiPickerEl) {
+            this.emojiPickerEl.classList.remove('active');
+            this.emojiPickerEl.classList.add('disabled');
+        }
+        this.currentPickerTargetMessageId = null;
     }
 
     prependMessage(msg) {
@@ -1267,8 +1746,8 @@ export class DesignChat {
                 { name: '/unbancanvas', desc: 'Desbanear del lienzo', icon: 'check_circle' }
             ];
             const match = lastWord.toLowerCase();
-            const suggestions = commands.filter(c => c.name.startsWith(match));
-            this.showAutocomplete(suggestions, 'command', lastWord);
+            const suggestions = commands.filter(c => c.name.toLowerCase().startsWith(match) || c.name.toLowerCase().includes(match.replace('/', '')));
+            this.showAutocomplete(suggestions, 'command', lastWord, commands);
             return;
         }
 
@@ -1294,57 +1773,139 @@ export class DesignChat {
             
             const allUsernames = Array.from(new Set([...usernamesInDom, ...typingUsernames]));
             
-            const suggestions = allUsernames
-                .filter(u => u.toLowerCase().startsWith(query))
-                .map(u => ({ name: u, desc: 'Usuario', icon: 'person' }));
+            const allUserItems = allUsernames.map(u => ({ name: u, desc: 'Usuario', icon: 'person' }));
+            const suggestions = allUserItems.filter(u => u.name.toLowerCase().includes(query));
 
-            this.showAutocomplete(suggestions, 'user', triggerWord);
+            this.showAutocomplete(suggestions, 'user', triggerWord, allUserItems);
             return;
         }
 
         this.hideAutocomplete();
     }
 
-    showAutocomplete(suggestions, type, triggerWord) {
-        if (!suggestions || suggestions.length === 0) {
+    showAutocomplete(suggestions, type, triggerWord, masterList = []) {
+        if (!suggestions || (suggestions.length === 0 && masterList.length === 0)) {
             this.hideAutocomplete();
             return;
         }
 
+        this.currentAutocompleteType = type;
+        this.currentAutocompleteTriggerWord = triggerWord;
+        this.allCurrentSuggestions = (masterList && masterList.length > 0) ? masterList : suggestions;
+
         this.autocompleteContainer.innerHTML = '';
         
-        const menuWrapper = document.createElement('div');
-        menuWrapper.className = 'component-menu component-menu--no-padding active';
-        menuWrapper.style.width = '100%';
-        
-        const listWrapper = document.createElement('div');
-        listWrapper.className = 'component-menu-list component-menu-list--scrollable';
-        listWrapper.style.maxHeight = '180px';
-        listWrapper.style.overflowY = 'auto';
-        
-        suggestions.forEach((item, index) => {
-            const el = document.createElement('div');
-            el.className = 'component-menu-link chat-autocomplete-item' + (index === 0 ? ' active' : '');
-            el.innerHTML = `
-                <div class="component-menu-link-icon">
-                    <span class="material-symbols-rounded">${item.icon || 'star'}</span>
-                </div>
-                <div class="component-menu-link-text component-menu-link-text--between">
-                    <span>${item.name}</span>
-                    ${item.desc ? `<span class="component-menu-link-meta">${item.desc}</span>` : ''}
-                </div>
-            `;
-            el.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.selectSuggestion(item, type, triggerWord);
-            });
-            listWrapper.appendChild(el);
-        });
-        
-        menuWrapper.appendChild(listWrapper);
-        this.autocompleteContainer.appendChild(menuWrapper);
+        const searchPlaceholder = (type === 'command')
+            ? (window.__('search_commands') || 'Buscar comandos...')
+            : (window.__('search_users') || 'Buscar usuarios...');
 
+        const menuWrapper = document.createElement('div');
+        menuWrapper.className = 'component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited active';
+
+        const cleanVal = triggerWord.replace(/^[/@]/, '');
+
+        menuWrapper.innerHTML = `
+            <div class="pill-container"><div class="drag-handle"></div></div>
+            <div class="component-menu-header">
+                <div class="component-search component-search--full component-search--h36">
+                    <div class="component-search-icon">
+                        <span class="material-symbols-rounded">search</span>
+                    </div>
+                    <div class="component-search-input">
+                        <input type="text" data-ref="chat-autocomplete-search" placeholder="${searchPlaceholder}" value="${cleanVal}">
+                    </div>
+                </div>
+            </div>
+            <div class="component-menu-list component-menu-list--scrollable" data-ref="chat-autocomplete-list">
+            </div>
+            <div class="component-menu-empty ${suggestions.length === 0 ? '' : 'disabled'}" data-ref="chat-autocomplete-empty">
+                 <div class="component-menu-link disabled-interaction">
+                     <div class="component-menu-link-icon"><span class="material-symbols-rounded">search_off</span></div>
+                     <div class="component-menu-link-text"><span>${window.__('no_results_found') || 'No se encontraron resultados'}</span></div>
+                 </div>
+            </div>
+        `;
+
+        const listContainer = menuWrapper.querySelector('[data-ref="chat-autocomplete-list"]');
+        const emptyContainer = menuWrapper.querySelector('[data-ref="chat-autocomplete-empty"]');
+        const searchInput = menuWrapper.querySelector('[data-ref="chat-autocomplete-search"]');
+
+        const renderItems = (items) => {
+            listContainer.innerHTML = '';
+            if (!items || items.length === 0) {
+                if (emptyContainer) emptyContainer.classList.remove('disabled');
+                return;
+            }
+            if (emptyContainer) emptyContainer.classList.add('disabled');
+
+            items.forEach((item, index) => {
+                const el = document.createElement('div');
+                el.className = 'component-menu-link chat-autocomplete-item' + (index === 0 ? ' active' : '');
+                el.dataset.name = item.name;
+                el.innerHTML = `
+                    <div class="component-menu-link-icon">
+                        <span class="material-symbols-rounded">${item.icon || 'star'}</span>
+                    </div>
+                    <div class="component-menu-link-text component-menu-link-text--between">
+                        <span>${item.name}</span>
+                        ${item.desc ? `<span class="component-menu-link-meta">${item.desc}</span>` : ''}
+                    </div>
+                `;
+                el.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.selectSuggestion(item, type, triggerWord);
+                });
+                listContainer.appendChild(el);
+            });
+        };
+
+        renderItems(suggestions);
+
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const q = e.target.value.toLowerCase().trim();
+                const filtered = this.allCurrentSuggestions.filter(s => 
+                    s.name.toLowerCase().includes(q) || (s.desc && s.desc.toLowerCase().includes(q))
+                );
+                renderItems(filtered);
+            });
+
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === 'Tab') {
+                    e.preventDefault();
+                    const items = Array.from(listContainer.querySelectorAll('.chat-autocomplete-item'));
+                    let activeIndex = items.findIndex(item => item.classList.contains('active'));
+
+                    if (e.key === 'ArrowDown') {
+                        if (items.length > 0) {
+                            if (activeIndex !== -1) items[activeIndex].classList.remove('active');
+                            activeIndex = (activeIndex + 1) % items.length;
+                            items[activeIndex].classList.add('active');
+                            items[activeIndex].scrollIntoView({ block: 'nearest' });
+                        }
+                    } else if (e.key === 'ArrowUp') {
+                        if (items.length > 0) {
+                            if (activeIndex !== -1) items[activeIndex].classList.remove('active');
+                            activeIndex = (activeIndex - 1 + items.length) % items.length;
+                            items[activeIndex].classList.add('active');
+                            items[activeIndex].scrollIntoView({ block: 'nearest' });
+                        }
+                    } else if (e.key === 'Enter' || e.key === 'Tab') {
+                        if (activeIndex !== -1 && items[activeIndex]) {
+                            items[activeIndex].click();
+                        } else if (items.length > 0) {
+                            items[0].click();
+                        }
+                    }
+                } else if (e.key === 'Escape') {
+                    this.hideAutocomplete();
+                    this.chatInput.focus();
+                }
+            });
+        }
+
+        this.autocompleteContainer.appendChild(menuWrapper);
         this.autocompleteContainer.classList.remove('disabled');
     }
 
@@ -1362,11 +1923,11 @@ export class DesignChat {
         const textAfterCursor = val.substring(selStart);
 
         let replacement = item.name;
-        if (triggerWord.startsWith('@') && !replacement.startsWith('@')) {
+        if (triggerWord && triggerWord.startsWith('@') && !replacement.startsWith('@')) {
             replacement = '@' + replacement;
         }
 
-        const newTextBefore = textBeforeCursor.substring(0, textBeforeCursor.length - triggerWord.length) + replacement + ' ';
+        const newTextBefore = textBeforeCursor.substring(0, textBeforeCursor.length - (triggerWord ? triggerWord.length : 0)) + replacement + ' ';
         this.chatInput.value = newTextBefore + textAfterCursor;
 
         this.chatInput.focus();
@@ -1472,7 +2033,58 @@ export class DesignChat {
 
     showGeneralInfoMenu() {
         this.transitionMenus('menu-chat', 'menu-chat-info');
+        this.loadGeneralInfoDetails();
         this.loadMediaGallery();
+    }
+
+    async loadGeneralInfoDetails() {
+        if (!this.canvasId) return;
+        try {
+            const res = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasId });
+            if (res && res.success && res.data) {
+                const c = res.data;
+                const menuInfo = document.querySelector('[data-ref="menu-chat-info"]');
+                if (!menuInfo) return;
+
+                const typeEl = menuInfo.querySelector('[data-ref="canvas-info-type"]');
+                const dimEl = menuInfo.querySelector('[data-ref="canvas-info-dimensions"]');
+                const ownerEl = menuInfo.querySelector('[data-ref="canvas-info-owner"]');
+                const createdEl = menuInfo.querySelector('[data-ref="canvas-info-created"]');
+                const membersEl = menuInfo.querySelector('[data-ref="canvas-info-members"]');
+                const cooldownEl = menuInfo.querySelector('[data-ref="canvas-info-cooldown"]');
+                const privacyEl = menuInfo.querySelector('[data-ref="canvas-info-privacy"]');
+                const favsEl = menuInfo.querySelector('[data-ref="canvas-info-favorites"]');
+                const pixelsEl = menuInfo.querySelector('[data-ref="canvas-info-total-pixels"]');
+
+                if (typeEl) typeEl.textContent = (c.mode === 'online') ? 'Lienzo en vivo' : 'Lienzo personal';
+                if (dimEl) dimEl.textContent = `${c.width || '-'} x ${c.height || '-'} px`;
+                if (ownerEl) ownerEl.textContent = c.owner_username || '-';
+                if (createdEl && c.created_at) {
+                    try {
+                        const dateObj = new Date(c.created_at.replace(' ', 'T'));
+                        if (!isNaN(dateObj.getTime())) {
+                            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                            createdEl.textContent = `${dateObj.getDate()} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
+                        } else {
+                            createdEl.textContent = c.created_at;
+                        }
+                    } catch (e) {
+                        createdEl.textContent = c.created_at;
+                    }
+                }
+                if (membersEl) {
+                    const current = c.members_count || 1;
+                    const max = c.max_participants || c.max_members || 10;
+                    membersEl.textContent = `${current} / ${max}`;
+                }
+                if (cooldownEl) cooldownEl.textContent = c.cooldown_seconds ? `${c.cooldown_seconds}s` : 'Sin espera';
+                if (privacyEl) privacyEl.textContent = (c.privacy === 'private') ? 'Privado' : 'Público';
+                if (favsEl) favsEl.textContent = c.favorites_count || 0;
+                if (pixelsEl) pixelsEl.textContent = (c.total_pixels !== undefined) ? Number(c.total_pixels).toLocaleString() : '0';
+            }
+        } catch (e) {
+            console.error('[DesignChat] Error loading canvas info details:', e);
+        }
     }
 
     transitionMenus(fromRef, toRef) {
@@ -1488,11 +2100,11 @@ export class DesignChat {
         const grid = document.querySelector('[data-ref="chat-info-gallery-grid"]');
         if (!grid) return;
 
-        grid.innerHTML = `
-            <div class="chat-info-gallery-empty">
-                ${window.__('lbl_loading_photos')}
-            </div>
-        `;
+        let skeletonHtml = '';
+        for (let s = 0; s < 6; s++) {
+            skeletonHtml += '<div class="chat-info-gallery-item component-skeleton"></div>';
+        }
+        grid.innerHTML = skeletonHtml;
 
         try {
             const response = await this.api.post(ApiRoutes.Chat.MediaGallery, {
@@ -1503,17 +2115,46 @@ export class DesignChat {
                 if (response.photos.length === 0) {
                     grid.innerHTML = `
                         <div class="chat-info-gallery-empty">
-                            ${window.__('lbl_no_photos')}
+                            ${window.__('lbl_no_photos') || 'No hay fotos enviadas'}
                         </div>
                     `;
                 } else {
                     grid.innerHTML = '';
-                    response.photos.forEach(photoUrl => {
+                    response.photos.forEach((photoUrl, pIdx) => {
                         const item = document.createElement('div');
-                        item.className = 'chat-info-gallery-item';
-                        item.innerHTML = `<img src="${photoUrl}" alt="Photo" loading="lazy">`;
+                        item.className = 'chat-info-gallery-item component-skeleton';
+
+                        const img = document.createElement('img');
+                        img.src = photoUrl;
+                        img.alt = 'Photo';
+                        img.loading = 'lazy';
+                        img.className = 'image-lazy-fade';
+                        img.onload = () => {
+                            img.classList.add('image-loaded');
+                            item.classList.remove('component-skeleton');
+                        };
+                        img.onerror = () => {
+                            item.classList.remove('component-skeleton');
+                        };
+
+                        item.appendChild(img);
                         item.addEventListener('click', () => {
-                            window.open(photoUrl, '_blank');
+                            if (window.modalSystem) {
+                                const galleryImages = response.photos.map((p, idx) => ({
+                                    url: p,
+                                    name: `${window.__('lbl_sent_photos') || 'Foto enviada'} #${idx + 1}`,
+                                    sender: window.__('lbl_chat_member') || 'Miembro del lienzo',
+                                    avatar: '',
+                                    date: ''
+                                }));
+                                window.modalSystem.show('imageViewer', {
+                                    images: galleryImages,
+                                    initialIndex: pIdx,
+                                    title: window.__('lbl_sent_photos') || 'Fotos enviadas'
+                                });
+                            } else {
+                                window.open(photoUrl, '_blank');
+                            }
                         });
                         grid.appendChild(item);
                     });
@@ -1521,14 +2162,14 @@ export class DesignChat {
             } else {
                 grid.innerHTML = `
                     <div class="chat-info-gallery-error">
-                        ${response.message || window.__('err_generic')}
+                        ${response.message || window.__('err_generic') || 'Error al cargar fotos'}
                     </div>
                 `;
             }
         } catch (error) {
             grid.innerHTML = `
                 <div class="chat-info-gallery-error">
-                    ${window.__('err_generic')}
+                    ${window.__('err_generic') || 'Error al cargar fotos'}
                 </div>
             `;
         }
@@ -1571,3 +2212,4 @@ export class DesignChat {
         }
     }
 }
+

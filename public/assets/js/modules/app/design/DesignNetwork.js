@@ -595,6 +595,9 @@ export const DesignNetwork = {
                 else if (data.type === 'chat_message_deleted') {
                     document.dispatchEvent(new CustomEvent('canvas:chat_message_deleted', { detail: data.data }));
                 }
+                else if (data.type === 'chat_reaction_updated') {
+                    document.dispatchEvent(new CustomEvent('canvas:chat_reaction_updated', { detail: data.data }));
+                }
                 else if (data.type === 'live_image_updated') {
                     this.handleLiveImageUpdate(data);
                 }

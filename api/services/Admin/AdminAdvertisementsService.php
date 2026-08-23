@@ -648,6 +648,7 @@ class AdminAdvertisementsService {
             $status = in_array($adData['status'] ?? '', AdvertisementConstants::VALID_STATUSES, true) ? $adData['status'] : AdvertisementConstants::STATUS_ACTIVE;
             $hasExpiration = !empty($adData['has_expiration']) ? 1 : 0;
             $expirationDate = $hasExpiration && !empty($adData['expiration_date']) ? date('Y-m-d H:i:s', strtotime($adData['expiration_date'])) : null;
+            $startDate = !empty($adData['start_date']) ? date('Y-m-d H:i:s', strtotime($adData['start_date'])) : null;
             $settings = isset($adData['settings']) ? (is_array($adData['settings']) ? json_encode($adData['settings']) : $adData['settings']) : null;
 
             if (empty($name)) {
@@ -656,7 +657,7 @@ class AdminAdvertisementsService {
 
             $pdo->beginTransaction();
 
-            $stmtUpdate = $pdo->prepare("UPDATE advertisements SET name = ?, title = ?, description = ?, target_url = ?, sponsor_label = ?, format = ?, status = ?, has_expiration = ?, expiration_date = ?, settings = ? WHERE id = ?");
+            $stmtUpdate = $pdo->prepare("UPDATE advertisements SET name = ?, title = ?, description = ?, target_url = ?, sponsor_label = ?, format = ?, status = ?, has_expiration = ?, start_date = COALESCE(?, start_date), expiration_date = ?, settings = ? WHERE id = ?");
             $stmtUpdate->execute([
                 $name,
                 $title,
@@ -666,6 +667,7 @@ class AdminAdvertisementsService {
                 $format,
                 $status,
                 $hasExpiration,
+                $startDate,
                 $expirationDate,
                 $settings,
                 $adId
@@ -1214,5 +1216,129 @@ class AdminAdvertisementsService {
         header('Pragma: public');
         echo $pdfBytes;
         exit;
+    }
+
+    public function uploadAdMedia(array $fileInfo): array {
+        if (!isset($fileInfo['error']) || is_array($fileInfo['error']) || $fileInfo['error'] !== UPLOAD_ERR_OK) {
+            return ['success' => false, 'message_key' => 'err_media_upload_failed'];
+        }
+
+        $maxSize = 50 * 1024 * 1024;
+        if ($fileInfo['size'] > $maxSize) {
+            return ['success' => false, 'message_key' => 'err_file_too_large'];
+        }
+
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($fileInfo['tmp_name']);
+
+        $allowedTypes = [
+            'jpg'  => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png'  => 'image/png',
+            'webp' => 'image/webp',
+            'gif'  => 'image/gif',
+            'svg'  => 'image/svg+xml',
+            'mp4'  => 'video/mp4',
+            'webm' => 'video/webm'
+        ];
+
+        $extension = array_search($mime, $allowedTypes, true);
+        if ($extension === false) {
+            $origExt = strtolower(pathinfo($fileInfo['name'] ?? '', PATHINFO_EXTENSION));
+            if ($origExt === 'svg' && (strpos($mime, 'svg') !== false || strpos($mime, 'xml') !== false || strpos($mime, 'text') !== false)) {
+                $extension = 'svg';
+            } else {
+                return ['success' => false, 'message_key' => 'err_invalid_media_file'];
+            }
+        }
+
+        $isVideo = in_array($extension, ['mp4', 'webm'], true);
+        $fileName = sprintf('ad_media_%s.%s', Utils::generateUUID(), $extension);
+
+        $uploadDir = (defined('ROOT_PATH') ? ROOT_PATH : dirname(dirname(dirname(__DIR__)))) . '/public/assets/uploads/ads';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        $destination = $uploadDir . '/' . $fileName;
+        if (!move_uploaded_file($fileInfo['tmp_name'], $destination)) {
+            Logger::error("Failed to move uploaded ad media to: {$destination}");
+            return ['success' => false, 'message_key' => 'err_media_upload_failed'];
+        }
+
+        $publicUrl = '/assets/uploads/ads/' . $fileName;
+
+        return [
+            'success' => true,
+            'url' => $publicUrl,
+            'filename' => $fileName,
+            'type' => $isVideo ? 'video' : 'image',
+            'size' => $fileInfo['size'],
+            'message_key' => 'msg_media_uploaded_success'
+        ];
+    }
+
+    public function getAvailableMediaLibrary(): array {
+        $root = (defined('ROOT_PATH') ? ROOT_PATH : dirname(dirname(dirname(__DIR__))));
+        $dirs = [
+            [
+                'dir' => $root . '/public/assets/uploads/ads',
+                'url_prefix' => '/assets/uploads/ads/',
+                'category' => 'Cargas de Anuncios'
+            ],
+            [
+                'dir' => $root . '/public/assets/img/showcase',
+                'url_prefix' => '/assets/img/showcase/',
+                'category' => 'Creativos Showcase'
+            ],
+            [
+                'dir' => $root . '/public/assets/media',
+                'url_prefix' => '/assets/media/',
+                'category' => 'Vídeos Promocionales'
+            ]
+        ];
+
+        $mediaList = [];
+        $validExts = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg', 'mp4', 'webm'];
+
+        foreach ($dirs as $config) {
+            if (!is_dir($config['dir'])) continue;
+
+            $files = scandir($config['dir']);
+            if (!$files) continue;
+
+            foreach ($files as $file) {
+                if ($file === '.' || $file === '..') continue;
+                $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+                if (!in_array($ext, $validExts, true)) continue;
+
+                $fullPath = $config['dir'] . '/' . $file;
+                if (!is_file($fullPath)) continue;
+
+                $size = filesize($fullPath);
+                $modified = filemtime($fullPath);
+                $isVideo = in_array($ext, ['mp4', 'webm'], true);
+
+                $mediaList[] = [
+                    'filename' => $file,
+                    'url' => $config['url_prefix'] . $file,
+                    'type' => $isVideo ? 'video' : 'image',
+                    'category' => $config['category'],
+                    'size' => $size,
+                    'modified' => $modified,
+                    'created_date' => date('Y-m-d H:i', $modified)
+                ];
+            }
+        }
+
+        usort($mediaList, function ($a, $b) {
+            return $b['modified'] <=> $a['modified'];
+        });
+
+        return [
+            'success' => true,
+            'media' => $mediaList,
+            'total' => count($mediaList)
+        ];
     }
 }

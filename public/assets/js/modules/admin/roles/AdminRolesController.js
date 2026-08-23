@@ -1,7 +1,8 @@
 import { ApiRoutes }             from '../../../core/api/ApiRoutes.js';
-import { showMessage }            from '../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 import { BaseListController }     from '../../../core/base/BaseListController.js';
 import { applySelectableTable }   from '../../../core/mixins/SelectableTableMixin.js';
+import { AdminModalTemplates }    from '../AdminModalTemplates.js';
 
 function _t(key, fallback = '') {
     return typeof window.__ === 'function' ? window.__(key) : fallback;
@@ -12,6 +13,9 @@ class AdminRolesController extends BaseListController {
         super();
         this.selectedRoleId   = null;
         this.selectedRoleUuid = null;
+        if (window.modalSystem) {
+            window.modalSystem.registerTemplates(AdminModalTemplates);
+        }
     }
 
     // ─── Métodos abstractos de BaseListController ─────────────────────────────
@@ -29,19 +33,23 @@ class AdminRolesController extends BaseListController {
     // ─── Manejadores de eventos ───────────────────────────────────────────────
 
     handleGlobalClick(e) {
-        const selectTarget = e.target.closest('[data-action="selectRoleRow"]');
-        const searchBtn    = e.target.closest('[data-action="searchRole"]');
-        const addBtn       = e.target.closest('[data-action="addRole"]');
-        const editBtn      = e.target.closest('[data-action="editRole"]');
-        const permsBtn     = e.target.closest('[data-action="editPermissions"]');
-        const deleteBtn    = e.target.closest('[data-action="deleteRole"]');
+        const selectTarget    = e.target.closest('[data-action="selectRoleRow"]');
+        const searchBtn       = e.target.closest('[data-action="searchRole"]');
+        const addBtn          = e.target.closest('[data-action="addRole"]');
+        const editBtn         = e.target.closest('[data-action="editRole"]');
+        const permsBtn        = e.target.closest('[data-action="editPermissions"]');
+        const deleteBtn       = e.target.closest('[data-action="deleteRole"]');
+        const adjustWeightBtn = e.target.closest('[data-action="adjustModalWeight"]');
+        const submitModalBtn  = e.target.closest('[data-action="submitRoleModal"]');
 
-        if (selectTarget) this.handleRowSelection(selectTarget);
-        if (searchBtn)    this.toggleSearchToolbar();
-        if (addBtn)       this.navigateToAddRole();
-        if (editBtn)      this.navigateToEditRole();
-        if (permsBtn)     this.navigateToEditPermissions();
-        if (deleteBtn)    this.openDeleteRoleDialog();
+        if (selectTarget)    this.handleRowSelection(selectTarget);
+        if (searchBtn)       this.toggleSearchToolbar();
+        if (addBtn)          this.openAddRoleModal();
+        if (editBtn)         this.openEditRoleModal();
+        if (permsBtn)        this.navigateToEditPermissions();
+        if (deleteBtn)       this.openDeleteRoleDialog();
+        if (adjustWeightBtn) this.handleAdjustModalWeight(adjustWeightBtn);
+        if (submitModalBtn)  this.handleRoleModalSubmit(submitModalBtn);
 
         const searchToolbar = document.querySelector('[data-ref="search-toolbar"]');
         if (searchToolbar && !searchToolbar.classList.contains('disabled')) {
@@ -164,18 +172,129 @@ class AdminRolesController extends BaseListController {
         }
     }
 
-    // ─── Navegación ───────────────────────────────────────────────────────────
+    // ─── Modal de Crear / Editar Rol ─────────────────────────────────────────
 
-    navigateToAddRole() {
-        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/role-create`);
-        else window.location.href = `${this.basePath}/admin/role-create`;
+    openAddRoleModal() {
+        this.openRoleModal({
+            isEdit: false,
+            roleId: null,
+            roleName: '',
+            roleWeight: 1,
+            isSystem: false
+        });
     }
 
-    navigateToEditRole() {
-        if (!this.selectedRoleUuid) return;
-        if (window.spaRouter) window.spaRouter.navigate(`${this.basePath}/admin/role-edit/${this.selectedRoleUuid}`);
-        else window.location.href = `${this.basePath}/admin/role-edit/${this.selectedRoleUuid}`;
+    openEditRoleModal() {
+        if (!this.selectedRoleId) return;
+        const roleId = parseInt(this.selectedRoleId, 10);
+        const selectedRow = document.querySelector(`[data-action="selectRoleRow"][data-role-id="${roleId}"]`);
+        if (!selectedRow) return;
+
+        const isSystem = parseInt(selectedRow.getAttribute('data-is-system') || '0', 10) === 1;
+        if (isSystem) {
+            showMessage(_t('system_role_cannot_edit', 'Los roles del sistema no pueden editarse'), 'error');
+            return;
+        }
+
+        const rawName = selectedRow.getAttribute('data-role-raw-name') || selectedRow.getAttribute('data-role-name') || '';
+        const roleWeight = parseInt(selectedRow.getAttribute('data-role-weight') || '1', 10);
+
+        this.openRoleModal({
+            isEdit: true,
+            roleId: roleId,
+            roleName: rawName,
+            roleWeight: roleWeight,
+            isSystem: false
+        });
     }
+
+    openRoleModal({ isEdit = false, roleId = null, roleName = '', roleWeight = 1, isSystem = false } = {}) {
+        if (!window.modalSystem) return;
+        window.modalSystem.registerTemplates(AdminModalTemplates);
+
+        const view = document.querySelector('[data-ref="manageRolesView"]');
+        const isSuperAdmin = parseInt(view?.getAttribute('data-is-superadmin') || '0', 10) === 1;
+        const currentUserWeight = parseInt(view?.getAttribute('data-current-user-weight') || '0', 10);
+        const maxWeight = isSuperAdmin ? 100 : Math.max(1, currentUserWeight - 1);
+
+        window.modalSystem.show('roleModal', {
+            isEdit,
+            roleId,
+            roleName,
+            roleWeight,
+            maxWeight,
+            isSystem
+        });
+    }
+
+    handleAdjustModalWeight(btn) {
+        const step = parseInt(btn.dataset.step, 10) || 0;
+        const min = parseInt(btn.dataset.min, 10) || 1;
+        const max = parseInt(btn.dataset.max, 10) || 100;
+        const display = document.querySelector('[data-ref="modal_val_role_weight"]');
+        if (!display) return;
+
+        let currentVal = parseInt(display.dataset.value || display.textContent, 10) || 1;
+        let newVal = currentVal + step;
+        if (newVal < min) newVal = min;
+        if (newVal > max) newVal = max;
+        display.dataset.value = newVal;
+        display.textContent = newVal;
+    }
+
+    async handleRoleModalSubmit(btn) {
+        const form = document.querySelector('[data-ref="admin-role-form"]');
+        if (!form) return;
+
+        const mode = form.getAttribute('data-mode');
+        const roleId = form.getAttribute('data-role-id');
+        const nameInput = form.querySelector('[data-ref="modalRoleNameInput"]');
+        const weightEl = form.querySelector('[data-ref="modal_val_role_weight"]');
+
+        const roleName = nameInput ? nameInput.value.trim() : '';
+        const roleWeight = weightEl ? parseInt(weightEl.dataset.value || weightEl.textContent, 10) : 1;
+
+        if (!roleName) {
+            showMessage(_t('err_role_name_required', 'El nombre del rol es obligatorio.'), 'error');
+            if (nameInput) nameInput.focus();
+            return;
+        }
+        if (roleName.length < 2 || roleName.length > 50) {
+            showMessage(_t('err_role_name_length', 'El nombre del rol debe tener entre 2 y 50 caracteres.'), 'error');
+            if (nameInput) nameInput.focus();
+            return;
+        }
+
+        const isEdit = mode === 'edit';
+        const payload = {
+            name: roleName,
+            weight: roleWeight
+        };
+        if (isEdit) {
+            payload.id = parseInt(roleId, 10);
+        }
+
+        const route = isEdit ? ApiRoutes.Admin.EditRole : ApiRoutes.Admin.CreateRole;
+
+        setButtonLoading(btn);
+        try {
+            const res = await this.api.post(route, payload, this.abortController?.signal);
+            if (res.aborted) return;
+            if (res.success) {
+                showMessage(res.message || (isEdit ? _t('msg_role_updated', 'Rol actualizado correctamente.') : _t('role_created_success', 'Rol creado correctamente.')), 'success');
+                if (window.modalSystem) window.modalSystem.closeCurrent();
+                await this.handlePagination(window.location.href);
+            } else {
+                showMessage(res.message || _t('err_default', 'Ha ocurrido un error.'), 'error');
+            }
+        } catch (err) {
+            if (err.name !== 'AbortError') showMessage(_t('err_default', 'Ha ocurrido un error.'), 'error');
+        } finally {
+            restoreButton(btn);
+        }
+    }
+
+    // ─── Navegación a Permisos ────────────────────────────────────────────────
 
     navigateToEditPermissions() {
         if (!this.selectedRoleUuid) return;

@@ -83,6 +83,22 @@ return [
             ],
         ],
     ],
+    'chat.react' => [
+        'controller' => 'App\\Api\\Controllers\\Chat\\ChatController',
+        'action' => 'react',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'chat_react',
+                'max' => 60,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
     'chat.attachment' => [
         'controller' => 'App\\Api\\Controllers\\Chat\\ChatController',
         'action' => 'attachment',

@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS advertisements (
     description TEXT NULL,
     target_url VARCHAR(1024) NULL,
     sponsor_label VARCHAR(100) NULL,
-    format ENUM('feed', 'module_colors', 'module_templates') NOT NULL DEFAULT 'feed',
+    format ENUM('feed', 'module_colors', 'module_templates', 'module_stickers', 'module_shapes') NOT NULL DEFAULT 'feed',
     status ENUM('active', 'inactive', 'paused', 'expired') NOT NULL DEFAULT 'active',
     has_expiration TINYINT(1) NOT NULL DEFAULT 0,
     start_date DATETIME NULL,

@@ -237,6 +237,7 @@ export class ModuleManager {
         if (activeModules.length === 0) return;
 
         activeModules.forEach(module => {
+
             if (this.isMobile && (module.classList.contains('component-module--dropdown') || module.classList.contains('component-module--sidebar-responsive'))) {
                 const clickedMenu = e.target.closest('.component-menu');
                 if (clickedMenu && module.contains(clickedMenu)) {

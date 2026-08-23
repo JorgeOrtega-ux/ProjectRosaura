@@ -112,6 +112,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/roles?page=' . ($page + 1
                             data-role-id="<?php echo $role['id']; ?>" 
                             data-role-uuid="<?php echo htmlspecialchars($role['uuid'] ?? ''); ?>"
                             data-role-name="<?php echo htmlspecialchars($translatedName); ?>" 
+                            data-role-raw-name="<?php echo htmlspecialchars($rawName); ?>" 
                             data-is-system="<?php echo $isSystemFlag; ?>" 
                             data-role-weight="<?php echo (int)$role['weight']; ?>">
                             <td>
