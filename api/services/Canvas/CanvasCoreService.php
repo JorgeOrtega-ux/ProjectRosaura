@@ -88,7 +88,12 @@ class CanvasCoreService {
                 return ['success' => false, 'message' => __('err_canvas_offline') ?: 'Este lienzo está en modo estudio privado.', 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
             }
 
-            $secret = getenv('INTERNAL_API_SECRET') ?: 'default_secret';
+            $secret = \App\Core\Helpers\EnvLoader::get('INTERNAL_API_SECRET');
+            if (empty($secret)) {
+                Logger::critical('INTERNAL_API_SECRET is not configured in environment. Cannot generate WS ticket.');
+                return ['success' => false, 'message' => __('err_internal_server_error'), 'http_code' => 500];
+            }
+
             $time = time();
             $tokenData = [
                 'type' => $userId !== null ? 'auth' : 'guest',

@@ -8,7 +8,7 @@ class Utils {
     private static $sanctionReasons = null;
 
     /**
-     * Centralized check to determine if an IP address belongs to a trusted proxy or local/private network.
+     * Centralized check to determine if an IP address belongs to a trusted proxy.
      */
     public static function isTrustedProxy(?string $ip = null): bool {
         $targetIp = $ip ?? ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
@@ -16,11 +16,68 @@ class Utils {
         
         $envProxies = EnvLoader::get('TRUSTED_PROXIES', '');
         if (!empty($envProxies)) {
-            $trustedProxies = array_merge($trustedProxies, array_map('trim', explode(',', $envProxies)));
+            $trustedProxies = array_merge($trustedProxies, array_filter(array_map('trim', explode(',', $envProxies))));
         }
 
-        return in_array($targetIp, $trustedProxies, true) 
-            || filter_var($targetIp, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
+        foreach ($trustedProxies as $proxy) {
+            if ($proxy === $targetIp) {
+                return true;
+            }
+            if (strpos($proxy, '/') !== false && self::ipMatchesCidr($targetIp, $proxy)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Validates whether an IP address matches an IPv4 or IPv6 CIDR subnet.
+     */
+    public static function ipMatchesCidr(string $ip, string $cidr): bool {
+        if (strpos($cidr, '/') === false) {
+            return $ip === $cidr;
+        }
+
+        list($subnet, $bits) = explode('/', $cidr, 2);
+        $bits = (int)$bits;
+
+        // IPv4
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) && filter_var($subnet, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            if ($bits < 0 || $bits > 32) return false;
+            $ipLong = ip2long($ip);
+            $subnetLong = ip2long($subnet);
+            $mask = $bits === 0 ? 0 : (~0 << (32 - $bits));
+            return ($ipLong & $mask) === ($subnetLong & $mask);
+        }
+
+        // IPv6
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) && filter_var($subnet, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            if ($bits < 0 || $bits > 128) return false;
+            $ipBin = inet_pton($ip);
+            $subnetBin = inet_pton($subnet);
+            if ($ipBin === false || $subnetBin === false) return false;
+
+            $byteCount = intdiv($bits, 8);
+            $bitRemainder = $bits % 8;
+
+            if ($byteCount > 0 && substr($ipBin, 0, $byteCount) !== substr($subnetBin, 0, $byteCount)) {
+                return false;
+            }
+
+            if ($bitRemainder > 0 && isset($ipBin[$byteCount], $subnetBin[$byteCount])) {
+                $ipByte = ord($ipBin[$byteCount]);
+                $subnetByte = ord($subnetBin[$byteCount]);
+                $mask = (0xFF << (8 - $bitRemainder)) & 0xFF;
+                if (($ipByte & $mask) !== ($subnetByte & $mask)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /**

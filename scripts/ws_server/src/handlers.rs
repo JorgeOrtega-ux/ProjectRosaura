@@ -48,7 +48,14 @@ pub async fn ws_handler(
 }
 
 async fn handle_socket(mut socket: WebSocket, canvas_id: String, ticket: String, state: AppState) {
-    let secret = std::env::var("INTERNAL_API_SECRET").unwrap_or_else(|_| "default_secret".to_string());
+    let secret = match std::env::var("INTERNAL_API_SECRET") {
+        Ok(s) if !s.trim().is_empty() => s,
+        _ => {
+            error!("Connection rejected: INTERNAL_API_SECRET environment variable is missing or empty.");
+            let _ = socket.send(Message::Close(None)).await;
+            return;
+        }
+    };
     
     let mut validation = Validation::new(Algorithm::HS256);
     validation.validate_exp = true;

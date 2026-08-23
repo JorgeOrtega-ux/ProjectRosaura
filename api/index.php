@@ -33,14 +33,6 @@ register_shutdown_function(function() {
     }
 });
 
-if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    header("Access-Control-Allow-Origin: *");
-    header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS");
-    header("Access-Control-Allow-Headers: Content-Type, X-CSRF-Token, X-SPA-Request, Authorization, X-Internal-Api-Key");
-    http_response_code(204);
-    exit;
-}
-
 header("X-Frame-Options: DENY");
 header("X-Content-Type-Options: nosniff");
 header("Referrer-Policy: strict-origin-when-cross-origin");
@@ -58,6 +50,22 @@ if (!isset($_ENV['APP_URL'])) {
     exit;
 }
 define('APP_URL', rtrim($_ENV['APP_URL'], '/'));
+
+if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    if (!empty($origin)) {
+        $cleanOrigin = rtrim($origin, '/');
+        if ($cleanOrigin === APP_URL) {
+            header("Access-Control-Allow-Origin: " . $cleanOrigin);
+            header("Access-Control-Allow-Credentials: true");
+            header("Vary: Origin");
+        }
+    }
+    header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS");
+    header("Access-Control-Allow-Headers: Content-Type, X-CSRF-Token, X-SPA-Request, Authorization, X-Internal-Api-Key");
+    http_response_code(204);
+    exit;
+}
 
 use App\Core\Helpers\Utils;
 use App\Core\Container;
@@ -268,7 +276,7 @@ if ($requestRoute === 'csrf.refresh' || $requestRoute === 'auth.csrf') {
     exit;
 }
 
-$requestToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($_GET['csrf_token'] ?? '');
+$requestToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($_POST['csrf_token'] ?? '');
 $isChatAttachment = ($_SERVER['REQUEST_METHOD'] === 'GET' && ($requestRoute === 'chat.attachment'));
 $isReceiptDownload = ($requestRoute === 'stripe.download_receipt');
 
