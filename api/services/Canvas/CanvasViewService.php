@@ -2,10 +2,12 @@
 namespace App\Api\Services\Canvas;
 
 use App\Config\Database\DatabaseManager;
+use App\Config\Database\RedisCache;
 use App\Core\Helpers\Utils;
 use App\Core\System\PermissionsConstants;
 use App\Core\System\CanvasPermissionsConstants;
 use App\Core\System\SubscriptionPlanConstants;
+use App\Core\System\CacheConstants;
 use App\Core\System\Logger;
 
 class CanvasViewService {
@@ -272,6 +274,23 @@ class CanvasViewService {
         $currentPage = ($page && $page > 0) ? $page : 1;
         $offset = ($currentPage - 1) * $limit;
 
+        $cacheKey = CacheConstants::PREFIX_CANVAS_MANAGE . "u{$userId}:{$currentPage}";
+        $redis = null;
+        try {
+            if (class_exists(RedisCache::class)) {
+                $redis = (new RedisCache())->getClient();
+                if ($redis) {
+                    $cached = $redis->get($cacheKey);
+                    if ($cached) {
+                        $decoded = json_decode($cached, true);
+                        if (is_array($decoded)) {
+                            return $decoded;
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {}
+
         $db = new DatabaseManager();
         $connName = defined('\App\Core\System\DatabaseConstants::CONN_CANVASES') ? \App\Core\System\DatabaseConstants::CONN_CANVASES : 'canvases';
         $pdo = $db->getConnection($connName);
@@ -344,7 +363,7 @@ class CanvasViewService {
         }
         unset($c);
 
-        return [
+        $resultData = [
             'unauthorized' => false,
             'canvases' => $canvases,
             'totalItems' => $totalItems,
@@ -354,6 +373,14 @@ class CanvasViewService {
             'hasAdvancedRoles' => $hasAdvancedRoles,
             'userTier' => $subscriptionTier
         ];
+
+        if ($redis && !empty($canvases)) {
+            try {
+                $redis->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($resultData));
+            } catch (\Throwable $e) {}
+        }
+
+        return $resultData;
     }
 
     public function getSnapshotsGalleryData(?string $paramUuid): array {
@@ -377,7 +404,25 @@ class CanvasViewService {
         $errorIcon = 'error';
 
         $appUrl = defined('APP_URL') ? APP_URL : '';
-        $fallbackImg = $appUrl . '/assets/img/fallbacks/canvas-default.png';
+        $userIdParam = $_SESSION['user_id'] ?? 0;
+        $cacheKey = $uuid ? (CacheConstants::PREFIX_CANVAS_SNAPSHOTS_GALLERY . "{$uuid}:u{$userIdParam}") : null;
+        $redis = null;
+        if ($cacheKey) {
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redis = (new RedisCache())->getClient();
+                    if ($redis) {
+                        $cached = $redis->get($cacheKey);
+                        if ($cached) {
+                            $decoded = json_decode($cached, true);
+                            if (is_array($decoded)) {
+                                return $decoded;
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
 
         if ($uuid) {
             try {
@@ -468,7 +513,7 @@ class CanvasViewService {
             Logger::error("Error loading promo catalog for snapshots: " . $e->getMessage());
         }
 
-        return [
+        $resultData = [
             'uuid' => $uuid,
             'snapshots' => $snapshots,
             'canvasName' => $canvasName,
@@ -481,6 +526,14 @@ class CanvasViewService {
             'isOwner' => $isOwner ?? false,
             'promoCatalog' => $promoCatalog
         ];
+
+        if ($redis && $cacheKey && !$error) {
+            try {
+                $redis->setex($cacheKey, CacheConstants::TTL_TEN_MINS, json_encode($resultData));
+            } catch (\Throwable $e) {}
+        }
+
+        return $resultData;
     }
 
     public function getSnapshotViewerData(?string $paramId): array {
@@ -557,6 +610,25 @@ class CanvasViewService {
         if ($page < 1) $page = 1;
         $offset = ($page - 1) * $limit;
 
+        $cacheKey = $canvasUuid ? (CacheConstants::PREFIX_CANVAS_TEAM_MEMBERS . "{$canvasUuid}:p{$page}") : null;
+        $redis = null;
+        if ($cacheKey) {
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redis = (new RedisCache())->getClient();
+                    if ($redis) {
+                        $cached = $redis->get($cacheKey);
+                        if ($cached) {
+                            $decoded = json_decode($cached, true);
+                            if (is_array($decoded)) {
+                                return $decoded;
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
         $members = [];
         $memberRoles = [];
         $userDetails = [];
@@ -632,7 +704,7 @@ class CanvasViewService {
         $prevPageUrl = $page > 1 ? $appUrl . '/canvases/members/' . $canvasUuid . '?page=' . ($page - 1) : '#';
         $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/members/' . $canvasUuid . '?page=' . ($page + 1) : '#';
 
-        return [
+        $resultData = [
             'unauthorized' => false,
             'userId' => $userId,
             'canvasUuid' => $canvasUuid,
@@ -648,6 +720,14 @@ class CanvasViewService {
             'nextPageUrl' => $nextPageUrl,
             'appUrl' => $appUrl
         ];
+
+        if ($redis && $cacheKey && !empty($members)) {
+            try {
+                $redis->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($resultData));
+            } catch (\Throwable $e) {}
+        }
+
+        return $resultData;
     }
 
     public function getWorkspaceEditData(?string $canvasUuid): array {
@@ -961,6 +1041,26 @@ class CanvasViewService {
         $pdoCanvases = $ctx['pdo'];
         $db = $ctx['db'];
 
+        $canvasUuid = $ctx['canvasUuid'];
+        $cacheKey = $canvasUuid ? (CacheConstants::PREFIX_CANVAS_TEAM_ROLES . "{$canvasUuid}:u{$userId}") : null;
+        $redis = null;
+        if ($cacheKey) {
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redis = (new RedisCache())->getClient();
+                    if ($redis) {
+                        $cached = $redis->get($cacheKey);
+                        if ($cached) {
+                            $decoded = json_decode($cached, true);
+                            if (is_array($decoded)) {
+                                return $decoded;
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
         $ownerTier = 0;
         if ($canvasOwnerId !== null) {
             try {
@@ -1015,7 +1115,7 @@ class CanvasViewService {
             $userRolesWeight = 100;
         }
 
-        return [
+        $resultData = [
             'error' => null,
             'userId' => $userId,
             'canvasUuid' => $ctx['canvasUuid'],
@@ -1027,6 +1127,14 @@ class CanvasViewService {
             'canManageRoles' => $canManageRoles,
             'userRolesWeight' => $userRolesWeight
         ];
+
+        if ($redis && $cacheKey && !empty($roles)) {
+            try {
+                $redis->setex($cacheKey, CacheConstants::TTL_TEN_MINS, json_encode($resultData));
+            } catch (\Throwable $e) {}
+        }
+
+        return $resultData;
     }
 
     public function getCanvasChangeRoleData(?string $canvasUuid, ?string $targetUserUuid): array {
@@ -1184,6 +1292,25 @@ class CanvasViewService {
         $canvasId = $ctx['canvasId'];
         $pdoCanvases = $ctx['pdo'];
 
+        $cacheKey = $canvasUuid ? (CacheConstants::PREFIX_CANVAS_TEAM_INVITES . $canvasUuid) : null;
+        $redis = null;
+        if ($cacheKey) {
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redis = (new RedisCache())->getClient();
+                    if ($redis) {
+                        $cached = $redis->get($cacheKey);
+                        if ($cached) {
+                            $decoded = json_decode($cached, true);
+                            if (is_array($decoded)) {
+                                return $decoded;
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
         $invites = [];
         try {
             $stmt = $pdoCanvases->prepare("
@@ -1198,13 +1325,21 @@ class CanvasViewService {
             Logger::error("getCanvasInvitesData invites query error: " . $e->getMessage(), ['exception' => $e]);
         }
 
-        return [
+        $resultData = [
             'error' => null,
             'canvasId' => $canvasId,
             'canvasUuid' => $ctx['canvasUuid'],
             'invites' => $invites,
             'appUrl' => defined('APP_URL') ? APP_URL : ''
         ];
+
+        if ($redis && $cacheKey && !empty($invites)) {
+            try {
+                $redis->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($resultData));
+            } catch (\Throwable $e) {}
+        }
+
+        return $resultData;
     }
 
     public function getCanvasRequestsData(?string $canvasUuid): array {
@@ -1219,6 +1354,26 @@ class CanvasViewService {
 
         $canvasId = $ctx['canvasId'];
         $pdo = $ctx['pdo'];
+
+        $cacheKey = $canvasUuid ? (CacheConstants::PREFIX_CANVAS_TEAM_REQUESTS . $canvasUuid) : null;
+        $redis = null;
+        if ($cacheKey) {
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redis = (new RedisCache())->getClient();
+                    if ($redis) {
+                        $cached = $redis->get($cacheKey);
+                        if ($cached) {
+                            $decoded = json_decode($cached, true);
+                            if (is_array($decoded)) {
+                                return $decoded;
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
         $pendingRequests = [];
 
         try {
@@ -1229,13 +1384,21 @@ class CanvasViewService {
             Logger::error("getCanvasRequestsData error: " . $e->getMessage(), ['exception' => $e]);
         }
 
-        return [
+        $resultData = [
             'error' => null,
             'canvasId' => $canvasId,
             'canvasUuid' => $ctx['canvasUuid'],
             'pendingRequests' => $pendingRequests,
             'appUrl' => defined('APP_URL') ? APP_URL : ''
         ];
+
+        if ($redis && $cacheKey && !empty($pendingRequests)) {
+            try {
+                $redis->setex($cacheKey, CacheConstants::TTL_TWO_MINS, json_encode($resultData));
+            } catch (\Throwable $e) {}
+        }
+
+        return $resultData;
     }
 
     public function getCanvasRoleBuilderData(?string $canvasUuid, ?string $roleUuid): array {
@@ -1518,6 +1681,25 @@ class CanvasViewService {
         if ($page < 1) $page = 1;
         $offset = ($page - 1) * $limit;
 
+        $cacheKey = $realCanvasUuid ? (CacheConstants::PREFIX_CANVAS_TEAM_SANCTIONS . "{$realCanvasUuid}:p{$page}") : null;
+        $redis = null;
+        if ($cacheKey) {
+            try {
+                if (class_exists(RedisCache::class)) {
+                    $redis = (new RedisCache())->getClient();
+                    if ($redis) {
+                        $cached = $redis->get($cacheKey);
+                        if ($cached) {
+                            $decoded = json_decode($cached, true);
+                            if (is_array($decoded)) {
+                                return $decoded;
+                            }
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
         $userList = [];
         $restrictionsMap = [];
         $activeMemberUserIds = [];
@@ -1578,7 +1760,7 @@ class CanvasViewService {
         $prevPageUrl = $page > 1 ? $appUrl . '/canvases/manage/sanctions/' . $realCanvasUuid . '?page=' . ($page - 1) : '#';
         $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage/sanctions/' . $realCanvasUuid . '?page=' . ($page + 1) : '#';
 
-        return [
+        $resultData = [
             'unauthorized' => false,
             'canvas' => $canvas,
             'canvasId' => $canvasId,
@@ -1594,6 +1776,14 @@ class CanvasViewService {
             'nextPageUrl' => $nextPageUrl,
             'appUrl' => $appUrl
         ];
+
+        if ($redis && $cacheKey && !empty($userList)) {
+            try {
+                $redis->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, json_encode($resultData));
+            } catch (\Throwable $e) {}
+        }
+
+        return $resultData;
     }
 
     public function getTrashData(?string $searchQuery = '', array $typeFilter = [], array $sizeFilter = [], array $privacyFilter = [], int $page = 1): array {

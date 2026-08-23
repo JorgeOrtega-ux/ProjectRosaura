@@ -94,17 +94,16 @@ class AdminViewService {
     public function getServerConfigData(): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
-        $db = $this->dbManager;
-        $pdo = $db->getConnection(DB::CONN_IDENTITY);
-
-        $tblServerConfig = DB::TBL_SERVER_CONFIG;
         $config = [];
-
         try {
-            $stmt = $pdo->query("SELECT * FROM {$tblServerConfig} LIMIT 1");
-            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-            if ($row) {
-                $config = $row;
+            $redis = (new RedisCache())->getClient();
+            if ($redis) {
+                $serverConfigRepo = new \App\Core\Repositories\ServerConfigRepository($this->dbManager, $redis);
+                $config = $serverConfigRepo->getConfig();
+            } else {
+                $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
+                $stmt = $pdo->query("SELECT * FROM " . DB::TBL_SERVER_CONFIG . " LIMIT 1");
+                $config = $stmt->fetch(\PDO::FETCH_ASSOC) ?: [];
             }
         } catch (\Throwable $e) {
             Logger::error("getServerConfigData error: " . $e->getMessage(), ['exception' => $e]);
@@ -122,9 +121,10 @@ class AdminViewService {
     public function getManageUsersData(?string $searchQuery, array $rolesFilter, array $statusFilter, int $page = 1): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
 
+        $roleRepo = new RoleRepository($this->dbManager, new \App\Config\Database\RedisCache());
+
         $activeUserId = $_SESSION['user_id'] ?? null;
         if ($activeUserId) {
-            $roleRepo = new RoleRepository($this->dbManager, new \App\Config\Database\RedisCache());
             $userPerms = $roleRepo->getMergedPermissionsForUser((int)$activeUserId);
         } else {
             $userPerms = $_SESSION['user_permissions'] ?? [];
@@ -147,13 +147,7 @@ class AdminViewService {
         $tblUserRoles = DB::TBL_USER_ROLES;
         $tblUserRestr = DB::TBL_USER_RESTRICTIONS;
 
-        $allRoles = [];
-        try {
-            $stmtRoles = $pdo->query("SELECT id, name FROM {$tblRoles} ORDER BY id ASC");
-            $allRoles = $stmtRoles->fetchAll(\PDO::FETCH_ASSOC);
-        } catch (\Throwable $e) {
-            Logger::error("getManageUsersData allRoles error: " . $e->getMessage(), ['exception' => $e]);
-        }
+        $allRoles = $roleRepo->getAll();
 
         $searchQuery = trim($searchQuery ?? '');
         $whereConditions = ["1=1"];
@@ -405,13 +399,8 @@ class AdminViewService {
 
         $targetUserId = (int)$targetUser['id'];
 
-        $allRoles = [];
-        try {
-            $stmtRoles = $pdo->query("SELECT id, name, weight FROM " . DB::TBL_ROLES . " ORDER BY weight DESC");
-            $allRoles = $stmtRoles->fetchAll(\PDO::FETCH_ASSOC);
-        } catch (\Throwable $e) {
-            Logger::error("getEditUserRoleData allRoles error: " . $e->getMessage(), ['exception' => $e]);
-        }
+        $roleRepo = new RoleRepository($this->dbManager, new RedisCache());
+        $allRoles = $roleRepo->getAll();
 
         $assignedRoleIds = [];
         try {
@@ -914,13 +903,8 @@ class AdminViewService {
             return ['error' => __('err_role_not_found')];
         }
 
-        $allPermissions = [];
-        try {
-            $stmtAll = $pdo->query("SELECT * FROM permissions ORDER BY id ASC");
-            $allPermissions = $stmtAll->fetchAll(\PDO::FETCH_ASSOC);
-        } catch (\Throwable $e) {
-            Logger::error("getRolePermissionsData allPermissions error: " . $e->getMessage(), ['exception' => $e]);
-        }
+        $roleRepo = new RoleRepository($this->dbManager, new RedisCache());
+        $allPermissions = $roleRepo->getAllPermissions();
 
         return [
             'redirect' => null,

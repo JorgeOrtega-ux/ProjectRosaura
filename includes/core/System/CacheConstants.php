@@ -46,22 +46,30 @@ class CacheConstants {
     public const PATTERN_PR_CACHE = 'PR_cache:*';
 
     // --- Nuevas constantes de caché ---
-    public const PREFIX_USER_SUBSCRIPTION    = 'user:subscription:';
-    public const PREFIX_USER_STORAGE         = 'user:storage:';
-    public const PREFIX_USER_PALETTE         = 'user:palettes:';
-    public const PREFIX_CANVAS_OWNER_LIST    = 'canvas:owner:';
-    public const PREFIX_CANVAS_DASHBOARD     = 'canvas:user_dashboard:';
-    public const PREFIX_CANVAS_COUNT         = 'canvas:count:';
-    public const PREFIX_CANVAS_TIER_COUNT    = 'canvas:tier_count:';
-    public const PREFIX_CANVAS_ROLES_LIST    = 'canvas:roles:';
-    public const PREFIX_CANVAS_MEMBER_ROLES  = 'canvas:member_roles:';
-    public const PREFIX_CANVAS_PERMISSION    = 'canvas:perm:';
-    public const PREFIX_CANVAS_SNAPSHOTS     = 'canvas:snapshots:';
-    public const KEY_CANVAS_PERMS_ALL        = 'canvas:permissions:all';
-    public const PREFIX_CANVAS_RESET_SETTINGS  = 'canvas:reset_settings:';
+    public const PREFIX_USER_PREFS            = 'user:prefs:';
+    public const PREFIX_USER_FLAGS            = 'user:flags:';
+    public const PREFIX_USER_STORAGE          = 'user:storage:';
+    public const PREFIX_USER_PALETTE          = 'user:palettes:';
+    public const PREFIX_CANVAS_MANAGE         = 'canvas:manage:';
+    public const PREFIX_CANVAS_OWNER_LIST     = 'canvas:owner:';
+    public const PREFIX_CANVAS_DASHBOARD      = 'canvas:user_dashboard:';
+    public const PREFIX_CANVAS_COUNT          = 'canvas:count:';
+    public const PREFIX_CANVAS_TIER_COUNT     = 'canvas:tier_count:';
+    public const PREFIX_CANVAS_ROLES_LIST     = 'canvas:roles:';
+    public const PREFIX_CANVAS_MEMBER_ROLES   = 'canvas:member_roles:';
+    public const PREFIX_CANVAS_PERMISSION     = 'canvas:perm:';
+    public const PREFIX_CANVAS_SNAPSHOTS      = 'canvas:snapshots:';
+    public const PREFIX_CANVAS_SNAPSHOTS_GALLERY = 'canvas:snapshots:gallery:';
+    public const PREFIX_CANVAS_TEAM_MEMBERS   = 'canvas:team:members:';
+    public const PREFIX_CANVAS_TEAM_REQUESTS  = 'canvas:team:requests:';
+    public const PREFIX_CANVAS_TEAM_INVITES   = 'canvas:team:invites:';
+    public const PREFIX_CANVAS_TEAM_ROLES     = 'canvas:team:roles:';
+    public const PREFIX_CANVAS_TEAM_SANCTIONS = 'canvas:team:sanctions:';
+    public const KEY_CANVAS_PERMS_ALL         = 'canvas:permissions:all';
+    public const PREFIX_CANVAS_RESET_SETTINGS = 'canvas:reset_settings:';
     public const PREFIX_CANVAS_RESIZE_SETTINGS = 'canvas:resize_settings:';
-    public const PREFIX_CANVAS_BANNED          = 'canvas:%s:canvas_banned:%s';
-    public const PREFIX_CHAT_RESTRICTED        = 'canvas:%s:chat_restricted:%s';
+    public const PREFIX_CANVAS_BANNED         = 'canvas:%s:canvas_banned:%s';
+    public const PREFIX_CHAT_RESTRICTED       = 'canvas:%s:chat_restricted:%s';
 
     // --- Publicidad y Anuncios (Advertisements) ---
     public const PREFIX_ADS_ACTIVE_PUBLIC      = 'ads:active:public';

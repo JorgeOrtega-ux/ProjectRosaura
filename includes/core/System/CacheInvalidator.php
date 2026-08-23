@@ -44,6 +44,8 @@ class CacheInvalidator {
         try {
             $this->redis->del(CacheConstants::PREFIX_USER_PROFILE . $userId);
             $this->redis->del(CacheConstants::PREFIX_USER_TEMPLATE_TOKENS . $userId);
+            $this->redis->del(CacheConstants::PREFIX_USER_PREFS . $userId);
+            $this->redis->del(CacheConstants::PREFIX_USER_FLAGS . $userId);
 
             if ($uuid) {
                 $this->redis->del(CacheConstants::PREFIX_USER_PROFILE . $uuid);
@@ -53,6 +55,14 @@ class CacheInvalidator {
             $this->redis->del(CacheConstants::PREFIX_USER_PERMS . $userId);
             $this->redis->del(CacheConstants::PREFIX_USER_HIGHEST_ROLE . $userId);
             $this->redis->del(CacheConstants::PREFIX_USER_STORAGE . $userId);
+        } catch (\Throwable $e) {}
+    }
+
+    public function userPrefs(int $userId): void {
+        if (!$this->redis) return;
+        try {
+            $this->redis->del(CacheConstants::PREFIX_USER_PREFS . $userId);
+            $this->redis->del(CacheConstants::PREFIX_USER_FLAGS . $userId);
         } catch (\Throwable $e) {}
     }
 
@@ -86,6 +96,7 @@ class CacheInvalidator {
             if ($canvasUuid) {
                 $this->deleteByPattern("canvas:view_data:{$canvasUuid}:*");
                 $this->deleteByPattern("canvas:layout_preload:{$canvasUuid}:*");
+                $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_SNAPSHOTS_GALLERY . "{$canvasUuid}:*");
             }
             $this->deleteByPattern("canvas:view_data:*");
             $this->deleteByPattern("canvas:layout_preload:*");
@@ -96,6 +107,44 @@ class CacheInvalidator {
             $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_PUBLIC_PAGE . '*');
             $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_HOME_FEED . '*');
             $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_DASHBOARD . '*');
+            $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_MANAGE . '*');
+        } catch (\Throwable $e) {}
+    }
+
+    public function canvasSnapshots(string $canvasUuid, ?int $canvasId = null): void {
+        if (!$this->redis) return;
+        try {
+            $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_SNAPSHOTS_GALLERY . "{$canvasUuid}:*");
+            if ($canvasId) {
+                $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_SNAPSHOTS . "{$canvasId}:*");
+            }
+        } catch (\Throwable $e) {}
+    }
+
+    public function canvasTeam(?int $canvasId = null, ?string $canvasUuid = null): void {
+        if (!$this->redis) return;
+        try {
+            if ($canvasUuid) {
+                $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_TEAM_MEMBERS . "{$canvasUuid}:*");
+                $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_TEAM_REQUESTS . "{$canvasUuid}:*");
+                $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_TEAM_INVITES . "{$canvasUuid}:*");
+                $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_TEAM_ROLES . "{$canvasUuid}:*");
+                $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_TEAM_SANCTIONS . "{$canvasUuid}:*");
+            }
+            if ($canvasId) {
+                $this->canvasRoles($canvasId);
+            }
+        } catch (\Throwable $e) {}
+    }
+
+    public function canvasSanctions(int $canvasId, ?string $canvasUuid = null): void {
+        if (!$this->redis) return;
+        try {
+            if ($canvasUuid) {
+                $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_TEAM_SANCTIONS . "{$canvasUuid}:*");
+            }
+            $this->deleteByPattern(sprintf(CacheConstants::PREFIX_CANVAS_BANNED, $canvasId, '*'));
+            $this->deleteByPattern(sprintf(CacheConstants::PREFIX_CHAT_RESTRICTED, $canvasId, '*'));
         } catch (\Throwable $e) {}
     }
 
@@ -123,6 +172,7 @@ class CacheInvalidator {
             }
 
             $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_DASHBOARD . "u{$userId}:*");
+            $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_MANAGE . "u{$userId}:*");
             $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_HOME_FEED . '*');
         } catch (\Throwable $e) {}
     }
@@ -147,6 +197,7 @@ class CacheInvalidator {
             }
 
             $this->userCanvasList($userId);
+            $this->canvasTeam($canvasId);
         } catch (\Throwable $e) {}
     }
 

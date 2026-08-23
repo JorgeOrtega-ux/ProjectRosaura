@@ -290,7 +290,13 @@ class CanvasMediaService {
             $db = new DatabaseManager();
             $pdo = $db->getConnection(DB::CONN_CANVASES);
 
-            $stmt = $pdo->prepare("SELECT id FROM canvas_snapshots_history WHERE snapshot_uuid = :uuid LIMIT 1");
+            $stmt = $pdo->prepare("
+                SELECT s.id, s.canvas_id, c.uuid as canvas_uuid 
+                FROM canvas_snapshots_history s
+                JOIN " . DB::TBL_CANVASES . " c ON s.canvas_id = c.id
+                WHERE s.snapshot_uuid = :uuid 
+                LIMIT 1
+            ");
             $stmt->execute([':uuid' => $snapshotId]);
             $snapshot = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -314,6 +320,13 @@ class CanvasMediaService {
                 $action = 'added';
             }
 
+            if (!empty($snapshot['canvas_uuid'])) {
+                try {
+                    $redis = (new \App\Config\Database\RedisCache())->getClient();
+                    (new \App\Core\System\CacheInvalidator($redis))->canvasSnapshots($snapshot['canvas_uuid'], (int)$snapshot['canvas_id']);
+                } catch (\Throwable $e) {}
+            }
+
             return ['success' => true, 'data' => ['action' => $action]];
 
         } catch (Exception $e) {
@@ -328,7 +341,7 @@ class CanvasMediaService {
             $pdo = $db->getConnection(DB::CONN_CANVASES);
 
             $stmt = $pdo->prepare("
-                SELECT s.id, s.privacy, s.canvas_id, c.owner_id 
+                SELECT s.id, s.privacy, s.canvas_id, c.owner_id, c.uuid as canvas_uuid 
                 FROM canvas_snapshots_history s
                 JOIN " . DB::TBL_CANVASES . " c ON s.canvas_id = c.id
                 WHERE s.snapshot_uuid = :uuid 
@@ -354,7 +367,7 @@ class CanvasMediaService {
 
             try {
                 $redis = (new \App\Config\Database\RedisCache())->getClient();
-                (new \App\Core\System\CacheInvalidator($redis))->canvasSnapshots((int)$data['canvas_id']);
+                (new \App\Core\System\CacheInvalidator($redis))->canvasSnapshots($data['canvas_uuid'] ?? '', (int)$data['canvas_id']);
             } catch (\Throwable $e) {}
 
             return ['success' => true, 'data' => ['privacy' => $newPrivacy], 'message' => __('msg_privacy_updated')];
@@ -371,7 +384,7 @@ class CanvasMediaService {
             $pdo = $db->getConnection(DB::CONN_CANVASES);
 
             $stmt = $pdo->prepare("
-                SELECT s.id, s.file_path, s.timelapse_path, s.snapshot_uuid, s.canvas_id, c.owner_id 
+                SELECT s.id, s.file_path, s.timelapse_path, s.snapshot_uuid, s.canvas_id, c.owner_id, c.uuid as canvas_uuid 
                 FROM canvas_snapshots_history s
                 JOIN " . DB::TBL_CANVASES . " c ON s.canvas_id = c.id
                 WHERE s.snapshot_uuid = :uuid 
@@ -395,7 +408,7 @@ class CanvasMediaService {
 
             try {
                 $redis = (new \App\Config\Database\RedisCache())->getClient();
-                (new \App\Core\System\CacheInvalidator($redis))->canvasSnapshots((int)$data['canvas_id']);
+                (new \App\Core\System\CacheInvalidator($redis))->canvasSnapshots($data['canvas_uuid'] ?? '', (int)$data['canvas_id']);
             } catch (\Throwable $e) {}
 
             $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');

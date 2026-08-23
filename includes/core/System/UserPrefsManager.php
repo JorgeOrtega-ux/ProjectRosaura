@@ -5,17 +5,34 @@ namespace App\Core\System;
 use App\Core\Interfaces\UserPrefsManagerInterface;
 use App\Core\Helpers\Utils;
 use App\Config\Database\DatabaseManager;
+use App\Config\Database\RedisCache;
 use App\Core\System\DatabaseConstants as DB;
+use App\Core\System\CacheConstants;
 use PDO;
 
 class UserPrefsManager implements UserPrefsManagerInterface {
     private $pdo;
+    private $redisClient;
 
-    public function __construct(DatabaseManager $db) {
+    public function __construct(DatabaseManager $db, ?RedisCache $redisCache = null) {
         $this->pdo = $db->getConnection(DB::CONN_IDENTITY);
+        $this->redisClient = $redisCache ? $redisCache->getClient() : null;
     }
 
     public function ensureDefaultPreferences($userId) {
+        $cacheKey = CacheConstants::PREFIX_USER_PREFS . $userId;
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) {
+                    $decoded = json_decode($cached, true);
+                    if (is_array($decoded)) {
+                        return $decoded;
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
         $tblUserPrefs = DB::TBL_USER_PREFERENCES;
 
         $stmtPref = $this->pdo->prepare("SELECT * FROM {$tblUserPrefs} WHERE user_id = ?");
@@ -32,6 +49,13 @@ class UserPrefsManager implements UserPrefsManagerInterface {
             $stmtPref->execute([$userId]);
             $userPrefs = $stmtPref->fetch(PDO::FETCH_ASSOC);
         }
+
+        if ($userPrefs && $this->redisClient) {
+            try {
+                $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($userPrefs));
+            } catch (\Throwable $e) {}
+        }
+
         return $userPrefs;
     }
 
@@ -48,11 +72,31 @@ class UserPrefsManager implements UserPrefsManagerInterface {
     }
 
     public function getUserFlags($userId): array {
+        $cacheKey = CacheConstants::PREFIX_USER_FLAGS . $userId;
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached !== null && $cached !== false) {
+                    $decoded = json_decode($cached, true);
+                    if (is_array($decoded)) {
+                        return $decoded;
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
         $tblFlags = DB::TBL_USER_FLAGS;
         $stmt = $this->pdo->prepare("SELECT flag_key FROM {$tblFlags} WHERE user_id = ?");
         $stmt->execute([$userId]);
-        $flags = $stmt->fetchAll(PDO::FETCH_COLUMN);
-        return $flags ?: [];
+        $flags = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+
+        if ($this->redisClient) {
+            try {
+                $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($flags));
+            } catch (\Throwable $e) {}
+        }
+
+        return $flags;
     }
 }
 ?>

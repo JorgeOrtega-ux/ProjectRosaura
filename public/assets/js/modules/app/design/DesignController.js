@@ -280,6 +280,24 @@ class DesignController {
                 PromoService.initCardInteractions(templatesContainer);
             }
         }
+
+        const stickersContainer = document.querySelector('[data-ref="module-promo-bottom-stickers"]');
+        if (stickersContainer) {
+            const promoStickers = PromoService.getModulePromo('stickers');
+            if (promoStickers) {
+                stickersContainer.innerHTML = CardTemplates.promoCard(promoStickers, { basePath: this.basePath });
+                PromoService.initCardInteractions(stickersContainer);
+            }
+        }
+
+        const shapesContainer = document.querySelector('[data-ref="module-promo-bottom-shapes"]');
+        if (shapesContainer) {
+            const promoShapes = PromoService.getModulePromo('shapes');
+            if (promoShapes) {
+                shapesContainer.innerHTML = CardTemplates.promoCard(promoShapes, { basePath: this.basePath });
+                PromoService.initCardInteractions(shapesContainer);
+            }
+        }
     }
 
     applyPremiumLocks() {

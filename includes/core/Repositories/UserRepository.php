@@ -360,7 +360,11 @@ class UserRepository implements UserRepositoryInterface {
         $tblUserPrefs = DB::TBL_USER_PREFERENCES;
         try {
             $stmt = $this->pdo->prepare("UPDATE {$tblUserPrefs} SET {$key} = ? WHERE user_id = ?");
-            return $stmt->execute([$value, $userId]);
+            $res = $stmt->execute([$value, $userId]);
+            if ($res) {
+                $this->cacheInvalidator->userPrefs($userId);
+            }
+            return $res;
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'key' => $key, 'value' => $value, 'exception' => $e]);
             return false;
@@ -371,7 +375,11 @@ class UserRepository implements UserRepositoryInterface {
         $tblFlags = DB::TBL_USER_FLAGS;
         try {
             $stmt = $this->pdo->prepare("INSERT IGNORE INTO {$tblFlags} (user_id, flag_key) VALUES (?, ?)");
-            return $stmt->execute([$userId, $flagKey]);
+            $res = $stmt->execute([$userId, $flagKey]);
+            if ($res) {
+                $this->cacheInvalidator->userPrefs($userId);
+            }
+            return $res;
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'flag_key' => $flagKey, 'exception' => $e]);
             return false;

@@ -106,7 +106,22 @@ class PromoCardService {
 
     getModulePromo(moduleKey) {
         if (this.isExempt()) return null;
-        const entry = this.modulePromos[moduleKey];
+        let entry = (this.modulePromos && typeof this.modulePromos === 'object') ? this.modulePromos[moduleKey] : null;
+
+        // Fallback 1: Si no hay un promo con clave exacta, usar cualquiera de los otros module promos disponibles
+        if (!entry && this.modulePromos && typeof this.modulePromos === 'object') {
+            const availableKeys = Object.keys(this.modulePromos).filter(k => Array.isArray(this.modulePromos[k]) ? this.modulePromos[k].length > 0 : !!this.modulePromos[k]);
+            if (availableKeys.length > 0) {
+                const chosenKey = availableKeys[Math.floor(Math.random() * availableKeys.length)];
+                entry = this.modulePromos[chosenKey];
+            }
+        }
+
+        // Fallback 2: Si no hay module promos activos pero sí feed promos, adaptar un feed promo
+        if (!entry && Array.isArray(this.feedPromos) && this.feedPromos.length > 0) {
+            entry = this.feedPromos[Math.floor(Math.random() * this.feedPromos.length)];
+        }
+
         if (!entry) return null;
 
         if (Array.isArray(entry)) {
