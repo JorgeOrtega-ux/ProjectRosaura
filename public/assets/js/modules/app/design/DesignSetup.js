@@ -138,6 +138,9 @@ export const DesignSetup = {
             }
 
             this.setupCanvas();
+            if (this.isOfflineMode && typeof this.syncOfflineToolsTier === 'function') {
+                this.syncOfflineToolsTier();
+            }
             this.centerBoard();
             this.setCanvasBadge('coords', 'my_location', '- , -', 'left');
             this.renderColorPalette(this.canvasPaletteId);

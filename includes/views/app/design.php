@@ -171,132 +171,91 @@ extract($designData);
                 <?php endif; ?>
             </div>
 
-            <?php if (!$isOnlineModeActive): ?>
+            <?php if (!$isOnlineModeActive): 
+                $offlineTools = \App\Core\System\OfflineToolsConfig::getTools();
+            ?>
             <div class="canvas-design-toolbar-vertical <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="offline-tools-vertical">
-                <button class="component-button component-button--icon component-button--h32" data-action="toggleOfflineBrush" data-ref="btn-offline-brush" data-tooltip="<?php echo __('tooltip_brush'); ?> [B]" data-position="right">
-                    <span class="material-symbols-rounded">brush</span>
+                <?php foreach ($offlineTools as $tool): 
+                    $tooltipText = __($tool['name_key']) . (!empty($tool['shortcut']) ? " [{$tool['shortcut']}]" : '');
+                    $actionAttr = 'data-action="' . htmlspecialchars($tool['action']) . '"';
+                    if (!empty($tool['module_target'])) {
+                        $actionAttr .= ' data-module-target="' . htmlspecialchars($tool['module_target']) . '"';
+                    }
+                    if (!empty($tool['menu_target'])) {
+                        $actionAttr .= ' data-menu-target="' . htmlspecialchars($tool['menu_target']) . '"';
+                    }
+                    $refAttr = !empty($tool['ref']) ? ' data-ref="' . htmlspecialchars($tool['ref']) . '"' : '';
+                ?>
+                <button class="component-button component-button--icon component-button--h32" <?php echo $actionAttr; ?><?php echo $refAttr; ?> data-tooltip="<?php echo htmlspecialchars($tooltipText); ?>" data-position="right">
+                    <span class="material-symbols-rounded"><?php echo htmlspecialchars($tool['icon']); ?></span>
                 </button>
-                <button class="component-button component-button--icon component-button--h32" data-action="toggleOfflineMirror" data-ref="btn-offline-mirror" data-tooltip="<?php echo __('tooltip_mirror_mode'); ?> [X]" data-position="right">
-                    <span class="material-symbols-rounded">flip</span>
-                </button>
-                <button class="component-button component-button--icon component-button--h32" data-action="toggleOfflineMoveArea" data-ref="btn-offline-move-area" data-tooltip="<?php echo __('tooltip_move_area'); ?> [M]" data-position="right">
-                    <span class="material-symbols-rounded">crop_free</span>
-                </button>
-                <button class="component-button component-button--icon component-button--h32" data-action="toggleOfflineBucket" data-ref="btn-offline-bucket" data-tooltip="<?php echo __('tooltip_bucket'); ?> [G]" data-position="right">
-                    <span class="material-symbols-rounded">format_color_fill</span>
-                </button>
-                <button class="component-button component-button--icon component-button--h32" data-action="toggleOfflineSpray" data-ref="btn-offline-spray" data-tooltip="<?php echo __('tooltip_spray'); ?> [A]" data-position="right">
-                    <span class="material-symbols-rounded">grain</span>
-                </button>
-                <button class="component-button component-button--icon component-button--h32" data-action="toggleOfflineEraser" data-ref="btn-offline-eraser" data-tooltip="<?php echo __('tooltip_eraser'); ?> [E]" data-position="right">
-                    <span class="material-symbols-rounded">cleaning_services</span>
-                </button>
-                <button class="component-button component-button--icon component-button--h32" data-action="toggleOfflineDither" data-ref="btn-offline-dither" data-tooltip="<?php echo __('tooltip_dither'); ?> [D]" data-position="right">
-                    <span class="material-symbols-rounded">texture</span>
-                </button>
-                <button class="component-button component-button--icon component-button--h32" data-action="toggleOfflineShading" data-ref="btn-offline-shading" data-tooltip="<?php echo __('tooltip_shading'); ?> [S]" data-position="right">
-                    <span class="material-symbols-rounded">exposure</span>
-                </button>
-                <button class="component-button component-button--icon component-button--h32" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-shapes" data-ref="btn-offline-shapes" data-tooltip="<?php echo __('tooltip_shapes'); ?> [V]" data-position="right">
-                    <span class="material-symbols-rounded">shapes</span>
-                </button>
-                <button class="component-button component-button--icon component-button--h32" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-text" data-ref="btn-offline-text" data-tooltip="<?php echo __('tooltip_text_tool'); ?> [Y]" data-position="right">
-                    <span class="material-symbols-rounded">title</span>
-                </button>
-                <button class="component-button component-button--icon component-button--h32" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-stickers" data-ref="btn-offline-stickers" data-tooltip="<?php echo __('tooltip_stickers'); ?> [F]" data-position="right">
-                    <span class="material-symbols-rounded">category</span>
-                </button>
-                <button class="component-button component-button--icon component-button--h32" data-action="toggleTileGrid" data-ref="btn-tile-grid" data-tooltip="<?php echo __('tooltip_tile_grid'); ?> [Z]" data-position="right">
-                    <span class="material-symbols-rounded">grid_on</span>
-                </button>
+                <?php endforeach; ?>
             </div>
 
             <div class="canvas-design-subtoolbar-vertical disabled" data-ref="offline-subtoolbar-vertical">
-                <div class="canvas-design-subtoolbar-group disabled" data-subtoolbar="brush">
-                    <button class="component-button component-button--icon component-button--h32 active" data-action="setBrushShape" data-brush-shape="square" data-tooltip="<?php echo __('tooltip_brush_square'); ?>" data-position="right">
-                        <span class="material-symbols-rounded">square</span>
-                    </button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setBrushShape" data-brush-shape="circle" data-tooltip="<?php echo __('tooltip_brush_circle'); ?>" data-position="right">
-                        <span class="material-symbols-rounded">circle</span>
-                    </button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setBrushShape" data-brush-shape="slash" data-tooltip="<?php echo __('tooltip_brush_slash'); ?>" data-position="right">
-                        <span class="material-symbols-rounded">edit</span>
-                    </button>
+                <?php foreach ($offlineTools as $tool): 
+                    if (empty($tool['subtoolbar'])) continue;
+                    $sub = $tool['subtoolbar'];
+                    $subId = $sub['id'];
+                ?>
+                <div class="canvas-design-subtoolbar-group disabled" data-subtoolbar="<?php echo htmlspecialchars($subId); ?>">
+                    <?php if (!empty($sub['options'])): ?>
+                        <?php foreach ($sub['options'] as $opt): 
+                            $isActive = ($opt['id'] === ($sub['default'] ?? ''));
+                            $optRef = !empty($opt['ref']) ? ' data-ref="' . htmlspecialchars($opt['ref']) . '"' : '';
+                            $dataValAttr = htmlspecialchars($sub['data_attr']) . '="' . htmlspecialchars($opt['id']) . '"';
+                            $optTooltip = !empty($opt['name_key']) ? __($opt['name_key']) : '';
+                        ?>
+                        <button class="component-button component-button--icon component-button--h32 <?php echo $isActive ? 'active' : ''; ?>" data-action="<?php echo htmlspecialchars($sub['action']); ?>" <?php echo $dataValAttr; ?><?php echo $optRef; ?> data-tooltip="<?php echo htmlspecialchars($optTooltip); ?>" data-position="right">
+                            <span class="material-symbols-rounded"><?php echo htmlspecialchars($opt['icon']); ?></span>
+                        </button>
+                        <?php endforeach; ?>
+                    <?php elseif (!empty($sub['is_sizes']) && !empty($sub['tiers']['medium'])): ?>
+                        <?php foreach ($sub['tiers']['medium'] as $sizeVal): 
+                            $isActive = ($sizeVal === ($sub['default'] ?? 0));
+                            $dataValAttr = htmlspecialchars($sub['data_attr']) . '="' . htmlspecialchars($sizeVal) . '"';
+                        ?>
+                        <button class="component-button component-button--icon component-button--h32 <?php echo $isActive ? 'active' : ''; ?>" data-action="<?php echo htmlspecialchars($sub['action']); ?>" <?php echo $dataValAttr; ?> data-tooltip="<?php echo "Radio {$sizeVal} px"; ?>" data-position="right">
+                            <?php echo htmlspecialchars($sizeVal); ?>
+                        </button>
+                        <?php endforeach; ?>
+                    <?php elseif (!empty($sub['is_levels']) && !empty($sub['tiers']['medium'])): ?>
+                        <?php foreach ($sub['tiers']['medium'] as $lvlVal): 
+                            $isActive = ($lvlVal === ($sub['default'] ?? 0));
+                            $dataValAttr = htmlspecialchars($sub['data_attr']) . '="' . htmlspecialchars($lvlVal) . '"';
+                            $lvlTooltip = ($lvlVal === 0) ? (__('lbl_grid_off') ?: 'Desactivar cuadrícula') : "{$lvlVal}x{$lvlVal} px";
+                        ?>
+                        <button class="component-button component-button--icon component-button--h32 <?php echo $isActive ? 'active' : ''; ?>" data-action="<?php echo htmlspecialchars($sub['action']); ?>" <?php echo $dataValAttr; ?> data-tooltip="<?php echo htmlspecialchars($lvlTooltip); ?>" data-position="right">
+                            <?php if ($lvlVal === 0): ?>
+                                <span class="material-symbols-rounded">grid_off</span>
+                            <?php else: ?>
+                                <?php echo htmlspecialchars($lvlVal); ?>
+                            <?php endif; ?>
+                        </button>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
-
-                <div class="canvas-design-subtoolbar-group disabled" data-subtoolbar="eraser">
-                    <button class="component-button component-button--icon component-button--h32 active" data-action="setOfflineEraserMode" data-eraser-mode="box" data-ref="btn-eraser-mode-box" data-tooltip="<?php echo __('tooltip_eraser_box'); ?>" data-position="right">
-                        <span class="material-symbols-rounded">highlight_alt</span>
-                    </button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setOfflineEraserMode" data-eraser-mode="brush" data-ref="btn-eraser-mode-brush" data-tooltip="<?php echo __('tooltip_eraser_brush'); ?>" data-position="right">
-                        <span class="material-symbols-rounded">draw</span>
-                    </button>
-                </div>
-
-                <div class="canvas-design-subtoolbar-group disabled" data-subtoolbar="spray">
-                    <button class="component-button component-button--icon component-button--h32" data-action="setSpraySize" data-size="2" data-tooltip="Radio 2 px" data-position="right">2</button>
-                    <button class="component-button component-button--icon component-button--h32 active" data-action="setSpraySize" data-size="5" data-tooltip="Radio 5 px" data-position="right">5</button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setSpraySize" data-size="10" data-tooltip="Radio 10 px" data-position="right">10</button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setSpraySize" data-size="20" data-tooltip="Radio 20 px" data-position="right">20</button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setSpraySize" data-size="35" data-tooltip="Radio 35 px" data-position="right">35</button>
-                </div>
-
-                <div class="canvas-design-subtoolbar-group disabled" data-subtoolbar="dither">
-                    <button class="component-button component-button--icon component-button--h32 active" data-action="setDitherPattern" data-dither-pattern="checker_50" data-tooltip="<?php echo __('tooltip_dither_checker'); ?>" data-position="right">
-                        <span class="material-symbols-rounded">grid_view</span>
-                    </button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setDitherPattern" data-dither-pattern="dots_25" data-tooltip="<?php echo __('tooltip_dither_dots25'); ?>" data-position="right">
-                        <span class="material-symbols-rounded">blur_on</span>
-                    </button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setDitherPattern" data-dither-pattern="dots_75" data-tooltip="<?php echo __('tooltip_dither_dots75'); ?>" data-position="right">
-                        <span class="material-symbols-rounded">gradient</span>
-                    </button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setDitherPattern" data-dither-pattern="diag_lines" data-tooltip="<?php echo __('tooltip_dither_diag'); ?>" data-position="right">
-                        <span class="material-symbols-rounded">line_axis</span>
-                    </button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setDitherPattern" data-dither-pattern="h_lines" data-tooltip="<?php echo __('tooltip_dither_hlines'); ?>" data-position="right">
-                        <span class="material-symbols-rounded">reorder</span>
-                    </button>
-                </div>
-
-                <div class="canvas-design-subtoolbar-group disabled" data-subtoolbar="shading">
-                    <button class="component-button component-button--icon component-button--h32 active" data-action="setShadingMode" data-shading-mode="shadow" data-tooltip="<?php echo __('tooltip_shading_shadow'); ?>" data-position="right">
-                        <span class="material-symbols-rounded">brightness_low</span>
-                    </button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setShadingMode" data-shading-mode="highlight" data-tooltip="<?php echo __('tooltip_shading_highlight'); ?>" data-position="right">
-                        <span class="material-symbols-rounded">brightness_high</span>
-                    </button>
-                </div>
+                <?php endforeach; ?>
             </div>
 
             <div class="canvas-design-sizes-subtoolbar-vertical disabled" data-ref="brush-size-toolbar">
-                <div class="canvas-design-sizes-group disabled" data-sizes-for="brush">
-                    <button class="component-button component-button--icon component-button--h32 active" data-action="setBrushSize" data-size="1" data-tooltip="1x1 px" data-position="right">1</button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setBrushSize" data-size="2" data-tooltip="2x2 px" data-position="right">2</button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setBrushSize" data-size="3" data-tooltip="3x3 px" data-position="right">3</button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setBrushSize" data-size="4" data-tooltip="4x4 px" data-position="right">4</button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setBrushSize" data-size="6" data-tooltip="6x6 px" data-position="right">6</button>
+                <?php foreach ($offlineTools as $tool): 
+                    if (empty($tool['sizes'])) continue;
+                    $sz = $tool['sizes'];
+                    $szId = $sz['id'];
+                    $defaultSizes = $sz['tiers']['medium'] ?? [];
+                    $defaultVal = $sz['default'] ?? 1;
+                ?>
+                <div class="canvas-design-sizes-group disabled" data-sizes-for="<?php echo htmlspecialchars($szId); ?>">
+                    <?php foreach ($defaultSizes as $sVal): 
+                        $isActive = ($sVal === $defaultVal);
+                    ?>
+                    <button class="component-button component-button--icon component-button--h32 <?php echo $isActive ? 'active' : ''; ?>" data-action="<?php echo htmlspecialchars($sz['action']); ?>" data-size="<?php echo htmlspecialchars($sVal); ?>" data-tooltip="<?php echo "{$sVal}x{$sVal} px"; ?>" data-position="right">
+                        <?php echo htmlspecialchars($sVal); ?>
+                    </button>
+                    <?php endforeach; ?>
                 </div>
-                <div class="canvas-design-sizes-group active" data-sizes-for="eraser">
-                    <button class="component-button component-button--icon component-button--h32 active" data-action="setBrushEraserSize" data-size="1" data-tooltip="1x1 px" data-position="right">1</button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setBrushEraserSize" data-size="5" data-tooltip="5x5 px" data-position="right">5</button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setBrushEraserSize" data-size="10" data-tooltip="10x10 px" data-position="right">10</button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setBrushEraserSize" data-size="25" data-tooltip="25x25 px" data-position="right">25</button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setBrushEraserSize" data-size="50" data-tooltip="50x50 px" data-position="right">50</button>
-                </div>
-                <div class="canvas-design-sizes-group disabled" data-sizes-for="dither">
-                    <button class="component-button component-button--icon component-button--h32 active" data-action="setDitherSize" data-size="1" data-tooltip="1x1 px" data-position="right">1</button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setDitherSize" data-size="3" data-tooltip="3x3 px" data-position="right">3</button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setDitherSize" data-size="5" data-tooltip="5x5 px" data-position="right">5</button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setDitherSize" data-size="10" data-tooltip="10x10 px" data-position="right">10</button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setDitherSize" data-size="20" data-tooltip="20x20 px" data-position="right">20</button>
-                </div>
-                <div class="canvas-design-sizes-group disabled" data-sizes-for="shading">
-                    <button class="component-button component-button--icon component-button--h32 active" data-action="setShadingSize" data-size="1" data-tooltip="1x1 px" data-position="right">1</button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setShadingSize" data-size="2" data-tooltip="2x2 px" data-position="right">2</button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setShadingSize" data-size="3" data-tooltip="3x3 px" data-position="right">3</button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="setShadingSize" data-size="5" data-tooltip="5x5 px" data-position="right">5</button>
-                </div>
+                <?php endforeach; ?>
             </div>
             <?php endif; ?>
             <?php endif; ?>

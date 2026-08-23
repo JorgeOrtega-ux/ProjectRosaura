@@ -233,8 +233,8 @@ export const DesignRender = {
                         isMirrorMode: !!this.isMirrorMode,
                         isEyedropperActive: (this.interactionMode === 'offline_eyedropper'),
                         tileGridSize: this.tileGridSize || 0,
-                        brushSize: (this.interactionMode === 'offline_brush' || this.interactionMode === 'normal') ? (this.brushSize || 1) : 1,
-                        brushShape: (this.interactionMode === 'offline_brush' || this.interactionMode === 'normal') ? (this.brushShape || 'square') : 'square',
+                        brushSize: (this.interactionMode === 'offline_brush') ? (this.brushSize || 1) : 1,
+                        brushShape: (this.interactionMode === 'offline_brush') ? (this.brushShape || 'square') : 'square',
                         topBarCenterX: topBarCenterX,
                         topBarBottomY: topBarBottomY
                     }
@@ -449,22 +449,37 @@ export const DesignRender = {
         }
 
         if (this.tileGridSize > 0 && this.boardWidth > 0 && this.boardHeight > 0) {
-            this.ctx.save();
-            this.ctx.lineWidth = Math.max(1 / this.transform.scale, 1.5 / this.transform.scale);
-            this.ctx.strokeStyle = isDark ? 'rgba(99, 102, 241, 0.7)' : 'rgba(79, 70, 229, 0.6)';
-            this.ctx.setLineDash([3 / this.transform.scale, 2 / this.transform.scale]);
-            this.ctx.beginPath();
+            const screenStep = this.tileGridSize * this.transform.scale;
+            if (screenStep >= 3.5 && this.canvas) {
+                const dpr = this.dpr || 1;
+                const canvasWidthCss = this.canvas.width / dpr;
+                const canvasHeightCss = this.canvas.height / dpr;
+                const visibleMinX = Math.max(0, Math.floor((-this.transform.x) / this.transform.scale));
+                const visibleMaxX = Math.min(this.boardWidth, Math.ceil((canvasWidthCss - this.transform.x) / this.transform.scale));
+                const visibleMinY = Math.max(0, Math.floor((-this.transform.y) / this.transform.scale));
+                const visibleMaxY = Math.min(this.boardHeight, Math.ceil((canvasHeightCss - this.transform.y) / this.transform.scale));
 
-            for (let x = this.tileGridSize; x < this.boardWidth; x += this.tileGridSize) {
-                this.ctx.moveTo(x, 0);
-                this.ctx.lineTo(x, this.boardHeight);
+                if (visibleMinX < visibleMaxX && visibleMinY < visibleMaxY) {
+                    this.ctx.save();
+                    this.ctx.lineWidth = Math.max(1 / this.transform.scale, 1.5 / this.transform.scale);
+                    this.ctx.strokeStyle = isDark ? 'rgba(99, 102, 241, 0.7)' : 'rgba(79, 70, 229, 0.6)';
+                    this.ctx.setLineDash([3 / this.transform.scale, 2 / this.transform.scale]);
+                    this.ctx.beginPath();
+
+                    const startX = Math.max(this.tileGridSize, Math.floor(visibleMinX / this.tileGridSize) * this.tileGridSize);
+                    for (let x = startX; x < visibleMaxX && x < this.boardWidth; x += this.tileGridSize) {
+                        this.ctx.moveTo(x, visibleMinY);
+                        this.ctx.lineTo(x, visibleMaxY);
+                    }
+                    const startY = Math.max(this.tileGridSize, Math.floor(visibleMinY / this.tileGridSize) * this.tileGridSize);
+                    for (let y = startY; y < visibleMaxY && y < this.boardHeight; y += this.tileGridSize) {
+                        this.ctx.moveTo(visibleMinX, y);
+                        this.ctx.lineTo(visibleMaxX, y);
+                    }
+                    this.ctx.stroke();
+                    this.ctx.restore();
+                }
             }
-            for (let y = this.tileGridSize; y < this.boardHeight; y += this.tileGridSize) {
-                this.ctx.moveTo(0, y);
-                this.ctx.lineTo(this.boardWidth, y);
-            }
-            this.ctx.stroke();
-            this.ctx.restore();
         }
 
         if (this.templates && this.templates.length > 0 && !this.isResetLocked) {

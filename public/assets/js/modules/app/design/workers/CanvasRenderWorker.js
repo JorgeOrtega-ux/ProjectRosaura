@@ -248,6 +248,57 @@ function abgrToHex(val) {
     return `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(2)})`;
 }
 
+function abgrToHsv(val) {
+    if (!val || val === 0) {
+        return { h: 0, s: 0, v: 100 };
+    }
+    const r = (val & 0xFF) / 255;
+    const g = ((val >> 8) & 0xFF) / 255;
+    const b = ((val >> 16) & 0xFF) / 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const d = max - min;
+    let h = 0;
+    const s = max === 0 ? 0 : (d / max) * 100;
+    const v = max * 100;
+
+    if (max !== min) {
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h = Math.round(h * 60);
+    }
+    return { h, s: Math.round(s), v: Math.round(v) };
+}
+
+function hsvToAbgr(h, s, v, a = 255) {
+    s = Math.max(0, Math.min(100, s)) / 100;
+    v = Math.max(0, Math.min(100, v)) / 100;
+    h = ((h % 360) + 360) % 360;
+    let r = 0, g = 0, b = 0;
+    const i = Math.floor(h / 60);
+    const f = (h / 60) - i;
+    const p = v * (1 - s);
+    const q = v * (1 - f * s);
+    const t = v * (1 - (1 - f) * s);
+
+    switch (i % 6) {
+        case 0: r = v; g = t; b = p; break;
+        case 1: r = q; g = v; b = p; break;
+        case 2: r = p; g = v; b = t; break;
+        case 3: r = p; g = q; b = v; break;
+        case 4: r = t; g = p; b = v; break;
+        case 5: r = v; g = p; b = q; break;
+    }
+
+    const r8 = Math.round(r * 255);
+    const g8 = Math.round(g * 255);
+    const b8 = Math.round(b * 255);
+    return ((a << 24) | (b8 << 16) | (g8 << 8) | r8) >>> 0;
+}
+
 // ---------------------------------------------------------
 // FUNCIONES DE DESCOMPRESIÓN E HIDRATACIÓN
 // ---------------------------------------------------------
@@ -916,24 +967,39 @@ function render() {
     
     ctx.restore();
 
-    // Cuadrícula de Tiles / Bloques (8x8 / 16x16 / 32x32)
+    // Cuadrícula de Tiles / Bloques con Viewport Culling & LOD
     if (tileGridSize > 0 && boardWidth > 0 && boardHeight > 0) {
-        ctx.save();
-        ctx.lineWidth = Math.max(1 / transform.scale, 1.5 / transform.scale);
-        ctx.strokeStyle = isDarkMode ? 'rgba(99, 102, 241, 0.7)' : 'rgba(79, 70, 229, 0.6)';
-        ctx.setLineDash([3 / transform.scale, 2 / transform.scale]);
-        ctx.beginPath();
+        const screenStep = tileGridSize * transform.scale;
+        if (screenStep >= 3.5 && canvas) {
+            const canvasWidthCss = canvas.width / (dpr || 1);
+            const canvasHeightCss = canvas.height / (dpr || 1);
+            const visibleMinX = Math.max(0, Math.floor((-transform.x) / transform.scale));
+            const visibleMaxX = Math.min(drawW, Math.ceil((canvasWidthCss - transform.x) / transform.scale));
+            const visibleMinY = Math.max(0, Math.floor((-transform.y) / transform.scale));
+            const visibleMaxY = Math.min(drawH, Math.ceil((canvasHeightCss - transform.y) / transform.scale));
 
-        for (let x = tileGridSize; x < drawW; x += tileGridSize) {
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, drawH);
+            if (visibleMinX < visibleMaxX && visibleMinY < visibleMaxY) {
+                ctx.save();
+                ctx.lineWidth = Math.max(1 / transform.scale, 1.5 / transform.scale);
+                ctx.strokeStyle = isDarkMode ? 'rgba(99, 102, 241, 0.7)' : 'rgba(79, 70, 229, 0.6)';
+                ctx.setLineDash([3 / transform.scale, 2 / transform.scale]);
+                ctx.beginPath();
+
+                const startX = Math.max(tileGridSize, Math.floor(visibleMinX / tileGridSize) * tileGridSize);
+                for (let x = startX; x < visibleMaxX && x < drawW; x += tileGridSize) {
+                    ctx.moveTo(x, visibleMinY);
+                    ctx.lineTo(x, visibleMaxY);
+                }
+
+                const startY = Math.max(tileGridSize, Math.floor(visibleMinY / tileGridSize) * tileGridSize);
+                for (let y = startY; y < visibleMaxY && y < drawH; y += tileGridSize) {
+                    ctx.moveTo(visibleMinX, y);
+                    ctx.lineTo(visibleMaxX, y);
+                }
+                ctx.stroke();
+                ctx.restore();
+            }
         }
-        for (let y = tileGridSize; y < drawH; y += tileGridSize) {
-            ctx.moveTo(0, y);
-            ctx.lineTo(drawW, y);
-        }
-        ctx.stroke();
-        ctx.restore();
     }
 
     // Render all templates concurrently
@@ -2466,6 +2532,13 @@ self.onmessage = function (e) {
             if (isOfflineMode && pixelBuffer && pixels && pixels.length > 0) {
                 processPixelQueue();
                 const diffs = [];
+
+                if (strokePhase === 'start') {
+                    activeBrushStrokeDiffs = new Map();
+                } else if (strokePhase === 'step' && !activeBrushStrokeDiffs) {
+                    activeBrushStrokeDiffs = new Map();
+                }
+
                 for (let i = 0; i < pixels.length; i++) {
                     const p = pixels[i];
                     if (p.x >= 0 && p.x < boardWidth && p.y >= 0 && p.y < boardHeight) {
@@ -2473,30 +2546,34 @@ self.onmessage = function (e) {
                         const prev = pixelBuffer[idx];
                         const next = colorToAbgr(p.color);
                         if (prev !== next) {
-                            diffs.push({ x: p.x, y: p.y, prev, next });
+                            if (activeBrushStrokeDiffs) {
+                                if (!activeBrushStrokeDiffs.has(idx)) {
+                                    activeBrushStrokeDiffs.set(idx, { x: p.x, y: p.y, prev, next });
+                                } else {
+                                    activeBrushStrokeDiffs.get(idx).next = next;
+                                }
+                            } else {
+                                diffs.push({ x: p.x, y: p.y, prev, next });
+                            }
                         }
                     }
                 }
 
-                if (strokePhase === 'start') {
-                    activeBrushStrokeDiffs = [...diffs];
-                } else if (strokePhase === 'step') {
-                    if (!activeBrushStrokeDiffs) activeBrushStrokeDiffs = [];
-                    activeBrushStrokeDiffs.push(...diffs);
-                } else if (strokePhase === 'end') {
-                    if (!activeBrushStrokeDiffs) activeBrushStrokeDiffs = [];
-                    activeBrushStrokeDiffs.push(...diffs);
-                    if (activeBrushStrokeDiffs.length > 0) {
-                        undoStack.push({ type: 'pixels', diffs: activeBrushStrokeDiffs });
-                        redoStack.length = 0;
-                        if (undoStack.length > MAX_HISTORY) undoStack.shift();
-                        self.postMessage({
-                            type: 'HISTORY_CHANGED',
-                            payload: { canUndo: undoStack.length > 0, canRedo: false, action: 'push' }
-                        });
+                if (strokePhase === 'end') {
+                    if (activeBrushStrokeDiffs && activeBrushStrokeDiffs.size > 0) {
+                        const strokeDiffs = Array.from(activeBrushStrokeDiffs.values()).filter(d => d.prev !== d.next);
+                        if (strokeDiffs.length > 0) {
+                            undoStack.push({ type: 'pixels', diffs: strokeDiffs });
+                            redoStack.length = 0;
+                            if (undoStack.length > MAX_HISTORY) undoStack.shift();
+                            self.postMessage({
+                                type: 'HISTORY_CHANGED',
+                                payload: { canUndo: undoStack.length > 0, canRedo: false, action: 'push' }
+                            });
+                        }
                     }
                     activeBrushStrokeDiffs = null;
-                } else if (!skipUndo) {
+                } else if (!skipUndo && !activeBrushStrokeDiffs) {
                     if (diffs.length > 0) {
                         undoStack.push({ type: 'pixels', diffs });
                         redoStack.length = 0;
@@ -2507,6 +2584,20 @@ self.onmessage = function (e) {
                         });
                     }
                 }
+            } else if (strokePhase === 'end') {
+                if (activeBrushStrokeDiffs && activeBrushStrokeDiffs.size > 0) {
+                    const strokeDiffs = Array.from(activeBrushStrokeDiffs.values()).filter(d => d.prev !== d.next);
+                    if (strokeDiffs.length > 0) {
+                        undoStack.push({ type: 'pixels', diffs: strokeDiffs });
+                        redoStack.length = 0;
+                        if (undoStack.length > MAX_HISTORY) undoStack.shift();
+                        self.postMessage({
+                            type: 'HISTORY_CHANGED',
+                            payload: { canUndo: undoStack.length > 0, canRedo: false, action: 'push' }
+                        });
+                    }
+                }
+                activeBrushStrokeDiffs = null;
             }
 
             if (isProgressive) {
@@ -2526,6 +2617,93 @@ self.onmessage = function (e) {
             } else {
                 pixelQueue.push(...pixels);
             }
+            requestRender();
+            break;
+        }
+
+        case 'APPLY_SHADING': {
+            if (!pixelBuffer || !payload) break;
+            const { cx, cy, points, mode, size = 1, isMirrorMode = false, strokePhase = 'step' } = payload;
+            const bw = boardWidth;
+            const bh = boardHeight;
+            const offsets = getBrushOffsetsWorker(size, 'square');
+
+            processPixelQueue();
+
+            if (strokePhase === 'start') {
+                activeBrushStrokeDiffs = new Map();
+            } else if (!activeBrushStrokeDiffs) {
+                activeBrushStrokeDiffs = new Map();
+            }
+
+            const applyShadeToCoord = (px, py) => {
+                if (px < 0 || px >= bw || py < 0 || py >= bh) return;
+                const idx = py * bw + px;
+
+                // Si ya fue sombreado en este mismo trazo, no volver a sombrear
+                if (activeBrushStrokeDiffs && activeBrushStrokeDiffs.has(idx)) return;
+
+                const prev = pixelBuffer[idx];
+                // Ignorar píxeles transparentes / vacíos
+                if (!prev || prev === 0 || (prev >>> 24) === 0) return;
+
+                const hsv = abgrToHsv(prev);
+                let h = hsv.h;
+                let s = hsv.s;
+                let v = hsv.v;
+
+                if (mode === 'highlight') {
+                    v = Math.min(100, v + 7);
+                    if (v >= 90) {
+                        s = Math.max(0, s - 5);
+                    }
+                } else {
+                    v = Math.max(8, v - 7);
+                    if (v <= 25) {
+                        s = Math.min(100, s + 3);
+                    }
+                }
+
+                const next = hsvToAbgr(h, s, v);
+                if (prev !== next) {
+                    if (activeBrushStrokeDiffs) {
+                        activeBrushStrokeDiffs.set(idx, { x: px, y: py, prev, next });
+                    }
+                    pixelBuffer[idx] = next;
+                    markDirty(px, py);
+                }
+            };
+
+            const pointList = Array.isArray(points) ? points : (cx !== undefined && cy !== undefined ? [{ x: cx, y: cy }] : []);
+            for (let p = 0; p < pointList.length; p++) {
+                const pt = pointList[p];
+                for (let i = 0; i < offsets.length; i++) {
+                    const off = offsets[i];
+                    applyShadeToCoord(pt.x + off.dx, pt.y + off.dy);
+                    if (isMirrorMode) {
+                        const symX = bw - 1 - (pt.x + off.dx);
+                        applyShadeToCoord(symX, pt.y + off.dy);
+                    }
+                }
+            }
+
+            if (strokePhase === 'end') {
+                if (activeBrushStrokeDiffs && activeBrushStrokeDiffs.size > 0) {
+                    const strokeDiffs = Array.from(activeBrushStrokeDiffs.values()).filter(d => d.prev !== d.next);
+                    if (strokeDiffs.length > 0) {
+                        undoStack.push({ type: 'shading', diffs: strokeDiffs });
+                        redoStack.length = 0;
+                        if (undoStack.length > MAX_HISTORY) undoStack.shift();
+                        self.postMessage({
+                            type: 'HISTORY_CHANGED',
+                            payload: { canUndo: undoStack.length > 0, canRedo: false, action: 'shading' }
+                        });
+                    }
+                }
+                activeBrushStrokeDiffs = null;
+            }
+
+            flushDirtyRect();
             requestRender();
             break;
         }
@@ -2699,75 +2877,85 @@ self.onmessage = function (e) {
             const startX = Math.floor(payload.startX);
             const startY = Math.floor(payload.startY);
             const fillColor = colorToAbgr(payload.color);
+            const isMirror = payload.isMirrorMode !== undefined ? !!payload.isMirrorMode : isMirrorMode;
 
             if (startX < 0 || startX >= boardWidth || startY < 0 || startY >= boardHeight) break;
 
             processPixelQueue();
 
-            const startIdx = startY * boardWidth + startX;
-            const targetColor = pixelBuffer[startIdx];
-
-            if (targetColor === fillColor) break;
-
-            const totalPixels = boardWidth * boardHeight;
-            const queue = new Int32Array(totalPixels);
-            let head = 0;
-            let tail = 0;
-
-            const diffs = isOfflineMode ? [] : null;
-
-            pixelBuffer[startIdx] = fillColor;
-            markDirty(startX, startY);
-            if (diffs) diffs.push({ x: startX, y: startY, prev: targetColor, next: fillColor });
-            queue[tail++] = startIdx;
-
             const bw = boardWidth;
             const bh = boardHeight;
+            const totalPixels = bw * bh;
+            const diffs = isOfflineMode ? [] : null;
 
-            while (head < tail) {
-                const idx = queue[head++];
-                const cx = idx % bw;
-                const cy = (idx / bw) | 0;
+            const runFloodFillAt = (sX, sY) => {
+                const sIdx = sY * bw + sX;
+                const targetColor = pixelBuffer[sIdx];
+                if (targetColor === fillColor) return;
 
-                // Left
-                if (cx > 0) {
-                    const nIdx = idx - 1;
-                    if (pixelBuffer[nIdx] === targetColor) {
-                        pixelBuffer[nIdx] = fillColor;
-                        markDirty(cx - 1, cy);
-                        if (diffs) diffs.push({ x: cx - 1, y: cy, prev: targetColor, next: fillColor });
-                        queue[tail++] = nIdx;
+                const queue = new Int32Array(totalPixels);
+                let head = 0;
+                let tail = 0;
+
+                pixelBuffer[sIdx] = fillColor;
+                markDirty(sX, sY);
+                if (diffs) diffs.push({ x: sX, y: sY, prev: targetColor, next: fillColor });
+                queue[tail++] = sIdx;
+
+                while (head < tail) {
+                    const idx = queue[head++];
+                    const cx = idx % bw;
+                    const cy = (idx / bw) | 0;
+
+                    // Left
+                    if (cx > 0) {
+                        const nIdx = idx - 1;
+                        if (pixelBuffer[nIdx] === targetColor) {
+                            pixelBuffer[nIdx] = fillColor;
+                            markDirty(cx - 1, cy);
+                            if (diffs) diffs.push({ x: cx - 1, y: cy, prev: targetColor, next: fillColor });
+                            queue[tail++] = nIdx;
+                        }
+                    }
+                    // Right
+                    if (cx < bw - 1) {
+                        const nIdx = idx + 1;
+                        if (pixelBuffer[nIdx] === targetColor) {
+                            pixelBuffer[nIdx] = fillColor;
+                            markDirty(cx + 1, cy);
+                            if (diffs) diffs.push({ x: cx + 1, y: cy, prev: targetColor, next: fillColor });
+                            queue[tail++] = nIdx;
+                        }
+                    }
+                    // Up
+                    if (cy > 0) {
+                        const nIdx = idx - bw;
+                        if (pixelBuffer[nIdx] === targetColor) {
+                            pixelBuffer[nIdx] = fillColor;
+                            markDirty(cx, cy - 1);
+                            if (diffs) diffs.push({ x: cx, y: cy - 1, prev: targetColor, next: fillColor });
+                            queue[tail++] = nIdx;
+                        }
+                    }
+                    // Down
+                    if (cy < bh - 1) {
+                        const nIdx = idx + bw;
+                        if (pixelBuffer[nIdx] === targetColor) {
+                            pixelBuffer[nIdx] = fillColor;
+                            markDirty(cx, cy + 1);
+                            if (diffs) diffs.push({ x: cx, y: cy + 1, prev: targetColor, next: fillColor });
+                            queue[tail++] = nIdx;
+                        }
                     }
                 }
-                // Right
-                if (cx < bw - 1) {
-                    const nIdx = idx + 1;
-                    if (pixelBuffer[nIdx] === targetColor) {
-                        pixelBuffer[nIdx] = fillColor;
-                        markDirty(cx + 1, cy);
-                        if (diffs) diffs.push({ x: cx + 1, y: cy, prev: targetColor, next: fillColor });
-                        queue[tail++] = nIdx;
-                    }
-                }
-                // Up
-                if (cy > 0) {
-                    const nIdx = idx - bw;
-                    if (pixelBuffer[nIdx] === targetColor) {
-                        pixelBuffer[nIdx] = fillColor;
-                        markDirty(cx, cy - 1);
-                        if (diffs) diffs.push({ x: cx, y: cy - 1, prev: targetColor, next: fillColor });
-                        queue[tail++] = nIdx;
-                    }
-                }
-                // Down
-                if (cy < bh - 1) {
-                    const nIdx = idx + bw;
-                    if (pixelBuffer[nIdx] === targetColor) {
-                        pixelBuffer[nIdx] = fillColor;
-                        markDirty(cx, cy + 1);
-                        if (diffs) diffs.push({ x: cx, y: cy + 1, prev: targetColor, next: fillColor });
-                        queue[tail++] = nIdx;
-                    }
+            };
+
+            runFloodFillAt(startX, startY);
+
+            if (isMirror) {
+                const symStartX = bw - 1 - startX;
+                if (symStartX >= 0 && symStartX < bw && symStartX !== startX) {
+                    runFloodFillAt(symStartX, startY);
                 }
             }
 
@@ -2802,11 +2990,15 @@ self.onmessage = function (e) {
                 activeSprayStrokeDiffs = new Map();
             }
 
+            const radSq = radius * radius;
+
             for (let i = 0; i < density; i++) {
-                const theta = Math.random() * 2 * Math.PI;
-                const r = Math.sqrt(Math.random()) * radius;
-                const px = Math.round(centerX + r * Math.cos(theta));
-                const py = Math.round(centerY + r * Math.sin(theta));
+                const rx = (Math.random() - 0.5) * 2 * radius;
+                const ry = (Math.random() - 0.5) * 2 * radius;
+                if (rx * rx + ry * ry > radSq) continue;
+
+                const px = Math.round(centerX + rx);
+                const py = Math.round(centerY + ry);
 
                 if (px >= 0 && px < boardWidth && py >= 0 && py < boardHeight) {
                     const idx = py * boardWidth + px;

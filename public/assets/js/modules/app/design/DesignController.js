@@ -3,13 +3,13 @@ import { showMessage, setButtonLoading, restoreButton } from '../../../core/util
 import { CardTemplates } from '../../../core/components/CardTemplates.js';
 import { PromoService } from '../../../core/services/PromoCardService.js';
 import { DesignChat } from './DesignChat.js';
-import { DesignInteractions } from './DesignInteractions.js?v=12';
-import { DesignNetwork } from './DesignNetwork.js?v=12';
-import { DesignRender } from './DesignRender.js?v=12';
-import { DesignSetup } from './DesignSetup.js?v=12';
+import { DesignInteractions } from './DesignInteractions.js?v=18';
+import { DesignNetwork } from './DesignNetwork.js?v=18';
+import { DesignRender } from './DesignRender.js?v=18';
+import { DesignSetup } from './DesignSetup.js?v=18';
 import { PerksRegistry } from './PerksRegistry.js';
 import { soundManager } from './SoundManager.js';
-import { DesignTemplates } from './templates/DesignTemplates.js?v=12';
+import { DesignTemplates } from './templates/DesignTemplates.js?v=18';
 
 class DesignController {
     constructor() {
@@ -435,6 +435,7 @@ class DesignController {
         document.removeEventListener('mousedown', this.handleMouseDownBound);
         document.removeEventListener('mousemove', this.handleMouseMoveBound);
         document.removeEventListener('mouseup', this.handleMouseUpBound);
+        window.removeEventListener('blur', this.handleMouseUpBound);
         document.removeEventListener('keydown', this.handleKeyDownBound);
         document.removeEventListener('click', this.handleClickBound);
         document.removeEventListener('input', this.handleInputBound);

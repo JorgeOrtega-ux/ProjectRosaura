@@ -7,6 +7,7 @@ import { getPaletteById } from './utils/DesignPaletteUtils.js';
 import { PerksRegistry } from './PerksRegistry.js';
 import { showMessage, hexToHsv, hsvToHex, getEventCoords } from '../../../core/utils/uiUtils.js';
 import { soundManager } from './SoundManager.js';
+import { OfflineToolsConfig, getCanvasTier, getToolSizes, getSprayRadii, getTileGridLevels } from './data/OfflineToolsData.js';
 
 function colorToAbgr(color) {
     if (!color || color === 'transparent') return 0;
@@ -72,6 +73,7 @@ export const DesignInteractions = {
         document.addEventListener('mousedown', this.handleMouseDownBound);
         document.addEventListener('mousemove', this.handleMouseMoveBound);
         document.addEventListener('mouseup', this.handleMouseUpBound);
+        window.addEventListener('blur', this.handleMouseUpBound);
         document.addEventListener('keydown', this.handleKeyDownBound);
         document.addEventListener('click', this.handleClickBound);
         document.addEventListener('input', this.handleInputBound);
@@ -374,6 +376,14 @@ export const DesignInteractions = {
         if (btnTileGrid) {
             e.preventDefault();
             this.toggleTileGrid();
+            return;
+        }
+
+        const btnSetTileGridLevel = e.target.closest('[data-action="setTileGridLevel"]');
+        if (btnSetTileGridLevel) {
+            e.preventDefault();
+            const size = parseInt(btnSetTileGridLevel.getAttribute('data-grid-size'), 10) || 0;
+            this.setTileGridLevel(size, btnSetTileGridLevel);
             return;
         }
 
@@ -725,6 +735,11 @@ export const DesignInteractions = {
                 this.commitMoveArea();
                 return;
             }
+            if (this.isOfflineMode && this.interactionMode === 'owner_erasing' && this.ownerEraserBox) {
+                e.preventDefault();
+                this.executeOwnerClearArea();
+                return;
+            }
         }
 
         if (this.interactionMode === 'offline_text' && this.textPosition && !(e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'))) {
@@ -783,8 +798,18 @@ export const DesignInteractions = {
             const btn = document.querySelector('[data-action="openJoinLiveModal"]');
             if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
         } else if (keyUpper === 'S') {
-            const btn = document.querySelector('[data-action="toggleLiveBroadcast"]');
-            if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
+            if (this.isOfflineMode && typeof this.toggleOfflineShading === 'function') {
+                e.preventDefault();
+                this.toggleOfflineShading();
+            } else {
+                const btn = document.querySelector('[data-action="toggleLiveBroadcast"]');
+                if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
+            }
+        } else if (keyUpper === 'I') {
+            if (typeof this.toggleEyedropper === 'function') {
+                e.preventDefault();
+                this.toggleEyedropper();
+            }
         } else if (keyUpper === 'C') {
             const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-colors"]');
             if (btn && !btn.classList.contains('disabled')) { e.preventDefault(); btn.click(); }
@@ -859,11 +884,6 @@ export const DesignInteractions = {
             } else if (this.isOfflineMode && typeof this.toggleOfflineBrush === 'function') {
                 this.toggleOfflineBrush();
             }
-        } else if (keyUpper === 'S') {
-            if (this.isOfflineMode && typeof this.toggleOfflineShading === 'function') {
-                e.preventDefault();
-                this.toggleOfflineShading();
-            }
         } else if (keyUpper === 'Z' && !e.ctrlKey && !e.metaKey) {
             if (this.isOfflineMode && typeof this.toggleTileGrid === 'function') {
                 e.preventDefault();
@@ -873,6 +893,14 @@ export const DesignInteractions = {
             if (this.activeTemplateId && typeof this.deleteTemplate === 'function') {
                 e.preventDefault();
                 this.deleteTemplate();
+            } else if (this.isOfflineMode && this.interactionMode === 'owner_erasing' && this.ownerEraserBox) {
+                e.preventDefault();
+                this.executeOwnerClearArea();
+            }
+        } else if (e.key === '[' || e.key === ']') {
+            if (this.isOfflineMode && typeof this.stepActiveToolSize === 'function') {
+                e.preventDefault();
+                this.stepActiveToolSize(e.key === ']' ? 1 : -1);
             }
         }
     },
@@ -1079,7 +1107,7 @@ export const DesignInteractions = {
                 return;
             }
 
-            if (this.interactionMode === 'offline_brush' || (this.isOfflineMode && this.interactionMode === 'normal' && (this.brushSize > 1 || this.brushShape !== 'square'))) {
+            if (this.interactionMode === 'offline_brush') {
                 this.isBrushPainting = true;
                 this.brushLastCoords = { x: coords.x, y: coords.y };
                 this.applyBrushAt(coords.x, coords.y, true);
@@ -1225,9 +1253,7 @@ export const DesignInteractions = {
             if (coords && this.brushEraserLastCoords) {
                 if (coords.x !== this.brushEraserLastCoords.x || coords.y !== this.brushEraserLastCoords.y) {
                     const line = getBresenhamLine(this.brushEraserLastCoords.x, this.brushEraserLastCoords.y, coords.x, coords.y);
-                    for (let i = 1; i < line.length; i++) {
-                        this.applyBrushEraseAt(line[i].x, line[i].y, false);
-                    }
+                    this.applyBrushEraseLine(line.slice(1), false);
                     this.brushEraserLastCoords = { x: coords.x, y: coords.y };
                 }
             }
@@ -1239,9 +1265,7 @@ export const DesignInteractions = {
             if (coords && this.ditherLastCoords) {
                 if (coords.x !== this.ditherLastCoords.x || coords.y !== this.ditherLastCoords.y) {
                     const line = getBresenhamLine(this.ditherLastCoords.x, this.ditherLastCoords.y, coords.x, coords.y);
-                    for (let i = 1; i < line.length; i++) {
-                        this.applyDitherAt(line[i].x, line[i].y, false);
-                    }
+                    this.applyDitherStrokeLine(line.slice(1), false);
                     this.ditherLastCoords = { x: coords.x, y: coords.y };
                 }
             }
@@ -1253,9 +1277,7 @@ export const DesignInteractions = {
             if (coords && this.shadingLastCoords) {
                 if (coords.x !== this.shadingLastCoords.x || coords.y !== this.shadingLastCoords.y) {
                     const line = getBresenhamLine(this.shadingLastCoords.x, this.shadingLastCoords.y, coords.x, coords.y);
-                    for (let i = 1; i < line.length; i++) {
-                        this.applyShadingAt(line[i].x, line[i].y, false);
-                    }
+                    this.applyShadingStrokeLine(line.slice(1), false);
                     this.shadingLastCoords = { x: coords.x, y: coords.y };
                 }
             }
@@ -1267,9 +1289,7 @@ export const DesignInteractions = {
             if (coords && this.brushLastCoords) {
                 if (coords.x !== this.brushLastCoords.x || coords.y !== this.brushLastCoords.y) {
                     const line = getBresenhamLine(this.brushLastCoords.x, this.brushLastCoords.y, coords.x, coords.y);
-                    for (let i = 1; i < line.length; i++) {
-                        this.applyBrushAt(line[i].x, line[i].y, false);
-                    }
+                    this.applyBrushStrokeLine(line.slice(1), false);
                     this.brushLastCoords = { x: coords.x, y: coords.y };
                 }
             }
@@ -1699,8 +1719,15 @@ export const DesignInteractions = {
             if (this.isOfflineMode) {
                 if (this.renderWorker) {
                     this.renderWorker.postMessage({
-                        type: 'PUSH_PIXELS',
-                        payload: { pixels: [], strokePhase: 'end' }
+                        type: 'APPLY_SHADING',
+                        payload: {
+                            cx: 0,
+                            cy: 0,
+                            mode: this.shadingMode || 'shadow',
+                            size: this.shadingSize || 1,
+                            isMirrorMode: !!this.isMirrorMode,
+                            strokePhase: 'end'
+                        }
                     });
                 }
                 if (typeof this.saveOfflineCanvasState === 'function') {
@@ -1888,7 +1915,7 @@ export const DesignInteractions = {
                 }
             }
 
-            if ((this.interactionMode === 'offline_brush' || (this.isOfflineMode && this.interactionMode === 'normal' && (this.brushSize > 1 || this.brushShape !== 'square'))) && !this.isSpectator && !isOperationalLocked) {
+            if (this.interactionMode === 'offline_brush' && !this.isSpectator && !isOperationalLocked) {
                 const coords = this.getBoardCoords(this.touchStartX, this.touchStartY);
                 if (coords) {
                     e.preventDefault();
@@ -2000,9 +2027,7 @@ export const DesignInteractions = {
             if (coords && this.brushEraserLastCoords) {
                 if (coords.x !== this.brushEraserLastCoords.x || coords.y !== this.brushEraserLastCoords.y) {
                     const line = getBresenhamLine(this.brushEraserLastCoords.x, this.brushEraserLastCoords.y, coords.x, coords.y);
-                    for (let i = 1; i < line.length; i++) {
-                        this.applyBrushEraseAt(line[i].x, line[i].y, false);
-                    }
+                    this.applyBrushEraseLine(line.slice(1), false);
                     this.brushEraserLastCoords = { x: coords.x, y: coords.y };
                 }
             }
@@ -2015,9 +2040,7 @@ export const DesignInteractions = {
             if (coords && this.ditherLastCoords) {
                 if (coords.x !== this.ditherLastCoords.x || coords.y !== this.ditherLastCoords.y) {
                     const line = getBresenhamLine(this.ditherLastCoords.x, this.ditherLastCoords.y, coords.x, coords.y);
-                    for (let i = 1; i < line.length; i++) {
-                        this.applyDitherAt(line[i].x, line[i].y, false);
-                    }
+                    this.applyDitherStrokeLine(line.slice(1), false);
                     this.ditherLastCoords = { x: coords.x, y: coords.y };
                 }
             }
@@ -2030,9 +2053,7 @@ export const DesignInteractions = {
             if (coords && this.shadingLastCoords) {
                 if (coords.x !== this.shadingLastCoords.x || coords.y !== this.shadingLastCoords.y) {
                     const line = getBresenhamLine(this.shadingLastCoords.x, this.shadingLastCoords.y, coords.x, coords.y);
-                    for (let i = 1; i < line.length; i++) {
-                        this.applyShadingAt(line[i].x, line[i].y, false);
-                    }
+                    this.applyShadingStrokeLine(line.slice(1), false);
                     this.shadingLastCoords = { x: coords.x, y: coords.y };
                 }
             }
@@ -2045,9 +2066,7 @@ export const DesignInteractions = {
             if (coords && this.brushLastCoords) {
                 if (coords.x !== this.brushLastCoords.x || coords.y !== this.brushLastCoords.y) {
                     const line = getBresenhamLine(this.brushLastCoords.x, this.brushLastCoords.y, coords.x, coords.y);
-                    for (let i = 1; i < line.length; i++) {
-                        this.applyBrushAt(line[i].x, line[i].y, false);
-                    }
+                    this.applyBrushStrokeLine(line.slice(1), false);
                     this.brushLastCoords = { x: coords.x, y: coords.y };
                 }
             }
@@ -2340,8 +2359,15 @@ export const DesignInteractions = {
             if (this.isOfflineMode) {
                 if (this.renderWorker) {
                     this.renderWorker.postMessage({
-                        type: 'PUSH_PIXELS',
-                        payload: { pixels: [], strokePhase: 'end' }
+                        type: 'APPLY_SHADING',
+                        payload: {
+                            cx: 0,
+                            cy: 0,
+                            mode: this.shadingMode || 'shadow',
+                            size: this.shadingSize || 1,
+                            isMirrorMode: !!this.isMirrorMode,
+                            strokePhase: 'end'
+                        }
                     });
                 }
                 if (typeof this.saveOfflineCanvasState === 'function') {
@@ -2572,6 +2598,10 @@ export const DesignInteractions = {
 
         if (this.interactionMode === 'owner_erasing') {
             if (!this.ownerEraserBox) return;
+            if (this.isOfflineMode) {
+                this.executeOwnerClearArea();
+                return;
+            }
             const count = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
             window.modalSystem.show('confirmClearAreaModal', { count }).then(result => {
                 if (result && result.confirmed) {
@@ -3020,14 +3050,33 @@ export const DesignInteractions = {
     },
 
     toggleTileGrid() {
-        const modes = [0, 8, 16, 32];
-        const current = this.tileGridSize || 0;
-        const nextIdx = (modes.indexOf(current) + 1) % modes.length;
-        this.tileGridSize = modes[nextIdx];
+        const btn = document.querySelector('[data-action="toggleTileGrid"]');
+        if (this.activeSubtoolbar === 'tilegrid') {
+            this.closeSubtoolbar();
+        } else {
+            this.closeSubtoolbar();
+            this.openSubtoolbar('tilegrid');
+        }
+        if (btn) {
+            btn.classList.toggle('active', this.tileGridSize > 0 || this.activeSubtoolbar === 'tilegrid');
+        }
+    },
+
+    setTileGridLevel(size = 0, targetEl = null) {
+        this.tileGridSize = parseInt(size, 10) || 0;
+
+        const subtoolbar = document.querySelector('[data-ref="offline-subtoolbar-vertical"]');
+        if (subtoolbar) {
+            const btns = subtoolbar.querySelectorAll('[data-action="setTileGridLevel"]');
+            btns.forEach(b => {
+                const s = parseInt(b.getAttribute('data-grid-size'), 10) || 0;
+                b.classList.toggle('active', s === this.tileGridSize);
+            });
+        }
 
         const btn = document.querySelector('[data-action="toggleTileGrid"]');
         if (btn) {
-            btn.classList.toggle('active', this.tileGridSize > 0);
+            btn.classList.toggle('active', this.tileGridSize > 0 || this.activeSubtoolbar === 'tilegrid');
         }
 
         if (this.tileGridSize === 0) {
@@ -3037,6 +3086,7 @@ export const DesignInteractions = {
             const msg = tpl.replace(/:size/g, this.tileGridSize);
             showMessage(msg, 'success');
         }
+
         this.requestRender();
     },
 
@@ -3146,58 +3196,42 @@ export const DesignInteractions = {
         }
     },
 
-    applyShadingAt(cx, cy, isStart = false) {
-        const size = this.shadingSize || 1;
-        const mode = this.shadingMode || 'shadow';
-        const offsets = this.getBrushOffsets(size, 'square');
+    applyBrushStrokeLine(line, isStart = false) {
+        if (!line || line.length === 0) return;
+        const size = this.brushSize || 1;
+        const shape = this.brushShape || 'square';
+        const color = this.currentColor || '#000000';
+        const offsets = this.getBrushOffsets(size, shape);
         const bw = this.boardWidth || 64;
         const bh = this.boardHeight || 64;
         const pixelsToPaint = [];
-        if (!this.shadingTouchedInStroke) this.shadingTouchedInStroke = new Set();
+        const seen = new Set();
 
-        const processCoord = (px, py) => {
-            if (px < 0 || px >= bw || py < 0 || py >= bh) return;
-            const key = (py << 16) | px;
-            if (this.shadingTouchedInStroke.has(key)) return;
-            this.shadingTouchedInStroke.add(key);
-
-            let currentHex = '#FFFFFF';
-            if (this.offscreenCtx) {
-                const img = this.offscreenCtx.getImageData(px, py, 1, 1);
-                const val = new Uint32Array(img.data.buffer)[0];
-                if (val !== 0) {
-                    currentHex = abgrToHex(val);
+        for (let i = 0; i < line.length; i++) {
+            const pt = line[i];
+            for (let j = 0; j < offsets.length; j++) {
+                const off = offsets[j];
+                const px = pt.x + off.dx;
+                const py = pt.y + off.dy;
+                if (px >= 0 && px < bw && py >= 0 && py < bh) {
+                    const k = (py << 16) | px;
+                    if (!seen.has(k)) {
+                        seen.add(k);
+                        pixelsToPaint.push({ x: px, y: py, color });
+                    }
+                }
+                if (this.isMirrorMode) {
+                    const symX = bw - 1 - (pt.x + off.dx);
+                    if (symX >= 0 && symX < bw && py >= 0 && py < bh) {
+                        const k = (py << 16) | symX;
+                        if (!seen.has(k)) {
+                            seen.add(k);
+                            pixelsToPaint.push({ x: symX, y: py, color });
+                        }
+                    }
                 }
             }
-
-            const hsv = hexToHsv(currentHex);
-            let h = hsv.h;
-            let s = hsv.s;
-            let v = hsv.v;
-
-            if (mode === 'highlight') {
-                v = Math.min(100, v + 8);
-                if (v >= 96) {
-                    s = Math.max(0, s - 8);
-                }
-            } else {
-                v = Math.max(0, v - 8);
-                if (v <= 20) {
-                    s = Math.min(100, s + 4);
-                }
-            }
-
-            const newHex = hsvToHex(h, s, v);
-            pixelsToPaint.push({ x: px, y: py, color: newHex });
-        };
-
-        offsets.forEach(off => {
-            processCoord(cx + off.dx, cy + off.dy);
-            if (this.isMirrorMode) {
-                const symX = bw - 1 - (cx + off.dx);
-                processCoord(symX, cy + off.dy);
-            }
-        });
+        }
 
         if (pixelsToPaint.length === 0) return;
 
@@ -3211,6 +3245,234 @@ export const DesignInteractions = {
                     }
                 });
             }
+            if (this.offscreenCtx) {
+                this.offscreenCtx.fillStyle = color;
+                pixelsToPaint.forEach(p => {
+                    this.offscreenCtx.fillRect(p.x, p.y, 1, 1);
+                });
+            }
+        }
+    },
+
+    applyBrushEraseLine(line, isStart = false) {
+        if (!line || line.length === 0) return;
+        const size = this.brushEraserSize || 1;
+        const half1 = Math.floor((size - 1) / 2);
+        const half2 = Math.floor(size / 2);
+        const bw = this.boardWidth || 64;
+        const bh = this.boardHeight || 64;
+        const pixelsToErase = [];
+        const seen = new Set();
+
+        for (let i = 0; i < line.length; i++) {
+            const pt = line[i];
+            const minX = Math.max(0, pt.x - half1);
+            const maxX = Math.min(bw - 1, pt.x + half2);
+            const minY = Math.max(0, pt.y - half1);
+            const maxY = Math.min(bh - 1, pt.y + half2);
+
+            for (let y = minY; y <= maxY; y++) {
+                for (let x = minX; x <= maxX; x++) {
+                    const k = (y << 16) | x;
+                    if (!seen.has(k)) {
+                        seen.add(k);
+                        pixelsToErase.push({ x, y, color: 'transparent' });
+                    }
+                    if (this.isMirrorMode) {
+                        const symX = bw - 1 - x;
+                        if (symX >= 0 && symX < bw && symX !== x) {
+                            const symK = (y << 16) | symX;
+                            if (!seen.has(symK)) {
+                                seen.add(symK);
+                                pixelsToErase.push({ x: symX, y, color: 'transparent' });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (pixelsToErase.length === 0) return;
+
+        if (this.isOfflineMode) {
+            if (this.renderWorker) {
+                this.renderWorker.postMessage({
+                    type: 'PUSH_PIXELS',
+                    payload: {
+                        pixels: pixelsToErase,
+                        strokePhase: isStart ? 'start' : 'step'
+                    }
+                });
+            }
+            if (this.offscreenCtx) {
+                pixelsToErase.forEach(p => {
+                    this.offscreenCtx.clearRect(p.x, p.y, 1, 1);
+                });
+            }
+        }
+    },
+
+    applyDitherStrokeLine(line, isStart = false) {
+        if (!line || line.length === 0) return;
+        const size = this.ditherSize || 1;
+        const pattern = this.ditherPattern || 'checker_50';
+        const color = this.currentColor;
+        const half1 = Math.floor((size - 1) / 2);
+        const half2 = Math.floor(size / 2);
+        const bw = this.boardWidth || 64;
+        const bh = this.boardHeight || 64;
+        const pixelsToPaint = [];
+        const seen = new Set();
+
+        for (let i = 0; i < line.length; i++) {
+            const pt = line[i];
+            const minX = Math.max(0, pt.x - half1);
+            const maxX = Math.min(bw - 1, pt.x + half2);
+            const minY = Math.max(0, pt.y - half1);
+            const maxY = Math.min(bh - 1, pt.y + half2);
+
+            for (let y = minY; y <= maxY; y++) {
+                for (let x = minX; x <= maxX; x++) {
+                    if (this.isDitherPixel(x, y, pattern)) {
+                        const k = (y << 16) | x;
+                        if (!seen.has(k)) {
+                            seen.add(k);
+                            pixelsToPaint.push({ x, y, color });
+                        }
+                    }
+                    if (this.isMirrorMode) {
+                        const symX = bw - 1 - x;
+                        if (symX >= 0 && symX < bw && symX !== x) {
+                            if (this.isDitherPixel(symX, y, pattern)) {
+                                const symK = (y << 16) | symX;
+                                if (!seen.has(symK)) {
+                                    seen.add(symK);
+                                    pixelsToPaint.push({ x: symX, y, color });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (pixelsToPaint.length === 0) return;
+
+        if (this.isOfflineMode) {
+            if (this.renderWorker) {
+                this.renderWorker.postMessage({
+                    type: 'PUSH_PIXELS',
+                    payload: {
+                        pixels: pixelsToPaint,
+                        strokePhase: isStart ? 'start' : 'step'
+                    }
+                });
+            }
+            if (this.offscreenCtx) {
+                this.offscreenCtx.fillStyle = color;
+                pixelsToPaint.forEach(p => {
+                    this.offscreenCtx.fillRect(p.x, p.y, 1, 1);
+                });
+            }
+        }
+    },
+
+    applyShadingStrokeLine(line, isStart = false) {
+        if (!line || line.length === 0) return;
+        const size = this.shadingSize || 1;
+        const mode = this.shadingMode || 'shadow';
+        const isMirrorMode = !!this.isMirrorMode;
+        const strokePhase = isStart ? 'start' : 'step';
+
+        if (this.isOfflineMode && this.renderWorker) {
+            this.renderWorker.postMessage({
+                type: 'APPLY_SHADING',
+                payload: {
+                    points: line,
+                    mode,
+                    size,
+                    isMirrorMode,
+                    strokePhase
+                }
+            });
+        }
+    },
+
+    applyShadingAt(cx, cy, isStart = false) {
+        const size = this.shadingSize || 1;
+        const mode = this.shadingMode || 'shadow';
+        const isMirrorMode = !!this.isMirrorMode;
+        const strokePhase = isStart ? 'start' : 'step';
+
+        if (this.isOfflineMode) {
+            if (this.renderWorker) {
+                this.renderWorker.postMessage({
+                    type: 'APPLY_SHADING',
+                    payload: {
+                        cx,
+                        cy,
+                        mode,
+                        size,
+                        isMirrorMode,
+                        strokePhase
+                    }
+                });
+                return;
+            }
+
+            const offsets = this.getBrushOffsets(size, 'square');
+            const bw = this.boardWidth || 64;
+            const bh = this.boardHeight || 64;
+            const pixelsToPaint = [];
+            if (!this.shadingTouchedInStroke) this.shadingTouchedInStroke = new Set();
+
+            const processCoord = (px, py) => {
+                if (px < 0 || px >= bw || py < 0 || py >= bh) return;
+                const key = (py << 16) | px;
+                if (this.shadingTouchedInStroke.has(key)) return;
+                this.shadingTouchedInStroke.add(key);
+
+                let currentHex = '#FFFFFF';
+                if (this.offscreenCtx) {
+                    const img = this.offscreenCtx.getImageData(px, py, 1, 1);
+                    const val = new Uint32Array(img.data.buffer)[0];
+                    if (val === 0 || (val >>> 24) === 0) return;
+                    currentHex = abgrToHex(val);
+                } else {
+                    return;
+                }
+
+                const hsv = hexToHsv(currentHex);
+                let h = hsv.h;
+                let s = hsv.s;
+                let v = hsv.v;
+
+                if (mode === 'highlight') {
+                    v = Math.min(100, v + 8);
+                    if (v >= 96) {
+                        s = Math.max(0, s - 8);
+                    }
+                } else {
+                    v = Math.max(0, v - 8);
+                    if (v <= 20) {
+                        s = Math.min(100, s + 4);
+                    }
+                }
+
+                const newHex = hsvToHex(h, s, v);
+                pixelsToPaint.push({ x: px, y: py, color: newHex });
+            };
+
+            offsets.forEach(off => {
+                processCoord(cx + off.dx, cy + off.dy);
+                if (this.isMirrorMode) {
+                    const symX = bw - 1 - (cx + off.dx);
+                    processCoord(symX, cy + off.dy);
+                }
+            });
+
+            if (pixelsToPaint.length === 0) return;
+
             if (this.offscreenCtx) {
                 pixelsToPaint.forEach(p => {
                     this.offscreenCtx.fillStyle = p.color;
@@ -3533,6 +3795,16 @@ export const DesignInteractions = {
                 g.classList.add('disabled');
             }
         });
+
+        if (name === 'tilegrid') {
+            const btns = subtoolbar.querySelectorAll('[data-action="setTileGridLevel"]');
+            const current = this.tileGridSize || 0;
+            btns.forEach(b => {
+                const s = parseInt(b.getAttribute('data-grid-size'), 10) || 0;
+                b.classList.toggle('active', s === current);
+            });
+        }
+
         this.activeSubtoolbar = name;
     },
 
@@ -3543,6 +3815,10 @@ export const DesignInteractions = {
             subtoolbar.classList.add('disabled');
             const groups = subtoolbar.querySelectorAll('.canvas-design-subtoolbar-group');
             groups.forEach(g => g.classList.add('disabled'));
+        }
+        const btnTileGrid = document.querySelector('[data-action="toggleTileGrid"]');
+        if (btnTileGrid) {
+            btnTileGrid.classList.toggle('active', (this.tileGridSize || 0) > 0);
         }
         this.activeSubtoolbar = null;
         this.closeBrushSizeToolbar();
@@ -3601,6 +3877,110 @@ export const DesignInteractions = {
         if (toolbar) {
             toolbar.classList.remove('active');
             toolbar.classList.add('disabled');
+        }
+    },
+
+    syncOfflineToolsTier(tier = null) {
+        if (!this.isOfflineMode) return;
+        const currentTier = tier || getCanvasTier(this.boardWidth || 64, this.boardHeight || 64);
+        this.currentCanvasTier = currentTier;
+
+        const sizeToolbar = document.querySelector('[data-ref="brush-size-toolbar"]');
+        if (sizeToolbar) {
+            const toolIds = ['brush', 'eraser', 'dither', 'shading'];
+            toolIds.forEach(toolId => {
+                const group = sizeToolbar.querySelector(`[data-sizes-for="${toolId}"]`);
+                if (!group) return;
+                const sizes = getToolSizes(toolId, currentTier);
+                const currentVal = (toolId === 'brush') ? (this.brushSize || 1) :
+                                   (toolId === 'eraser') ? (this.brushEraserSize || 1) :
+                                   (toolId === 'dither') ? (this.ditherSize || 1) :
+                                   (this.shadingSize || 1);
+
+                const action = (toolId === 'brush') ? 'setBrushSize' :
+                               (toolId === 'eraser') ? 'setBrushEraserSize' :
+                               (toolId === 'dither') ? 'setDitherSize' :
+                               'setShadingSize';
+
+                group.innerHTML = sizes.map(s => {
+                    const isActive = (s === currentVal);
+                    return `<button class="component-button component-button--icon component-button--h32 ${isActive ? 'active' : ''}" data-action="${action}" data-size="${s}" data-tooltip="${s}x${s} px" data-position="right">${s}</button>`;
+                }).join('');
+            });
+        }
+
+        const subtoolbar = document.querySelector('[data-ref="offline-subtoolbar-vertical"]');
+        if (subtoolbar) {
+            const sprayGroup = subtoolbar.querySelector('[data-subtoolbar="spray"]');
+            if (sprayGroup) {
+                const radii = getSprayRadii(currentTier);
+                const currentRadius = this.sprayRadius || 5;
+                sprayGroup.innerHTML = radii.map(r => {
+                    const isActive = (r === currentRadius);
+                    return `<button class="component-button component-button--icon component-button--h32 ${isActive ? 'active' : ''}" data-action="setSpraySize" data-size="${r}" data-tooltip="Radio ${r} px" data-position="right">${r}</button>`;
+                }).join('');
+            }
+
+            const gridGroup = subtoolbar.querySelector('[data-subtoolbar="tilegrid"]');
+            if (gridGroup) {
+                const levels = getTileGridLevels(currentTier);
+                const currentGrid = this.tileGridSize || 0;
+                gridGroup.innerHTML = levels.map(lvl => {
+                    const isActive = (lvl === currentGrid);
+                    const label = (lvl === 0) ? '<span class="material-symbols-rounded">grid_off</span>' : lvl;
+                    const tooltip = (lvl === 0) ? (window.__('lbl_grid_off') || 'Desactivar cuadrícula') : `${lvl}x${lvl} px`;
+                    return `<button class="component-button component-button--icon component-button--h32 ${isActive ? 'active' : ''}" data-action="setTileGridLevel" data-grid-size="${lvl}" data-tooltip="${tooltip}" data-position="right">${label}</button>`;
+                }).join('');
+            }
+        }
+    },
+
+    stepActiveToolSize(direction = 1) {
+        if (!this.isOfflineMode) return;
+        const tier = this.currentCanvasTier || getCanvasTier(this.boardWidth || 64, this.boardHeight || 64);
+
+        if (this.interactionMode === 'offline_brush') {
+            const sizes = getToolSizes('brush', tier);
+            const current = this.brushSize || 1;
+            let idx = sizes.indexOf(current);
+            if (idx === -1) idx = 0;
+            const nextIdx = Math.max(0, Math.min(sizes.length - 1, idx + direction));
+            this.setBrushSize(sizes[nextIdx]);
+        } else if (this.interactionMode === 'owner_erasing' && this.offlineEraserMode === 'brush') {
+            const sizes = getToolSizes('eraser', tier);
+            const current = this.brushEraserSize || 1;
+            let idx = sizes.indexOf(current);
+            if (idx === -1) idx = 0;
+            const nextIdx = Math.max(0, Math.min(sizes.length - 1, idx + direction));
+            this.setBrushEraserSize(sizes[nextIdx]);
+        } else if (this.interactionMode === 'offline_spray') {
+            const radii = getSprayRadii(tier);
+            const current = this.sprayRadius || 5;
+            let idx = radii.indexOf(current);
+            if (idx === -1) idx = 0;
+            const nextIdx = Math.max(0, Math.min(radii.length - 1, idx + direction));
+            this.setSpraySize(radii[nextIdx]);
+        } else if (this.interactionMode === 'offline_dither') {
+            const sizes = getToolSizes('dither', tier);
+            const current = this.ditherSize || 1;
+            let idx = sizes.indexOf(current);
+            if (idx === -1) idx = 0;
+            const nextIdx = Math.max(0, Math.min(sizes.length - 1, idx + direction));
+            this.setDitherSize(sizes[nextIdx]);
+        } else if (this.interactionMode === 'offline_shading') {
+            const sizes = getToolSizes('shading', tier);
+            const current = this.shadingSize || 1;
+            let idx = sizes.indexOf(current);
+            if (idx === -1) idx = 0;
+            const nextIdx = Math.max(0, Math.min(sizes.length - 1, idx + direction));
+            this.setShadingSize(sizes[nextIdx]);
+        } else if (this.activeSubtoolbar === 'tilegrid') {
+            const levels = getTileGridLevels(tier);
+            const current = this.tileGridSize || 0;
+            let idx = levels.indexOf(current);
+            if (idx === -1) idx = 0;
+            const nextIdx = Math.max(0, Math.min(levels.length - 1, idx + direction));
+            this.setTileGridLevel(levels[nextIdx]);
         }
     },
 
@@ -4845,7 +5225,6 @@ export const DesignInteractions = {
     updateSpray(x, y) {
         if (!this.isSpraying) return;
         this.sprayCenter = { x, y };
-        this.fireSprayBurst(x, y);
     },
 
     fireSprayBurst(centerX, centerY) {
@@ -4932,7 +5311,8 @@ export const DesignInteractions = {
                 payload: {
                     startX,
                     startY,
-                    color: this.currentColor
+                    color: this.currentColor,
+                    isMirrorMode: !!this.isMirrorMode
                 }
             });
             if (typeof this.saveOfflineCanvasState === 'function') {
@@ -4943,19 +5323,21 @@ export const DesignInteractions = {
             const bh = this.boardHeight || 64;
             const imgData = this.offscreenCtx.getImageData(0, 0, bw, bh);
             const buf32 = new Uint32Array(imgData.data.buffer);
-            const startIdx = startY * bw + startX;
-            const targetColor = buf32[startIdx];
             const fillColor = colorToAbgr(this.currentColor);
+            const diffs = [];
 
-            if (targetColor !== fillColor) {
+            const runFill = (sX, sY) => {
+                const startIdx = sY * bw + sX;
+                const targetColor = buf32[startIdx];
+                if (targetColor === fillColor) return;
+
                 const total = bw * bh;
                 const queue = new Int32Array(total);
                 let head = 0;
                 let tail = 0;
-                const diffs = [];
 
                 buf32[startIdx] = fillColor;
-                diffs.push({ x: startX, y: startY, prev: targetColor, next: fillColor });
+                diffs.push({ x: sX, y: sY, prev: targetColor, next: fillColor });
                 queue[tail++] = startIdx;
 
                 while (head < tail) {
@@ -4996,20 +5378,28 @@ export const DesignInteractions = {
                         }
                     }
                 }
+            };
 
-                this.offscreenCtx.putImageData(imgData, 0, 0);
-
-                if (this.undoStack && diffs.length > 0) {
-                    this.undoStack.push({ type: 'flood_fill', diffs });
-                    this.redoStack = [];
-                    if (this.undoStack.length > 50) this.undoStack.shift();
+            runFill(startX, startY);
+            if (this.isMirrorMode) {
+                const symX = bw - 1 - startX;
+                if (symX >= 0 && symX < bw && symX !== startX) {
+                    runFill(symX, startY);
                 }
-
-                if (typeof this.saveOfflineCanvasState === 'function') {
-                    this.saveOfflineCanvasState(false);
-                }
-                this.requestRender();
             }
+
+            this.offscreenCtx.putImageData(imgData, 0, 0);
+
+            if (this.undoStack && diffs.length > 0) {
+                this.undoStack.push({ type: 'flood_fill', diffs });
+                this.redoStack = [];
+                if (this.undoStack.length > 50) this.undoStack.shift();
+            }
+
+            if (typeof this.saveOfflineCanvasState === 'function') {
+                this.saveOfflineCanvasState(false);
+            }
+            this.requestRender();
         }
     },
 
