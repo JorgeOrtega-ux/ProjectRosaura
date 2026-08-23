@@ -1,5 +1,6 @@
 <?php
 use App\Api\Services\Admin\AdminViewService;
+use App\Core\Helpers\Utils;
 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $typesFilter = isset($_GET['types']) && $_GET['types'] !== '' ? explode(',', $_GET['types']) : [];
@@ -39,6 +40,9 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page +
                         <span class="material-symbols-rounded">settings_backup_restore</span>
                     </button>
                     <?php endif; ?>
+                    <button class="component-button component-button--icon component-button--h40" data-action="deselectBackup" data-tooltip="<?php echo __('btn_cancel'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">close</span>
+                    </button>
                 </div>
 
                 <div class="component-actions active" data-ref="header-default-actions">
@@ -48,7 +52,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page +
                     </button>
 
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
-                        <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="moduleBackupFilters" data-ref="btn-toggle-filters" data-tooltip="<?php echo __('tooltip_filters'); ?>" data-position="bottom">
+                        <button class="component-button component-button--icon component-button--h40" data-action="toggleBackupFilters" data-target="moduleBackupFilters" data-ref="btn-toggle-filters" data-tooltip="<?php echo __('tooltip_filters'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded">tune</span>
                         </button>
                         
@@ -189,7 +193,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page +
                                     $displayStatus = $backup['status'] === 'success' ? __('status_completed') : __('status_failed');
                                     $statusIcon = $backup['status'] === 'success' ? 'check_circle' : 'error';
                                 ?>
-                                <tr class="component-table-row" data-action="selectBackup" data-backup-id="<?php echo htmlspecialchars($backup['id']); ?>" data-type="<?php echo htmlspecialchars($backup['type']); ?>" data-status="<?php echo htmlspecialchars($backup['status']); ?>">
+                                <tr class="component-table-row clickable" data-action="selectBackup" data-backup-id="<?php echo htmlspecialchars($backup['id']); ?>" data-type="<?php echo htmlspecialchars($backup['type']); ?>" data-status="<?php echo htmlspecialchars($backup['status']); ?>">
                                     <td>
                                         <div class="td-user-info">
                                             <div class="component-button--profile component-avatar--static-sm">
@@ -231,20 +235,25 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/backups?page=' . ($page +
                             
                             <tr class="disabled" data-ref="empty-search-table">
                                 <td colspan="5" class="component-empty-table-cell">
-                                    <div class="component-empty-state component-empty-state--table">
-                                        <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                                        <p class="component-empty-state-text"><?php echo __('empty_search_backups'); ?></p>
-                                    </div>
+                                    <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                        'type' => 'search',
+                                        'title' => __('search_empty_no_results_title'),
+                                        'message' => __('empty_search_backups')
+                                    ]); ?>
                                 </td>
                             </tr>
 
                         <?php else: ?>
-                            <tr>
+                            <?php 
+                            $isFiltered = !empty($searchQuery) || (!empty($typesFilter) && count($typesFilter) < 2) || (!empty($statusFilter) && count($statusFilter) < 2);
+                            ?>
+                            <tr data-ref="<?php echo $isFiltered ? 'empty-search-table' : 'backups-empty-state'; ?>">
                                 <td colspan="5" class="component-empty-table-cell">
-                                    <div class="component-empty-state component-empty-state--table">
-                                        <span class="material-symbols-rounded component-empty-state-icon">cloud_off</span>
-                                        <p class="component-empty-state-text"><?php echo __('empty_backups_system'); ?></p>
-                                    </div>
+                                    <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                        'type' => $isFiltered ? 'search' : 'backups',
+                                        'title' => $isFiltered ? __('search_empty_no_results_title') : __('admin_backups_empty_title'),
+                                        'message' => $isFiltered ? __('empty_search_backups') : __('empty_backups_system')
+                                    ]); ?>
                                 </td>
                             </tr>
                         <?php endif; ?>

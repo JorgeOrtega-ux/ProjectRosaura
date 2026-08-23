@@ -1,4 +1,5 @@
 import { ADVERTISEMENT_FORMATS } from '../../core/constants/AdvertisementConstants.js';
+import { CardTemplates } from '../../core/components/CardTemplates.js';
 
 export const AdminModalTemplates = {
     editUserRoleModal: {
@@ -618,12 +619,11 @@ export const AdminModalTemplates = {
                         </div>
                     </div>
                 `;
-            }).join('') : `
-                <div class="component-empty-state">
-                    <span class="material-symbols-rounded component-empty-state-icon">perm_media</span>
-                    <p class="component-empty-state-text">${__('admin_ad_search_empty') || 'No hay medios disponibles en el servidor.'}</p>
-                </div>
-            `;
+            }).join('') : CardTemplates.emptyState({
+                type: 'snapshots',
+                title: __('modal_select_server_media_title'),
+                message: __('admin_ad_search_empty') || 'No hay medios disponibles en el servidor.'
+            });
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>

@@ -286,48 +286,6 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                 </svg>
             `;
         }
-        if (type === 'canvas' || type === 'home') {
-            return `
-                <svg class="component-empty-state-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <linearGradient id="boardGrad" x1="30" y1="30" x2="110" y2="105" gradientUnits="userSpaceOnUse">
-                            <stop offset="0%" stop-color="#52525b"/>
-                            <stop offset="50%" stop-color="#3f3f46"/>
-                            <stop offset="100%" stop-color="#27272a"/>
-                        </linearGradient>
-                        <linearGradient id="brushHandle" x1="0" y1="0" x2="1" y2="1">
-                            <stop offset="0%" stop-color="#a1a1aa"/>
-                            <stop offset="100%" stop-color="#52525b"/>
-                        </linearGradient>
-                    </defs>
-                    <path d="M42 60 L30 124 M98 60 L110 124 M70 50 L70 124" stroke="var(--text-tertiary, #52525b)" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
-                    <rect x="34" y="34" width="72" height="64" rx="10" fill="url(#boardGrad)" stroke="#52525b" stroke-width="1.5"/>
-                    <rect x="39" y="39" width="62" height="54" rx="7" fill="var(--bg-surface, #18181b)"/>
-                    <rect x="46" y="46" width="10" height="10" rx="2" fill="#71717a"/>
-                    <rect x="58" y="46" width="10" height="10" rx="2" fill="#a1a1aa"/>
-                    <rect x="70" y="46" width="10" height="10" rx="2" fill="#52525b"/>
-                    <rect x="82" y="46" width="10" height="10" rx="2" fill="#3f3f46"/>
-                    <rect x="46" y="58" width="10" height="10" rx="2" fill="#d4d4d8"/>
-                    <rect x="58" y="58" width="10" height="10" rx="2" fill="#71717a"/>
-                    <rect x="70" y="58" width="10" height="10" rx="2" fill="#e4e4e7"/>
-                    <rect x="82" y="58" width="10" height="10" rx="2" fill="#52525b"/>
-                    <rect x="46" y="70" width="10" height="10" rx="2" fill="#3f3f46"/>
-                    <rect x="58" y="70" width="10" height="10" rx="2" fill="#52525b"/>
-                    <rect x="70" y="70" width="10" height="10" rx="2" fill="#a1a1aa"/>
-                    <rect x="82" y="70" width="10" height="10" rx="2" fill="#71717a"/>
-                    <g transform="rotate(32 94 40)">
-                        <rect x="88" y="16" width="6" height="42" rx="3" fill="url(#brushHandle)"/>
-                        <rect x="87" y="54" width="8" height="6" rx="1.5" fill="#e4e4e7"/>
-                        <path d="M87 60 C87 66 95 66 95 60 Z" fill="#71717a"/>
-                    </g>
-                    <g>
-                        <path d="M112 30 L113.5 34.5 L118 36 L113.5 37.5 L112 42 L110.5 37.5 L106 36 L110.5 34.5 Z" fill="#e4e4e7"/>
-                        <path d="M26 48 L27 51 L30 52 L27 53 L26 56 L25 53 L22 52 L25 51 Z" fill="#a1a1aa"/>
-                        <path d="M102 96 L103 98 L105 99 L103 100 L102 102 L101 100 L99 99 L101 98 Z" fill="#71717a"/>
-                    </g>
-                </svg>
-            `;
-        }
         if (type === 'search') {
             return `
                 <svg class="component-empty-state-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -442,6 +400,290 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                 </svg>
             `;
         }
+        if (type === 'users' || type === 'team' || type === 'members') {
+            return `
+                <svg class="component-empty-state-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="userGradMain" x1="35" y1="35" x2="105" y2="105" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#52525b"/>
+                            <stop offset="50%" stop-color="#3f3f46"/>
+                            <stop offset="100%" stop-color="#27272a"/>
+                        </linearGradient>
+                        <linearGradient id="userGradBack" x1="30" y1="20" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#3f3f46"/>
+                            <stop offset="100%" stop-color="#18181b"/>
+                        </linearGradient>
+                    </defs>
+                    <g opacity="0.6">
+                        <circle cx="48" cy="46" r="14" fill="url(#userGradBack)" stroke="#52525b" stroke-width="1.5"/>
+                        <path d="M28 84 C28 70 38 68 48 68 C58 68 68 70 68 84 Z" fill="url(#userGradBack)" stroke="#52525b" stroke-width="1.5"/>
+                    </g>
+                    <g opacity="0.6">
+                        <circle cx="92" cy="46" r="14" fill="url(#userGradBack)" stroke="#52525b" stroke-width="1.5"/>
+                        <path d="M72 84 C72 70 82 68 92 68 C102 68 112 70 112 84 Z" fill="url(#userGradBack)" stroke="#52525b" stroke-width="1.5"/>
+                    </g>
+                    <circle cx="70" cy="50" r="18" fill="url(#userGradMain)" stroke="#71717a" stroke-width="2"/>
+                    <circle cx="70" cy="46" r="6" fill="#e4e4e7" opacity="0.8"/>
+                    <path d="M44 98 C44 80 56 76 70 76 C84 76 96 80 96 98 Z" fill="url(#userGradMain)" stroke="#71717a" stroke-width="2"/>
+                    <rect x="62" y="82" width="16" height="4" rx="2" fill="#e4e4e7" opacity="0.5"/>
+                    <g>
+                        <path d="M116 28 L117.5 32.5 L122 34 L117.5 35.5 L116 40 L114.5 35.5 L110 34 L114.5 32.5 Z" fill="#e4e4e7"/>
+                        <path d="M22 46 L23 49 L26 50 L23 51 L22 54 L21 51 L18 50 L21 49 Z" fill="#a1a1aa"/>
+                        <path d="M102 96 L103 98 L105 99 L103 100 L102 102 L101 100 L99 99 L101 98 Z" fill="#71717a"/>
+                    </g>
+                </svg>
+            `;
+        }
+        if (type === 'roles' || type === 'permissions' || type === 'shield') {
+            return `
+                <svg class="component-empty-state-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="rolesShieldGrad" x1="30" y1="20" x2="110" y2="105" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#52525b"/>
+                            <stop offset="50%" stop-color="#3f3f46"/>
+                            <stop offset="100%" stop-color="#18181b"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M70 24 L106 38 C106 78 70 106 70 106 C70 106 34 78 34 38 Z" fill="url(#rolesShieldGrad)" stroke="#71717a" stroke-width="2"/>
+                    <path d="M70 32 L98 44 C98 74 70 96 70 96 C70 96 42 74 42 44 Z" fill="var(--bg-surface, #18181b)" stroke="#52525b" stroke-width="1.5"/>
+                    <circle cx="70" cy="56" r="10" fill="url(#rolesShieldGrad)" stroke="#a1a1aa" stroke-width="1.5"/>
+                    <path d="M68 62 L66 76 C66 78 74 78 74 76 L72 62 Z" fill="#e4e4e7"/>
+                    <g>
+                        <path d="M114 26 L115.5 30.5 L120 32 L115.5 33.5 L114 38 L112.5 33.5 L108 32 L112.5 30.5 Z" fill="#e4e4e7"/>
+                        <path d="M24 46 L25 49 L28 50 L25 51 L24 54 L23 51 L20 50 L23 49 Z" fill="#a1a1aa"/>
+                        <path d="M96 98 L97 100 L99 101 L97 102 L96 104 L95 102 L93 101 L95 100 Z" fill="#71717a"/>
+                    </g>
+                </svg>
+            `;
+        }
+        if (type === 'messages' || type === 'chat') {
+            return `
+                <svg class="component-empty-state-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="chatBubble1" x1="20" y1="25" x2="90" y2="85" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#52525b"/>
+                            <stop offset="50%" stop-color="#3f3f46"/>
+                            <stop offset="100%" stop-color="#27272a"/>
+                        </linearGradient>
+                        <linearGradient id="chatBubble2" x1="50" y1="50" x2="115" y2="110" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#71717a"/>
+                            <stop offset="50%" stop-color="#52525b"/>
+                            <stop offset="100%" stop-color="#18181b"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M30 36 C30 28 86 28 86 36 L86 64 C86 72 30 72 30 64 L30 76 L44 64 Z" fill="url(#chatBubble1)" stroke="#52525b" stroke-width="1.5" opacity="0.6"/>
+                    <path d="M50 56 C50 46 110 46 110 56 L110 86 C110 96 74 96 74 96 L60 108 L62 96 L50 96 Z" fill="url(#chatBubble2)" stroke="#71717a" stroke-width="1.5"/>
+                    <circle cx="68" cy="74" r="3.5" fill="#e4e4e7"/>
+                    <circle cx="80" cy="74" r="3.5" fill="#d4d4d8"/>
+                    <circle cx="92" cy="74" r="3.5" fill="#a1a1aa"/>
+                    <g>
+                        <path d="M116 26 L117.5 30.5 L122 32 L117.5 33.5 L116 38 L114.5 33.5 L110 32 L114.5 30.5 Z" fill="#e4e4e7"/>
+                        <path d="M22 60 L23 63 L26 64 L23 65 L22 68 L21 65 L18 64 L21 63 Z" fill="#a1a1aa"/>
+                    </g>
+                </svg>
+            `;
+        }
+        if (type === 'backups' || type === 'cloud') {
+            return `
+                <svg class="component-empty-state-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="cloudGradBackups" x1="30" y1="20" x2="110" y2="85" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#71717a"/>
+                            <stop offset="50%" stop-color="#52525b"/>
+                            <stop offset="100%" stop-color="#27272a"/>
+                        </linearGradient>
+                        <linearGradient id="discGrad" x1="40" y1="70" x2="100" y2="110" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#52525b"/>
+                            <stop offset="100%" stop-color="#18181b"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M48 58 C42 58 36 63 36 70 C36 76 40 80 46 80 L94 80 C100 80 106 75 106 69 C106 63 101 58 95 58 C94 51 88 46 81 46 C77 46 73 48 70 51 C67 46 61 43 55 46 C50 48 48 53 48 58 Z" fill="url(#cloudGradBackups)" stroke="#71717a" stroke-width="2"/>
+                    <path d="M42 90 L42 102 C42 108 98 108 98 102 L98 90 Z" fill="url(#discGrad)" stroke="#52525b" stroke-width="1.5"/>
+                    <ellipse cx="70" cy="90" rx="28" ry="6" fill="#3f3f46" stroke="#71717a" stroke-width="1.5"/>
+                    <circle cx="88" cy="98" r="2" fill="#22c55e"/>
+                    <g>
+                        <path d="M116 24 L117.5 28.5 L122 30 L117.5 31.5 L116 36 L114.5 31.5 L110 30 L114.5 28.5 Z" fill="#e4e4e7"/>
+                        <path d="M24 40 L25 43 L28 44 L25 45 L24 48 L23 45 L20 44 L23 43 Z" fill="#a1a1aa"/>
+                    </g>
+                </svg>
+            `;
+        }
+        if (type === 'logs' || type === 'history') {
+            return `
+                <svg class="component-empty-state-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="docGradLogs" x1="30" y1="20" x2="105" y2="110" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#52525b"/>
+                            <stop offset="50%" stop-color="#3f3f46"/>
+                            <stop offset="100%" stop-color="#18181b"/>
+                        </linearGradient>
+                    </defs>
+                    <rect x="40" y="26" width="60" height="82" rx="8" fill="url(#docGradLogs)" stroke="#71717a" stroke-width="2"/>
+                    <path d="M78 26 L100 48 L78 48 Z" fill="#71717a"/>
+                    <rect x="50" y="44" width="20" height="4" rx="2" fill="#e4e4e7"/>
+                    <rect x="50" y="56" width="40" height="3" rx="1.5" fill="#a1a1aa"/>
+                    <rect x="50" y="66" width="36" height="3" rx="1.5" fill="#71717a"/>
+                    <rect x="50" y="76" width="32" height="3" rx="1.5" fill="#52525b"/>
+                    <rect x="50" y="86" width="24" height="3" rx="1.5" fill="#71717a"/>
+                    <g>
+                        <path d="M114 22 L115.5 26.5 L120 28 L115.5 29.5 L114 34 L112.5 29.5 L108 28 L112.5 26.5 Z" fill="#e4e4e7"/>
+                        <path d="M26 54 L27 57 L30 58 L27 59 L26 62 L25 59 L22 58 L25 57 Z" fill="#a1a1aa"/>
+                        <path d="M98 104 L99 106 L101 107 L99 108 L98 110 L97 108 L95 107 L97 106 Z" fill="#71717a"/>
+                    </g>
+                </svg>
+            `;
+        }
+        if (type === 'advertisements' || type === 'campaign') {
+            return `
+                <svg class="component-empty-state-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="adHornGrad" x1="30" y1="30" x2="105" y2="105" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#71717a"/>
+                            <stop offset="50%" stop-color="#52525b"/>
+                            <stop offset="100%" stop-color="#27272a"/>
+                        </linearGradient>
+                    </defs>
+                    <g transform="rotate(-15 70 70)">
+                        <path d="M42 54 L62 54 L88 38 L88 92 L62 76 L42 76 Z" fill="url(#adHornGrad)" stroke="#71717a" stroke-width="2"/>
+                        <ellipse cx="88" cy="65" rx="6" ry="27" fill="#3f3f46" stroke="#a1a1aa" stroke-width="2"/>
+                        <path d="M48 76 L52 98 C52 100 58 100 58 98 L60 76 Z" fill="#27272a" stroke="#52525b" stroke-width="1.5"/>
+                        <path d="M100 52 C106 58 106 72 100 78" stroke="#e4e4e7" stroke-width="3" stroke-linecap="round" fill="none"/>
+                        <path d="M108 44 C116 54 116 76 108 86" stroke="#a1a1aa" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.6"/>
+                    </g>
+                    <g>
+                        <path d="M116 20 L117.5 24.5 L122 26 L117.5 27.5 L116 32 L114.5 27.5 L110 26 L114.5 24.5 Z" fill="#e4e4e7"/>
+                        <path d="M22 72 L23 75 L26 76 L23 77 L22 80 L21 77 L18 76 L21 75 Z" fill="#a1a1aa"/>
+                    </g>
+                </svg>
+            `;
+        }
+        if (type === 'subscriptions' || type === 'billing' || type === 'receipt') {
+            return `
+                <svg class="component-empty-state-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="cardGradSub" x1="25" y1="35" x2="115" y2="95" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#71717a"/>
+                            <stop offset="50%" stop-color="#52525b"/>
+                            <stop offset="100%" stop-color="#27272a"/>
+                        </linearGradient>
+                    </defs>
+                    <rect x="30" y="42" width="80" height="54" rx="10" fill="url(#cardGradSub)" stroke="#71717a" stroke-width="2"/>
+                    <rect x="30" y="54" width="80" height="10" fill="#18181b"/>
+                    <rect x="42" y="74" width="16" height="12" rx="3" fill="#e4e4e7" opacity="0.7"/>
+                    <g transform="translate(86, 78)">
+                        <path d="M0 -8 L2.4 -2.5 L8.5 -2.5 L3.6 1.2 L5.5 7 L0 3.5 L-5.5 7 L-3.6 1.2 L-8.5 -2.5 L-2.4 -2.5 Z" fill="#fbbf24"/>
+                    </g>
+                    <g>
+                        <path d="M116 24 L117.5 28.5 L122 30 L117.5 31.5 L116 36 L114.5 31.5 L110 30 L114.5 28.5 Z" fill="#e4e4e7"/>
+                        <path d="M22 46 L23 49 L26 50 L23 51 L22 54 L21 51 L18 50 L21 49 Z" fill="#a1a1aa"/>
+                        <path d="M98 104 L99 106 L101 107 L99 108 L98 110 L97 108 L95 107 L97 106 Z" fill="#71717a"/>
+                    </g>
+                </svg>
+            `;
+        }
+        if (type === 'reports' || type === 'check') {
+            return `
+                <svg class="component-empty-state-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="checkGradRep" x1="30" y1="25" x2="110" y2="105" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#52525b"/>
+                            <stop offset="50%" stop-color="#3f3f46"/>
+                            <stop offset="100%" stop-color="#18181b"/>
+                        </linearGradient>
+                    </defs>
+                    <circle cx="70" cy="66" r="36" fill="url(#checkGradRep)" stroke="#71717a" stroke-width="2"/>
+                    <circle cx="70" cy="66" r="28" fill="var(--bg-surface, #18181b)" stroke="#52525b" stroke-width="1.5"/>
+                    <path d="M54 66 L65 77 L86 54" stroke="#22c55e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <g>
+                        <path d="M116 26 L117.5 30.5 L122 32 L117.5 33.5 L116 38 L114.5 33.5 L110 32 L114.5 30.5 Z" fill="#e4e4e7"/>
+                        <path d="M24 46 L25 49 L28 50 L25 51 L24 54 L23 51 L20 50 L23 49 Z" fill="#a1a1aa"/>
+                    </g>
+                </svg>
+            `;
+        }
+        if (type === 'invites' || type === 'requests') {
+            return `
+                <svg class="component-empty-state-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="inviteGrad" x1="30" y1="30" x2="110" y2="100" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#71717a"/>
+                            <stop offset="50%" stop-color="#52525b"/>
+                            <stop offset="100%" stop-color="#27272a"/>
+                        </linearGradient>
+                    </defs>
+                    <rect x="34" y="40" width="72" height="54" rx="8" fill="url(#inviteGrad)" stroke="#71717a" stroke-width="2"/>
+                    <path d="M36 44 L70 68 L104 44" stroke="#e4e4e7" stroke-width="2" stroke-linecap="round" fill="none"/>
+                    <circle cx="70" cy="68" r="8" fill="#18181b" stroke="#71717a" stroke-width="1.5"/>
+                    <path d="M66 68 L74 68 M70 64 L70 72" stroke="#e4e4e7" stroke-width="2" stroke-linecap="round"/>
+                    <g>
+                        <path d="M116 24 L117.5 28.5 L122 30 L117.5 31.5 L116 36 L114.5 31.5 L110 30 L114.5 28.5 Z" fill="#e4e4e7"/>
+                        <path d="M22 50 L23 53 L26 54 L23 55 L22 58 L21 55 L18 54 L21 53 Z" fill="#a1a1aa"/>
+                    </g>
+                </svg>
+            `;
+        }
+        if (type === 'sanctions') {
+            return `
+                <svg class="component-empty-state-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="sanctionGrad" x1="30" y1="20" x2="110" y2="105" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#52525b"/>
+                            <stop offset="50%" stop-color="#3f3f46"/>
+                            <stop offset="100%" stop-color="#18181b"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M70 24 L106 38 C106 78 70 106 70 106 C70 106 34 78 34 38 Z" fill="url(#sanctionGrad)" stroke="#71717a" stroke-width="2"/>
+                    <path d="M70 32 L98 44 C98 74 70 96 70 96 C70 96 42 74 42 44 Z" fill="var(--bg-surface, #18181b)" stroke="#52525b" stroke-width="1.5"/>
+                    <path d="M56 52 L84 80 M84 52 L56 80" stroke="#ef4444" stroke-width="4" stroke-linecap="round"/>
+                    <g>
+                        <path d="M114 26 L115.5 30.5 L120 32 L115.5 33.5 L114 38 L112.5 33.5 L108 32 L112.5 30.5 Z" fill="#e4e4e7"/>
+                        <path d="M24 46 L25 49 L28 50 L25 51 L24 54 L23 51 L20 50 L23 49 Z" fill="#a1a1aa"/>
+                    </g>
+                </svg>
+            `;
+        }
+        if (type === 'canvas' || type === 'home' || type === 'palette') {
+            return `
+                <svg class="component-empty-state-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="boardGrad" x1="30" y1="30" x2="110" y2="105" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#52525b"/>
+                            <stop offset="50%" stop-color="#3f3f46"/>
+                            <stop offset="100%" stop-color="#27272a"/>
+                        </linearGradient>
+                        <linearGradient id="brushHandle" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#a1a1aa"/>
+                            <stop offset="100%" stop-color="#52525b"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M42 60 L30 124 M98 60 L110 124 M70 50 L70 124" stroke="var(--text-tertiary, #52525b)" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
+                    <rect x="34" y="34" width="72" height="64" rx="10" fill="url(#boardGrad)" stroke="#52525b" stroke-width="1.5"/>
+                    <rect x="39" y="39" width="62" height="54" rx="7" fill="var(--bg-surface, #18181b)"/>
+                    <rect x="46" y="46" width="10" height="10" rx="2" fill="#71717a"/>
+                    <rect x="58" y="46" width="10" height="10" rx="2" fill="#a1a1aa"/>
+                    <rect x="70" y="46" width="10" height="10" rx="2" fill="#52525b"/>
+                    <rect x="82" y="46" width="10" height="10" rx="2" fill="#3f3f46"/>
+                    <rect x="46" y="58" width="10" height="10" rx="2" fill="#d4d4d8"/>
+                    <rect x="58" y="58" width="10" height="10" rx="2" fill="#71717a"/>
+                    <rect x="70" y="58" width="10" height="10" rx="2" fill="#e4e4e7"/>
+                    <rect x="82" y="58" width="10" height="10" rx="2" fill="#52525b"/>
+                    <rect x="46" y="70" width="10" height="10" rx="2" fill="#3f3f46"/>
+                    <rect x="58" y="70" width="10" height="10" rx="2" fill="#52525b"/>
+                    <rect x="70" y="70" width="10" height="10" rx="2" fill="#a1a1aa"/>
+                    <rect x="82" y="70" width="10" height="10" rx="2" fill="#71717a"/>
+                    <g transform="rotate(32 94 40)">
+                        <rect x="88" y="16" width="6" height="42" rx="3" fill="url(#brushHandle)"/>
+                        <rect x="87" y="54" width="8" height="6" rx="1.5" fill="#e4e4e7"/>
+                        <path d="M87 60 C87 66 95 66 95 60 Z" fill="#71717a"/>
+                    </g>
+                    <g>
+                        <path d="M112 30 L113.5 34.5 L118 36 L113.5 37.5 L112 42 L110.5 37.5 L106 36 L110.5 34.5 Z" fill="#e4e4e7"/>
+                        <path d="M26 48 L27 51 L30 52 L27 53 L26 56 L25 53 L22 52 L25 51 Z" fill="#a1a1aa"/>
+                        <path d="M102 96 L103 98 L105 99 L103 100 L102 102 L101 100 L99 99 L101 98 Z" fill="#71717a"/>
+                    </g>
+                </svg>
+            `;
+        }
         return null;
     },
 
@@ -462,37 +704,41 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         const titleText = typeof opts.title === 'string' ? opts.title : '';
         let detectedType = opts.type;
         if (!detectedType) {
-            if (opts.icon === 'search_off') detectedType = 'search';
-            else if (opts.icon === 'delete_outline' || opts.icon === 'restore_from_trash') detectedType = 'trash';
+            if (opts.icon === 'search_off' || opts.icon === 'search') detectedType = 'search';
+            else if (opts.icon === 'delete_outline' || opts.icon === 'restore_from_trash' || opts.icon === 'delete_forever') detectedType = 'trash';
             else if (opts.icon === 'palette' || opts.icon === 'dashboard_customize' || opts.icon === 'dashboard') detectedType = 'canvas';
             else if (opts.icon === 'history' || opts.icon === 'collections' || opts.icon === 'photo_library') detectedType = 'snapshots';
             else if (opts.icon === 'explore' || opts.icon === 'public') detectedType = 'explore';
             else if (opts.icon === 'error' || opts.icon === 'wifi_off') detectedType = 'error';
+            else if (opts.icon === 'group' || opts.icon === 'group_off' || opts.icon === 'person' || opts.icon === 'people') detectedType = 'users';
+            else if (opts.icon === 'admin_panel_settings' || opts.icon === 'shield' || opts.icon === 'lock') detectedType = 'roles';
+            else if (opts.icon === 'chat' || opts.icon === 'sms' || opts.icon === 'forum') detectedType = 'messages';
+            else if (opts.icon === 'cloud_off' || opts.icon === 'backup' || opts.icon === 'cloud') detectedType = 'backups';
+            else if (opts.icon === 'folder_off' || opts.icon === 'article' || opts.icon === 'description') detectedType = 'logs';
+            else if (opts.icon === 'campaign' || opts.icon === 'ad_units') detectedType = 'advertisements';
+            else if (opts.icon === 'credit_card' || opts.icon === 'receipt_long' || opts.icon === 'workspace_premium' || opts.icon === 'credit_card_off') detectedType = 'subscriptions';
+            else if (opts.icon === 'check_circle' || opts.icon === 'verified') detectedType = 'reports';
+            else if (opts.icon === 'link_off' || opts.icon === 'inbox' || opts.icon === 'send') detectedType = 'invites';
+            else if (opts.icon === 'gavel' || opts.icon === 'shield_person') detectedType = 'sanctions';
             else detectedType = 'canvas';
         }
 
         const refAttr = opts.ref ? `data-ref="${escapeHTML(opts.ref)}"` : 'data-ref="empty-state-rendered"';
-        const isTable = !!opts.isTable;
 
         let graphicHtml = '';
-        if (!isTable) {
-            const svgContent = CardTemplates.getEmptyGraphicSvg(detectedType);
-            if (svgContent) {
-                graphicHtml = `<div class="component-empty-state-graphic">${svgContent}</div>`;
-            } else {
-                graphicHtml = `<div class="component-empty-state-badge"><span class="material-symbols-rounded">${opts.icon || 'info'}</span></div>`;
-            }
+        const svgContent = CardTemplates.getEmptyGraphicSvg(detectedType);
+        if (svgContent) {
+            graphicHtml = `<div class="component-empty-state-graphic">${svgContent}</div>`;
         } else {
-            graphicHtml = `<div class="component-empty-state-badge"><span class="material-symbols-rounded">${opts.icon || 'search_off'}</span></div>`;
+            graphicHtml = `<div class="component-empty-state-badge"><span class="material-symbols-rounded">${opts.icon || 'info'}</span></div>`;
         }
 
         const titleHtml = titleText ? `<h2 class="component-empty-state-title">${escapeHTML(titleText)}</h2>` : '';
         const descHtml = msg ? `<p class="component-empty-state-desc">${escapeHTML(msg)}</p>` : '';
         const actionsHtml = (typeof opts.actions === 'string' && opts.actions) ? `<div class="component-empty-state-actions">${opts.actions}</div>` : '';
-        const tableClass = isTable ? 'component-empty-state--table' : '';
 
         return `
-            <div class="component-empty-state ${tableClass}" ${refAttr}>
+            <div class="component-empty-state" ${refAttr}>
                 ${graphicHtml}
                 ${titleHtml}
                 ${descHtml}

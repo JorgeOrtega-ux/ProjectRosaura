@@ -320,7 +320,7 @@ class RoleRepository implements RoleRepositoryInterface {
         if (empty($ids)) return [];
         $allPerms = $this->getAllPermissions(); 
         $validIds = array_column($allPerms, 'id');
-        return array_values(array_intersect($ids, $validIds));
+        return array_values(array_unique(array_intersect($ids, $validIds)));
     }
 
     public function ensureUserHasDefaultRole(int $userId): bool {
@@ -583,7 +583,7 @@ class RoleRepository implements RoleRepositoryInterface {
                     $values[] = $roleId;
                     $values[] = $permissionId;
                 }
-                $insertStmt = $this->pdo->prepare("INSERT INTO {$tblRolePerms} (role_id, permission_id) VALUES {$placeholders}");
+                $insertStmt = $this->pdo->prepare("INSERT IGNORE INTO {$tblRolePerms} (role_id, permission_id) VALUES {$placeholders}");
                 $insertStmt->execute($values);
             }
 

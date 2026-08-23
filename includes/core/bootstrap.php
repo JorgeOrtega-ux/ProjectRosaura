@@ -4,6 +4,10 @@ define('ROOT_PATH', dirname(__DIR__, 2));
 
 require_once ROOT_PATH . '/vendor/autoload.php';
 
+if (!class_exists('Utils', false)) {
+    class_alias(\App\Core\Helpers\Utils::class, 'Utils');
+}
+
 \App\Core\Helpers\EnvLoader::load(ROOT_PATH . '/.env');
 
 if (!isset($_ENV['APP_URL'])) {

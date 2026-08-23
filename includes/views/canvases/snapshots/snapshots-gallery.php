@@ -1,5 +1,6 @@
 <?php
 use App\Api\Services\Canvas\CanvasViewService;
+use App\Core\Helpers\Utils;
 use App\Core\System\SubscriptionPlanConstants;
 
 $canvasService = new CanvasViewService();
@@ -40,60 +41,19 @@ $promoCatalog = $galleryData['promoCatalog'] ?? [];
 
         <div class="component-bottom" data-ref="dynamic-content-area">
             <?php if ($error): ?>
-                <div class="component-empty-state" data-ref="empty-state-rendered">
-                    <div class="component-empty-state-graphic">
-                        <svg class="component-empty-state-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <defs>
-                                <linearGradient id="shieldGradSnap" x1="30" y1="20" x2="110" y2="100" gradientUnits="userSpaceOnUse">
-                                    <stop offset="0%" stop-color="#52525b"/>
-                                    <stop offset="100%" stop-color="#27272a"/>
-                                </linearGradient>
-                            </defs>
-                            <path d="M70 28 L104 42 C104 76 70 102 70 102 C70 102 36 76 36 42 Z" fill="url(#shieldGradSnap)" stroke="#52525b" stroke-width="1.5"/>
-                            <rect x="67" y="46" width="6" height="24" rx="3" fill="#e4e4e7"/>
-                            <circle cx="70" cy="80" r="3.5" fill="#e4e4e7"/>
-                            <g>
-                                <path d="M112 30 L113.5 34.5 L118 36 L113.5 37.5 L112 42 L110.5 37.5 L106 36 L110.5 34.5 Z" fill="#e4e4e7"/>
-                                <path d="M26 50 L27 53 L30 54 L27 55 L26 58 L25 55 L22 54 L25 53 Z" fill="#71717a"/>
-                            </g>
-                        </svg>
-                    </div>
-                    <h2 class="component-empty-state-title"><?php echo __('snapshots_error_title'); ?></h2>
-                    <p class="component-empty-state-desc"><?php echo htmlspecialchars($errorMessage); ?></p>
-                </div>
+                <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                    'type' => 'error',
+                    'title' => __('snapshots_error_title'),
+                    'message' => $errorMessage,
+                    'ref' => 'empty-state-rendered'
+                ]); ?>
             <?php elseif (empty($snapshots)): ?>
-                <div class="component-empty-state" data-ref="empty-state-rendered">
-                    <div class="component-empty-state-graphic">
-                        <svg class="component-empty-state-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <defs>
-                                <linearGradient id="photoGradPhp" x1="0" y1="0" x2="1" y2="1">
-                                    <stop offset="0%" stop-color="#52525b"/>
-                                    <stop offset="50%" stop-color="#3f3f46"/>
-                                    <stop offset="100%" stop-color="#18181b"/>
-                                </linearGradient>
-                            </defs>
-                            <g transform="rotate(-12 60 70)">
-                                <rect x="36" y="32" width="58" height="68" rx="8" fill="var(--bg-surface-alt, #27272a)" stroke="var(--border-color, #3f3f46)" stroke-width="1.5"/>
-                                <rect x="42" y="38" width="46" height="42" rx="5" fill="#3f3f46" opacity="0.4"/>
-                            </g>
-                            <g transform="rotate(8 72 70)">
-                                <rect x="42" y="30" width="60" height="72" rx="8" fill="var(--bg-surface, #18181b)" stroke="var(--border-color, #3f3f46)" stroke-width="1.5"/>
-                                <rect x="48" y="36" width="48" height="46" rx="5" fill="url(#photoGradPhp)"/>
-                                <circle cx="80" cy="48" r="5" fill="#e4e4e7"/>
-                                <path d="M48 76 L62 58 L72 68 L82 54 L96 76 Z" fill="rgba(255,255,255,0.18)"/>
-                                <path d="M58 76 L70 62 L80 72 L96 76 Z" fill="rgba(255,255,255,0.28)"/>
-                                <circle cx="88" cy="88" r="7" fill="#52525b"/>
-                                <path d="M88 86 C87 84 84 84 84 86 C84 88 88 91 88 91 C88 91 92 88 92 86 C92 84 89 84 88 86 Z" fill="#ffffff"/>
-                            </g>
-                            <g>
-                                <path d="M112 24 L113.5 28.5 L118 30 L113.5 31.5 L112 36 L110.5 31.5 L106 30 L110.5 28.5 Z" fill="#e4e4e7"/>
-                                <path d="M26 40 L27 43 L30 44 L27 45 L26 48 L25 45 L22 44 L25 43 Z" fill="#a1a1aa"/>
-                            </g>
-                        </svg>
-                    </div>
-                    <h2 class="component-empty-state-title"><?php echo __('snapshots_empty_title'); ?></h2>
-                    <p class="component-empty-state-desc"><?php echo __('snapshots_empty_desc'); ?></p>
-                </div>
+                <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                    'type' => 'snapshots',
+                    'title' => __('snapshots_empty_title'),
+                    'message' => __('snapshots_empty_desc'),
+                    'ref' => 'empty-state-rendered'
+                ]); ?>
             <?php else: ?>
                 <div class="component-grid" data-ref="gallery-grid">
                     <?php 

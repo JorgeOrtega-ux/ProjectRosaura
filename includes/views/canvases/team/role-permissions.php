@@ -1,5 +1,6 @@
 <?php
 use App\Api\Services\Canvas\CanvasViewService;
+use App\Core\Helpers\Utils;
 
 $canvasService = new CanvasViewService();
 $rolePermData = $canvasService->getCanvasRolePermissionsData($_GET['uuid'] ?? null, $_GET['role_uuid'] ?? null);
@@ -81,10 +82,11 @@ if (trim($rawName) !== '') {
 
                 <div data-ref="permissions-container" class="component-list">
                     <?php if (empty($allPermissions)): ?>
-                        <div class="component-empty-state">
-                            <span class="material-symbols-rounded empty-icon">lock</span>
-                            <h3><?php echo __('admin_perms_empty_title'); ?></h3>
-                        </div>
+                        <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                            'type' => 'roles',
+                            'title' => __('admin_perms_empty_title'),
+                            'message' => __('empty_role_perms_desc')
+                        ]); ?>
                     <?php else: ?>
                         <?php foreach ($allPermissions as $p): ?>
                             <?php 

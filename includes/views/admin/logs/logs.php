@@ -1,5 +1,6 @@
 <?php
 use App\Api\Services\Admin\AdminViewService;
+use App\Core\Helpers\Utils;
 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $adminService = new AdminViewService();
@@ -178,20 +179,22 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/logs?page=' . ($page + 1)
                             
                             <tr class="disabled" data-ref="empty-search-table">
                                 <td colspan="4" class="component-empty-table-cell">
-                                    <div class="component-empty-state component-empty-state--table">
-                                        <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                                        <p class="component-empty-state-text"><?php echo __('empty_search_logs'); ?></p>
-                                    </div>
+                                    <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                        'type' => 'search',
+                                        'title' => __('search_empty_no_results_title'),
+                                        'message' => __('empty_search_logs')
+                                    ]); ?>
                                 </td>
                             </tr>
 
                         <?php else: ?>
                             <tr>
                                 <td colspan="4" class="component-empty-table-cell">
-                                    <div class="component-empty-state component-empty-state--table">
-                                        <span class="material-symbols-rounded component-empty-state-icon">folder_off</span>
-                                        <p class="component-empty-state-text"><?php echo __('empty_logs_system'); ?></p>
-                                    </div>
+                                    <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                        'type' => 'logs',
+                                        'title' => __('admin_logs_empty_title'),
+                                        'message' => __('empty_logs_system')
+                                    ]); ?>
                                 </td>
                             </tr>
                         <?php endif; ?>

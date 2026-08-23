@@ -1,5 +1,6 @@
 <?php
 use App\Api\Services\Canvas\CanvasViewService;
+use App\Core\Helpers\Utils;
 
 $canvasService = new CanvasViewService();
 $membersData = $canvasService->getCanvasMembersData($_GET['uuid'] ?? null, (int)($_GET['page'] ?? 1));
@@ -172,24 +173,22 @@ extract($membersData);
                             
                             <tr class="disabled" data-ref="empty-search-table">
                                 <td colspan="3" class="component-empty-table-cell">
-                                    <div class="component-empty-state component-empty-state--table">
-                                        <div class="component-empty-state-badge">
-                                            <span class="material-symbols-rounded">search_off</span>
-                                        </div>
-                                        <p class="component-empty-state-text"><?php echo __('empty_search_members'); ?></p>
-                                    </div>
+                                    <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                        'type' => 'search',
+                                        'title' => __('search_empty_no_results_title'),
+                                        'message' => __('empty_search_members')
+                                    ]); ?>
                                 </td>
                             </tr>
 
                         <?php else: ?>
                             <tr>
                                 <td colspan="3" class="component-empty-table-cell">
-                                    <div class="component-empty-state component-empty-state--table">
-                                        <div class="component-empty-state-badge">
-                                            <span class="material-symbols-rounded">group_off</span>
-                                        </div>
-                                        <p class="component-empty-state-text"><?php echo __('empty_members_system'); ?></p>
-                                    </div>
+                                    <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                        'type' => 'users',
+                                        'title' => __('empty_members_system'),
+                                        'message' => __('empty_invites_desc')
+                                    ]); ?>
                                 </td>
                             </tr>
                         <?php endif; ?>

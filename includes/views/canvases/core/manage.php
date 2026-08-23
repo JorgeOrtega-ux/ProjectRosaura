@@ -1,5 +1,6 @@
 <?php
 use App\Api\Services\Canvas\CanvasViewService;
+use App\Core\Helpers\Utils;
 
 $canvasService = new CanvasViewService();
 $manageData = $canvasService->getCanvasManageData(isset($_GET['page']) ? (int)$_GET['page'] : 1);
@@ -244,24 +245,22 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                             
                             <tr class="disabled" data-ref="empty-search-table">
                                 <td colspan="7" class="component-empty-table-cell">
-                                    <div class="component-empty-state component-empty-state--table">
-                                        <div class="component-empty-state-badge">
-                                            <span class="material-symbols-rounded">search_off</span>
-                                        </div>
-                                        <p class="component-empty-state-text"><?php echo __('empty_search_canvases'); ?></p>
-                                    </div>
+                                    <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                        'type' => 'search',
+                                        'title' => __('search_empty_no_results_title'),
+                                        'message' => __('empty_search_canvases')
+                                    ]); ?>
                                 </td>
                             </tr>
 
                         <?php else: ?>
                             <tr>
                                 <td colspan="7" class="component-empty-table-cell">
-                                    <div class="component-empty-state component-empty-state--table">
-                                        <div class="component-empty-state-badge">
-                                            <span class="material-symbols-rounded">palette</span>
-                                        </div>
-                                        <p class="component-empty-state-text"><?php echo __('empty_canvases_system'); ?></p>
-                                    </div>
+                                    <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                        'type' => 'canvas',
+                                        'title' => __('home_empty_mine_title'),
+                                        'message' => __('empty_canvases_system')
+                                    ]); ?>
                                 </td>
                             </tr>
                         <?php endif; ?>

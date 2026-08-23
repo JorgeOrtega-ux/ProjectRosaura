@@ -1,5 +1,6 @@
 <?php
 use App\Api\Services\Canvas\CanvasViewService;
+use App\Core\Helpers\Utils;
 
 $canvasService = new CanvasViewService();
 $rolesData = $canvasService->getCanvasRolesData($_GET['uuid'] ?? null);
@@ -121,13 +122,12 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
                 </table>
             </div>
             <?php else: ?>
-            <div class="component-empty-state" data-ref="roles-empty-state">
-                <div class="component-empty-state-badge">
-                    <span class="material-symbols-rounded">admin_panel_settings</span>
-                </div>
-                <h2 class="component-empty-state-title"><?php echo __('empty_roles_title'); ?></h2>
-                <p class="component-empty-state-desc"><?php echo __('empty_roles_desc'); ?></p>
-            </div>
+            <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                'type' => 'roles',
+                'title' => __('empty_roles_title'),
+                'message' => __('empty_roles_desc'),
+                'ref' => 'roles-empty-state'
+            ]); ?>
             <?php endif; ?>
         </div>
 

@@ -1,5 +1,6 @@
 <?php
 use App\Api\Services\Admin\AdminViewService;
+use App\Core\Helpers\Utils;
 
 $searchQuery = isset($_GET['q']) ? trim($_GET['q']) : '';
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -199,10 +200,11 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                         <?php if (empty($messages)): ?>
                         <tr>
                             <td colspan="7" class="component-empty-table-cell">
-                                <div class="component-empty-state component-empty-state--table">
-                                    <span class="material-symbols-rounded component-empty-state-icon">chat</span>
-                                    <p class="component-empty-state-text"><?php echo __('admin_msg_empty_list'); ?></p>
-                                </div>
+                                <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                    'type' => 'messages',
+                                    'title' => __('admin_msg_empty_title'),
+                                    'message' => __('admin_msg_empty_list')
+                                ]); ?>
                             </td>
                         </tr>
                         <?php else: ?>
@@ -216,8 +218,8 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
                                         $rawAttachments = $msg['attachments'] ?? null;
                                         $attachCount = 0;
                                         if (!empty($rawAttachments)) {
-                                            $decoded = is_string($rawAttachments) ? json_decode($rawAttachments, true) : $rawAttachments;
-                                            $attachCount = is_array($decoded) ? count($decoded) : 0;
+                                             $decoded = is_string($rawAttachments) ? json_decode($rawAttachments, true) : $rawAttachments;
+                                             $attachCount = is_array($decoded) ? count($decoded) : 0;
                                         }
                                         $textContent = trim(strip_tags($msg['message'] ?? ''));
                                         $snippet = mb_substr($textContent, 0, 100);
@@ -263,10 +265,11 @@ $nextPageUrl = $page < $totalPages ? buildMessagesUrl($appUrl, $page + 1, $filte
 
                             <tr class="disabled" data-ref="empty-search-table">
                                 <td colspan="7" class="component-empty-table-cell">
-                                    <div class="component-empty-state component-empty-state--table">
-                                        <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                                        <p class="component-empty-state-text"><?php echo __('empty_search_messages'); ?></p>
-                                    </div>
+                                    <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                        'type' => 'search',
+                                        'title' => __('search_empty_no_results_title'),
+                                        'message' => __('empty_search_messages')
+                                    ]); ?>
                                 </td>
                             </tr>
                         <?php endif; ?>

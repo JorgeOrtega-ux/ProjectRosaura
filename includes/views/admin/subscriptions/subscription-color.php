@@ -1,5 +1,6 @@
 <?php
 use App\Api\Services\Admin\AdminViewService;
+use App\Core\Helpers\Utils;
 
 $adminService = new AdminViewService();
 $builderData = $adminService->getSubscriptionBuilderData($_GET['uuid'] ?? null);
@@ -206,48 +207,60 @@ if (!function_exists('hexToHslArr')) {
                         </tr>
                     </thead>
                     <tbody data-ref="subscriptionColorsTableBody">
-                        <?php foreach ($colorsList as $index => $item): 
-                            $hex = $item['hex'];
-                            $percentage = $item['percentage'];
-                            $rgb = hexToRgbArr($hex);
-                            $hsl = hexToHslArr($hex);
-                            $controlDisabled = $countColors === 1 ? 'disabled-interaction' : '';
-                        ?>
-                            <tr class="component-table-row" data-action="selectColorRow" data-index="<?php echo $index; ?>">
-                                <td>
-                                    <div class="component-badge component-badge--sm">#<?php echo $index + 1; ?></div>
-                                </td>
-                                <td>
-                                    <div class="component-table-color-swatch" style="background-color: <?php echo htmlspecialchars($hex); ?>;"></div>
-                                </td>
-                                <td>
-                                    <span class="component-code-text search-target"><?php echo htmlspecialchars($hex); ?></span>
-                                </td>
-                                <td>
-                                    <div class="component-inline-control component-inline-control--fixed <?php echo $controlDisabled; ?>" data-ref="percentageControl">
-                                        <div class="component-inline-control__group">
-                                            <button type="button" class="component-inline-control__btn" data-action="adjustColorPercent" data-index="<?php echo $index; ?>" data-step="-5">
-                                                <span class="material-symbols-rounded">chevron_left</span>
-                                            </button>
-                                        </div>
-                                        <div class="component-inline-control__center" data-val="<?php echo $percentage; ?>">
-                                            <span data-ref="percentageDisplay"><?php echo $percentage; ?></span>%
-                                        </div>
-                                        <div class="component-inline-control__group">
-                                            <button type="button" class="component-inline-control__btn" data-action="adjustColorPercent" data-index="<?php echo $index; ?>" data-step="5">
-                                                <span class="material-symbols-rounded">chevron_right</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="component-subtext">rgb(<?php echo $rgb['r']; ?>, <?php echo $rgb['g']; ?>, <?php echo $rgb['b']; ?>)</span>
-                                </td>
-                                <td>
-                                    <span class="component-subtext">hsl(<?php echo $hsl['h']; ?>°, <?php echo $hsl['s']; ?>%, <?php echo $hsl['l']; ?>%)</span>
+                        <?php if (empty($colorsList)): ?>
+                            <tr>
+                                <td colspan="6" class="component-empty-table-cell">
+                                    <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                        'type' => 'canvas',
+                                        'title' => __('admin_sub_colors_empty_title'),
+                                        'message' => __('admin_sub_colors_empty_desc')
+                                    ]); ?>
                                 </td>
                             </tr>
-                        <?php endforeach; ?>
+                        <?php else: ?>
+                            <?php foreach ($colorsList as $index => $item): 
+                                $hex = $item['hex'];
+                                $percentage = $item['percentage'];
+                                $rgb = hexToRgbArr($hex);
+                                $hsl = hexToHslArr($hex);
+                                $controlDisabled = $countColors === 1 ? 'disabled-interaction' : '';
+                            ?>
+                                <tr class="component-table-row" data-action="selectColorRow" data-index="<?php echo $index; ?>">
+                                    <td>
+                                        <div class="component-badge component-badge--sm">#<?php echo $index + 1; ?></div>
+                                    </td>
+                                    <td>
+                                        <div class="component-table-color-swatch" style="background-color: <?php echo htmlspecialchars($hex); ?>;"></div>
+                                    </td>
+                                    <td>
+                                        <span class="component-code-text search-target"><?php echo htmlspecialchars($hex); ?></span>
+                                    </td>
+                                    <td>
+                                        <div class="component-inline-control component-inline-control--fixed <?php echo $controlDisabled; ?>" data-ref="percentageControl">
+                                            <div class="component-inline-control__group">
+                                                <button type="button" class="component-inline-control__btn" data-action="adjustColorPercent" data-index="<?php echo $index; ?>" data-step="-5">
+                                                    <span class="material-symbols-rounded">chevron_left</span>
+                                                </button>
+                                            </div>
+                                            <div class="component-inline-control__center" data-val="<?php echo $percentage; ?>">
+                                                <span data-ref="percentageDisplay"><?php echo $percentage; ?></span>%
+                                            </div>
+                                            <div class="component-inline-control__group">
+                                                <button type="button" class="component-inline-control__btn" data-action="adjustColorPercent" data-index="<?php echo $index; ?>" data-step="5">
+                                                    <span class="material-symbols-rounded">chevron_right</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="component-subtext">rgb(<?php echo $rgb['r']; ?>, <?php echo $rgb['g']; ?>, <?php echo $rgb['b']; ?>)</span>
+                                    </td>
+                                    <td>
+                                        <span class="component-subtext">hsl(<?php echo $hsl['h']; ?>°, <?php echo $hsl['s']; ?>%, <?php echo $hsl['l']; ?>%)</span>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>

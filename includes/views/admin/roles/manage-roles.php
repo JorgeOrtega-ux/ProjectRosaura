@@ -1,5 +1,6 @@
 <?php
 use App\Api\Services\Admin\AdminViewService;
+use App\Core\Helpers\Utils;
 
 $searchQuery = isset($_GET['q']) ? trim($_GET['q']) : '';
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -142,20 +143,23 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/roles?page=' . ($page + 1
                         
                         <tr class="disabled" data-ref="empty-search-table">
                             <td colspan="3" class="component-empty-table-cell">
-                                <div class="component-empty-state component-empty-state--table">
-                                    <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                                    <p class="component-empty-state-text"><?php echo __('empty_search_roles'); ?></p>
-                                </div>
+                                <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                    'type' => 'search',
+                                    'title' => __('search_empty_no_results_title'),
+                                    'message' => __('empty_search_roles')
+                                ]); ?>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
             <?php else: ?>
-            <div class="component-empty-state" data-ref="roles-empty-state">
-                <span class="material-symbols-rounded component-empty-state-icon">admin_panel_settings</span>
-                <p class="component-empty-state-text"><?php echo __('admin_roles_empty_desc'); ?></p>
-            </div>
+            <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                'type' => 'roles',
+                'title' => __('admin_roles_empty_title'),
+                'message' => __('admin_roles_empty_desc'),
+                'ref' => 'roles-empty-state'
+            ]); ?>
             <?php endif; ?>
         </div>
 

@@ -149,6 +149,11 @@ input:checked+.component-toggle-slider:before {
     font-size: 0.75rem;
 }
 
+.component-table--empty,
+.component-table:has(tr:not(.disabled) > .component-empty-table-cell) {
+    height: 100%;
+}
+
 .component-table th,
 .component-table td {
     padding: 12px 16px;

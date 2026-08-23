@@ -1,5 +1,6 @@
 <?php
 use App\Api\Services\Admin\AdminViewService;
+use App\Core\Helpers\Utils;
 
 $adminService = new AdminViewService();
 $rolePermData = $adminService->getRolePermissionsData($_GET['uuid'] ?? null);
@@ -147,10 +148,11 @@ $isSystemRole = (isset($role['is_system']) && (int)$role['is_system'] === 1);
 
                 <div data-ref="permissions-container" class="component-list">
                     <?php if (empty($allPermissions)): ?>
-                        <div class="component-empty-state">
-                            <span class="material-symbols-rounded component-empty-state-icon">lock</span>
-                            <p class="component-empty-state-text"><?php echo __('admin_perms_empty_title'); ?></p>
-                        </div>
+                        <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                            'type' => 'roles',
+                            'title' => __('admin_perms_empty_title'),
+                            'message' => __('empty_role_perms_desc')
+                        ]); ?>
                     <?php else: ?>
                         <?php foreach ($groupedPermissions as $catKey => $catData): 
                             if (empty($catData['list'])) continue;

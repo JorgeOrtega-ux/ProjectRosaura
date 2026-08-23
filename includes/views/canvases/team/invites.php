@@ -1,5 +1,6 @@
 <?php
 use App\Api\Services\Canvas\CanvasViewService;
+use App\Core\Helpers\Utils;
 
 $canvasService = new CanvasViewService();
 $invitesData = $canvasService->getCanvasInvitesData($_GET['uuid'] ?? null);
@@ -89,12 +90,11 @@ extract($invitesData);
                         <?php else: ?>
                             <tr>
                                 <td colspan="4" class="component-empty-table-cell">
-                                    <div class="component-empty-state component-empty-state--table">
-                                        <div class="component-empty-state-badge">
-                                            <span class="material-symbols-rounded">link_off</span>
-                                        </div>
-                                        <p class="component-empty-state-text"><?php echo __('empty_no_active_invites'); ?></p>
-                                    </div>
+                                    <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                        'type' => 'invites',
+                                        'title' => __('empty_invites_title'),
+                                        'message' => __('empty_invites_desc')
+                                    ]); ?>
                                 </td>
                             </tr>
                         <?php endif; ?>

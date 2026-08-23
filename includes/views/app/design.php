@@ -25,7 +25,7 @@ extract($designData);
 <div class="view-content">
     
     <?php 
-    echo Utils::renderTurnstile('canvas_design'); 
+    echo \App\Core\Helpers\Utils::renderTurnstile('canvas_design'); 
     ?>
 
     <div class="component-wrapper component-wrapper--full no-padding" 

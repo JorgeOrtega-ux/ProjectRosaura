@@ -1,4 +1,5 @@
 import { CanvasApiService } from '../../../core/api/CanvasApiService.js';
+import { CardTemplates } from '../../../core/components/CardTemplates.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 
 class CanvasRequestsController {
@@ -133,10 +134,11 @@ class CanvasRequestsController {
             tbody.innerHTML = `
                 <tr data-ref="empty-requests-table">
                     <td colspan="3" class="component-empty-table-cell">
-                        <div class="component-empty-state component-empty-state--table">
-                            <span class="material-symbols-rounded component-empty-state-icon">${icon}</span>
-                            <p class="component-empty-state-text">${message}</p>
-                        </div>
+                        ${CardTemplates.emptyState({
+                            type: 'invites',
+                            title: window.__('empty_requests_title'),
+                            message: message
+                        })}
                     </td>
                 </tr>
             `;

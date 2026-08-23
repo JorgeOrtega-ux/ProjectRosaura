@@ -1,5 +1,6 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiService.js';
+import { CardTemplates } from '../../../core/components/CardTemplates.js';
 import { 
     handleOutsideSearchToolbarClick,
     restoreButton, 
@@ -121,11 +122,12 @@ class CanvasPaletteCreateController {
         if (visibleCount === 0) {
             html = `
                 <tr>
-                    <td colspan="5">
-                        <div class="component-table-empty">
-                            <span class="material-symbols-rounded">palette</span>
-                            <p>${window.__('dt_zero_records')}</p>
-                        </div>
+                    <td colspan="5" class="component-empty-table-cell">
+                        ${CardTemplates.emptyState({
+                            type: this.searchQuery ? 'search' : 'canvas',
+                            title: this.searchQuery ? window.__('search_empty_no_results_title') : window.__('empty_palette_title'),
+                            message: this.searchQuery ? window.__('dt_zero_records') : window.__('empty_palette_desc')
+                        })}
                     </td>
                 </tr>
             `;

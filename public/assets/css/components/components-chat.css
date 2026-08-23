@@ -664,6 +664,14 @@ html.dark-theme .component-skeleton-design-bottom {
     display: none;
 }
 
+.component-tags-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border-color);
+    margin: auto 4px;
+    flex-shrink: 0;
+}
+
 .component-tags-carousel.is-dragging,
 .component-tabs-header.is-dragging {
     scroll-behavior: auto;

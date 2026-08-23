@@ -1,5 +1,6 @@
 <?php
 use App\Api\Services\Canvas\CanvasViewService;
+use App\Core\Helpers\Utils;
 
 $canvasService = new CanvasViewService();
 $reqData = $canvasService->getCanvasRequestsData($_GET['uuid'] ?? null);
@@ -52,12 +53,11 @@ extract($reqData);
                         <?php if (empty($pendingRequests)): ?>
                             <tr data-ref="empty-requests-table">
                                 <td colspan="3" class="component-empty-table-cell">
-                                    <div class="component-empty-state component-empty-state--table">
-                                        <div class="component-empty-state-badge">
-                                            <span class="material-symbols-rounded">inbox</span>
-                                        </div>
-                                        <p class="component-empty-state-text" data-ref="empty-state-text"><?php echo __('canvases_requests_empty'); ?></p>
-                                    </div>
+                                    <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                        'type' => 'invites',
+                                        'title' => __('empty_requests_title'),
+                                        'message' => __('empty_requests_desc')
+                                    ]); ?>
                                 </td>
                             </tr>
                         <?php else: ?>

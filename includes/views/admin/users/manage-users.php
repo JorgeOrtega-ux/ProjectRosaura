@@ -195,7 +195,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
                                     $dataStatus = $user['is_suspended'] ? 'suspended' : 'active';
                                     $displayStatus = $user['is_suspended'] ? __('status_suspended') : __('status_active');
                                     $statusIcon = $user['is_suspended'] ? 'block' : 'check_circle';
-                                    $validUserPic = Utils::getValidImage($user['profile_picture'], 'avatar');
+                                    $validUserPic = \App\Core\Helpers\Utils::getValidImage($user['profile_picture'], 'avatar');
                                     
                                     $roleIds = $user['role_ids'] ?? '1';
                                     $roleNamesStr = $user['role_names'] ?? __('user');
@@ -312,20 +312,22 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
                             
                             <tr class="disabled" data-ref="empty-search-table">
                                 <td colspan="6" class="component-empty-table-cell">
-                                    <div class="component-empty-state component-empty-state--table">
-                                        <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                                        <p class="component-empty-state-text"><?php echo __('empty_search_users'); ?></p>
-                                    </div>
+                                    <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                        'type' => 'search',
+                                        'title' => __('search_empty_no_results_title'),
+                                        'message' => __('empty_search_users')
+                                    ]); ?>
                                 </td>
                             </tr>
 
                         <?php else: ?>
                             <tr>
                                 <td colspan="6" class="component-empty-table-cell">
-                                    <div class="component-empty-state component-empty-state--table">
-                                        <span class="material-symbols-rounded component-empty-state-icon">group_off</span>
-                                        <p class="component-empty-state-text"><?php echo __('empty_users_system'); ?></p>
-                                    </div>
+                                    <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                        'type' => 'users',
+                                        'title' => __('admin_users_empty_title'),
+                                        'message' => __('empty_users_system')
+                                    ]); ?>
                                 </td>
                             </tr>
                         <?php endif; ?>

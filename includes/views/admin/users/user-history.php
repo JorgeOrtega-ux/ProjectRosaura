@@ -1,5 +1,6 @@
 <?php
 use App\Api\Services\Admin\AdminViewService;
+use App\Core\Helpers\Utils;
 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $categoryParam = isset($_GET['category']) && $_GET['category'] !== '' ? explode(',', $_GET['category']) : [];
@@ -111,10 +112,11 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity/' . $user['
                             <?php if (empty($paginatedLogs)): ?>
                             <tr>
                                 <td colspan="5" class="component-empty-table-cell">
-                                    <div class="component-empty-state component-empty-state--table">
-                                        <span class="material-symbols-rounded component-empty-state-icon">history</span>
-                                        <p class="component-empty-state-text"><?php echo __('admin_history_empty'); ?></p>
-                                    </div>
+                                    <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                        'type' => !empty($categoryFilter) && $categoryFilter !== 'all' ? 'search' : 'logs',
+                                        'title' => !empty($categoryFilter) && $categoryFilter !== 'all' ? __('search_empty_no_results_title') : __('admin_history_empty_title'),
+                                        'message' => !empty($categoryFilter) && $categoryFilter !== 'all' ? __('admin_history_empty_filtered') : __('admin_history_empty')
+                                    ]); ?>
                                 </td>
                             </tr>
                             <?php else: ?>
@@ -270,10 +272,11 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity/' . $user['
 
                                 <tr class="disabled" data-ref="empty-search-table">
                                     <td colspan="5" class="component-empty-table-cell">
-                                        <div class="component-empty-state component-empty-state--table">
-                                            <span class="material-symbols-rounded component-empty-state-icon">filter_alt_off</span>
-                                            <p class="component-empty-state-text"><?php echo __('admin_history_empty_filtered'); ?></p>
-                                        </div>
+                                        <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                            'type' => 'search',
+                                            'title' => __('search_empty_no_results_title'),
+                                            'message' => __('admin_history_empty_filtered')
+                                        ]); ?>
                                     </td>
                                 </tr>
 

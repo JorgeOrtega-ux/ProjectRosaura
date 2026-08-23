@@ -1,5 +1,6 @@
 <?php
 use App\Api\Services\Admin\AdminViewService;
+use App\Core\Helpers\Utils;
 
 $messageUuid = $_GET['uuid'] ?? ($_GET['id'] ?? '');
 
@@ -97,10 +98,11 @@ $backUrl = $appUrl . '/admin/messages';
                         <?php if (empty($reports)): ?>
                         <tr>
                             <td colspan="6" class="component-empty-table-cell">
-                                <div class="component-empty-state component-empty-state--table">
-                                    <span class="material-symbols-rounded component-empty-state-icon">check_circle</span>
-                                    <p class="component-empty-state-text"><?php echo __('admin_no_reports'); ?></p>
-                                </div>
+                                <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                    'type' => 'reports',
+                                    'title' => __('admin_reports_empty_title'),
+                                    'message' => __('admin_no_reports')
+                                ]); ?>
                             </td>
                         </tr>
                         <?php else: ?>

@@ -1,5 +1,6 @@
 import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiService.js';
+import { CardTemplates } from '../../core/components/CardTemplates.js';
 import { escapeHTML, showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
 
 export class PurchaseHistoryController {
@@ -261,12 +262,11 @@ export class PurchaseHistoryController {
             this.tbody.innerHTML = `
                 <tr>
                     <td colspan="4" class="component-empty-table-cell">
-                        <div class="component-empty-state component-empty-state--table">
-                            <div class="component-empty-state-badge">
-                                <span class="material-symbols-rounded">receipt_long</span>
-                            </div>
-                            <p class="component-empty-state-text">${window.__('no_purchases')}</p>
-                        </div>
+                        ${CardTemplates.emptyState({
+                            type: this.activeSearch ? 'search' : 'subscriptions',
+                            title: this.activeSearch ? window.__('search_empty_no_results_title') : window.__('empty_purchase_history_title'),
+                            message: this.activeSearch ? window.__('empty_purchase_history') : window.__('no_purchases')
+                        })}
                     </td>
                 </tr>
             `;
@@ -559,12 +559,11 @@ export class PurchaseHistoryController {
                 this.tbody.innerHTML = `
                     <tr>
                         <td colspan="4" class="component-empty-table-cell">
-                            <div class="component-empty-state component-empty-state--table">
-                                <div class="component-empty-state-badge">
-                                    <span class="material-symbols-rounded">receipt_long</span>
-                                </div>
-                                <p class="component-empty-state-text">${window.__('empty_purchase_history')}</p>
-                            </div>
+                            ${CardTemplates.emptyState({
+                                type: 'subscriptions',
+                                title: window.__('empty_purchase_history_title'),
+                                message: window.__('empty_purchase_history')
+                            })}
                         </td>
                     </tr>
                 `;
@@ -574,12 +573,11 @@ export class PurchaseHistoryController {
                 this.tbody.innerHTML = `
                     <tr>
                         <td colspan="4" class="component-empty-table-cell">
-                            <div class="component-empty-state component-empty-state--table">
-                                <div class="component-empty-state-badge">
-                                    <span class="material-symbols-rounded">error</span>
-                                </div>
-                                <p class="component-empty-state-text">${window.__('err_connection')}</p>
-                            </div>
+                            ${CardTemplates.emptyState({
+                                type: 'error',
+                                title: window.__('err_server'),
+                                message: window.__('err_connection')
+                            })}
                         </td>
                     </tr>
                 `;

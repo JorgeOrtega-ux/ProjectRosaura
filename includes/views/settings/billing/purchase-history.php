@@ -1,4 +1,5 @@
 <?php
+use App\Core\Helpers\Utils;
 if (session_status() === PHP_SESSION_NONE) session_start();
 ?>
 
@@ -135,10 +136,11 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                         <?php if (empty($history)): ?>
                             <tr>
                                 <td colspan="4" class="component-empty-table-cell">
-                                    <div class="component-empty-state component-empty-state--table">
-                                        <span class="material-symbols-rounded component-empty-state-icon">receipt_long</span>
-                                        <p class="component-empty-state-text"><?php echo __('empty_purchase_history'); ?></p>
-                                    </div>
+                                    <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                        'type' => 'subscriptions',
+                                        'title' => __('empty_purchase_history_title'),
+                                        'message' => __('empty_purchase_history')
+                                    ]); ?>
                                 </td>
                             </tr>
                         <?php else: ?>

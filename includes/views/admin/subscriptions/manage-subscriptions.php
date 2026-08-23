@@ -1,5 +1,6 @@
 <?php
 use App\Api\Services\Admin\AdminViewService;
+use App\Core\Helpers\Utils;
 
 $searchQuery = isset($_GET['q']) ? trim($_GET['q']) : '';
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -190,20 +191,23 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
                         
                         <tr class="disabled" data-ref="empty-search-table">
                             <td colspan="5" class="component-empty-table-cell">
-                                <div class="component-empty-state component-empty-state--table">
-                                    <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                                    <p class="component-empty-state-text"><?php echo __('admin_tier_search_empty'); ?></p>
-                                </div>
+                                <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                    'type' => 'search',
+                                    'title' => __('search_empty_no_results_title'),
+                                    'message' => __('admin_tier_search_empty')
+                                ]); ?>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
             <?php else: ?>
-            <div class="component-empty-state" data-ref="tiers-empty-state">
-                <span class="material-symbols-rounded component-empty-state-icon">workspace_premium</span>
-                <p class="component-empty-state-text"><?php echo __('admin_tier_empty_desc'); ?></p>
-            </div>
+            <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                'type' => 'subscriptions',
+                'title' => __('admin_tier_empty_title'),
+                'message' => __('admin_tier_empty_desc'),
+                'ref' => 'tiers-empty-state'
+            ]); ?>
             <?php endif; ?>
         </div>
 

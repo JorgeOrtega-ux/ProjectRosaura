@@ -789,5 +789,15 @@
     "modal_edit_role_desc": "Modifica el nombre y el nivel jerárquico del rol.",
     "err_role_name_required": "El nombre del rol es obligatorio.",
     "err_role_name_length": "El nombre del rol debe tener entre 2 y 50 caracteres.",
-    "role_created_success": "Rol creado correctamente."
+    "role_created_success": "Rol creado correctamente.",
+    "admin_backups_empty_title": "Sin copias de seguridad",
+    "admin_logs_empty_title": "Sin registros del sistema",
+    "admin_users_empty_title": "Sin usuarios registrados",
+    "admin_history_empty_title": "Sin historial de actividad",
+    "admin_ad_providers_empty_title": "Sin proveedores publicitarios",
+    "admin_ads_empty_title": "Sin anuncios creados",
+    "admin_msg_empty_title": "Sin mensajes registrados",
+    "admin_reports_empty_title": "Sin reportes pendientes",
+    "admin_sub_colors_empty_title": "Sin colores de suscripción",
+    "admin_sub_colors_empty_desc": "No hay colores de suscripción configurados en el sistema."
 }

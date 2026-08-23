@@ -29,6 +29,8 @@ class Mailer {
         $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; 
         $this->mail->Port       = (int)$_ENV['SMTP_PORT'];
         $this->mail->CharSet    = 'UTF-8';
+        $this->mail->Timeout    = 5;
+        $this->mail->Timelimit  = 5;
 
         $fromEmail = $_ENV['SMTP_FROM_EMAIL'];
         $fromName  = trim($_ENV['SMTP_FROM_NAME'], '"\'');

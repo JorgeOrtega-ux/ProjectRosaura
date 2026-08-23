@@ -1,5 +1,6 @@
 <?php
 use App\Api\Services\Admin\AdminViewService;
+use App\Core\Helpers\Utils;
 
 $providerUuid = isset($_GET['uuid']) ? trim($_GET['uuid']) : '';
 $searchQuery = isset($_GET['q']) ? trim($_GET['q']) : '';
@@ -324,20 +325,23 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/advertisement-items/' . $
                         
                         <tr class="disabled" data-ref="empty-search-table">
                             <td class="component-empty-table-cell" colspan="7">
-                                <div class="component-empty-state component-empty-state--table">
-                                    <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                                    <p class="component-empty-state-text"><?php echo __('admin_ad_search_empty'); ?></p>
-                                </div>
+                                <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                    'type' => 'search',
+                                    'title' => __('search_empty_no_results_title'),
+                                    'message' => __('admin_ad_search_empty')
+                                ]); ?>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
             <?php else: ?>
-            <div class="component-empty-state" data-ref="ads-empty-state">
-                <span class="material-symbols-rounded component-empty-state-icon">campaign</span>
-                <p class="component-empty-state-text"><?php echo __('admin_ad_items_empty_desc'); ?></p>
-            </div>
+            <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                'type' => 'advertisements',
+                'title' => __('admin_ads_empty_title'),
+                'message' => __('admin_ad_items_empty_desc'),
+                'ref' => 'ads-empty-state'
+            ]); ?>
             <?php endif; ?>
         </div>
 

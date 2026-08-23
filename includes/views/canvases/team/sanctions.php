@@ -1,5 +1,6 @@
 <?php
 use App\Api\Services\Canvas\CanvasViewService;
+use App\Core\Helpers\Utils;
 
 $canvasService = new CanvasViewService();
 $sanctionsData = $canvasService->getCanvasSanctionsData($_GET['uuid'] ?? null, (int)($_GET['page'] ?? 1));
@@ -229,23 +230,21 @@ $predefinedSuspension = [
 
                             <tr class="disabled" data-ref="empty-search-table">
                                 <td colspan="5" class="component-empty-table-cell">
-                                    <div class="component-empty-state component-empty-state--table">
-                                        <div class="component-empty-state-badge">
-                                            <span class="material-symbols-rounded">search_off</span>
-                                        </div>
-                                        <p class="component-empty-state-text"><?php echo __('lbl_no_users_found'); ?></p>
-                                    </div>
+                                    <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                        'type' => 'search',
+                                        'title' => __('search_empty_no_results_title'),
+                                        'message' => __('empty_sanctions_search_desc')
+                                    ]); ?>
                                 </td>
                             </tr>
                         <?php else: ?>
                             <tr data-ref="empty-table">
                                 <td colspan="5" class="component-empty-table-cell">
-                                    <div class="component-empty-state component-empty-state--table">
-                                        <div class="component-empty-state-badge">
-                                            <span class="material-symbols-rounded">shield_person</span>
-                                        </div>
-                                        <p class="component-empty-state-text"><?php echo __('lbl_no_sanctions_found'); ?></p>
-                                    </div>
+                                    <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                                        'type' => 'sanctions',
+                                        'title' => __('empty_sanctions_title'),
+                                        'message' => __('empty_sanctions_desc')
+                                    ]); ?>
                                 </td>
                             </tr>
                         <?php endif; ?>
