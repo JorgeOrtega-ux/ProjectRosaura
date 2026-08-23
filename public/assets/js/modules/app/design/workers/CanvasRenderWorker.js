@@ -35,6 +35,7 @@ let myMinesArray = new Uint32Array(0);
 let isPlacingMines = false;
 let shapePreviewPixelsArray = new Uint32Array(0);
 let shapePreviewBox = null;
+const workerPath2dCache = new Map();
 let textPreviewPixelsArray = new Uint32Array(0);
 let textPreviewShadowArray = new Uint32Array(0);
 let textPreviewOutlineArray = new Uint32Array(0);
@@ -390,7 +391,11 @@ async function hydrateChunkWorker(chunkX, chunkY, chunkSize, chunkData) {
         const chunkKey = `${chunkX},${chunkY}`;
         hydratedChunks.add(chunkKey);
         if (pendingProgressivePixels[chunkKey]) {
-            pixelQueue.push(...pendingProgressivePixels[chunkKey]);
+            const pendingArr = pendingProgressivePixels[chunkKey];
+            const pLen = pendingArr.length;
+            for (let i = 0; i < pLen; i++) {
+                pixelQueue.push(pendingArr[i]);
+            }
             delete pendingProgressivePixels[chunkKey];
         }
         
@@ -1019,6 +1024,7 @@ function render() {
             const hh = Math.round(tpl.h / 2);
 
             if (tpl.imageBitmap) {
+                ctx.imageSmoothingEnabled = false;
                 ctx.drawImage(tpl.imageBitmap, -hw, -hh, tpl.w, tpl.h);
             }
 
@@ -1106,6 +1112,47 @@ function render() {
                 const py = key >> 16;
                 if (px >= 0 && px < boardWidth && py >= 0 && py < boardHeight) {
                     ctx.fillRect(px, py, 1, 1);
+                }
+            }
+        } else if (shapePreviewBox && shapePreviewBox.pathD) {
+            // RENDERIZADO VECTORIAL CON GROSOR UNIFORME PERFECTO EN TODOS LOS LADOS
+            const { pathD, minX, minY, w, h, isFill, strokeWidth, color } = shapePreviewBox;
+            let basePath = workerPath2dCache.get(pathD);
+            if (!basePath && typeof Path2D !== 'undefined') {
+                try {
+                    basePath = new Path2D(pathD);
+                    workerPath2dCache.set(pathD, basePath);
+                } catch (e) {}
+            }
+            if (basePath) {
+                let pathObj = basePath;
+                if (typeof DOMMatrix !== 'undefined') {
+                    const matrix = new DOMMatrix([w / 48, 0, 0, h / 48, 0, 0]);
+                    const transformedPath = new Path2D();
+                    transformedPath.addPath(basePath, matrix);
+                    pathObj = transformedPath;
+                }
+
+                const drawVector = (ox, oy) => {
+                    ctx.save();
+                    ctx.translate(ox, oy);
+                    if (isFill) {
+                        ctx.fillStyle = color || currentColor;
+                        ctx.fill(pathObj, 'evenodd');
+                    } else {
+                        ctx.strokeStyle = color || currentColor;
+                        ctx.lineWidth = Math.max(1, strokeWidth || 1);
+                        ctx.stroke(pathObj);
+                    }
+                    ctx.restore();
+                };
+
+                drawVector(minX, minY);
+                if (isMirrorMode) {
+                    const symMinX = boardWidth - 1 - (minX + w - 1);
+                    if (symMinX >= 0 && symMinX < boardWidth) {
+                        drawVector(symMinX, minY);
+                    }
                 }
             }
         }
@@ -2615,7 +2662,10 @@ self.onmessage = function (e) {
                     }
                 });
             } else {
-                pixelQueue.push(...pixels);
+                const pLen = pixels.length;
+                for (let i = 0; i < pLen; i++) {
+                    pixelQueue.push(pixels[i]);
+                }
             }
             requestRender();
             break;
@@ -2735,10 +2785,12 @@ self.onmessage = function (e) {
                                 const bufferIdx = absY * boardWidth + absX;
                                 const templateIdx = y * tc.w + x;
                                 const nextColor = templatePixels[templateIdx];
-                                if ((nextColor & 0xFF000000) !== 0) {
+                                const alpha = (nextColor >>> 24) & 0xFF;
+                                if (alpha >= 128) {
+                                    const solidColor = (nextColor & 0x00FFFFFF) | 0xFF000000;
                                     const prevColor = pixelBuffer[bufferIdx];
-                                    if (prevColor !== nextColor) {
-                                        diffs.push({ x: absX, y: absY, prev: prevColor, next: nextColor });
+                                    if (prevColor !== solidColor) {
+                                        diffs.push({ x: absX, y: absY, prev: prevColor, next: solidColor });
                                     }
                                 }
                             }

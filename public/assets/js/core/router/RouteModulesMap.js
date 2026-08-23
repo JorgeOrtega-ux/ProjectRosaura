@@ -9,8 +9,8 @@ export const RouteModulesMap = {
     '/upgrade': { path: './modules/app/upgrade/UpgradeController.js', className: 'UpgradeController', skeletonType: 'layout-basic' },
     '/premium': { path: './modules/app/upgrade/UpgradeController.js', className: 'UpgradeController', skeletonType: 'layout-basic' },
 
-    '/design': { path: './modules/app/design/DesignController.js?v=18', className: 'DesignController', skeletonType: 'layout-design' },
-    '/design/:id': { path: './modules/app/design/DesignController.js?v=18', className: 'DesignController', skeletonType: 'layout-design' },
+    '/design': { path: './modules/app/design/DesignController.js?v=34', className: 'DesignController', skeletonType: 'layout-design' },
+    '/design/:id': { path: './modules/app/design/DesignController.js?v=34', className: 'DesignController', skeletonType: 'layout-design' },
     
     '/canvases/c/v/:canvas/:msg/:idx': { path: './modules/canvases/chat/CanvasChatViewerController.js', className: 'CanvasChatViewerController', skeletonType: 'layout-basic' },
 

@@ -1,6 +1,8 @@
 import { ApiRoutes } from '../../../../core/api/ApiRoutes.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../../core/utils/uiUtils.js';
 import { getStickersList, getStickerById } from '../data/StickersData.js';
+import { SHAPE_SVG_PATHS } from '../data/ShapeSvgPathsData.js?v=34';
+import { generateShapePixels } from '../utils/GeometricShapesUtils.js?v=34';
 
 export const DesignTemplates = {
 
@@ -486,6 +488,102 @@ export const DesignTemplates = {
         img.src = sticker.dataUrl;
     },
 
+    async addShapeToCanvas(shapeId, fallbackSvg = null, fallbackName = null) {
+        if (this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+
+        const pathD = SHAPE_SVG_PATHS ? SHAPE_SVG_PATHS[shapeId] : null;
+        const color = this.currentColor || '#000000';
+        const targetSize = Math.max(16, Math.min(128, Math.floor(Math.min(this.boardWidth, this.boardHeight) / 4)));
+        const w = targetSize;
+        const h = targetSize;
+        const x = Math.round((this.boardWidth - w) / 2);
+        const y = Math.round((this.boardHeight - h) / 2);
+
+        // Generar bitmap exacto 1:1 en tamaño de píxeles reales (Pixel Art nítido sin difuminado ni sombras)
+        const imageBitmap = await this.renderCrispShapeBitmap(shapeId, w, h, color, true, 1, fallbackSvg);
+
+        const shapeEntry = {
+            id: 'shape_' + shapeId + '_' + Date.now(),
+            shapeId: shapeId,
+            pathD: pathD,
+            src: fallbackSvg,
+            imageBitmap: imageBitmap,
+            x,
+            y,
+            w,
+            h,
+            angle: 0,
+            locked: false,
+            opacity: 0.85,
+            isSticker: true,
+            isShape: true,
+            color: color,
+            isFill: true,
+            strokeWidth: 1,
+            title: fallbackName || shapeId
+        };
+
+        // Reemplazar figura activa previa no bloqueada para mantener el lienzo limpio
+        this.templates = this.templates.filter(t => !t.isShape || t.locked);
+        this.templates.push(shapeEntry);
+        this.activeTemplateId = shapeEntry.id;
+        if (typeof this.updateTemplateUI === 'function') {
+            this.updateTemplateUI();
+        }
+        this.requestRender();
+        showMessage(window.__('msg_template_added') || 'Figura añadida al lienzo', 'success');
+    },
+
+    async renderCrispShapeBitmap(shapeId, w, h, color, isFill = true, strokeWidth = 1, fallbackSvg = null) {
+        const cw = Math.max(1, Math.round(w));
+        const ch = Math.max(1, Math.round(h));
+        const offCanvas = document.createElement('canvas');
+        offCanvas.width = cw;
+        offCanvas.height = ch;
+        const offCtx = offCanvas.getContext('2d');
+        offCtx.imageSmoothingEnabled = false;
+
+        const points = generateShapePixels(shapeId, 0, 0, cw - 1, ch - 1, isFill, strokeWidth, cw, ch);
+        if (points && points.length > 0) {
+            offCtx.fillStyle = color || '#000000';
+            for (let i = 0; i < points.length; i++) {
+                offCtx.fillRect(points[i].x, points[i].y, 1, 1);
+            }
+        } else if (fallbackSvg) {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            await new Promise((resolve) => {
+                img.onload = () => {
+                    offCtx.drawImage(img, 0, 0, cw, ch);
+                    resolve();
+                };
+                img.onerror = resolve;
+                img.src = fallbackSvg;
+            });
+        }
+
+        try {
+            return await createImageBitmap(offCanvas);
+        } catch (e) {
+            return null;
+        }
+    },
+
+    async refreshShapeTemplateColor(tpl, color) {
+        if (!tpl || !tpl.isShape || !tpl.shapeId) return;
+        tpl.color = color;
+        tpl.imageBitmap = await this.renderCrispShapeBitmap(
+            tpl.shapeId,
+            tpl.w,
+            tpl.h,
+            color,
+            tpl.isFill !== false,
+            tpl.strokeWidth || 1,
+            tpl.src
+        );
+        this.requestRender();
+    },
+
     _compressTemplateImage(file) {
         if (!file.type.startsWith('image/')) return Promise.resolve(file);
 
@@ -752,6 +850,17 @@ export const DesignTemplates = {
             }
         });
 
+        const shapeCards = document.querySelectorAll('.component-shape-card');
+        const activeTpl = this.templates ? this.templates.find(t => t.id === this.activeTemplateId) : null;
+        shapeCards.forEach(card => {
+            const shpId = card.getAttribute('data-shape-id');
+            if (activeTpl && activeTpl.shapeId && activeTpl.shapeId === shpId) {
+                card.classList.add('active');
+            } else {
+                card.classList.remove('active');
+            }
+        });
+
         const toolbarEl = document.querySelector('[data-ref="template-floating-toolbar"]');
         const btnLock = document.querySelector('[data-ref="btn-template-lock"]');
         const btnRotate = document.querySelector('[data-ref="btn-template-rotate"]');
@@ -769,31 +878,32 @@ export const DesignTemplates = {
             }
         }
 
-        if (this.activeTemplateId) {
-            const tpl = this.templates ? this.templates.find(t => t.id === this.activeTemplateId) : null;
-            if (tpl) {
-                if (btnLock) btnLock.classList.remove('disabled');
-                if (btnRotate) btnRotate.classList.remove('disabled');
-                if (btnInject) btnInject.classList.remove('disabled');
-                if (btnDel) btnDel.classList.remove('disabled');
-                
-                if (btnLock) {
-                    const iconLock = btnLock.querySelector('.material-symbols-rounded');
-                    if (iconLock) {
-                        iconLock.textContent = tpl.locked ? 'lock' : 'lock_open';
-                    }
+        if (this.activeTemplateId && activeTpl) {
+            if (btnLock) btnLock.classList.remove('disabled');
+            if (btnRotate) btnRotate.classList.remove('disabled');
+            if (btnInject) btnInject.classList.remove('disabled');
+            if (btnDel) btnDel.classList.remove('disabled');
+            
+            if (btnLock) {
+                const iconLock = btnLock.querySelector('.material-symbols-rounded');
+                if (iconLock) {
+                    iconLock.textContent = activeTpl.locked ? 'lock' : 'lock_open';
                 }
-                if (toolbarEl) toolbarEl.classList.add('active');
-                this.positionTemplateToolbar();
-            } else {
-                if (toolbarEl) toolbarEl.classList.remove('active');
             }
+            if (toolbarEl) {
+                toolbarEl.classList.remove('disabled');
+                toolbarEl.classList.add('active');
+            }
+            this.positionTemplateToolbar();
         } else {
             if (btnLock) btnLock.classList.add('disabled');
             if (btnRotate) btnRotate.classList.add('disabled');
             if (btnInject) btnInject.classList.add('disabled');
             if (btnDel) btnDel.classList.add('disabled');
-            if (toolbarEl) toolbarEl.classList.remove('active');
+            if (toolbarEl) {
+                toolbarEl.classList.remove('active');
+                toolbarEl.classList.add('disabled');
+            }
         }
 
         if (btnLive) {
@@ -995,25 +1105,41 @@ export const DesignTemplates = {
             if (btn) setButtonLoading(btn);
 
             try {
+                let bitmapClone = null;
+                if (tpl.isShape && tpl.shapeId) {
+                    bitmapClone = await this.renderCrispShapeBitmap(
+                        tpl.shapeId,
+                        tpl.w,
+                        tpl.h,
+                        tpl.color || this.currentColor,
+                        tpl.isFill !== false,
+                        tpl.strokeWidth || 1,
+                        tpl.src
+                    );
+                } else if (tpl.imageBitmap) {
+                    try {
+                        bitmapClone = await createImageBitmap(tpl.imageBitmap);
+                    } catch (e) {}
+                }
+
                 if (typeof this.setLastInjectedTemplate === 'function') {
-                    let bitmapClone = null;
-                    if (tpl.imageBitmap) {
+                    let lastClone = null;
+                    if (bitmapClone) {
                         try {
-                            bitmapClone = await createImageBitmap(tpl.imageBitmap);
+                            lastClone = await createImageBitmap(bitmapClone);
                         } catch (e) {}
                     }
                     this.setLastInjectedTemplate({
                         x: Math.round(tpl.x),
                         y: Math.round(tpl.y),
-                        w: tpl.w,
-                        h: tpl.h,
-                        imageBitmap: bitmapClone
+                        w: Math.round(tpl.w),
+                        h: Math.round(tpl.h),
+                        imageBitmap: lastClone
                     });
                 }
 
-                if (this.renderWorker && tpl.imageBitmap) {
+                if (this.renderWorker && bitmapClone) {
                     try {
-                        const bitmapClone = await createImageBitmap(tpl.imageBitmap);
                         this.renderWorker.postMessage({
                             type: 'TRIGGER_INJECT_ANIMATION',
                             payload: {

@@ -227,7 +227,10 @@ export const DesignNetwork = {
                             this.renderWorker.postMessage({ type: 'PUSH_PIXELS', payload: { pixels } });
                         } else {
                             if (!this.pixelQueue) this.pixelQueue = [];
-                            this.pixelQueue.push(...pixels);
+                            const pLen = pixels.length;
+                            for (let i = 0; i < pLen; i++) {
+                                this.pixelQueue.push(pixels[i]);
+                            }
                             this.requestRender();
                         }
                     }

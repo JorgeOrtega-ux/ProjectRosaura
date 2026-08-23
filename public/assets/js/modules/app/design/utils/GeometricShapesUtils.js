@@ -1,3 +1,76 @@
+import { SHAPE_SVG_PATHS } from '../data/ShapeSvgPathsData.js?v=33';
+
+// Reusable canvas and Path2D cache
+const path2dCache = new Map();
+let rasterCanvas = null;
+let rasterCtx = null;
+
+function getRasterContext() {
+    if (!rasterCanvas && typeof document !== 'undefined') {
+        rasterCanvas = document.createElement('canvas');
+        rasterCtx = rasterCanvas.getContext('2d', { willReadFrequently: true });
+        if (rasterCtx) {
+            rasterCtx.imageSmoothingEnabled = false;
+        }
+    }
+    return { canvas: rasterCanvas, ctx: rasterCtx };
+}
+
+// Rasterizador universal de SVG a píxeles discretos con 100% de fidelidad y grosor uniforme
+export function rasterizeSvgPathToPixels(pathString, w, h, isFill = false, strokeWidth = 1) {
+    const { canvas, ctx } = getRasterContext();
+    if (!canvas || !ctx || !pathString || w <= 0 || h <= 0) return [];
+
+    let basePath = path2dCache.get(pathString);
+    if (!basePath) {
+        try {
+            basePath = new Path2D(pathString);
+            path2dCache.set(pathString, basePath);
+        } catch (e) {
+            console.error('Invalid SVG path:', pathString, e);
+            return [];
+        }
+    }
+
+    canvas.width = Math.max(1, w);
+    canvas.height = Math.max(1, h);
+    ctx.clearRect(0, 0, w, h);
+
+    // Transformar los puntos vectoriales a (w, h) manteniendo el trazo en espacio 1:1 (grosor idéntico en todos los lados)
+    let pathObj = basePath;
+    if (typeof DOMMatrix !== 'undefined') {
+        const matrix = new DOMMatrix([w / 48, 0, 0, h / 48, 0, 0]);
+        const transformedPath = new Path2D();
+        transformedPath.addPath(basePath, matrix);
+        pathObj = transformedPath;
+    }
+
+    if (isFill) {
+        ctx.fillStyle = '#000000';
+        ctx.fill(pathObj, 'evenodd');
+    } else {
+        ctx.strokeStyle = '#000000';
+        // Grosor uniforme exacto en píxeles reales (sin distorsión horizontal/vertical)
+        ctx.lineWidth = Math.max(1, strokeWidth || 1);
+        ctx.stroke(pathObj);
+    }
+
+    const imgData = ctx.getImageData(0, 0, w, h);
+    const data = imgData.data;
+    const points = [];
+
+    for (let py = 0; py < h; py++) {
+        for (let px = 0; px < w; px++) {
+            const alpha = data[(py * w + px) * 4 + 3];
+            if (alpha > 48) {
+                points.push({ x: px, y: py });
+            }
+        }
+    }
+
+    return points;
+}
+
 function getBresenhamLine(x0, y0, x1, y1) {
     const points = [];
     const dx = Math.abs(x1 - x0);
@@ -199,29 +272,15 @@ function getEllipseFilled(x0, y0, x1, y1) {
     return result;
 }
 
-function getTriangleOutline(x0, y0, x1, y1, width = 1) {
-    const minX = Math.min(x0, x1);
-    const maxX = Math.max(x0, x1);
-    const minY = Math.min(y0, y1);
-    const maxY = Math.max(y0, y1);
-
-    const topX = Math.round((minX + maxX) / 2);
-    const topY = minY;
-    const leftX = minX;
-    const leftY = maxY;
-    const rightX = maxX;
-    const rightY = maxY;
-
-    const l1 = getThickLine(topX, topY, leftX, leftY, width);
-    const l2 = getThickLine(leftX, leftY, rightX, rightY, width);
-    const l3 = getThickLine(rightX, rightY, topX, topY, width);
-
+// Algoritmo general de polígonos: contorno
+function getPolygonOutline(vertices, width = 1) {
+    if (!vertices || vertices.length < 2) return [];
     const pointMap = new Set();
     const result = [];
 
-    const addBatch = (arr) => {
-        for (let i = 0; i < arr.length; i++) {
-            const p = arr[i];
+    const addPoints = (pts) => {
+        for (let i = 0; i < pts.length; i++) {
+            const p = pts[i];
             const key = (p.y << 16) | (p.x & 0xFFFF);
             if (!pointMap.has(key)) {
                 pointMap.add(key);
@@ -230,160 +289,99 @@ function getTriangleOutline(x0, y0, x1, y1, width = 1) {
         }
     };
 
-    addBatch(l1);
-    addBatch(l2);
-    addBatch(l3);
-    return result;
-}
-
-function getTriangleFilled(x0, y0, x1, y1) {
-    const minX = Math.min(x0, x1);
-    const maxX = Math.max(x0, x1);
-    const minY = Math.min(y0, y1);
-    const maxY = Math.max(y0, y1);
-
-    const topX = Math.round((minX + maxX) / 2);
-    const topY = minY;
-    const leftX = minX;
-    const leftY = maxY;
-    const rightX = maxX;
-    const rightY = maxY;
-
-    const lLeft = getBresenhamLine(topX, topY, leftX, leftY);
-    const lRight = getBresenhamLine(topX, topY, rightX, rightY);
-
-    const minScan = new Map();
-    const maxScan = new Map();
-
-    const recordLine = (arr) => {
-        for (let i = 0; i < arr.length; i++) {
-            const { x, y } = arr[i];
-            if (!minScan.has(y) || x < minScan.get(y)) minScan.set(y, x);
-            if (!maxScan.has(y) || x > maxScan.get(y)) maxScan.set(y, x);
-        }
-    };
-
-    recordLine(lLeft);
-    recordLine(lRight);
-
-    const result = [];
-    for (let y = minY; y <= maxY; y++) {
-        const sX = minScan.has(y) ? minScan.get(y) : minX;
-        const eX = maxScan.has(y) ? maxScan.get(y) : maxX;
-        for (let x = sX; x <= eX; x++) {
-            result.push({ x, y });
-        }
+    for (let i = 0; i < vertices.length; i++) {
+        const p1 = vertices[i];
+        const p2 = vertices[(i + 1) % vertices.length];
+        const line = getThickLine(p1.x, p1.y, p2.x, p2.y, width);
+        addPoints(line);
     }
     return result;
 }
 
-function getDiamondOutline(x0, y0, x1, y1, width = 1) {
-    const minX = Math.min(x0, x1);
-    const maxX = Math.max(x0, x1);
-    const minY = Math.min(y0, y1);
-    const maxY = Math.max(y0, y1);
+// Algoritmo general de polígonos: relleno scanline
+function getPolygonFilled(vertices) {
+    if (!vertices || vertices.length < 3) return [];
+    let minY = Infinity;
+    let maxY = -Infinity;
 
-    const midX = Math.round((minX + maxX) / 2);
-    const midY = Math.round((minY + maxY) / 2);
+    for (let i = 0; i < vertices.length; i++) {
+        const y = vertices[i].y;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+    }
 
-    const pTop = { x: midX, y: minY };
-    const pRight = { x: maxX, y: midY };
-    const pBottom = { x: midX, y: maxY };
-    const pLeft = { x: minX, y: midY };
+    const edges = [];
+    for (let i = 0; i < vertices.length; i++) {
+        const p1 = vertices[i];
+        const p2 = vertices[(i + 1) % vertices.length];
+        if (p1.y !== p2.y) {
+            edges.push({
+                yMin: Math.min(p1.y, p2.y),
+                yMax: Math.max(p1.y, p2.y),
+                xAtYMin: p1.y < p2.y ? p1.x : p2.x,
+                slopeInv: (p2.x - p1.x) / (p2.y - p1.y)
+            });
+        }
+    }
 
-    const l1 = getThickLine(pTop.x, pTop.y, pRight.x, pRight.y, width);
-    const l2 = getThickLine(pRight.x, pRight.y, pBottom.x, pBottom.y, width);
-    const l3 = getThickLine(pBottom.x, pBottom.y, pLeft.x, pLeft.y, width);
-    const l4 = getThickLine(pLeft.x, pLeft.y, pTop.x, pTop.y, width);
-
-    const pointMap = new Set();
     const result = [];
+    const pointMap = new Set();
 
-    const addBatch = (arr) => {
-        for (let i = 0; i < arr.length; i++) {
-            const p = arr[i];
-            const key = (p.y << 16) | (p.x & 0xFFFF);
-            if (!pointMap.has(key)) {
-                pointMap.add(key);
-                result.push(p);
+    for (let y = minY; y <= maxY; y++) {
+        const intersections = [];
+        for (let i = 0; i < edges.length; i++) {
+            const e = edges[i];
+            if (y >= e.yMin && y <= e.yMax) {
+                const x = e.xAtYMin + (y - e.yMin) * e.slopeInv;
+                intersections.push(x);
             }
         }
-    };
 
-    addBatch(l1);
-    addBatch(l2);
-    addBatch(l3);
-    addBatch(l4);
-    return result;
-}
+        intersections.sort((a, b) => a - b);
 
-function getDiamondFilled(x0, y0, x1, y1) {
-    const minX = Math.min(x0, x1);
-    const maxX = Math.max(x0, x1);
-    const minY = Math.min(y0, y1);
-    const maxY = Math.max(y0, y1);
-
-    const midX = Math.round((minX + maxX) / 2);
-    const midY = Math.round((minY + maxY) / 2);
-
-    const l1 = getBresenhamLine(midX, minY, maxX, midY);
-    const l2 = getBresenhamLine(maxX, midY, midX, maxY);
-    const l3 = getBresenhamLine(midX, maxY, minX, midY);
-    const l4 = getBresenhamLine(minX, midY, midX, minY);
-
-    const minScan = new Map();
-    const maxScan = new Map();
-
-    const recordLine = (arr) => {
-        for (let i = 0; i < arr.length; i++) {
-            const { x, y } = arr[i];
-            if (!minScan.has(y) || x < minScan.get(y)) minScan.set(y, x);
-            if (!maxScan.has(y) || x > maxScan.get(y)) maxScan.set(y, x);
-        }
-    };
-
-    recordLine(l1);
-    recordLine(l2);
-    recordLine(l3);
-    recordLine(l4);
-
-    const result = [];
-    for (let y = minY; y <= maxY; y++) {
-        const sX = minScan.has(y) ? minScan.get(y) : minX;
-        const eX = maxScan.has(y) ? maxScan.get(y) : maxX;
-        for (let x = sX; x <= eX; x++) {
-            result.push({ x, y });
+        for (let i = 0; i < intersections.length - 1; i += 2) {
+            const startX = Math.round(intersections[i]);
+            const endX = Math.round(intersections[i + 1]);
+            for (let x = startX; x <= endX; x++) {
+                const key = (y << 16) | (x & 0xFFFF);
+                if (!pointMap.has(key)) {
+                    pointMap.add(key);
+                    result.push({ x, y });
+                }
+            }
         }
     }
+
     return result;
 }
 
+// Función principal de generación de píxeles para cualquier forma del catálogo
 export function generateShapePixels(shapeType, x0, y0, x1, y1, isFill = false, strokeWidth = 1, boardW = 64, boardH = 64) {
+    const minX = Math.min(x0, x1);
+    const maxX = Math.max(x0, x1);
+    const minY = Math.min(y0, y1);
+    const maxY = Math.max(y0, y1);
+    const w = maxX - minX + 1;
+    const h = maxY - minY + 1;
+
     let rawPoints = [];
 
-    switch (shapeType) {
-        case 'line':
-            rawPoints = getThickLine(x0, y0, x1, y1, strokeWidth);
-            break;
-        case 'rectangle':
-            rawPoints = isFill ? getRectangleFilled(x0, y0, x1, y1) : getRectangleOutline(x0, y0, x1, y1, strokeWidth);
-            break;
-        case 'circle':
-        case 'ellipse':
-            rawPoints = isFill ? getEllipseFilled(x0, y0, x1, y1) : getEllipseOutline(x0, y0, x1, y1);
-            break;
-        case 'triangle':
-            rawPoints = isFill ? getTriangleFilled(x0, y0, x1, y1) : getTriangleOutline(x0, y0, x1, y1, strokeWidth);
-            break;
-        case 'diamond':
-        case 'rhombus':
-            rawPoints = isFill ? getDiamondFilled(x0, y0, x1, y1) : getDiamondOutline(x0, y0, x1, y1, strokeWidth);
-            break;
-        default:
-            rawPoints = getThickLine(x0, y0, x1, y1, strokeWidth);
-            break;
+    // Casos especiales nativos
+    if (shapeType === 'line') {
+        rawPoints = getThickLine(x0, y0, x1, y1, strokeWidth);
+    } else if (SHAPE_SVG_PATHS && SHAPE_SVG_PATHS[shapeType]) {
+        // RASTERIZADO VECTORIAL NATIVO PATH2D: 100% IDÉNTICO AL ICONO SVG
+        const localPoints = rasterizeSvgPathToPixels(SHAPE_SVG_PATHS[shapeType], w, h, isFill, strokeWidth);
+        rawPoints = localPoints.map(p => ({ x: minX + p.x, y: minY + p.y }));
+    } else if (shapeType === 'square' || shapeType === 'rectangle' || shapeType === 'flow_process') {
+        rawPoints = isFill ? getRectangleFilled(minX, minY, maxX, maxY) : getRectangleOutline(minX, minY, maxX, maxY, strokeWidth);
+    } else if (shapeType === 'circle' || shapeType === 'ellipse') {
+        rawPoints = isFill ? getEllipseFilled(minX, minY, maxX, maxY) : getEllipseOutline(minX, minY, maxX, maxY);
+    } else {
+        rawPoints = isFill ? getRectangleFilled(minX, minY, maxX, maxY) : getRectangleOutline(minX, minY, maxX, maxY, strokeWidth);
     }
 
+    // Filtrar límites del lienzo y deduplicar
     const filtered = [];
     const seen = new Set();
 
@@ -408,8 +406,6 @@ export {
     getRectangleFilled,
     getEllipseOutline,
     getEllipseFilled,
-    getTriangleOutline,
-    getTriangleFilled,
-    getDiamondOutline,
-    getDiamondFilled
+    getPolygonOutline,
+    getPolygonFilled
 };

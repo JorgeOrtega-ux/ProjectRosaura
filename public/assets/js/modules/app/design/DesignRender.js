@@ -484,7 +484,7 @@ export const DesignRender = {
 
         if (this.templates && this.templates.length > 0 && !this.isResetLocked) {
             this.templates.forEach(tpl => {
-                if (!tpl || !tpl.img) return;
+                if (!tpl || (!tpl.img && !tpl.imageBitmap)) return;
                 if (tpl.id !== this.activeTemplateId) return;
                 this.ctx.save();
                 this.ctx.globalAlpha = tpl.opacity !== undefined ? tpl.opacity : 0.5;
@@ -498,7 +498,11 @@ export const DesignRender = {
                 const hw = Math.round(tpl.w / 2);
                 const hh = Math.round(tpl.h / 2);
                 
-                this.ctx.drawImage(tpl.img, -hw, -hh, tpl.w, tpl.h);
+                this.ctx.imageSmoothingEnabled = false;
+                const sourceImg = tpl.imageBitmap || tpl.img;
+                if (sourceImg) {
+                    this.ctx.drawImage(sourceImg, -hw, -hh, tpl.w, tpl.h);
+                }
 
                 if (tpl.id === this.activeTemplateId && !tpl.locked) {
                     this.ctx.strokeStyle = '#2196F3';
@@ -539,6 +543,40 @@ export const DesignRender = {
                     const py = key >> 16;
                     if (px >= 0 && px < this.boardWidth && py >= 0 && py < this.boardHeight) {
                         this.ctx.fillRect(px, py, 1, 1);
+                    }
+                }
+            } else if (this.shapePreviewBox && this.shapePreviewBox.pathD) {
+                const { pathD, minX, minY, w, h, isFill, strokeWidth, color } = this.shapePreviewBox;
+                let basePath = typeof Path2D !== 'undefined' ? new Path2D(pathD) : null;
+                if (basePath) {
+                    let pathObj = basePath;
+                    if (typeof DOMMatrix !== 'undefined') {
+                        const matrix = new DOMMatrix([w / 48, 0, 0, h / 48, 0, 0]);
+                        const transformedPath = new Path2D();
+                        transformedPath.addPath(basePath, matrix);
+                        pathObj = transformedPath;
+                    }
+
+                    const drawVector = (ox, oy) => {
+                        this.ctx.save();
+                        this.ctx.translate(ox, oy);
+                        if (isFill) {
+                            this.ctx.fillStyle = color || this.currentColor;
+                            this.ctx.fill(pathObj, 'evenodd');
+                        } else {
+                            this.ctx.strokeStyle = color || this.currentColor;
+                            this.ctx.lineWidth = Math.max(1, strokeWidth || 1);
+                            this.ctx.stroke(pathObj);
+                        }
+                        this.ctx.restore();
+                    };
+
+                    drawVector(minX, minY);
+                    if (this.isMirrorMode) {
+                        const symMinX = this.boardWidth - 1 - (minX + w - 1);
+                        if (symMinX >= 0 && symMinX < this.boardWidth) {
+                            drawVector(symMinX, minY);
+                        }
                     }
                 }
             }

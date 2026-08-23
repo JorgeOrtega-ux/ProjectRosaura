@@ -191,15 +191,6 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                 <span class="component-menu-header-title"><?php echo __('dt_stickers'); ?></span>
             </div>
         </div>
-
-        <div class="component-stickers-category-bar" data-ref="stickers-categories">
-            <button class="component-sticker-cat-pill active" data-action="filterStickerCategory" data-category="all"><?php echo __('lbl_all'); ?> (<?php echo count($presetStickers); ?>)</button>
-            <button class="component-sticker-cat-pill" data-action="filterStickerCategory" data-category="rpg">RPG</button>
-            <button class="component-sticker-cat-pill" data-action="filterStickerCategory" data-category="treasures">Tesoros</button>
-            <button class="component-sticker-cat-pill" data-action="filterStickerCategory" data-category="symbols">Símbolos</button>
-            <button class="component-sticker-cat-pill" data-action="filterStickerCategory" data-category="nature">Naturaleza</button>
-            <button class="component-sticker-cat-pill" data-action="filterStickerCategory" data-category="arcade">Arcade</button>
-        </div>
         
         <div class="component-menu-section-parent component-menu-section-parent--scrollable">
             <div class="component-menu-section-header">
@@ -237,12 +228,181 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
     </div>
 
     <?php
-    $geometricShapes = [
-        ['id' => 'line', 'name_key' => 'shape_line', 'file_outline' => 'line.svg', 'file_fill' => 'line.svg', 'supports_fill' => false],
-        ['id' => 'rectangle', 'name_key' => 'shape_rectangle', 'file_outline' => 'rectangle.svg', 'file_fill' => 'rectangle_fill.svg', 'supports_fill' => true],
-        ['id' => 'circle', 'name_key' => 'shape_circle', 'file_outline' => 'circle.svg', 'file_fill' => 'circle_fill.svg', 'supports_fill' => true],
-        ['id' => 'triangle', 'name_key' => 'shape_triangle', 'file_outline' => 'triangle.svg', 'file_fill' => 'triangle_fill.svg', 'supports_fill' => true],
-        ['id' => 'diamond', 'name_key' => 'shape_diamond', 'file_outline' => 'diamond.svg', 'file_fill' => 'diamond_fill.svg', 'supports_fill' => true]
+    $shapeCategories = [
+        'basic' => [
+            'title' => 'Formas básicas',
+            'icon' => 'category',
+            'shapes' => [
+                ['id' => 'square', 'name' => 'Cuadrado', 'file' => 'square.svg'],
+                ['id' => 'rounded_rectangle', 'name' => 'Rectángulo redondeado', 'file' => 'rounded_rectangle.svg'],
+                ['id' => 'circle', 'name' => 'Círculo', 'file' => 'circle.svg'],
+                ['id' => 'triangle_up', 'name' => 'Triángulo', 'file' => 'triangle_up.svg'],
+                ['id' => 'triangle_down', 'name' => 'Triángulo invertido', 'file' => 'triangle_down.svg'],
+                ['id' => 'diamond', 'name' => 'Rombo', 'file' => 'diamond.svg'],
+                ['id' => 'cross', 'name' => 'Cruz', 'file' => 'cross.svg'],
+                ['id' => 'barrel', 'name' => 'Placa convexa', 'file' => 'barrel.svg'],
+                ['id' => 'ticket', 'name' => 'Boleto', 'file' => 'ticket.svg'],
+                ['id' => 'parallelogram_right', 'name' => 'Paralelogramo derecho', 'file' => 'parallelogram_right.svg'],
+                ['id' => 'parallelogram_left', 'name' => 'Paralelogramo izquierdo', 'file' => 'parallelogram_left.svg'],
+                ['id' => 'trapezoid_up', 'name' => 'Trapecio', 'file' => 'trapezoid_up.svg'],
+                ['id' => 'trapezoid_down', 'name' => 'Trapecio invertido', 'file' => 'trapezoid_down.svg'],
+                ['id' => 'shield_u', 'name' => 'Escudo en U', 'file' => 'shield_u.svg'],
+                ['id' => 'arch', 'name' => 'Arco', 'file' => 'arch.svg'],
+                ['id' => 'triangle_right_angle', 'name' => 'Triángulo rectángulo', 'file' => 'triangle_right_angle.svg'],
+                ['id' => 'semi_circle', 'name' => 'Semicírculo', 'file' => 'semi_circle.svg'],
+                ['id' => 'quarter_circle', 'name' => 'Cuarto de círculo', 'file' => 'quarter_circle.svg'],
+                ['id' => 'quadrant_ring', 'name' => 'Franja curva', 'file' => 'quadrant_ring.svg'],
+                ['id' => 'semi_ring', 'name' => 'Arco de semianillo', 'file' => 'semi_ring.svg']
+            ]
+        ],
+        'polygons' => [
+            'title' => 'Polígonos',
+            'icon' => 'hexagon',
+            'shapes' => [
+                ['id' => 'pentagon', 'name' => 'Pentágono', 'file' => 'pentagon.svg'],
+                ['id' => 'hexagon_pointy', 'name' => 'Hexágono en punta', 'file' => 'hexagon_pointy.svg'],
+                ['id' => 'hexagon_flat', 'name' => 'Hexágono plano', 'file' => 'hexagon_flat.svg'],
+                ['id' => 'octagon', 'name' => 'Octógono', 'file' => 'octagon.svg'],
+                ['id' => 'chamfer_square', 'name' => 'Cuadrado biselado', 'file' => 'chamfer_square.svg'],
+                ['id' => 'heptagon', 'name' => 'Heptágono', 'file' => 'heptagon.svg'],
+                ['id' => 'decagon', 'name' => 'Decágono', 'file' => 'decagon.svg']
+            ]
+        ],
+        'stars' => [
+            'title' => 'Estrellas',
+            'icon' => 'star',
+            'shapes' => [
+                ['id' => 'star_4_sparkle', 'name' => 'Destello de 4 puntas', 'file' => 'star_4_sparkle.svg'],
+                ['id' => 'star_5', 'name' => 'Estrella de 5 puntas', 'file' => 'star_5.svg'],
+                ['id' => 'star_6', 'name' => 'Estrella de 6 puntas', 'file' => 'star_6.svg'],
+                ['id' => 'star_8', 'name' => 'Estrella de 8 puntas', 'file' => 'star_8.svg'],
+                ['id' => 'burst_10', 'name' => 'Sello de 10 puntas', 'file' => 'burst_10.svg'],
+                ['id' => 'burst_12', 'name' => 'Sello de 12 puntas', 'file' => 'burst_12.svg'],
+                ['id' => 'burst_16', 'name' => 'Medalla de 16 puntas', 'file' => 'burst_16.svg'],
+                ['id' => 'burst_20', 'name' => 'Insignia de 20 puntas', 'file' => 'burst_20.svg'],
+                ['id' => 'burst_24', 'name' => 'Insignia de 24 puntas', 'file' => 'burst_24.svg'],
+                ['id' => 'star_7', 'name' => 'Estrella de 7 puntas', 'file' => 'star_7.svg'],
+                ['id' => 'sparkle_8', 'name' => 'Destello solar de 8 rayos', 'file' => 'sparkle_8.svg'],
+                ['id' => 'sparkle_12', 'name' => 'Destello solar de 12 rayos', 'file' => 'sparkle_12.svg'],
+                ['id' => 'sunburst_16', 'name' => 'Destello solar de 16 rayos', 'file' => 'sunburst_16.svg'],
+                ['id' => 'seal_scallop_32', 'name' => 'Rosetón de 32 puntas', 'file' => 'seal_scallop_32.svg']
+            ]
+        ],
+        'arrows' => [
+            'title' => 'Flechas',
+            'icon' => 'arrow_forward',
+            'shapes' => [
+                ['id' => 'arrow_right', 'name' => 'Flecha derecha', 'file' => 'arrow_right.svg'],
+                ['id' => 'arrow_left', 'name' => 'Flecha izquierda', 'file' => 'arrow_left.svg'],
+                ['id' => 'arrow_up', 'name' => 'Flecha arriba', 'file' => 'arrow_up.svg'],
+                ['id' => 'arrow_down', 'name' => 'Flecha abajo', 'file' => 'arrow_down.svg'],
+                ['id' => 'arrow_double_horizontal', 'name' => 'Flecha horizontal doble', 'file' => 'arrow_double_horizontal.svg'],
+                ['id' => 'arrow_double_vertical', 'name' => 'Flecha vertical doble', 'file' => 'arrow_double_vertical.svg'],
+                ['id' => 'arrow_ribbon', 'name' => 'Pentaflecha', 'file' => 'arrow_ribbon.svg'],
+                ['id' => 'chevron_right', 'name' => 'Galón derecho', 'file' => 'chevron_right.svg'],
+                ['id' => 'arrow_pointed_left', 'name' => 'Flecha afilada izquierda', 'file' => 'arrow_pointed_left.svg'],
+                ['id' => 'arrow_pointed_double', 'name' => 'Flecha afilada doble', 'file' => 'arrow_pointed_double.svg']
+            ]
+        ],
+        'flowchart' => [
+            'title' => 'Diagramas de flujo',
+            'icon' => 'schema',
+            'shapes' => [
+                ['id' => 'flow_preparation', 'name' => 'Hexágono de preparación', 'file' => 'flow_preparation.svg'],
+                ['id' => 'flow_terminator', 'name' => 'Píldora / Terminal', 'file' => 'flow_terminator.svg'],
+                ['id' => 'flow_process', 'name' => 'Proceso', 'file' => 'flow_process.svg'],
+                ['id' => 'flow_decision', 'name' => 'Decisión', 'file' => 'flow_decision.svg'],
+                ['id' => 'flow_document', 'name' => 'Documento ondulado', 'file' => 'flow_document.svg'],
+                ['id' => 'flow_data', 'name' => 'Datos / Entrada', 'file' => 'flow_data.svg'],
+                ['id' => 'flow_manual', 'name' => 'Operación manual', 'file' => 'flow_manual.svg'],
+                ['id' => 'flow_delay', 'name' => 'Retardo / Bala', 'file' => 'flow_delay.svg'],
+                ['id' => 'flow_merge', 'name' => 'Fusión / Almacén', 'file' => 'flow_merge.svg'],
+                ['id' => 'flow_offpage', 'name' => 'Conector fuera de página', 'file' => 'flow_offpage.svg'],
+                ['id' => 'flow_shield', 'name' => 'Conector de página', 'file' => 'flow_shield.svg']
+            ]
+        ],
+        'callouts' => [
+            'title' => 'Globos de diálogo',
+            'icon' => 'chat_bubble',
+            'shapes' => [
+                ['id' => 'callout_rectangular', 'name' => 'Bocadillo rectangular', 'file' => 'callout_rectangular.svg'],
+                ['id' => 'callout_oval', 'name' => 'Bocadillo ovalado', 'file' => 'callout_oval.svg'],
+                ['id' => 'callout_cloud', 'name' => 'Nube de pensamiento', 'file' => 'callout_cloud.svg'],
+                ['id' => 'callout_rounded_rect', 'name' => 'Bocadillo redondeado', 'file' => 'callout_rounded_rect.svg'],
+                ['id' => 'callout_curved_tail', 'name' => 'Burbuja cómic', 'file' => 'callout_curved_tail.svg']
+            ]
+        ],
+        'clouds' => [
+            'title' => 'Nubes',
+            'icon' => 'cloud',
+            'shapes' => [
+                ['id' => 'cloud_puffy_full', 'name' => 'Nube esponjosa', 'file' => 'cloud_puffy_full.svg'],
+                ['id' => 'cloud_flat_base_multi', 'name' => 'Nube de 4 cúpulas', 'file' => 'cloud_flat_base_multi.svg'],
+                ['id' => 'cloud_flat_base_triple', 'name' => 'Nube de 3 cúpulas', 'file' => 'cloud_flat_base_triple.svg'],
+                ['id' => 'cloud_fluffy_soft', 'name' => 'Nube suave', 'file' => 'cloud_fluffy_soft.svg'],
+                ['id' => 'cloud_round_dome', 'name' => 'Nube de domo central', 'file' => 'cloud_round_dome.svg']
+            ]
+        ],
+        'hearts' => [
+            'title' => 'Corazones',
+            'icon' => 'favorite',
+            'shapes' => [
+                ['id' => 'heart_classic', 'name' => 'Corazón clásico', 'file' => 'heart_classic.svg'],
+                ['id' => 'heart_wide', 'name' => 'Corazón ancho', 'file' => 'heart_wide.svg'],
+                ['id' => 'heart_playful', 'name' => 'Corazón asimétrico', 'file' => 'heart_playful.svg'],
+                ['id' => 'heart_rounded', 'name' => 'Corazón regordete', 'file' => 'heart_rounded.svg'],
+                ['id' => 'heart_narrow', 'name' => 'Corazón alargado', 'file' => 'heart_narrow.svg']
+            ]
+        ],
+        'banners' => [
+            'title' => 'Banners',
+            'icon' => 'flag',
+            'shapes' => [
+                ['id' => 'banner_horizontal_ribbon', 'name' => 'Cinta horizontal', 'file' => 'banner_horizontal_ribbon.svg'],
+                ['id' => 'banner_vertical_point', 'name' => 'Estandarte en punta', 'file' => 'banner_vertical_point.svg'],
+                ['id' => 'banner_vertical_notch', 'name' => 'Estandarte con muesca', 'file' => 'banner_vertical_notch.svg'],
+                ['id' => 'banner_rounded_point', 'name' => 'Estandarte redondeado', 'file' => 'banner_rounded_point.svg'],
+                ['id' => 'banner_rounded_notch', 'name' => 'Estandarte redondeado con muesca', 'file' => 'banner_rounded_notch.svg']
+            ]
+        ],
+        'tears' => [
+            'title' => 'Lágrimas',
+            'icon' => 'water_drop',
+            'shapes' => [
+                ['id' => 'tear_straight', 'name' => 'Gota clásica', 'file' => 'tear_straight.svg'],
+                ['id' => 'tear_narrow', 'name' => 'Gota alargada', 'file' => 'tear_narrow.svg'],
+                ['id' => 'tear_wide', 'name' => 'Gota ancha', 'file' => 'tear_wide.svg'],
+                ['id' => 'tear_tilted', 'name' => 'Gota diagonal', 'file' => 'tear_tilted.svg'],
+                ['id' => 'tear_curved_flame', 'name' => 'Gota de flama', 'file' => 'tear_curved_flame.svg']
+            ]
+        ],
+        'gears' => [
+            'title' => 'Engranajes',
+            'icon' => 'settings',
+            'shapes' => [
+                ['id' => 'gear_16_teeth_large_hole', 'name' => 'Engranaje 16 dientes grande', 'file' => 'gear_16_teeth_large_hole.svg'],
+                ['id' => 'gear_12_teeth_large_hole', 'name' => 'Engranaje 12 dientes grande', 'file' => 'gear_12_teeth_large_hole.svg'],
+                ['id' => 'gear_12_teeth_pointed', 'name' => 'Rueda 12 dientes cónicos', 'file' => 'gear_12_teeth_pointed.svg'],
+                ['id' => 'gear_16_teeth_pointed', 'name' => 'Engranaje 16 dientes cónicos', 'file' => 'gear_16_teeth_pointed.svg'],
+                ['id' => 'gear_12_teeth_small_hole', 'name' => 'Engranaje 12 dientes eje fino', 'file' => 'gear_12_teeth_small_hole.svg'],
+                ['id' => 'gear_14_teeth_pointed', 'name' => 'Engranaje 14 dientes cónicos', 'file' => 'gear_14_teeth_pointed.svg']
+            ]
+        ],
+        'nature' => [
+            'title' => 'Flores y naturaleza',
+            'icon' => 'local_florist',
+            'shapes' => [
+                ['id' => 'flower_8_petals_sharp', 'name' => 'Margarita 8 pétalos', 'file' => 'flower_8_petals_sharp.svg'],
+                ['id' => 'flower_6_petals_drop', 'name' => 'Flor 6 pétalos de gota', 'file' => 'flower_6_petals_drop.svg'],
+                ['id' => 'flower_8_petals_round', 'name' => 'Flor 8 pétalos suaves', 'file' => 'flower_8_petals_round.svg'],
+                ['id' => 'flower_6_petals_center_hole', 'name' => 'Flor 6 pétalos con centro', 'file' => 'flower_6_petals_center_hole.svg'],
+                ['id' => 'clover_4_leaves', 'name' => 'Trébol de 4 hojas', 'file' => 'clover_4_leaves.svg'],
+                ['id' => 'flower_4_petals_cross', 'name' => 'Flor 4 pétalos en cruz', 'file' => 'flower_4_petals_cross.svg'],
+                ['id' => 'leaf_curved', 'name' => 'Hoja curva', 'file' => 'leaf_curved.svg'],
+                ['id' => 'wave_multi_ribbon', 'name' => 'Cinta de 3 ondas', 'file' => 'wave_multi_ribbon.svg'],
+                ['id' => 'wave_s_curve', 'name' => 'Cinta curva en S', 'file' => 'wave_s_curve.svg']
+            ]
+        ]
     ];
     ?>
 
@@ -255,55 +415,91 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                 <span class="component-menu-header-title"><?php echo __('dt_geometric_shapes'); ?></span>
             </div>
         </div>
-
-        <div class="component-shape-mode-bar" data-ref="shape-modes">
-            <button class="component-shape-mode-pill active" data-action="setGeometricShapeFill" data-fill="0">
-                <span class="material-symbols-rounded">crop_din</span>
-                <span><?php echo __('lbl_shape_outline'); ?></span>
-            </button>
-            <button class="component-shape-mode-pill" data-action="setGeometricShapeFill" data-fill="1">
-                <span class="material-symbols-rounded">square</span>
-                <span><?php echo __('lbl_shape_fill'); ?></span>
-            </button>
-        </div>
         
         <div class="component-menu-section-parent component-menu-section-parent--scrollable">
-            <div class="component-menu-section-header">
-                <div class="component-menu-header-box">
-                    <span class="material-symbols-rounded">polyline</span>
-                    <span class="component-menu-header-title"><?php echo __('dt_shapes_collection'); ?> (<?php echo count($geometricShapes); ?>)</span>
-                </div>
-            </div>
-            <div class="component-menu-section-body">
-                <div class="component-items-grid component-items-grid--3 active" data-ref="shapes-grid">
-                    <?php foreach ($geometricShapes as $shp): 
-                        $svgOutline = ($basePath ?? '') . '/assets/img/shapes/' . $shp['file_outline'];
-                        $svgFill = ($basePath ?? '') . '/assets/img/shapes/' . $shp['file_fill'];
-                    ?>
-                    <div class="component-library-card component-shape-card" 
-                         data-action="selectGeometricShape" 
-                         data-shape-id="<?php echo htmlspecialchars($shp['id']); ?>" 
-                         data-supports-fill="<?php echo $shp['supports_fill'] ? '1' : '0'; ?>"
-                         data-svg-outline="<?php echo $svgOutline; ?>"
-                         data-svg-fill="<?php echo $svgFill; ?>"
-                         data-tooltip="<?php echo htmlspecialchars(__($shp['name_key'])); ?>" 
-                         data-position="top">
-                        <img class="component-library-card__image image-loaded" 
-                             src="<?php echo $svgOutline; ?>" 
-                             alt="<?php echo htmlspecialchars(__($shp['name_key'])); ?>" 
-                             loading="lazy" />
+            <?php foreach ($shapeCategories as $catKey => $catData): 
+                $previewShapes = array_slice($catData['shapes'], 0, 6);
+                $totalCount = count($catData['shapes']);
+            ?>
+            <div class="component-menu-section-parent component-menu-section-parent--bordered">
+                <div class="component-menu-section-header">
+                    <div class="component-menu-link component-menu-link--bordered" data-action="openShapeCategoryMenu" data-category="<?php echo $catKey; ?>" role="button" tabindex="0">
+                        <div class="component-menu-link-icon">
+                            <span class="material-symbols-rounded"><?php echo htmlspecialchars($catData['icon']); ?></span>
+                        </div>
+                        <div class="component-menu-link-text">
+                            <span><?php echo htmlspecialchars($catData['title']); ?> (<?php echo $totalCount; ?>)</span>
+                        </div>
+                        <div class="component-menu-link-icon">
+                            <span class="material-symbols-rounded">chevron_right</span>
+                        </div>
                     </div>
-                    <?php endforeach; ?>
                 </div>
-                <div class="component-empty-state disabled" data-ref="shapes-empty-state">
-                    <span class="material-symbols-rounded component-empty-state-icon">error</span>
-                    <p class="component-empty-state-text"><?php echo __('dt_generic_message'); ?></p>
+                <div class="component-menu-section-body">
+                    <div class="component-items-grid component-items-grid--3 active" data-ref="shapes-preview-grid-<?php echo $catKey; ?>">
+                        <?php foreach ($previewShapes as $shp): 
+                            $svgFile = ($basePath ?? '') . '/assets/img/shapes/' . $shp['file'];
+                        ?>
+                        <div class="component-library-card component-shape-card" 
+                             data-action="selectGeometricShape" 
+                             data-shape-id="<?php echo htmlspecialchars($shp['id']); ?>" 
+                             data-svg="<?php echo $svgFile; ?>"
+                             data-tooltip="<?php echo htmlspecialchars($shp['name']); ?>" 
+                             data-position="top">
+                            <img class="component-library-card__image image-loaded" 
+                                 src="<?php echo $svgFile; ?>" 
+                                 alt="<?php echo htmlspecialchars($shp['name']); ?>" 
+                                 loading="lazy" />
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
             </div>
+            <?php endforeach; ?>
         </div>
 
         <div class="component-menu-bottom component-menu-bottom--no-border" data-ref="module-promo-bottom-shapes"></div>
     </div>
+
+    <?php foreach ($shapeCategories as $catKey => $catData): ?>
+    <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding disabled" data-ref="menu-shapes-<?php echo $catKey; ?>">
+        <div class="pill-container"><div class="drag-handle"></div></div>
+        
+        <div class="component-menu-header">
+            <div class="component-menu-header-box">
+                <button type="button" class="component-button--icon-sm" data-action="backToShapesMainMenu" data-tooltip="<?php echo __('btn_back') ?: 'Volver'; ?>" style="border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; color: inherit; margin-right: 4px;">
+                    <span class="material-symbols-rounded">arrow_back</span>
+                </button>
+                <span class="material-symbols-rounded"><?php echo htmlspecialchars($catData['icon']); ?></span>
+                <span class="component-menu-header-title"><?php echo htmlspecialchars($catData['title']); ?> (<?php echo count($catData['shapes']); ?>)</span>
+            </div>
+        </div>
+
+        <div class="component-menu-section-parent component-menu-section-parent--scrollable">
+            <div class="component-menu-section-body">
+                <div class="component-items-grid component-items-grid--3 active" data-ref="shapes-grid-<?php echo $catKey; ?>">
+                    <?php foreach ($catData['shapes'] as $shp): 
+                        $svgFile = ($basePath ?? '') . '/assets/img/shapes/' . $shp['file'];
+                    ?>
+                    <div class="component-library-card component-shape-card" 
+                         data-action="selectGeometricShape" 
+                         data-shape-id="<?php echo htmlspecialchars($shp['id']); ?>" 
+                         data-svg="<?php echo $svgFile; ?>"
+                         data-tooltip="<?php echo htmlspecialchars($shp['name']); ?>" 
+                         data-position="top">
+                        <img class="component-library-card__image image-loaded" 
+                             src="<?php echo $svgFile; ?>" 
+                             alt="<?php echo htmlspecialchars($shp['name']); ?>" 
+                             loading="lazy" />
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+
+        <div class="component-menu-bottom component-menu-bottom--no-border"></div>
+    </div>
+    <?php endforeach; ?>
 
     <?php
     $pixelFonts = [
