@@ -16,6 +16,8 @@ header("X-Frame-Options: SAMEORIGIN");
 header("X-Content-Type-Options: nosniff");
 header("Cross-Origin-Opener-Policy: same-origin-allow-popups");
 header("Referrer-Policy: strict-origin-when-cross-origin");
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Pragma: no-cache");
 if (\App\Core\Helpers\Utils::isSecureConnection()) {
     header("Strict-Transport-Security: max-age=31536000; includeSubDomains; preload");
 }
@@ -50,7 +52,7 @@ try {
     if (session_status() === PHP_SESSION_NONE) {
         $cookieParams = session_get_cookie_params();
         session_set_cookie_params([
-            'lifetime' => $cookieParams['lifetime'],
+            'lifetime' => \App\Core\System\SessionConstants::SESSION_COOKIE_LIFETIME,
             'path' => '/',
             'domain' => $cookieParams['domain'],
             'secure' => \App\Core\Helpers\Utils::isSecureConnection(),
