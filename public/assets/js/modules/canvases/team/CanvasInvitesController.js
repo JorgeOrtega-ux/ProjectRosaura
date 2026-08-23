@@ -1,4 +1,4 @@
-﻿import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiService.js';
 import { showMessage, catchPaginationClick, copyToClipboard } from '../../../core/utils/uiUtils.js';
 

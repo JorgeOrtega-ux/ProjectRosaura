@@ -1,4 +1,4 @@
-﻿import { ApiService } from '../../../core/api/ApiService.js';
+import { ApiService } from '../../../core/api/ApiService.js';
 import { 
     catchPaginationClick, 
     debounce, 

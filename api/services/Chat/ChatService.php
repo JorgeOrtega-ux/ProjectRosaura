@@ -215,11 +215,22 @@ class ChatService
         }
         unset($msg);
 
+        $clearedAt = $this->redis ? (int)$this->redis->get("canvas_chat_cleared_at:{$canvasId}") : 0;
+        if ($clearedAt > 0) {
+            $messages = array_values(array_filter($messages, function($m) use ($clearedAt) {
+                $t = !empty($m['created_at']) ? strtotime($m['created_at']) : 0;
+                return $t >= $clearedAt;
+            }));
+        }
+
+        $slowmodeSeconds = $this->redis ? (int)$this->redis->get("canvas_chat_slowmode:{$canvasId}") : 0;
+
         return [
             'success' => true,
             'data' => [
                 'messages' => $messages,
-                'has_more' => count($messages) >= $limit
+                'has_more' => count($messages) >= $limit,
+                'slowmode_seconds' => $slowmodeSeconds
             ]
         ];
     }
@@ -230,10 +241,16 @@ class ChatService
             return ['success' => false, 'message' => __('err_invalid_data'), 'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST];
         }
 
+        $isShout = false;
         if (strpos($messageText, '/') === 0) {
             $cmdResult = $this->processChatCommand($userId, $canvasId, $messageText);
             if ($cmdResult !== null) {
-                return $cmdResult;
+                if (!empty($cmdResult['is_shout'])) {
+                    $isShout = true;
+                    $messageText = $cmdResult['shout_text'];
+                } else {
+                    return $cmdResult;
+                }
             }
         }
 
@@ -265,6 +282,22 @@ class ChatService
         if ($stmt->fetch()) {
             return ['success' => false, 'message' => __('err_chat_restricted'), 'http_code' => \App\Core\System\HttpConstants::FORBIDDEN];
         }
+
+        if ($this->redis && !$this->hasModPermissions($userId, $canvasId)) {
+            $slowmodeSeconds = (int)$this->redis->get("canvas_chat_slowmode:{$canvasId}");
+            if ($slowmodeSeconds > 0) {
+                $userSlowKey = "canvas_chat_slowmode_user:{$canvasId}:{$userId}";
+                $ttl = (int)$this->redis->ttl($userSlowKey);
+                if ($ttl > 0) {
+                    return [
+                        'success' => false,
+                        'message' => "El modo lento está activo. Espera {$ttl}s para volver a enviar un mensaje.",
+                        'http_code' => \App\Core\System\HttpConstants::TOO_MANY_REQUESTS
+                    ];
+                }
+            }
+        }
+
         if ($this->redis) {
             $redisKeyBurst = "canvas_chat_burst:{$canvasId}:{$userId}";
             $redisKeyLastMsg = "canvas_chat_last:{$canvasId}:{$userId}";
@@ -275,7 +308,7 @@ class ChatService
             }
             if ($burstCount > 3) {
                 return ['success' => false, 'message' => __('err_chat_rate_limit'), 'http_code' => \App\Core\System\HttpConstants::TOO_MANY_REQUESTS];
-}
+            }
 
             if (!empty($messageText)) {
                 $lastMsg = $this->redis->get($redisKeyLastMsg);
@@ -284,7 +317,7 @@ class ChatService
                 }
                 $this->redis->setex($redisKeyLastMsg, 3, $messageText);
             }
-}
+        }
 
         $attachments = [];
         $canvasUuid = $canvas['uuid'];
@@ -325,7 +358,7 @@ class ChatService
                     }
                 }
             }
-}
+        }
 
         $attachmentsJson = !empty($attachments) ? json_encode($attachments) : null;
         
@@ -336,7 +369,7 @@ class ChatService
             } else {
                 $safeAttachments[] = '/api/index.php?route=chat.attachment&canvas_uuid=' . $canvasUuid . '&file=' . urlencode(basename($att));
             }
-}
+        }
 
         $msgUuid = \App\Core\Helpers\Utils::generateUUID();
         $msgId = 'pending_' . $msgUuid;
@@ -396,7 +429,8 @@ class ChatService
             'reply_to' => $replyTo,
             'reply_to_username' => $replyToUsername,
             'reply_to_message' => $replyToMessage,
-            'reactions' => []
+            'reactions' => [],
+            'is_shout' => $isShout
         ];
 
         if ($this->redis) {
@@ -413,13 +447,22 @@ class ChatService
                 'avatar' => $messageData['avatar'],
                 'reply_to' => $replyTo,
                 'reply_to_username' => $replyToUsername,
-                'reply_to_message' => $replyToMessage
+                'reply_to_message' => $replyToMessage,
+                'is_shout' => $isShout
             ];
             $this->redis->rpush('canvas_chat_queue', json_encode($queuePayload));
 
             $cacheKey = CacheConstants::PREFIX_CHAT_CANVAS_RECENT . $canvasId;
             $this->redis->lpush($cacheKey, json_encode($queuePayload));
             $this->redis->ltrim($cacheKey, 0, 49);
+
+            if (!$this->hasModPermissions($userId, $canvasId)) {
+                $slowmodeSeconds = (int)$this->redis->get("canvas_chat_slowmode:{$canvasId}");
+                if ($slowmodeSeconds > 0) {
+                    $userSlowKey = "canvas_chat_slowmode_user:{$canvasId}:{$userId}";
+                    $this->redis->setex($userSlowKey, $slowmodeSeconds, '1');
+                }
+            }
 
             $eventPayload = [
                 'type' => 'chat_message',
@@ -660,18 +703,132 @@ class ChatService
         $parts = explode(' ', trim($messageText));
         $command = strtolower($parts[0]);
         
-        $allowedCommands = ['/timeout', '/untimeout', '/ban', '/unban', '/canvasban', '/bancanvas', '/canvasunban', '/unbancanvas'];
-        if (!in_array($command, $allowedCommands)) {
+        $userCommands = ['/w', '/whisper', '/msg', '/help', '/ayuda', '/clear'];
+        $modCommands = ['/clearchat', '/slowmode', '/shout', '/anuncio', '/timeout', '/untimeout', '/ban', '/unban', '/canvasban', '/bancanvas', '/canvasunban', '/unbancanvas'];
+        
+        if (!in_array($command, $userCommands) && !in_array($command, $modCommands)) {
             if ($this->hasModPermissions($userId, $canvasId)) {
                 return [
                     'success' => false, 
-                    'message' => "Comando desconocido. Comandos de moderación: /timeout, /untimeout, /ban, /unban, /bancanvas, /unbancanvas",
+                    'message' => "Comando desconocido. Comandos disponibles: /help, /w, /clear, /clearchat, /slowmode, /shout, /timeout, /untimeout, /ban, /unban, /bancanvas, /unbancanvas",
+                    'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => "Comando desconocido. Escribe /help para ver los comandos disponibles.",
                     'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST
                 ];
             }
-            return null; 
         }
 
+        // Handle general user commands
+        if (in_array($command, ['/help', '/ayuda'])) {
+            return [
+                'success' => true,
+                'is_command' => true,
+                'is_help' => true,
+                'message' => 'Comandos disponibles: /help, /w [usuario] [mensaje], /clear' . ($this->hasModPermissions($userId, $canvasId) ? ', /clearchat, /slowmode [seg], /shout [mensaje], /timeout, /untimeout, /ban, /unban, /canvasban, /unbancanvas' : '')
+            ];
+        }
+
+        if ($command === '/clear') {
+            return [
+                'success' => true,
+                'is_command' => true,
+                'is_clear' => true,
+                'message' => 'Has limpiado tu pantalla de chat.'
+            ];
+        }
+
+        if (in_array($command, ['/w', '/whisper', '/msg'])) {
+            if (count($parts) < 3) {
+                return [
+                    'success' => false,
+                    'message' => "Uso correcto: {$command} [nombre_de_usuario] [mensaje privado]",
+                    'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST
+                ];
+            }
+            $targetUsername = ltrim($parts[1], '@');
+            array_shift($parts);
+            array_shift($parts);
+            $whisperText = trim(implode(' ', $parts));
+            if (empty($whisperText)) {
+                return [
+                    'success' => false,
+                    'message' => 'El mensaje privado no puede estar vacío.',
+                    'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST
+                ];
+            }
+
+            $stmt = $this->identityPdo->prepare("SELECT id, uuid, username, profile_picture FROM users WHERE LOWER(username) = LOWER(?) LIMIT 1");
+            $stmt->execute([$targetUsername]);
+            $targetUser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$targetUser) {
+                return [
+                    'success' => false,
+                    'message' => "Usuario '{$targetUsername}' no encontrado.",
+                    'http_code' => \App\Core\System\HttpConstants::NOT_FOUND
+                ];
+            }
+
+            $targetUserId = (int)$targetUser['id'];
+            if ($targetUserId === (int)$userId) {
+                return [
+                    'success' => false,
+                    'message' => 'No puedes enviarte un susurro a ti mismo.',
+                    'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST
+                ];
+            }
+
+            $uStmt = $this->identityPdo->prepare("
+                SELECT u.username, u.uuid, u.profile_picture, st.color as subscription_color 
+                FROM " . DB::TBL_USERS . " u 
+                LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level 
+                WHERE u.id = ?
+            ");
+            $uStmt->execute([$userId]);
+            $senderInfo = $uStmt->fetch(PDO::FETCH_ASSOC);
+
+            $censoredWhisper = \App\Core\Helpers\Utils::censorText($whisperText);
+
+            $whisperData = [
+                'id' => 'whisper_' . uniqid(),
+                'sender_id' => (int)$userId,
+                'sender_uuid' => $senderInfo['uuid'] ?? '',
+                'sender_username' => $senderInfo['username'] ?? __('default_user'),
+                'sender_avatar' => isset($senderInfo['profile_picture']) ? \App\Core\Helpers\Utils::getS3PublicUrl($senderInfo['profile_picture']) : null,
+                'sender_sub_color' => $senderInfo['subscription_color'] ?? null,
+                'target_id' => $targetUserId,
+                'target_uuid' => $targetUser['uuid'],
+                'target_username' => $targetUser['username'],
+                'message' => htmlspecialchars($censoredWhisper, ENT_QUOTES, 'UTF-8'),
+                'created_at' => date('Y-m-d H:i:s'),
+                'is_whisper' => true
+            ];
+
+            if ($this->redis) {
+                $eventPayload = [
+                    'type' => 'chat_whisper',
+                    'canvas_id' => $canvasId,
+                    'sender_user_id' => (int)$userId,
+                    'target_user_id' => $targetUserId,
+                    'data' => $whisperData
+                ];
+                $this->redis->publish('admin:canvas_events', json_encode($eventPayload));
+            }
+
+            return [
+                'success' => true,
+                'is_command' => true,
+                'is_whisper' => true,
+                'data' => $whisperData,
+                'message' => "Susurro enviado a {$targetUser['username']}."
+            ];
+        }
+
+        // Moderation commands require mod permissions
         if (!$this->hasModPermissions($userId, $canvasId)) {
             return [
                 'success' => false,
@@ -680,6 +837,100 @@ class ChatService
             ];
         }
 
+        switch ($command) {
+            case '/clearchat':
+                if ($this->redis) {
+                    $cacheKey = CacheConstants::PREFIX_CHAT_CANVAS_RECENT . $canvasId;
+                    $this->redis->del($cacheKey);
+                    $this->redis->set("canvas_chat_cleared_at:{$canvasId}", time());
+
+                    $uStmt = $this->identityPdo->prepare("SELECT username FROM users WHERE id = ? LIMIT 1");
+                    $uStmt->execute([$userId]);
+                    $modUsername = $uStmt->fetchColumn() ?: __('default_user');
+
+                    $eventPayload = [
+                        'type' => 'chat_cleared',
+                        'canvas_id' => $canvasId,
+                        'cleared_by' => $userId,
+                        'cleared_by_username' => $modUsername,
+                        'cleared_at' => date('Y-m-d H:i:s')
+                    ];
+                    $this->redis->publish('admin:canvas_events', json_encode($eventPayload));
+                }
+                return [
+                    'success' => true,
+                    'is_command' => true,
+                    'message' => 'Has limpiado el chat para todos los participantes del lienzo.'
+                ];
+
+            case '/slowmode':
+                if (count($parts) < 2) {
+                    return [
+                        'success' => false,
+                        'message' => "Uso correcto: /slowmode [segundos|off] (ej: /slowmode 10)",
+                        'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST
+                    ];
+                }
+                $val = strtolower($parts[1]);
+                $seconds = ($val === 'off' || $val === '0' || $val === 'disable' || $val === 'desactivar') ? 0 : (int)$val;
+                if ($seconds < 0 || $seconds > 300) {
+                    return [
+                        'success' => false,
+                        'message' => 'El tiempo del modo lento debe estar entre 0 y 300 segundos.',
+                        'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST
+                    ];
+                }
+                if ($this->redis) {
+                    $slowKey = "canvas_chat_slowmode:{$canvasId}";
+                    if ($seconds > 0) {
+                        $this->redis->set($slowKey, $seconds);
+                    } else {
+                        $this->redis->del($slowKey);
+                    }
+
+                    $uStmt = $this->identityPdo->prepare("SELECT username FROM users WHERE id = ? LIMIT 1");
+                    $uStmt->execute([$userId]);
+                    $modUsername = $uStmt->fetchColumn() ?: __('default_user');
+
+                    $eventPayload = [
+                        'type' => 'chat_slowmode_changed',
+                        'canvas_id' => $canvasId,
+                        'seconds' => $seconds,
+                        'set_by_username' => $modUsername
+                    ];
+                    $this->redis->publish('admin:canvas_events', json_encode($eventPayload));
+                }
+                return [
+                    'success' => true,
+                    'is_command' => true,
+                    'message' => $seconds > 0 ? "Modo lento activado: {$seconds} segundos." : "Modo lento desactivado."
+                ];
+
+            case '/shout':
+            case '/anuncio':
+                if (count($parts) < 2) {
+                    return [
+                        'success' => false,
+                        'message' => "Uso correcto: {$command} [mensaje del anuncio]",
+                        'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST
+                    ];
+                }
+                array_shift($parts);
+                $shoutText = trim(implode(' ', $parts));
+                if (empty($shoutText)) {
+                    return [
+                        'success' => false,
+                        'message' => 'El texto del anuncio no puede estar vacío.',
+                        'http_code' => \App\Core\System\HttpConstants::BAD_REQUEST
+                    ];
+                }
+                return [
+                    'is_shout' => true,
+                    'shout_text' => $shoutText
+                ];
+        }
+
+        // Existing target-based mod commands
         if (count($parts) < 2) {
             return [
                 'success' => false,
@@ -688,7 +939,7 @@ class ChatService
             ];
         }
 
-        $targetUsername = $parts[1];
+        $targetUsername = ltrim($parts[1], '@');
         
         $stmt = $this->identityPdo->prepare("SELECT id, uuid, username FROM users WHERE LOWER(username) = LOWER(?) LIMIT 1");
         $stmt->execute([$targetUsername]);

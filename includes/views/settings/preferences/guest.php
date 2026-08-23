@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 use App\Api\Services\Settings\SettingsViewService;
 
 $settingsService = new SettingsViewService();

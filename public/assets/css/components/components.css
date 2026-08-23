@@ -1,13 +1,8 @@
-/* ==========================================================================
-   MASTER COMPONENTS BUNDLE
-   Imports all modular component stylesheets in proper cascade order.
-   ========================================================================== */
-
-@import url('./components-layout.css');
-@import url('./components-forms.css');
-@import url('./components-cards.css');
-@import url('./components-modals.css');
-@import url('./components-feedback.css');
-@import url('./components-media.css');
-@import url('./components-canvas.css');
-@import url('./components-chat.css');
+@import 'components-layout.css';
+@import 'components-forms.css';
+@import 'components-cards.css';
+@import 'components-modals.css';
+@import 'components-feedback.css';
+@import 'components-canvas.css';
+@import 'components-chat.css';
+@import 'components-media.css';

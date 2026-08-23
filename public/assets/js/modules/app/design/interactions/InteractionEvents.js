@@ -127,8 +127,8 @@ export const InteractionEvents = {
             } else {
                 btnOwnerTools.classList.remove('active');
             }
-            if (typeof this.updatePerkBadges === 'function') {
-                this.updatePerkBadges();
+            if (typeof this.updateOwnerBadges === 'function') {
+                this.updateOwnerBadges();
             }
             return;
         }
@@ -711,7 +711,7 @@ export const InteractionEvents = {
                 this.ownerEraserStep = 0;
                 this.ownerEraserStart = null;
                 this.updateSelectionUI();
-                if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
                 if (typeof this.requestRender === 'function') this.requestRender();
             }
             return;

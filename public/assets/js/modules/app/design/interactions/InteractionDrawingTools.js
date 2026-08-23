@@ -1,4 +1,4 @@
-﻿import { showMessage, hexToHsv, hsvToHex } from '../../../../core/utils/uiUtils.js';
+import { showMessage, hexToHsv, hsvToHex } from '../../../../core/utils/uiUtils.js';
 import { getCanvasTier, getToolSizes, getSprayRadii, getTileGridLevels } from '../data/OfflineToolsData.js';
 import { colorToAbgr, abgrToHex } from './InteractionHelpers.js';
 
@@ -831,7 +831,7 @@ export const InteractionDrawingTools = {
             this.setOfflineEraserMode(currentMode);
         }
         this.updateSelectionUI();
-        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
         this.requestRender();
     },
 
@@ -858,8 +858,6 @@ export const InteractionDrawingTools = {
         if (btnBox) btnBox.classList.toggle('active', mode === 'box');
         if (btnBrush) btnBrush.classList.toggle('active', mode === 'brush');
         if (btnEraser) btnEraser.classList.add('active');
-
-        this.activeBomb = null;
         this.selectedPixels.clear();
         this.ownerEraserBox = null;
         this.ownerEraserStep = 0;
@@ -883,7 +881,7 @@ export const InteractionDrawingTools = {
 
         this.openSubtoolbar('eraser');
         this.updateSelectionUI();
-        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
         this.requestRender();
     },
 
@@ -963,7 +961,6 @@ export const InteractionDrawingTools = {
             if (typeof showMessage === 'function') showMessage(window.__('msg_bucket_mode_off') || 'Modo Bote de Pintura desactivado.', 'info');
         } else {
             this.interactionMode = 'offline_bucket';
-            this.activeBomb = null;
             this.selectedPixels.clear();
             this.ownerEraserBox = null;
             this.ownerEraserStep = 0;
@@ -972,7 +969,7 @@ export const InteractionDrawingTools = {
             if (typeof showMessage === 'function') showMessage(window.__('msg_bucket_mode_on') || 'Modo Bote de Pintura activado. Haz clic en una zona para rellenar.', 'info');
         }
         this.updateSelectionUI();
-        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
         this.requestRender();
     },
 
@@ -1002,7 +999,6 @@ export const InteractionDrawingTools = {
             if (typeof showMessage === 'function') showMessage(window.__('msg_spray_mode_off') || 'Modo Spray desactivado.', 'info');
         } else {
             this.interactionMode = 'offline_spray';
-            this.activeBomb = null;
             this.selectedPixels.clear();
             this.ownerEraserBox = null;
             this.ownerEraserStep = 0;
@@ -1021,7 +1017,7 @@ export const InteractionDrawingTools = {
             if (typeof showMessage === 'function') showMessage(window.__('msg_spray_mode_on') || 'Modo Spray activado. Mant├®n presionado y arrastra para pintar.', 'info');
         }
         this.updateSelectionUI();
-        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
         this.requestRender();
     },
 
@@ -1069,7 +1065,6 @@ export const InteractionDrawingTools = {
             if (typeof showMessage === 'function') showMessage(window.__('msg_dither_mode_off') || 'Modo Dithering desactivado.', 'info');
         } else {
             this.interactionMode = 'offline_dither';
-            this.activeBomb = null;
             this.selectedPixels.clear();
             this.ownerEraserBox = null;
             this.ownerEraserStep = 0;
@@ -1087,7 +1082,7 @@ export const InteractionDrawingTools = {
             if (typeof showMessage === 'function') showMessage(window.__('msg_dither_mode_on') || 'Modo Dithering activado. Pinta sombras y texturas retro.', 'info');
         }
         this.updateSelectionUI();
-        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
         this.requestRender();
     },
 

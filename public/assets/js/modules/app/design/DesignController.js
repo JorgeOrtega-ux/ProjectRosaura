@@ -7,23 +7,19 @@ import { DesignInteractions } from './DesignInteractions.js?v=34';
 import { DesignNetwork } from './DesignNetwork.js?v=34';
 import { DesignRender } from './DesignRender.js?v=34';
 import { DesignSetup } from './DesignSetup.js?v=34';
-import { soundManager } from './SoundManager.js';
 import { DesignTemplates } from './templates/DesignTemplates.js?v=34';
 
 class DesignController {
     constructor() {
-        this.soundManager = soundManager;
         this.api = new ApiService();
         this.basePath = window.AppBasePath || '';
         this.abortController = null;
         this.wsManager = null;
         
-        const urlParams = new URLSearchParams(window.location.search);
-        this.canvasId = urlParams.get('id');
-        
-        this.snapshotUuid = urlParams.get('snapshot');
-        this.snapshotImg = urlParams.get('img');
-        this.isSnapshotMode = !!(this.snapshotUuid && this.snapshotImg);
+        this.canvasId = null;
+        this.snapshotUuid = null;
+        this.snapshotImg = null;
+        this.isSnapshotMode = false;
 
         this.canvas = null;
         this.ctx = null;
@@ -187,7 +183,22 @@ class DesignController {
     }
 
     async init() {
+        this._destroyed = false;
         this.abortController = new AbortController();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        let idFromQuery = urlParams.get('id');
+        if (!idFromQuery) {
+            const pathParts = window.location.pathname.split('/');
+            const designIdx = pathParts.indexOf('design');
+            if (designIdx !== -1 && pathParts[designIdx + 1] && pathParts[designIdx + 1] !== 's') {
+                idFromQuery = pathParts[designIdx + 1];
+            }
+        }
+        this.canvasId = idFromQuery;
+        this.snapshotUuid = urlParams.get('snapshot');
+        this.snapshotImg = urlParams.get('img');
+        this.isSnapshotMode = !!(this.snapshotUuid && this.snapshotImg);
         
         this.initSelectedPixelsProxy();
         this.isSelecting = false;
@@ -342,42 +353,25 @@ class DesignController {
             if (!this.isSpectator && !this.isSnapshotMode && !this.isResizeLocked) {
                 
                 let remaining = 0;
-                if (!this.perkNoCooldown) {
-                    if (this.cooldownSec > 0 && this.cooldownBalance < this.cooldownMax) {
-                        const elapsed = (Date.now() - this.lastSyncTime) / 1000;
-                        remaining = this.cooldownNextIn - elapsed;
-                        
-                        if (remaining <= 0) {
-                            let extraTime = Math.abs(remaining);
-                            let recoveredPixels = 1 + Math.floor(extraTime / this.cooldownSec);
+                if (this.cooldownSec > 0 && this.cooldownBalance < this.cooldownMax) {
+                    const elapsed = (Date.now() - this.lastSyncTime) / 1000;
+                    remaining = this.cooldownNextIn - elapsed;
+                    
+                    if (remaining <= 0) {
+                        let extraTime = Math.abs(remaining);
+                        let recoveredPixels = 1 + Math.floor(extraTime / this.cooldownSec);
 
-                            this.cooldownBalance = Math.min(this.cooldownMax, this.cooldownBalance + recoveredPixels);
+                        this.cooldownBalance = Math.min(this.cooldownMax, this.cooldownBalance + recoveredPixels);
 
-                            if (this.cooldownBalance < this.cooldownMax) {
-                                this.cooldownNextIn = this.cooldownSec - (extraTime % this.cooldownSec);
-                                this.lastSyncTime = Date.now();
-                                remaining = this.cooldownNextIn;
-                            } else {
-                                remaining = 0;
-                                this.cooldownNextIn = 0;
-                            }
-                            this.updateSelectionUI();
+                        if (this.cooldownBalance < this.cooldownMax) {
+                            this.cooldownNextIn = this.cooldownSec - (extraTime % this.cooldownSec);
+                            this.lastSyncTime = Date.now();
+                            remaining = this.cooldownNextIn;
+                        } else {
+                            remaining = 0;
+                            this.cooldownNextIn = 0;
                         }
-                    }
-                } else {
-                    const badgesLeft = document.querySelector('[data-ref="badges-left"]');
-                    if (badgesLeft) {
-                        let noCdBadge = badgesLeft.querySelector('[data-badge-id="perk-no-cooldown"]');
-                        if (noCdBadge && this.perkNoCooldownExpires) {
-                            const timeRem = Math.max(0, Math.ceil((this.perkNoCooldownExpires - Date.now()) / 1000));
-                            if (timeRem > 0) {
-                                noCdBadge.innerHTML = `<span class="material-symbols-rounded component-text-accent">bolt</span><span>Sin Cooldown (${timeRem}s)</span>`;
-                            } else {
-                                this.perkNoCooldown = false;
-                                if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
-                                this.updateSelectionUI();
-                            }
-                        }
+                        this.updateSelectionUI();
                     }
                 }
 

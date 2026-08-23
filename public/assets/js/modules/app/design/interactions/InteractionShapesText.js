@@ -1,4 +1,4 @@
-﻿import { generateShapePixels } from '../utils/GeometricShapesUtils.js?v=34';
+import { generateShapePixels } from '../utils/GeometricShapesUtils.js?v=34';
 import { SHAPE_SVG_PATHS } from '../data/ShapeSvgPathsData.js?v=34';
 import { renderPixelText } from '../utils/PixelTextUtils.js';
 import { showMessage } from '../../../../core/utils/uiUtils.js';
@@ -694,7 +694,6 @@ export const InteractionShapesText = {
             if (typeof showMessage === 'function') showMessage('Modo mover selecci├│n desactivado.', 'info');
         } else {
             this.interactionMode = 'offline_moving_area';
-            this.activeBomb = null;
             this.selectedPixels.clear();
             this.ownerEraserBox = null;
             this.ownerEraserStep = 0;
@@ -708,7 +707,7 @@ export const InteractionShapesText = {
             if (typeof showMessage === 'function') showMessage(window.__('msg_move_area_on') || 'Modo Mover activado. Selecciona un ├írea para moverla.', 'info');
         }
         this.updateSelectionUI();
-        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
         this.requestRender();
     },
 

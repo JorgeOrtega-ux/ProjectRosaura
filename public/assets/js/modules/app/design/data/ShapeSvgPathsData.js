@@ -1,4 +1,4 @@
-﻿export const SHAPE_SVG_PATHS = {
+export const SHAPE_SVG_PATHS = {
     'arch': 'M 6 42 V 24 A 18 18 0 0 1 42 24 V 42 Z',
     'arrow_double_horizontal': 'M 16 12 L 4 24 L 16 36 V 28 H 32 V 36 L 44 24 L 32 12 V 20 H 16 Z',
     'arrow_double_vertical': 'M 12 16 L 24 4 L 36 16 H 28 V 32 H 36 L 24 44 L 12 32 H 20 V 16 Z',

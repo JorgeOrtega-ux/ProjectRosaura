@@ -1,4 +1,4 @@
-﻿export function colorToAbgr(color) {
+export function colorToAbgr(color) {
     if (!color || color === 'transparent') return 0;
     let hex = color.replace('#', '');
     let r = 0, g = 0, b = 0, a = 255;

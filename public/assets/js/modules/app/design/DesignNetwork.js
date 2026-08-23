@@ -2,7 +2,6 @@ import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 import { WebSocketManager } from '../../../core/api/WebSocketManager.js';
 import { getPaletteById } from './utils/DesignPaletteUtils.js';
-import { soundManager } from './SoundManager.js';
 import { CanvasSyncChannel } from '../../../core/services/CanvasSyncChannel.js';
 
 export const DesignNetwork = {
@@ -235,45 +234,7 @@ export const DesignNetwork = {
                         }
                     }
                 }
-                else if (data.type === 'nuclear_warning') {
-                    if (typeof this.handleNuclearWarning === 'function') {
-                        this.handleNuclearWarning(data);
-                    }
-                }
-                else if (data.type === 'bomb_pixel') {
-                    const cX = parseInt(data.x, 10);
-                    const cY = parseInt(data.y, 10);
-                    const r = parseInt(data.r, 10);
-                    const perkId = data.perk || 'pixel_missile_1';
-
-                    if (this.nuclearWarnings) {
-                        const targetKey = `${cX}_${cY}_${perkId}`;
-                        soundManager.stopWarningSound(targetKey);
-                        this.nuclearWarnings = this.nuclearWarnings.filter(w => Math.abs(w.x - cX) > 2 || Math.abs(w.y - cY) > 2);
-                    }
-                    
-                    soundManager.playExplosionSound(perkId, cX, cY, this.boardWidth);
-
-                    if (typeof this.triggerExplosionEffect === 'function') {
-                        this.triggerExplosionEffect(cX, cY, r, perkId);
-                    }
-
-                    if (this.renderWorker) {
-                        this.renderWorker.postMessage({ type: 'BOMB_PIXEL', payload: { cX, cY, r, perkId } });
-                    } else {
-                        if (this.offscreenCtx) {
-                            for (let y = cY - r; y <= cY + r; y++) {
-                                const dy = y - cY;
-                                const dx = Math.floor(Math.sqrt(r * r - dy * dy));
-                                const startX = cX - dx;
-                                const endX = cX + dx;
-                                const width = endX - startX + 1;
-                                this.offscreenCtx.clearRect(startX, y, width, 1);
-                            }
-                        }
-                        this.requestRender();
-                    }
-                }
+                
                 else if (data.type === 'chunk_data') {
                     if (typeof this.hydrateChunk === 'function') {
                         this.hydrateChunk(data.chunk_x, data.chunk_y, data.state_base64);
@@ -328,7 +289,7 @@ export const DesignNetwork = {
                         }
                     }
                     if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
-                    if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                    if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
                 }
                 else if (data.type === 'pixel_protected_broadcast') {
                     if (!this.protectedPixels) this.protectedPixels = new Set();
@@ -351,7 +312,7 @@ export const DesignNetwork = {
                         delete this.myProtectedExpiries[data.offset];
                     }
                     if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
-                    if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                    if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
                 }
                 else if (data.type === 'pixel_protection_success') {
                     if (typeof showMessage === 'function') showMessage(window.__('msg_zone_protected_24h'), 'success');
@@ -364,7 +325,7 @@ export const DesignNetwork = {
                         });
                     }
 
-                    if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                    if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
                     if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
                 }
                 else if (data.type === 'init_my_mines') {
@@ -378,7 +339,7 @@ export const DesignNetwork = {
                         data.offsets.forEach(off => this.myMines.add(off));
                     }
 
-                    if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                    if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
                     if (typeof this.syncMinesToWorker === 'function') this.syncMinesToWorker();
                 }
                 else if (data.type === 'mines_placed_error') {
@@ -391,7 +352,7 @@ export const DesignNetwork = {
                     if (typeof this.syncMinesToWorker === 'function') this.syncMinesToWorker();
                     if (typeof showMessage === 'function') showMessage(window.__('msg_mine_detonated'), 'info');
                 }
-                else if (data.type === 'pixel_protected_error' || data.type === 'perk_error') {
+                else if (data.type === 'pixel_protected_error') {
                     const msg = data.message ? (typeof window.__ === 'function' ? window.__(data.message) : data.message) : (typeof window.__ === 'function' ? window.__('err_pixel_protected') : 'err_pixel_protected');
 
                     if (!this.lastProtectedToastTime || (Date.now() - this.lastProtectedToastTime > 2000)) {
@@ -405,9 +366,8 @@ export const DesignNetwork = {
                         const preparingBadges = badgesLeft.querySelectorAll('[data-preparing-key]');
                         preparingBadges.forEach(b => b.remove());
                     }
-                    this.perkGlobalCooldownUntil = 0;
 
-                    if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                    if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
 
                     if (data.balance !== undefined) {
                         this.handleCooldownSync(data);
@@ -549,7 +509,7 @@ export const DesignNetwork = {
                     if (!this.ownerCooldowns) this.ownerCooldowns = {};
                     this.ownerCooldowns[tool] = Date.now() + data.cooldown_ms;
                     if (typeof this.startOwnerCooldownTimer === 'function') this.startOwnerCooldownTimer();
-                    if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                    if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
 
                     showMessage(`${toolName} en cooldown. Espera ${secs} segundos.`, 'warning');
                 }
@@ -560,7 +520,7 @@ export const DesignNetwork = {
                         this.ownerCooldowns[tool] = now + ttl_ms;
                     }
                     if (typeof this.startOwnerCooldownTimer === 'function') this.startOwnerCooldownTimer();
-                    if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+                    if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
                 }
                 else if (data.type === 'canvas_locked_resize') {
                     this.handleCanvasLockedResize(data);
@@ -597,6 +557,15 @@ export const DesignNetwork = {
                 }
                 else if (data.type === 'chat_reaction_updated') {
                     document.dispatchEvent(new CustomEvent('canvas:chat_reaction_updated', { detail: data.data }));
+                }
+                else if (data.type === 'chat_cleared') {
+                    document.dispatchEvent(new CustomEvent('canvas:chat_cleared', { detail: data }));
+                }
+                else if (data.type === 'chat_slowmode_changed') {
+                    document.dispatchEvent(new CustomEvent('canvas:chat_slowmode_changed', { detail: data }));
+                }
+                else if (data.type === 'chat_whisper') {
+                    document.dispatchEvent(new CustomEvent('canvas:chat_whisper', { detail: data.data || data }));
                 }
                 else if (data.type === 'live_image_updated') {
                     this.handleLiveImageUpdate(data);
@@ -1450,8 +1419,8 @@ export const DesignNetwork = {
         }
 
         this.updateSelectionUI();
-        if (typeof this.updatePerkBadges === 'function') {
-            this.updatePerkBadges();
+        if (typeof this.updateOwnerBadges === 'function') {
+            this.updateOwnerBadges();
         }
     },
 
@@ -1597,8 +1566,8 @@ export const DesignNetwork = {
 
             // 3. Reconciliar selección e interfaz
             this.updateSelectionUI();
-            if (typeof this.updatePerkBadges === 'function') {
-                this.updatePerkBadges();
+            if (typeof this.updateOwnerBadges === 'function') {
+                this.updateOwnerBadges();
             }
         }
     },
@@ -1770,210 +1739,7 @@ export const DesignNetwork = {
 
 
 
-    handleBombWarning(data) {
-        const cx = parseInt(data.x || 0, 10);
-        const cy = parseInt(data.y || 0, 10);
-        const perkId = data.perk || 'atomic_bomb_1';
-        
-        let durationSecs = parseInt(data.duration || 3, 10);
-        if (isNaN(durationSecs) || durationSecs <= 0) durationSecs = 3;
-
-        let r = data.radius || data.r;
-        r = parseInt(r || 10, 10);
-        if (isNaN(r) || r <= 0) r = 10;
-
-        const targetKey = `${cx}_${cy}_${perkId}`;
-        const now = Date.now();
-
-        let container = document.querySelector('[data-ref="badges-left"]');
-        if (container) {
-            container.querySelectorAll(`[data-preparing-key="${targetKey}"], [data-preparing-key], [data-preparing-perk], [data-perk-id="${perkId}"]`).forEach(el => {
-                if (el.hasAttribute('data-preparing-key') || el.hasAttribute('data-preparing-perk')) {
-                    el.remove();
-                }
-            });
-        }
-
-        if (!this.nuclearWarnings) this.nuclearWarnings = [];
-        this.nuclearWarnings = this.nuclearWarnings.filter(w => !isNaN(w.endTime) && now < w.endTime);
-
-        const existing = this.nuclearWarnings.find(w => w.key === targetKey && now < w.endTime);
-        if (existing) {
-            return;
-        }
-
-        const durationMs = durationSecs * 1000;
-        soundManager.playWarningSound(perkId, durationSecs, targetKey);
-
-        const warningObj = {
-            key: targetKey,
-            x: cx,
-            y: cy,
-            radius: r,
-            startTime: now,
-            endTime: now + durationMs,
-            perkId: perkId
-        };
-
-        if (perkId === 'black_hole_1' || perkId === 'supernova_blast') {
-            const candidates = [];
-            const rInt = Math.ceil(r);
-            for (let dy = -rInt; dy <= rInt; dy++) {
-                for (let dx = -rInt; dx <= rInt; dx++) {
-                    const px = cx + dx;
-                    const py = cy + dy;
-                    if (px >= 0 && px < this.boardWidth && py >= 0 && py < this.boardHeight) {
-                        const distSq = dx * dx + dy * dy;
-                        if (distSq <= r * r) {
-                            const dist = Math.sqrt(distSq);
-                            if (perkId === 'black_hole_1') {
-                                const hash = ((px * 17 + py * 23) % 100) / 100;
-                                const threshold = 0.05 + (dist / r) * 0.75 + hash * 0.15;
-                                candidates.push({
-                                    x: px,
-                                    y: py,
-                                    dx: dx,
-                                    dy: dy,
-                                    dist: dist,
-                                    threshold: threshold
-                                });
-                            } else {
-                                const threshold = dist / r;
-                                candidates.push({
-                                    x: px,
-                                    y: py,
-                                    dx: dx,
-                                    dy: dy,
-                                    dist: dist,
-                                    threshold: threshold
-                                });
-                            }
-                        }
-                    }
-                }
-            }
-            candidates.sort((a, b) => a.threshold - b.threshold);
-            warningObj.candidates = candidates;
-            warningObj.candidateIndex = 0;
-        }
-
-        this.nuclearWarnings.push(warningObj);
-
-        if (this.renderWorker) {
-            this.renderWorker.postMessage({
-                type: 'BOMB_WARNING',
-                payload: { key: targetKey, x: cx, y: cy, radius: r, durationMs: durationMs, perkId: perkId }
-            });
-        }
-
-        const animateWarning = () => {
-            const currentNow = Date.now();
-            if (this.nuclearWarnings && this.nuclearWarnings.some(w => w === warningObj)) {
-                this.requestRender();
-
-                if (warningObj.perkId === 'supernova_blast' && this.canvas) {
-                    const elapsed = currentNow - warningObj.startTime;
-                    const duration = warningObj.endTime - warningObj.startTime;
-                    const progress = duration > 0 ? Math.min(1, elapsed / duration) : 1;
-                    const maxOffset = progress * 6.5;
-                    const dx = (Math.random() - 0.5) * maxOffset;
-                    const dy = (Math.random() - 0.5) * maxOffset;
-                    this.canvas.style.transform = `translate(${dx}px, ${dy}px)`;
-                }
-
-                if (currentNow < warningObj.endTime) {
-                    requestAnimationFrame(animateWarning);
-                } else {
-                    if (warningObj.perkId === 'supernova_blast' && this.canvas) {
-                        this.canvas.style.transform = '';
-                    }
-                }
-            } else {
-                if (warningObj.perkId === 'supernova_blast' && this.canvas) {
-                    this.canvas.style.transform = '';
-                }
-            }
-        };
-        requestAnimationFrame(animateWarning);
-
-        // UI Badge flotante en la izquierda (indexado por targetKey para soportar spameo/multiusuario)
-        container = document.querySelector('[data-ref="badges-left"]');
-        if (!container) {
-            container = document.createElement('div');
-            container.className = 'canvas-badges-left';
-            container.setAttribute('data-ref', 'badges-left');
-            document.body.appendChild(container);
-        }
-
-        const existingBadge = container.querySelector(`[data-perk-id="${perkId}"]:not([data-preparing-key])`);
-        if (!existingBadge) {
-            const badge = document.createElement('div');
-            badge.className = 'component-badge';
-            badge.setAttribute('data-warning-key', targetKey);
-            badge.setAttribute('data-perk-id', perkId);
-            badge.style.backgroundColor = 'rgba(239, 68, 68, 0.9)';
-            badge.style.color = '#ffffff';
-            badge.style.border = '1px solid var(--color-error, #ef4444)';
-            badge.style.animation = 'pulse 1s infinite';
-
-            const details = { icon: 'crisis_alert', text: 'Ataque de Perk' };
-
-            let remaining = durationSecs;
-            badge.style.display = 'flex';
-            badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span>${details.text} (${remaining}s)</span>`;
-            container.appendChild(badge);
-
-            const timerId = setInterval(() => {
-                remaining--;
-                if (remaining > 0) {
-                    badge.innerHTML = `<span class="material-symbols-rounded">${details.icon}</span><span>${details.text} (${remaining}s)</span>`;
-                } else {
-                    clearInterval(timerId);
-                    if (badge.parentNode) badge.remove();
-                }
-            }, 1000);
-        }
-    },
-
-    showPreparingPerkBadge(perkId, key = null) {
-        let container = document.querySelector('[data-ref="badges-left"]');
-        if (!container) {
-            container = document.createElement('div');
-            container.className = 'canvas-badges-left';
-            container.setAttribute('data-ref', 'badges-left');
-            document.body.appendChild(container);
-        }
-
-        const badgeKey = key || perkId;
-        const existing = container.querySelector(`[data-preparing-key="${badgeKey}"]`);
-        if (existing) existing.remove();
-
-        const icon = 'auto_mode';
-        const label = perkId;
-
-        const badge = document.createElement('div');
-        badge.className = 'component-badge';
-        badge.setAttribute('data-preparing-key', badgeKey);
-        badge.setAttribute('data-perk-id', perkId);
-        badge.style.backgroundColor = 'rgba(99, 102, 241, 0.95)';
-        badge.style.color = '#ffffff';
-        badge.style.border = '1px solid var(--color-primary, #6366f1)';
-        badge.style.animation = 'pulse 1s infinite';
-        badge.innerHTML = `<span class="material-symbols-rounded">${icon}</span><span>Preparando ${label}...</span>`;
-
-        container.appendChild(badge);
-
-        // Auto cleanup after 6 seconds so preparing badge NEVER stays stuck forever
-        setTimeout(() => {
-            if (badge.parentNode) badge.remove();
-        }, 6000);
-
-        return badge;
-    },
-
-    handleNuclearWarning(data) {
-        return this.handleBombWarning(data);
-    },
+    
 
     handleExpansionBadge(data) {
         let container = document.querySelector('[data-ref="badges-left"]');
@@ -2052,8 +1818,8 @@ export const DesignNetwork = {
         if (typeof this.updateLockBadges === 'function') {
             this.updateLockBadges();
         }
-        if (typeof this.updatePerkBadges === 'function') {
-            this.updatePerkBadges();
+        if (typeof this.updateOwnerBadges === 'function') {
+            this.updateOwnerBadges();
         }
         this.requestRender();
     },

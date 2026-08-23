@@ -56,7 +56,6 @@ export class AdminDashboardController {
         this.dom.statPageviews = document.querySelector('[data-ref="stat-pageviews"]');
         this.dom.statPixels = document.querySelector('[data-ref="stat-pixels"]');
         this.dom.statMessages = document.querySelector('[data-ref="stat-messages"]');
-        this.dom.statPerks = document.querySelector('[data-ref="stat-perks"]');
         this.dom.statCanvases = document.querySelector('[data-ref="stat-canvases"]');
         this.dom.statBanned = document.querySelector('[data-ref="stat-banned"]');
         this.dom.statLatency = document.querySelector('[data-ref="stat-latency"]');
@@ -99,7 +98,6 @@ export class AdminDashboardController {
         if (this.dom.statPageviews) this.dom.statPageviews.textContent = '...';
         if (this.dom.statPixels) this.dom.statPixels.textContent = '...';
         if (this.dom.statMessages) this.dom.statMessages.textContent = '...';
-        if (this.dom.statPerks) this.dom.statPerks.textContent = '...';
         if (this.dom.statCanvases) this.dom.statCanvases.textContent = '...';
         if (this.dom.statBanned) this.dom.statBanned.textContent = '...';
         if (this.dom.statLatency) this.dom.statLatency.textContent = '...';
@@ -114,7 +112,7 @@ export class AdminDashboardController {
             }
         } else {
             showMessage(response?.message, 'error');
-            this.updateStatsCards({ new_users: 0, logins: 0, pageviews: 0, messages: 0, pixels: 0, perks_used: 0, canvases: 0 });
+            this.updateStatsCards({ new_users: 0, logins: 0, pageviews: 0, messages: 0, pixels: 0, canvases: 0 });
         }
     }
 
@@ -124,7 +122,6 @@ export class AdminDashboardController {
         if (this.dom.statPageviews) this.dom.statPageviews.textContent = formatNumber(summary.pageviews ?? 0);
         if (this.dom.statPixels) this.dom.statPixels.textContent = formatNumber(summary.pixels ?? 0);
         if (this.dom.statMessages) this.dom.statMessages.textContent = formatNumber(summary.messages ?? 0);
-        if (this.dom.statPerks) this.dom.statPerks.textContent = formatNumber(summary.perks_used ?? 0);
         if (this.dom.statCanvases) this.dom.statCanvases.textContent = formatNumber(summary.canvases ?? 0);
         if (this.dom.statBanned) this.dom.statBanned.textContent = formatNumber(summary.banned_users ?? 0);
         if (this.dom.statLatency) this.dom.statLatency.textContent = formatNumber(summary.avg_latency ?? 0) + ' ms';

@@ -66,24 +66,36 @@ export class TooltipSystem {
 
         const preferredPosition = target.getAttribute('data-position') || 'auto';
 
-        this.activeEngine = UiEngine.createEngine(target, this.activeTooltip, {
+        if (typeof window.UiEngine === 'undefined') {
+            this.activeTooltip.classList.add('active');
+            return;
+        }
+
+        this.activeEngine = window.UiEngine.createEngine(target, this.activeTooltip, {
             placement: preferredPosition,
             modifiers: [
                 { name: 'offset', options: { offset: [0, 8] } },
                 { name: 'flip', enabled: true, options: { fallbackPlacements: ['bottom', 'top', 'left', 'right'] } },
                 { name: 'preventOverflow', enabled: true, options: { boundary: 'viewport' } },
-
                 { name: 'computeStyles', options: { gpuAcceleration: false } }
             ],
         });
 
-        this.activeEngine.update().then(() => {
-            requestAnimationFrame(() => {
+        if (this.activeEngine && typeof this.activeEngine.update === 'function') {
+            this.activeEngine.update().then(() => {
+                requestAnimationFrame(() => {
+                    if (this.activeTooltip) {
+                        this.activeTooltip.classList.add('active'); 
+                    }
+                });
+            }).catch(() => {
                 if (this.activeTooltip) {
-                    this.activeTooltip.classList.add('active'); 
+                    this.activeTooltip.classList.add('active');
                 }
             });
-        });
+        } else {
+            this.activeTooltip.classList.add('active');
+        }
     }
 
     handleHide(e) {

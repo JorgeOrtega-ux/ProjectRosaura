@@ -167,6 +167,3 @@ export class NoticeSystem {
         }, 300); // Wait for transition
     }
 }
-
-// Instantiate globally to be available for console testing
-window.NoticeSystemInstance = new NoticeSystem();

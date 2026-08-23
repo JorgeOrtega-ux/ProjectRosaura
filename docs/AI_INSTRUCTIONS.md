@@ -1,4 +1,4 @@
-﻿# AI Development Instructions - Project Rosaura
+# AI Development Instructions - Project Rosaura
 
 This guide outlines the mandatory coding rules and architectural constraints that must be followed by any AI developer or coding assistant working on this codebase.
 

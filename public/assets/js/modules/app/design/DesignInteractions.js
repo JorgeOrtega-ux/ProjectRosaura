@@ -1,4 +1,4 @@
-﻿import { colorToAbgr, abgrToHex, getBresenhamLine } from './interactions/InteractionHelpers.js?v=34';
+import { colorToAbgr, abgrToHex, getBresenhamLine } from './interactions/InteractionHelpers.js?v=34';
 import { InteractionEvents } from './interactions/InteractionEvents.js?v=34';
 import { InteractionPointer } from './interactions/InteractionPointer.js?v=34';
 import { InteractionSelection } from './interactions/InteractionSelection.js?v=34';

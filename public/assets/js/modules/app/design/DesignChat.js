@@ -35,9 +35,11 @@ export class DesignChat {
         this.typingUsers = new Map();
         this.lastTypingSent = 0;
         this.lastIsTyping = false;
-        this.myTypingTimeout = null;
-
         this.typingContainer = null;
+
+        this.slowmodeSeconds = 0;
+        this.slowmodeRemaining = 0;
+        this.slowmodeInterval = null;
 
         this.toolbarChatBtn = document.querySelector('[data-action="toggleMenuInModule"][data-module-target="moduleLiveChat"]');
 
@@ -429,6 +431,18 @@ export class DesignChat {
                 if (window.currentDesignChatInstance) window.currentDesignChatInstance.handleReactionEvent(e.detail);
             });
 
+            document.addEventListener('canvas:chat_cleared', (e) => {
+                if (window.currentDesignChatInstance) window.currentDesignChatInstance.handleChatClearedEvent(e.detail);
+            });
+
+            document.addEventListener('canvas:chat_slowmode_changed', (e) => {
+                if (window.currentDesignChatInstance) window.currentDesignChatInstance.handleSlowmodeChangedEvent(e.detail);
+            });
+
+            document.addEventListener('canvas:chat_whisper', (e) => {
+                if (window.currentDesignChatInstance) window.currentDesignChatInstance.handleWhisperEvent(e.detail);
+            });
+
             document.addEventListener('click', (e) => {
                 const attachmentItem = e.target.closest('[data-action="openChatImageViewer"]');
                 if (attachmentItem) {
@@ -746,6 +760,9 @@ export class DesignChat {
 
             if (response.success || response.status === 'success') {
                 const msgs = response.data.messages;
+                if (response.data.slowmode_seconds !== undefined) {
+                    this.slowmodeSeconds = parseInt(response.data.slowmode_seconds, 10) || 0;
+                }
                 
                 const emptyState = this.chatContainer.querySelector('[data-ref="empty-state-rendered"]');
                 if (this.offset === 0 && msgs.length === 0) {
@@ -804,6 +821,28 @@ export class DesignChat {
         
         const text = this.chatInput.value.trim();
         if (!text && this.selectedFiles.length === 0) return;
+
+        // Check local-only slash commands
+        const lower = text.toLowerCase();
+        if (lower === '/help' || lower === '/ayuda') {
+            this.chatInput.value = '';
+            this.autoResizeTextarea();
+            this.clearReplyTarget();
+            if (this.btnSend) this.btnSend.classList.remove('active');
+            this.hideAutocomplete();
+            this.showHelpMessage();
+            return;
+        }
+
+        if (lower === '/clear') {
+            this.chatInput.value = '';
+            this.autoResizeTextarea();
+            this.clearReplyTarget();
+            if (this.btnSend) this.btnSend.classList.remove('active');
+            this.hideAutocomplete();
+            this.clearLocalChat();
+            return;
+        }
         
         this.isSending = true;
 
@@ -812,6 +851,7 @@ export class DesignChat {
         
         const backupText = text;
         const backupFiles = [...this.selectedFiles];
+        const isCommand = backupText.startsWith('/');
         
         const replyToId = this.replyTarget ? this.replyTarget.id : null;
         const replyToUsername = this.replyTarget ? this.replyTarget.username : null;
@@ -820,30 +860,31 @@ export class DesignChat {
         const clientId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         const optimisticAttachments = backupFiles.map(file => URL.createObjectURL(file));
         
-        const optimisticMsg = {
-            id: clientId,
-            client_id: clientId,
-            user_id: this.currentUserId,
-            username: this.currentUsername,
-            avatar: this.currentUserAvatar || null,
-            message: backupText,
-            attachments: optimisticAttachments,
-            created_at: new Date().toISOString(),
-            is_optimistic: true,
-            reply_to: replyToId,
-            reply_to_username: replyToUsername,
-            reply_to_message: replyToMessage,
-            subscription_color: this.currentUserSubColor || null
-        };
-        
-        this.appendMessage(optimisticMsg);
+        if (!isCommand) {
+            const optimisticMsg = {
+                id: clientId,
+                client_id: clientId,
+                user_id: this.currentUserId,
+                username: this.currentUsername,
+                avatar: this.currentUserAvatar || null,
+                message: backupText,
+                attachments: optimisticAttachments,
+                created_at: new Date().toISOString(),
+                is_optimistic: true,
+                reply_to: replyToId,
+                reply_to_username: replyToUsername,
+                reply_to_message: replyToMessage,
+                subscription_color: this.currentUserSubColor || null
+            };
+            this.appendMessage(optimisticMsg);
+        }
         
         this.chatInput.value = '';
         this.autoResizeTextarea();
         this.selectedFiles = [];
         this.renderPreview();
         this.clearReplyTarget();
-        this.btnSend.classList.remove('active');
+        if (this.btnSend) this.btnSend.classList.remove('active');
         if (this.chatInput) this.chatInput.classList.remove('disabled-interaction');
 
         try {
@@ -877,6 +918,14 @@ export class DesignChat {
                 showMessage(response.message, 'error');
                 const optEl = this.chatContainer.querySelector(`[data-client-id="${clientId}"]`);
                 if (optEl) optEl.remove();
+            } else if (response.is_command) {
+                if (response.message) {
+                    showMessage(response.message, 'success');
+                }
+            } else {
+                if (this.slowmodeSeconds > 0 && !this.canModerateChat) {
+                    this.startSlowmodeTimer(this.slowmodeSeconds);
+                }
             }
         } catch (error) {
             console.error('[DesignChat] Error sending message:', error);
@@ -904,6 +953,270 @@ export class DesignChat {
                 this.lastIsTyping = false;
             }
             this.isSending = false;
+        }
+    }
+
+    showHelpMessage() {
+        const isMod = this.canModerateChat;
+        const helpEl = document.createElement('div');
+        helpEl.className = 'chat-message chat-message--system-card';
+
+        let commandsHtml = `
+            <div class="chat-help-category">
+                <div class="chat-help-category-title">
+                    <span class="material-symbols-rounded">chat</span>
+                    <strong>Comandos Generales</strong>
+                </div>
+                <div class="chat-help-item">
+                    <code>/help</code> o <code>/ayuda</code>
+                    <span>Muestra esta lista de comandos.</span>
+                </div>
+                <div class="chat-help-item">
+                    <code>/w @usuario &lt;mensaje&gt;</code>
+                    <span>Envía un susurro o mensaje privado.</span>
+                </div>
+                <div class="chat-help-item">
+                    <code>/clear</code>
+                    <span>Limpia tu pantalla actual de chat (vista local).</span>
+                </div>
+            </div>
+        `;
+
+        if (isMod) {
+            commandsHtml += `
+            <div class="chat-help-category">
+                <div class="chat-help-category-title">
+                    <span class="material-symbols-rounded">shield_person</span>
+                    <strong>Comandos de Moderación</strong>
+                </div>
+                <div class="chat-help-item">
+                    <code>/clearchat</code>
+                    <span>Borra el chat para todos los miembros en vivo.</span>
+                </div>
+                <div class="chat-help-item">
+                    <code>/slowmode &lt;segundos|off&gt;</code>
+                    <span>Configura el tiempo de espera entre mensajes (ej: /slowmode 10).</span>
+                </div>
+                <div class="chat-help-item">
+                    <code>/shout &lt;mensaje&gt;</code>
+                    <span>Envía un anuncio destacado global con estilo de megáfono.</span>
+                </div>
+                <div class="chat-help-item">
+                    <code>/timeout &lt;usuario&gt; [segundos]</code>
+                    <span>Silencia temporalmente a un usuario.</span>
+                </div>
+                <div class="chat-help-item">
+                    <code>/untimeout &lt;usuario&gt;</code>
+                    <span>Levanta el silencio temporal.</span>
+                </div>
+                <div class="chat-help-item">
+                    <code>/ban &lt;usuario&gt;</code>
+                    <span>Silencia permanentemente del chat a un usuario.</span>
+                </div>
+                <div class="chat-help-item">
+                    <code>/unban &lt;usuario&gt;</code>
+                    <span>Levanta el silencio permanente del chat.</span>
+                </div>
+                <div class="chat-help-item">
+                    <code>/canvasban &lt;usuario&gt;</code>
+                    <span>Banea y expulsa permanentemente a un usuario del lienzo.</span>
+                </div>
+                <div class="chat-help-item">
+                    <code>/unbancanvas &lt;usuario&gt;</code>
+                    <span>Desbanea a un usuario del lienzo.</span>
+                </div>
+            </div>
+            `;
+        }
+
+        helpEl.innerHTML = `
+            <div class="chat-message-bubble chat-help-card-bubble">
+                <div class="chat-help-header">
+                    <div class="chat-help-header-title">
+                        <span class="material-symbols-rounded">help</span>
+                        <strong>Ayuda de Comandos del Chat</strong>
+                    </div>
+                </div>
+                <div class="chat-help-content">
+                    ${commandsHtml}
+                </div>
+            </div>
+        `;
+
+        if (this.chatContainer) {
+            this.chatContainer.appendChild(helpEl);
+            this.scrollToBottom();
+        }
+    }
+
+    clearLocalChat() {
+        if (this.chatContainer) {
+            const loader = this.chatContainer.querySelector('[data-ref="chat-loader"]');
+            this.chatContainer.innerHTML = '';
+            if (loader) this.chatContainer.appendChild(loader);
+        }
+        this.messages = [];
+        this.offset = 0;
+        this.hasMore = false;
+
+        this.appendSystemNotice({
+            icon: 'delete_sweep',
+            text: 'Has limpiado tu pantalla de chat.'
+        });
+    }
+
+    handleChatClearedEvent(data) {
+        if (this.chatContainer) {
+            const loader = this.chatContainer.querySelector('[data-ref="chat-loader"]');
+            this.chatContainer.innerHTML = '';
+            if (loader) this.chatContainer.appendChild(loader);
+        }
+        this.messages = [];
+        this.offset = 0;
+        this.hasMore = false;
+
+        const modName = data.cleared_by_username || 'un moderador';
+        this.appendSystemNotice({
+            icon: 'cleaning_services',
+            text: `El chat ha sido limpiado por ${modName}.`
+        });
+    }
+
+    handleSlowmodeChangedEvent(data) {
+        const seconds = parseInt(data.seconds, 10) || 0;
+        this.slowmodeSeconds = seconds;
+
+        if (seconds > 0) {
+            this.appendSystemNotice({
+                icon: 'timer',
+                text: `Modo lento activado (${seconds}s por mensaje).`
+            });
+        } else {
+            this.appendSystemNotice({
+                icon: 'timer_off',
+                text: 'Modo lento desactivado.'
+            });
+            if (this.slowmodeInterval) {
+                clearInterval(this.slowmodeInterval);
+                this.slowmodeInterval = null;
+            }
+            this.slowmodeRemaining = 0;
+            if (this.btnSend) {
+                this.btnSend.classList.remove('disabled-interaction');
+                this.btnSend.title = window.__('lbl_send') || 'Enviar';
+            }
+        }
+    }
+
+    startSlowmodeTimer(seconds) {
+        if (this.canModerateChat || seconds <= 0) return;
+        this.slowmodeRemaining = seconds;
+        if (this.slowmodeInterval) clearInterval(this.slowmodeInterval);
+
+        const updateBtn = () => {
+            if (!this.btnSend) return;
+            if (this.slowmodeRemaining > 0) {
+                this.btnSend.classList.add('disabled-interaction');
+                this.btnSend.title = `Modo lento: espera ${this.slowmodeRemaining}s`;
+            } else {
+                this.btnSend.classList.remove('disabled-interaction');
+                if (this.chatInput && (this.chatInput.value.trim().length > 0 || this.selectedFiles.length > 0)) {
+                    this.btnSend.classList.add('active');
+                }
+                this.btnSend.title = window.__('lbl_send') || 'Enviar';
+            }
+        };
+
+        updateBtn();
+
+        this.slowmodeInterval = setInterval(() => {
+            this.slowmodeRemaining--;
+            if (this.slowmodeRemaining <= 0) {
+                clearInterval(this.slowmodeInterval);
+                this.slowmodeInterval = null;
+                this.slowmodeRemaining = 0;
+            }
+            updateBtn();
+        }, 1000);
+    }
+
+    handleWhisperEvent(data) {
+        const isSender = String(data.sender_id) === String(this.currentUserId);
+        const isTarget = String(data.target_id) === String(this.currentUserId);
+
+        if (!isSender && !isTarget) return;
+
+        this.appendWhisperMessage(data, isSender);
+    }
+
+    appendWhisperMessage(msg, isSender) {
+        const el = document.createElement('div');
+        el.className = 'chat-message chat-message--whisper' + (isSender ? ' chat-message--mine' : '');
+        el.dataset.messageId = msg.id || ('whisper_' + Date.now());
+
+        const msgDate = new Date(msg.created_at || Date.now());
+        const time = msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        const whisperTitle = isSender 
+            ? `Susurraste a <strong>@${msg.target_username}</strong>` 
+            : `<strong>@${msg.sender_username}</strong> te susurró`;
+
+        const avatarUrl = isSender 
+            ? (this.currentUserAvatar || `${window.AppBasePath || ''}/public/assets/img/fallbacks/avatar-default.png`)
+            : (msg.sender_avatar || `${window.AppBasePath || ''}/public/assets/img/fallbacks/avatar-default.png`);
+
+        const subColorCSS = this.parseSubscriptionColorCSS(msg.sender_sub_color);
+
+        const avatarStr = `
+            <div class="component-button--profile subscription-dynamic component-avatar--static-sm" data-sub-bg="${subColorCSS}" style="--active-subscription-bg: ${subColorCSS};">
+                <img src="${avatarUrl}" class="chat-message-avatar-img image-lazy-fade" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${window.AppBasePath || ''}/public/assets/img/fallbacks/avatar-default.png'; this.classList.add('image-loaded');">
+            </div>
+        `;
+
+        el.innerHTML = `
+            ${avatarStr}
+            <div class="chat-message-bubble chat-whisper-bubble">
+                <div class="chat-whisper-header">
+                    <div class="chat-whisper-tag">
+                        <span class="material-symbols-rounded">lock</span>
+                        <span>${whisperTitle}</span>
+                    </div>
+                    <span class="chat-message-time">${time}</span>
+                </div>
+                <div class="chat-message-text">${msg.message}</div>
+            </div>
+        `;
+
+        if (!isSender) {
+            el.style.cursor = 'pointer';
+            el.title = `Haz clic para responder a @${msg.sender_username}`;
+            el.addEventListener('click', () => {
+                if (this.chatInput) {
+                    this.chatInput.value = `/w @${msg.sender_username} `;
+                    this.chatInput.focus();
+                    this.chatInput.dispatchEvent(new Event('input'));
+                }
+            });
+        }
+
+        if (this.chatContainer) {
+            this.chatContainer.appendChild(el);
+            this.scrollToBottom();
+        }
+    }
+
+    appendSystemNotice(notice) {
+        const el = document.createElement('div');
+        el.className = 'chat-message chat-message--status chat-message--system-notice';
+        el.innerHTML = `
+            <div class="chat-message-status-bubble">
+                <span class="material-symbols-rounded">${notice.icon || 'info'}</span>
+                <span>${notice.text}</span>
+            </div>
+        `;
+        if (this.chatContainer) {
+            this.chatContainer.appendChild(el);
+            this.scrollToBottom();
         }
     }
 
@@ -1136,6 +1449,9 @@ export class DesignChat {
         else if (isYesterday) dateDividerStr = window.__('date_yesterday');
         
         el.dataset.dateString = dateDividerStr;
+        if (msg.is_shout) {
+            el.classList.add('chat-message--shout');
+        }
         
         let avatarUrl = `${window.AppBasePath || ''}/public/assets/img/fallbacks/avatar-default.png`;
         if (msg.avatar) {
@@ -1297,9 +1613,20 @@ export class DesignChat {
             </div>
         `;
 
+        let shoutBannerHtml = '';
+        if (msg.is_shout) {
+            shoutBannerHtml = `
+                <div class="chat-message-shout-banner">
+                    <span class="material-symbols-rounded">campaign</span>
+                    <span>${window.__('chat_announcement') || 'ANUNCIO DEL LIENZO'}</span>
+                </div>
+            `;
+        }
+
         el.innerHTML = `
             ${avatarStr}
             <div class="chat-message-bubble">
+                ${shoutBannerHtml}
                 <div class="chat-message-header">
                     <div class="chat-header-title-box">
                         <strong class="chat-message-username">${msg.username}</strong>
@@ -1326,7 +1653,7 @@ export class DesignChat {
             const usersTitle = (r.users || []).map(u => u.username).join(', ');
             const isUserReacted = (String(r.user_reacted) === 'true' || (r.users && r.users.some(u => String(u.id) === String(this.currentUserId))));
             return `
-                <button class="chat-reaction-badge ${isUserReacted ? 'active' : ''}" data-action="chatToggleReaction" data-message-id="${messageId}" data-emoji="${r.emoji}" title="${usersTitle || ''}">
+                <button class="chat-reaction-badge component-badge ${isUserReacted ? 'active' : ''}" data-action="chatToggleReaction" data-message-id="${messageId}" data-emoji="${r.emoji}" title="${usersTitle || ''}">
                     <span class="chat-reaction-emoji">${r.emoji}</span>
                     <span class="chat-reaction-count">${r.count}</span>
                 </button>
@@ -1334,7 +1661,7 @@ export class DesignChat {
         }).join('');
 
         const addBtnHtml = `
-            <button class="chat-reaction-badge chat-reaction-badge--add" data-action="chatOpenEmojiPicker" data-id="${messageId}" title="${window.__('lbl_add_reaction') || 'Reaccionar'}">
+            <button class="chat-reaction-badge component-badge chat-reaction-badge--add" data-action="chatOpenEmojiPicker" data-id="${messageId}" title="${window.__('lbl_add_reaction') || 'Reaccionar'}">
                 <span class="material-symbols-rounded">add</span>
             </button>
         `;
@@ -1412,7 +1739,7 @@ export class DesignChat {
             }
         } else {
             const newBadge = document.createElement('button');
-            newBadge.className = 'chat-reaction-badge active chat-reaction-pop';
+            newBadge.className = 'chat-reaction-badge component-badge active chat-reaction-pop';
             newBadge.dataset.action = 'chatToggleReaction';
             newBadge.dataset.messageId = actualMsgId;
             newBadge.dataset.emoji = emoji;
@@ -1425,7 +1752,7 @@ export class DesignChat {
             let addBtn = reactionsContainer.querySelector('.chat-reaction-badge--add');
             if (!addBtn) {
                 addBtn = document.createElement('button');
-                addBtn.className = 'chat-reaction-badge chat-reaction-badge--add';
+                addBtn.className = 'chat-reaction-badge component-badge chat-reaction-badge--add';
                 addBtn.dataset.action = 'chatOpenEmojiPicker';
                 addBtn.dataset.id = actualMsgId;
                 addBtn.title = window.__('lbl_add_reaction') || 'Reaccionar';
@@ -1472,7 +1799,7 @@ export class DesignChat {
             const usersTitle = (r.users || []).map(u => u.username).join(', ');
             const isUserReacted = (String(r.user_reacted) === 'true' || (r.users && r.users.some(u => String(u.id) === String(this.currentUserId))));
             return `
-                <button class="chat-reaction-badge ${isUserReacted ? 'active' : ''}" data-action="chatToggleReaction" data-message-id="${actualMsgId}" data-emoji="${r.emoji}" title="${usersTitle || ''}">
+                <button class="chat-reaction-badge component-badge ${isUserReacted ? 'active' : ''}" data-action="chatToggleReaction" data-message-id="${actualMsgId}" data-emoji="${r.emoji}" title="${usersTitle || ''}">
                     <span class="chat-reaction-emoji">${r.emoji}</span>
                     <span class="chat-reaction-count">${r.count}</span>
                 </button>
@@ -1480,7 +1807,7 @@ export class DesignChat {
         }).join('');
 
         const addBtnHtml = `
-            <button class="chat-reaction-badge chat-reaction-badge--add" data-action="chatOpenEmojiPicker" data-id="${actualMsgId}" title="${window.__('lbl_add_reaction') || 'Reaccionar'}">
+            <button class="chat-reaction-badge component-badge chat-reaction-badge--add" data-action="chatOpenEmojiPicker" data-id="${actualMsgId}" title="${window.__('lbl_add_reaction') || 'Reaccionar'}">
                 <span class="material-symbols-rounded">add</span>
             </button>
         `;
@@ -1736,15 +2063,28 @@ export class DesignChat {
         const words = textBeforeCursor.split(/\s+/);
         const lastWord = words[words.length - 1] || '';
 
-        if (lastWord.startsWith('/') && this.canModerateChat) {
-            const commands = [
-                { name: '/timeout', desc: 'Silenciar usuario temporalmente', icon: 'timer' },
+        if (lastWord.startsWith('/')) {
+            const generalCommands = [
+                { name: '/help', desc: 'Ayuda y lista de comandos', icon: 'help' },
+                { name: '/w', desc: 'Susurro / Mensaje privado', icon: 'lock' },
+                { name: '/whisper', desc: 'Susurro / Mensaje privado', icon: 'lock' },
+                { name: '/clear', desc: 'Limpiar chat (vista local)', icon: 'delete_sweep' }
+            ];
+
+            const modCommands = [
+                { name: '/clearchat', desc: 'Limpiar chat para todos (en vivo)', icon: 'cleaning_services' },
+                { name: '/slowmode', desc: 'Modo lento entre mensajes', icon: 'timer' },
+                { name: '/shout', desc: 'Anuncio destacado de moderador', icon: 'campaign' },
+                { name: '/anuncio', desc: 'Anuncio destacado de moderador', icon: 'campaign' },
+                { name: '/timeout', desc: 'Silenciar usuario temporalmente', icon: 'schedule' },
                 { name: '/untimeout', desc: 'Levantar silencio de chat', icon: 'lock_open' },
                 { name: '/ban', desc: 'Silenciar permanentemente', icon: 'speaker_notes_off' },
                 { name: '/unban', desc: 'Levantar baneo del chat', icon: 'check_circle' },
                 { name: '/canvasban', desc: 'Baneo permanente del lienzo', icon: 'block' },
                 { name: '/unbancanvas', desc: 'Desbanear del lienzo', icon: 'check_circle' }
             ];
+
+            const commands = this.canModerateChat ? [...generalCommands, ...modCommands] : generalCommands;
             const match = lastWord.toLowerCase();
             const suggestions = commands.filter(c => c.name.toLowerCase().startsWith(match) || c.name.toLowerCase().includes(match.replace('/', '')));
             this.showAutocomplete(suggestions, 'command', lastWord, commands);
@@ -1755,11 +2095,12 @@ export class DesignChat {
         let query = '';
         let triggerWord = '';
 
+        const userCmds = ['/w', '/whisper', '/msg', '/timeout', '/untimeout', '/ban', '/unban', '/canvasban', '/bancanvas', '/canvasunban', '/unbancanvas'];
         if (lastWord.startsWith('@')) {
             isUserTrigger = true;
             query = lastWord.substring(1).toLowerCase();
             triggerWord = lastWord;
-        } else if (words.length === 2 && ['/timeout', '/untimeout', '/ban', '/unban', '/canvasban', '/bancanvas', '/canvasunban', '/unbancanvas'].includes(words[0].toLowerCase())) {
+        } else if (words.length === 2 && userCmds.includes(words[0].toLowerCase())) {
             isUserTrigger = true;
             query = lastWord.toLowerCase();
             triggerWord = lastWord;

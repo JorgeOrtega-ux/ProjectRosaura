@@ -1,4 +1,4 @@
-﻿import { showMessage, hsvToHex, getEventCoords } from '../../../../core/utils/uiUtils.js';
+import { showMessage, hsvToHex, getEventCoords } from '../../../../core/utils/uiUtils.js';
 import { abgrToHex } from './InteractionHelpers.js';
 
 export const InteractionHistoryColors = {

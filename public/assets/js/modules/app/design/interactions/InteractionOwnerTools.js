@@ -1,4 +1,4 @@
-﻿import { showMessage } from '../../../../core/utils/uiUtils.js';
+import { showMessage } from '../../../../core/utils/uiUtils.js';
 
 export const InteractionOwnerTools = {
     toggleOwnerEraser() {
@@ -15,7 +15,6 @@ export const InteractionOwnerTools = {
             if (typeof showMessage === 'function') showMessage(window.__('msg_eraser_mode_off'), 'info');
         } else {
             this.interactionMode = 'owner_erasing';
-            this.activeBomb = null;
             this.selectedPixels.clear();
             this.ownerEraserBox = null;
             this.ownerEraserStep = 0;
@@ -24,7 +23,7 @@ export const InteractionOwnerTools = {
             if (typeof showMessage === 'function') showMessage(window.__('msg_eraser_mode_corner'), 'info');
         }
         this.updateSelectionUI();
-        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
         this.requestRender();
     },
 
@@ -132,7 +131,7 @@ export const InteractionOwnerTools = {
         const btnEraser = document.querySelector('[data-action="toggleOfflineEraser"]');
         if (btnEraser) btnEraser.classList.remove('active');
         this.updateSelectionUI();
-        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
         this.requestRender();
         if (typeof showMessage === 'function') showMessage(window.__('msg_zone_cleared_success'), 'success');
     },
@@ -174,7 +173,6 @@ export const InteractionOwnerTools = {
             if (typeof showMessage === 'function') showMessage(window.__('msg_protect_mode_off'), 'info');
         } else {
             this.interactionMode = 'owner_protecting';
-            this.activeBomb = null;
             this.selectedPixels.clear();
             this.ownerEraserBox = null;
             this.ownerEraserStep = 0;
@@ -182,7 +180,7 @@ export const InteractionOwnerTools = {
             if (typeof showMessage === 'function') showMessage(window.__('msg_protect_mode_corner'), 'info');
         }
         this.updateSelectionUI();
-        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
         this.requestRender();
     },
 
@@ -235,7 +233,7 @@ export const InteractionOwnerTools = {
         this.startOwnerCooldownTimer();
 
         this.updateSelectionUI();
-        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
         this.requestRender();
     },
 
@@ -272,7 +270,7 @@ export const InteractionOwnerTools = {
         this.interactionMode = 'normal';
         this.selectedPixels.clear();
         this.updateSelectionUI();
-        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
         this.syncMinesToWorker();
         this.requestRender();
     },
@@ -286,7 +284,7 @@ export const InteractionOwnerTools = {
                 showMessage(window.__('msg_hiding_protected_zones'), 'info');
             }
         }
-        this.updatePerkBadges();
+        this.updateOwnerBadges();
         if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
         this.requestRender();
     },
@@ -315,7 +313,7 @@ export const InteractionOwnerTools = {
         }
 
         if (hasExpiredAny) {
-            this.updatePerkBadges();
+            this.updateOwnerBadges();
             if (typeof this.syncProtectedPixelsToWorker === 'function') this.syncProtectedPixelsToWorker();
             this.requestRender();
         }
@@ -394,11 +392,11 @@ export const InteractionOwnerTools = {
                 }
             }
             if (active) {
-                this.updatePerkBadges();
+                this.updateOwnerBadges();
             } else {
                 clearInterval(this.ownerCooldownTimerInterval);
                 this.ownerCooldownTimerInterval = null;
-                this.updatePerkBadges();
+                this.updateOwnerBadges();
             }
         }, 1000);
     }

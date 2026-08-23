@@ -1,4 +1,4 @@
-﻿import { CanvasSyncChannel } from '../../../../core/services/CanvasSyncChannel.js';
+import { CanvasSyncChannel } from '../../../../core/services/CanvasSyncChannel.js';
 import { showMessage } from '../../../../core/utils/uiUtils.js';
 import { colorToAbgr } from './InteractionHelpers.js';
 
@@ -110,37 +110,7 @@ export const InteractionSelection = {
 
         let maxBalance = this.getMaxBalance();
         
-        if (this.interactionMode === 'bombing') {
-                        this.btnPlacePixels.classList.replace('component-button--success', 'component-button--danger');
-        } else {
-            this.btnPlacePixels.classList.remove('component-button--success');
-            this.btnPlacePixels.classList.remove('component-button--danger');
-        }
-
-        if (this.selectedPixels.size > 0 && this.selectedPixels.size <= maxBalance) {
-            this.btnPlacePixels.classList.remove('disabled-interaction');
-            this.txtPlacePixels.textContent = window.__('btn_place_pixels');
-        } else {
-            this.btnPlacePixels.classList.add('disabled-interaction');
-            if (this.selectedPixels.size > maxBalance) {
-                this.txtPlacePixels.textContent = (__('lbl_max_pixels')).replace(':max', maxBalance === Infinity ? 'Ôê×' : maxBalance);
-            } else {
-                this.txtPlacePixels.textContent = __('btn_select_pixels');
-            }
-        }
-    },
-
-    placePixels() {
-        if ((this.selectedPixels.size === 0 && this.interactionMode !== 'owner_erasing' && this.interactionMode !== 'owner_protecting') || this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
-
-        if (this.interactionMode === 'placing_mines') {
-            if (this.selectedPixels.size === 0 || this.selectedPixels.size > 10) return;
-            const pixels = Array.from(this.selectedPixels).map(key => {
-                return { x: key & 0xffff, y: key >> 16 };
-            });
-            this.executePlaceMines(pixels);
-            return;
-        }
+        
 
         if (this.interactionMode === 'owner_erasing') {
             if (!this.ownerEraserBox) return;
@@ -173,57 +143,11 @@ export const InteractionSelection = {
         let maxBalance = this.getMaxBalance();
 
         if (this.selectedPixels.size > maxBalance) {
-            showMessage(__('err_pixel_limit')?.replace(':limit', maxBalance === Infinity ? 'Ôê×' : maxBalance), 'warning');
+            showMessage(__('err_pixel_limit')?.replace(':limit', maxBalance === Infinity ? '∞' : maxBalance), 'warning');
             return;
         }
 
-        if (this.interactionMode === 'bombing') {
-            const requiredTargets = 1;
-            if (this.selectedPixels.size < requiredTargets) {
-                const msgText = (typeof window.__ === 'function' ? window.__('msg_select_target') : null) || 'Selecciona un objetivo';
-                if (typeof showMessage === 'function') showMessage(msgText, 'warning');
-                return;
-            }
-            const targets = Array.from(this.selectedPixels).map(key => ({
-                x: key & 0xFFFF,
-                y: key >> 16
-            }));
-            const usedPerk = this.activeBomb;
-            const durationSecs = 3;
-            const perkRadius = 10;
-
-
-            if (typeof this.showPreparingPerkBadge === 'function' && usedPerk) {
-                this.showPreparingPerkBadge(usedPerk, usedPerk);
-            }
-
-            const cooldownMs = (durationSecs + 1) * 1000;
-            if (typeof this.setGlobalPerkCooldown === 'function') {
-                this.setGlobalPerkCooldown(cooldownMs);
-            }
-
-            if (this.wsManager) {
-                this.wsManager.send({
-                    type: 'bomb_pixel',
-                    targets: targets,
-                    x: targets[0]?.x ?? 0,
-                    y: targets[0]?.y ?? 0,
-                    perk: usedPerk,
-                    width: this.boardWidth,
-                    userId: window.activeUserId || null
-                });
-            }
-            this.interactionMode = 'normal';
-            this.activeBomb = null;
-            this.perkBombReady = null;
-            this.selectedPixels.clear();
-            this.updateSelectionUI();
-            this.requestRender();
-            if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
-            return;
-        }
-
-        // Se env├¡a el color hexadecimal directamente
+        // Se envía el color hexadecimal directamente
         let colorHex = this.currentColor;
 
         let validPixels = [];
@@ -366,15 +290,13 @@ export const InteractionSelection = {
             }
             this.selectedPixels.clear();
             this.updateSelectionUI();
-            if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+            if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
             this.requestRender();
             return;
         }
 
         if (this.interactionMode === 'normal') {
-            if (!this.perkNoCooldown) {
-                this.cooldownBalance -= validPixels.length;
-            }
+            this.cooldownBalance -= validPixels.length;
             
             if (this.cooldownBalance < this.cooldownMax && this.cooldownNextIn <= 0) {
                 this.cooldownNextIn = this.cooldownSec;
@@ -386,37 +308,8 @@ export const InteractionSelection = {
         this.selectedPixels.clear();
         
         this.updateSelectionUI();
-        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
         this.requestRender();
-    },
-
-    setGlobalPerkCooldown(cooldownMs) {
-        this.perkGlobalCooldownUntil = Date.now() + cooldownMs;
-        
-        if (!document.getElementById('perk-cooldown-style')) {
-            const style = document.createElement('style');
-            style.id = 'perk-cooldown-style';
-            style.textContent = `
-                .disable-interaction, .disabled-interaction {
-                    pointer-events: none !important;
-                    opacity: 0.35 !important;
-                    cursor: not-allowed !important;
-                    filter: grayscale(0.8) !important;
-                    transition: opacity 0.3s ease, filter 0.3s ease;
-                }
-            `;
-            document.head.appendChild(style);
-        }
-
-        if (typeof this.updatePerkBadges === 'function') {
-            this.updatePerkBadges();
-        }
-
-        setTimeout(() => {
-            if (typeof this.updatePerkBadges === 'function') {
-                this.updatePerkBadges();
-            }
-        }, cooldownMs);
     },
 
     cancelInteractionMode() {
@@ -425,7 +318,6 @@ export const InteractionSelection = {
         this.ownerEraserBox = null;
         this.ownerEraserStep = 0;
         this.ownerEraserStart = null;
-        this.activeBomb = null;
         const btnMoveArea = document.querySelector('[data-action="toggleOfflineMoveArea"]');
         if (btnMoveArea) btnMoveArea.classList.remove('active');
         if (typeof this.cancelMoveArea === 'function') this.cancelMoveArea(true);
@@ -477,56 +369,14 @@ export const InteractionSelection = {
         if (btnEyedropper) btnEyedropper.classList.remove('active');
         if (this.canvas) this.canvas.classList.remove('component-cursor-eyedropper');
         this.updateSelectionUI();
-        if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
+        if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
         if (typeof this.requestRender === 'function') this.requestRender();
         showMessage(window.__('special_mode_deactivated'), 'info');
     },
 
-    ensureExplosionStyles() {
-        // Estilos integrados en components.css (.nuclear-shake y .canvas-flash-overlay)
-    },
+    
 
-    triggerExplosionEffect(cx, cy, r, perkId) {
-        if (!this.explosions) this.explosions = [];
-        this.explosions.push({
-            x: cx,
-            y: cy,
-            maxRadius: r,
-            perkId: perkId,
-            startTime: Date.now(),
-            duration: 800
-        });
-        
-        this.ensureExplosionStyles();
-
-        if (perkId === 'orbital_cannon_1') {
-            const ball = document.querySelector('.orbital-cannon-charge-ball');
-            if (ball) ball.remove();
-        }
-
-        if (this.canvas) {
-            this.canvas.classList.add('nuclear-shake');
-            setTimeout(() => {
-                this.canvas.classList.remove('nuclear-shake');
-            }, 600);
-        }
-        
-        if (!this.renderWorker && !this.isExplosionLoopRunning) {
-            this.isExplosionLoopRunning = true;
-            const loop = () => {
-                if (this.explosions && this.explosions.length > 0) {
-                    this.explosions = this.explosions.filter(exp => (Date.now() - exp.startTime) < exp.duration);
-                    this.requestRender();
-                    requestAnimationFrame(loop);
-                } else {
-                    this.isExplosionLoopRunning = false;
-                }
-            };
-            requestAnimationFrame(loop);
-        }
-    },
-
-    updatePerkBadges() {
+    updateOwnerBadges() {
         const badgesRight = document.querySelector('[data-ref="badges-right"]');
         if (!badgesRight) return;
 

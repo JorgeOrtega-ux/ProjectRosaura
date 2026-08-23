@@ -1,4 +1,4 @@
-import { SHAPE_SVG_PATHS } from '../data/ShapeSvgPathsData.js?v=33';
+import { SHAPE_SVG_PATHS } from '../data/ShapeSvgPathsData.js?v=34';
 
 // Reusable canvas and Path2D cache
 const path2dCache = new Map();

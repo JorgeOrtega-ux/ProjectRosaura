@@ -237,6 +237,35 @@ class AdminService {
         ];
     }
 
+    public function getUserPurchases($data) {
+        if (!$this->hasPermission(PermissionsConstants::VIEW_USER_PURCHASES) && !$this->hasPermission(PermissionsConstants::VIEW_KARDEX) && !$this->hasPermission(PermissionsConstants::VIEW_USERS)) {
+            return ['success' => false, 'message' => __('error.unauthorized')];
+        }
+
+        $rl = $this->applyAdminRateLimit(RateLimitConstants::KEY_ADM_READ_DATA, 120, 1);
+        if (!$rl['allowed']) return ['success' => false, 'message' => $rl['message']];
+
+        $targetId = (int)($data['target_user_id'] ?? 0);
+        $user = $this->userRepository->findById($targetId);
+        if (!$user) return ['success' => false, 'message' => __('admin.user_not_found')];
+
+        global $container;
+        try {
+            if ($container && $container->has(\App\Api\Services\Stripe\StripeService::class)) {
+                $stripeService = $container->get(\App\Api\Services\Stripe\StripeService::class);
+                $limit = (int)($data['limit'] ?? 50);
+                $offset = (int)($data['offset'] ?? 0);
+                return $stripeService->getPaymentHistory([
+                    'limit' => $limit,
+                    'offset' => $offset,
+                    'customer_id' => $user['stripe_customer_id'] ?? null
+                ]);
+            }
+            return ['success' => true, 'data' => []];
+        } catch (\Throwable $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
 
     public function updateAvatar($data) {
         if (!$this->hasPermission(PermissionsConstants::EDIT_USERS)) return ['success' => false, 'message' => __('error.unauthorized')];

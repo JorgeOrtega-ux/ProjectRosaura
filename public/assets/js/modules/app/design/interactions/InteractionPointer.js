@@ -1,4 +1,4 @@
-﻿import { showMessage } from '../../../../core/utils/uiUtils.js';
+import { showMessage } from '../../../../core/utils/uiUtils.js';
 import { abgrToHex, getBresenhamLine } from './InteractionHelpers.js';
 
 export const InteractionPointer = {
