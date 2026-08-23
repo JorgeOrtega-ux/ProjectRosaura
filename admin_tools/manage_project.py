@@ -620,7 +620,7 @@ def run_scan_views_integrity(project_root):
 
 """
 Módulo de Población y Reinicialización de Bases de Datos para ProjectRosaura.
-Puebla ~10,000 registros por tabla en db_identity, db_canvases, db_support y db_telemetry.
+Puebla ~10,000 registros por tabla en db_identity, db_canvases y db_telemetry.
 """
 
 DEFAULT_PASSWORD_HASH = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi' # "password"
@@ -632,29 +632,6 @@ LAST_NAMES = ['Garcia', 'Rodriguez', 'Gonzalez', 'Fernandez', 'Lopez', 'Martinez
               'Gomez', 'Martin', 'Jimenez', 'Ruiz', 'Hernandez', 'Diaz', 'Moreno', 'Muñoz', 'Alvarez', 'Romero']
 CANVAS_THEMES = ['PixelArt', 'Cyberpunk', 'Fantasy', 'Retro', 'Galaxy', 'Neon', 'Medieval', 'Futuristic', 
                  'Isometric', 'Chibi', 'Anime', 'Landscape', 'Dungeon', 'Space', 'Synthwave', 'Vaporwave']
-CATEGORIES = ['technical', 'billing', 'account', 'policy', 'general', 'other']
-TICKET_SUBJECTS = [
-    'Problema al cargar canvas en tiempo real',
-    'Error en la confirmación del pago Stripe',
-    'Consulta sobre actualización de suscripción Pro',
-    'Fallo al exportar snapshot en formato PNG',
-    'Duda respecto a roles de canvas y permisos',
-    'Problema de autenticación de dos factores (2FA)',
-    'Solicitud de cambio de nombre de usuario',
-    'Reporte de comportamiento inadecuado en chat de lienzo',
-    'Sugerencia de nueva paleta de colores personalizada',
-    'Lentitud de conexión al WebSocket de canvas'
-]
-CHAT_MESSAGES_SAMPLES = [
-    'Hola, necesito asistencia con una transacción reciente.',
-    'Estoy revisando los detalles de tu cuenta en este momento.',
-    '¿Podrías proporcionarme el identificador de tu compra o factura?',
-    'Listo, he actualizado los permisos de tu perfil.',
-    'Gracias por contactar al soporte técnico de ProjectRosaura.',
-    'El problema ha quedado solucionado satisfactoriamente.',
-    'Te transferiré al equipo de nivel 2 para investigar el inconveniente a fondo.',
-    '¿Hay algo más en lo que pueda ayudarte el día de hoy?'
-]
 
 def load_db_config(project_root):
     env_path = os.path.join(project_root, '.env')
