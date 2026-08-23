@@ -70,12 +70,101 @@ class CanvasInvitesController {
 
         if (btnCopy) this.copySelectedInvite();
         
+        const btnOpenGenerateModal = e.target.closest('[data-action="openGenerateInviteModal"]');
+        if (btnOpenGenerateModal) {
+            e.preventDefault();
+            this.openGenerateInviteModal(btnOpenGenerateModal);
+            return;
+        }
+
         if (selectTargetRow && !e.target.closest('button')) {
             this.handleInviteSelection(selectTargetRow);
         }
 
         if (deselectBtn) this.deselectInvite();
         if (revokeSelectedBtn) this.revokeSelectedInvites();
+    }
+
+    async openGenerateInviteModal(btn = null) {
+        let availableRoles = [];
+        try {
+            if (this.wrapper && this.wrapper.dataset.roles) {
+                availableRoles = JSON.parse(this.wrapper.dataset.roles);
+            }
+        } catch (e) {}
+
+        if (!availableRoles || availableRoles.length === 0) {
+            if (btn) btn.classList.add('disabled-interaction');
+            try {
+                const res = await this.api.post(ApiRoutes.Canvases.GetMemberRoleData, {
+                    canvas_uuid: this.canvasUuid
+                });
+                if (btn) btn.classList.remove('disabled-interaction');
+                if (res && res.success && res.data && res.data.availableRoles) {
+                    availableRoles = res.data.availableRoles;
+                }
+            } catch (err) {
+                if (btn) btn.classList.remove('disabled-interaction');
+            }
+        }
+
+        let defaultRole = null;
+        if (availableRoles && availableRoles.length > 0) {
+            for (const r of availableRoles) {
+                if (String(r.name).toLowerCase() === 'viewer') {
+                    defaultRole = r;
+                    break;
+                }
+            }
+            if (!defaultRole) {
+                defaultRole = availableRoles[availableRoles.length - 1];
+            }
+        }
+
+        const modalRes = await window.modalSystem.show('generateCanvasInviteModal', {
+            canvasId: this.canvasId,
+            canvasUuid: this.canvasUuid,
+            availableRoles: availableRoles,
+            defaultRole: defaultRole
+        });
+
+        if (modalRes && modalRes.confirmed) {
+            await this.submitGenerateInvite(modalRes.data);
+        }
+    }
+
+    async submitGenerateInvite(data) {
+        if (!data || !data.role || !this.canvasId) {
+            showMessage(__('err_incomplete_invite_data'), 'error');
+            return;
+        }
+
+        const payload = {
+            canvas_id: this.canvasId,
+            role: data.role,
+            max_uses: data.max_uses || null,
+            expires_at: data.expires_at || null
+        };
+
+        if (payload.expires_at) {
+            const dt = new Date(payload.expires_at);
+            if (!isNaN(dt.getTime())) {
+                payload.expires_at = dt.toISOString().slice(0, 19).replace('T', ' ');
+            }
+        }
+
+        try {
+            const response = await this.api.post(ApiRoutes.Canvases.GenerateInvite, payload);
+            if (response && response.success) {
+                showMessage(response.message || __('msg_invite_generated'), 'success');
+                this.deselectInvite();
+                await this.handlePagination(window.location.href);
+            } else {
+                showMessage(response?.message || __('err_generate_invite'), 'error');
+            }
+        } catch (error) {
+            showMessage(__('err_connection'), 'error');
+        }
     }
 
     handleInviteSelection(rowElement) {

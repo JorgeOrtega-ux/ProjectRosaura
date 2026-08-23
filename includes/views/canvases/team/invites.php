@@ -13,10 +13,13 @@ if (!empty($invitesData['error'])) {
 }
 
 extract($invitesData);
+
+$rolesData = $canvasService->getCanvasRolesData($canvasUuid);
+$availableRoles = $rolesData['roles'] ?? [];
 ?>
 
 <div class="view-content">
-    <div class="component-wrapper component-wrapper--full no-padding" data-ref="manage-invites-wrapper" data-canvas-id="<?php echo htmlspecialchars($canvasId); ?>" data-canvas-uuid="<?php echo htmlspecialchars($canvasUuid); ?>">
+    <div class="component-wrapper component-wrapper--full no-padding" data-ref="manage-invites-wrapper" data-canvas-id="<?php echo htmlspecialchars($canvasId); ?>" data-canvas-uuid="<?php echo htmlspecialchars($canvasUuid); ?>" data-roles="<?php echo htmlspecialchars(json_encode($availableRoles), ENT_QUOTES, 'UTF-8'); ?>">
         
         <div class="component-top">
             <div class="component-top-left">
@@ -34,7 +37,7 @@ extract($invitesData);
                 </div>
                 
                 <div class="component-actions active" data-ref="header-default-actions">
-                    <button data-nav="<?php echo htmlspecialchars($appUrl); ?>/canvases/manage/invites/generate/<?php echo htmlspecialchars($canvasUuid); ?>" class="component-button component-button--icon component-button--h40" data-tooltip="<?php echo htmlspecialchars(__('lbl_generate_invite')); ?>" data-position="bottom">
+                    <button type="button" class="component-button component-button--icon component-button--h40" data-action="openGenerateInviteModal" data-tooltip="<?php echo htmlspecialchars(__('lbl_generate_invite')); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">add_link</span>
                     </button>
                 </div>

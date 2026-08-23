@@ -112,8 +112,7 @@ extract($designData);
             </div>
         </div>
         <div class="component-bottom">
-            <div class="component-bottom-left" data-ref="canvas-viewport">
-                <canvas data-ref="design-canvas" class="component-canvas-surface <?php echo (isset($isBlockedInit) && $isBlockedInit) ? 'component-canvas-blocked disabled-interaction' : ''; ?>"></canvas>
+            <canvas data-ref="design-canvas" class="component-canvas-surface <?php echo (isset($isBlockedInit) && $isBlockedInit) ? 'component-canvas-blocked disabled-interaction' : ''; ?>"></canvas>
 
             <?php if (!$isSnapshot): ?>
             <?php
@@ -349,7 +348,6 @@ extract($designData);
                 </button>
             </div>
             <?php endif; ?>
-            </div>
         </div>
     </div>
 

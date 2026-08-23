@@ -95,7 +95,6 @@ export const RouteModulesMap = {
     '/canvases/members/:uuid': { path: './modules/canvases/team/CanvasMembersController.js', className: 'CanvasMembersController', skeletonType: 'layout-table' },
     
     '/canvases/manage/invites/:uuid': { path: './modules/canvases/team/CanvasInvitesController.js', className: 'CanvasInvitesController', skeletonType: 'layout-table' },
-    '/canvases/manage/invites/generate/:uuid': { path: './modules/canvases/team/CanvasInvitesGenerateController.js', className: 'CanvasInvitesGenerateController', skeletonType: 'layout-basic' },
     
     '/canvases/manage/resize/:uuid': { path: './modules/canvases/workspace/CanvasResizeController.js', className: 'CanvasResizeController', skeletonType: 'layout-basic' },
     '/canvases/palettes/create': { path: './modules/canvases/palettes/CanvasPaletteCreateController.js', className: 'CanvasPaletteCreateController', skeletonType: 'layout-basic' },

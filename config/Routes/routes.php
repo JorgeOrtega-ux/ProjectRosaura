@@ -45,7 +45,6 @@ return [
     '/canvases/members/:uuid' => ['view' => 'canvases/team/members.php', 'auth' => true, 'permissions' => [PC::MANAGE_CANVASES], 'requires_2fa' => false],
     '/canvases/manage/resize/:uuid' => ['view' => 'canvases/workspace/resize.php', 'auth' => true, 'permissions' => [PC::MANAGE_CANVASES], 'requires_2fa' => false],
     '/canvases/manage/invites/:uuid' => ['view' => 'canvases/team/invites.php', 'auth' => true, 'permissions' => [PC::MANAGE_CANVASES], 'requires_2fa' => false],
-    '/canvases/manage/invites/generate/:uuid' => ['view' => 'canvases/team/invites-generate.php', 'auth' => true, 'permissions' => [PC::MANAGE_CANVASES], 'requires_2fa' => false],
     '/canvases/manage/roles/:uuid' => ['view' => 'canvases/team/roles.php', 'auth' => true, 'permissions' => [PC::MANAGE_CANVASES], 'requires_2fa' => false],
     '/canvases/manage/role-builder/:uuid' => ['view' => 'canvases/team/role-builder.php', 'auth' => true, 'permissions' => [PC::MANAGE_CANVASES], 'requires_2fa' => false],
     '/canvases/manage/role-builder/:uuid/:role_uuid' => ['view' => 'canvases/team/role-builder.php', 'auth' => true, 'permissions' => [PC::MANAGE_CANVASES], 'requires_2fa' => false],

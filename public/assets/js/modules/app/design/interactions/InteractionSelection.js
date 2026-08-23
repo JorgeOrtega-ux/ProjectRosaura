@@ -6,9 +6,7 @@ export const InteractionSelection = {
     getMaxBalance() {
         if (this.isOfflineMode) return Infinity;
         if (this.interactionMode === 'owner_erasing') return Infinity;
-        if (this.perkNoCooldown) return Infinity;
         if (this.interactionMode === 'placing_mines') return 10;
-        if (this.interactionMode === 'bombing') return 1;
         return Math.floor(this.cooldownBalance);
     },
 
@@ -109,8 +107,34 @@ export const InteractionSelection = {
         }
 
         let maxBalance = this.getMaxBalance();
-        
-        
+
+        this.btnPlacePixels.classList.remove('component-button--success');
+        this.btnPlacePixels.classList.remove('component-button--danger');
+
+        if (this.selectedPixels.size > 0 && this.selectedPixels.size <= maxBalance) {
+            this.btnPlacePixels.classList.remove('disabled-interaction');
+            this.txtPlacePixels.textContent = window.__('btn_place_pixels');
+        } else {
+            this.btnPlacePixels.classList.add('disabled-interaction');
+            if (this.selectedPixels.size > maxBalance) {
+                this.txtPlacePixels.textContent = (__('lbl_max_pixels')).replace(':max', maxBalance === Infinity ? '∞' : maxBalance);
+            } else {
+                this.txtPlacePixels.textContent = __('btn_select_pixels');
+            }
+        }
+    },
+
+    placePixels() {
+        if ((this.selectedPixels.size === 0 && this.interactionMode !== 'owner_erasing' && this.interactionMode !== 'owner_protecting') || this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+
+        if (this.interactionMode === 'placing_mines') {
+            if (this.selectedPixels.size === 0 || this.selectedPixels.size > 10) return;
+            const pixels = Array.from(this.selectedPixels).map(key => {
+                return { x: key & 0xffff, y: key >> 16 };
+            });
+            this.executePlaceMines(pixels);
+            return;
+        }
 
         if (this.interactionMode === 'owner_erasing') {
             if (!this.ownerEraserBox) return;
@@ -138,7 +162,6 @@ export const InteractionSelection = {
             });
             return;
         }
-
 
         let maxBalance = this.getMaxBalance();
 

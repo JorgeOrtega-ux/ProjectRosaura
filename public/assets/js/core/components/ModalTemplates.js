@@ -2003,6 +2003,224 @@ export const ModalTemplates = {
             `;
         }
     },
+
+    generateCanvasInviteModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const availableRoles = data.availableRoles || [];
+            let defaultRole = data.defaultRole;
+            if (!defaultRole && availableRoles.length > 0) {
+                for (const r of availableRoles) {
+                    if (String(r.name).toLowerCase() === 'viewer') {
+                        defaultRole = r;
+                        break;
+                    }
+                }
+                if (!defaultRole) {
+                    defaultRole = availableRoles[availableRoles.length - 1];
+                }
+            }
+
+            let defIcon = (defaultRole && defaultRole.is_system) ? 'shield' : 'person';
+            let defLabel = defaultRole ? defaultRole.name : __('lbl_select');
+            if (defaultRole && defaultRole.is_system) {
+                const roleKey = 'role.' + defaultRole.name.toLowerCase().trim().replace(/[\s\W_]+/g, '_');
+                const trans = __(roleKey);
+                if (trans && trans !== roleKey) defLabel = trans;
+            }
+
+            const rolesHtml = availableRoles.map(role => {
+                const rawName = role.name;
+                const isSystemFlag = role.is_system || 0;
+                const icon = isSystemFlag ? 'shield' : 'person';
+                let translatedName = rawName;
+                if (isSystemFlag) {
+                    const roleKey = 'role.' + rawName.toLowerCase().trim().replace(/[\s\W_]+/g, '_');
+                    const trans = __(roleKey);
+                    if (trans && trans !== roleKey) translatedName = trans;
+                }
+                const nameLower = rawName.toLowerCase().trim();
+                const isHighRole = ['owner', 'propietario', 'superadmin', 'superadministrador'].includes(nameLower) || (role.weight !== undefined && parseInt(role.weight) >= 100);
+                const isActive = (defaultRole && defaultRole.id == role.id) ? 'active' : '';
+                const isDisabled = isHighRole ? 'disabled-interaction' : '';
+                const tooltipAttr = isHighRole ? `data-tooltip="${__('err_cannot_generate_invite_role')}" data-position="right"` : '';
+
+                return `
+                    <div class="component-menu-link ${isActive} ${isDisabled}" data-action="selectInviteRoleDropdownOption" data-value="${role.id}" data-text="${translatedName}" data-icon="${icon}" ${tooltipAttr}>
+                        <div class="component-menu-link-icon">
+                            <span class="material-symbols-rounded">${icon}</span>
+                        </div>
+                        <div class="component-menu-link-text">
+                            <span>${translatedName}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header component-modal-header--with-icon">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                        <span class="material-symbols-rounded">add_link</span>
+                    </div>
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${__('lbl_generate_new_invite')}</h2>
+                        <p class="component-modal-desc">${__('desc_invite_role')}</p>
+                    </div>
+                </div>
+
+                <div class="component-modal-body">
+                    <div class="step-modal-content">
+
+                        <!-- Step 1: Configuración de Invitación -->
+                        <div class="step-modal-step active" data-step="1">
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                                <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleInviteRole" data-ref="invite_role" data-value="${defaultRole ? defaultRole.id : ''}">
+                                    <span class="material-symbols-rounded" data-ref="invite_role_trigger_icon">${defIcon}</span>
+                                    <span class="component-dropdown-text" data-ref="invite_role_trigger_text">${defLabel}</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown disabled" data-module="moduleInviteRole">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list">
+                                            ${rolesHtml}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                                <div class="component-inline-control component-inline-control--full">
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustInviteMaxUses" data-step="-5" data-min="0">
+                                            <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                        </button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustInviteMaxUses" data-step="-1" data-min="0">
+                                            <span class="material-symbols-rounded">chevron_left</span>
+                                        </button>
+                                    </div>
+                                    <div class="component-inline-control__center" data-ref="invite-max-uses-val" data-value="0">${__('lbl_no_limit')}</div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustInviteMaxUses" data-step="1" data-max="999">
+                                            <span class="material-symbols-rounded">chevron_right</span>
+                                        </button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustInviteMaxUses" data-step="5" data-max="999">
+                                            <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                                <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="inviteNextStep" data-ref="invite_expires_at" data-value="">
+                                    <span class="material-symbols-rounded">calendar_month</span>
+                                    <span class="component-dropdown-text" data-ref="invite-endDate-text">${__('lbl_no_expiration')}</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Calendario inline + H:MM -->
+                        <div class="step-modal-step disabled" data-step="2">
+                            <div class="component-calendar">
+                                <div class="component-calendar-header">
+                                    <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarPrevMonth">
+                                        <span class="material-symbols-rounded">chevron_left</span>
+                                    </button>
+                                    <div class="component-calendar-title" data-ref="calendar-title">${__('calendar_month_year')}</div>
+                                    <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarNextMonth">
+                                        <span class="material-symbols-rounded">chevron_right</span>
+                                    </button>
+                                </div>
+                                <div class="component-calendar-weekdays">
+                                    <span>${__('cal_su')}</span>
+                                    <span>${__('cal_mo')}</span>
+                                    <span>${__('cal_tu')}</span>
+                                    <span>${__('cal_we')}</span>
+                                    <span>${__('cal_th')}</span>
+                                    <span>${__('cal_fr')}</span>
+                                    <span>${__('cal_sa')}</span>
+                                </div>
+                                <div class="component-calendar-days" data-ref="calendar-days"></div>
+                            </div>
+
+                            <div class="calendar-modal-controls">
+                                <div class="calendar-control-column">
+                                    <div class="calendar-control-label">${__('lbl_hours')}</div>
+                                    <div class="component-inline-control component-inline-control--full">
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-5">
+                                                <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                            </button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-1">
+                                                <span class="material-symbols-rounded">chevron_left</span>
+                                            </button>
+                                        </div>
+                                        <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-value="0">00</div>
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="1">
+                                                <span class="material-symbols-rounded">chevron_right</span>
+                                            </button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="5">
+                                                <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="calendar-control-column">
+                                    <div class="calendar-control-label">${__('lbl_minutes')}</div>
+                                    <div class="component-inline-control component-inline-control--full">
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-5">
+                                                <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                            </button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-1">
+                                                <span class="material-symbols-rounded">chevron_left</span>
+                                            </button>
+                                        </div>
+                                        <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-value="0">00</div>
+                                        <div class="component-inline-control__group">
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="1">
+                                                <span class="material-symbols-rounded">chevron_right</span>
+                                            </button>
+                                            <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="5">
+                                                <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="component-modal-actions">
+                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                    <button type="button" class="component-button component-button--h40 disabled" data-action="invitePrevStep" data-ref="btn-invite-prev">${__('btn_prev')}</button>
+                    <button type="button" class="component-button component-button--h40 disabled" data-action="inviteClearDate" data-ref="btn-invite-clear">${__('lbl_no_expiration')}</button>
+                    <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="confirm" data-ref="btn-invite-confirm">${__('btn_generate_invite')}</button>
+                    <button type="button" class="component-button component-button--primary component-button--h40 disabled" data-action="inviteConfirmDate" data-ref="btn-invite-accept">${__('btn_accept')}</button>
+                </div>
+            `;
+        },
+        getData: (container) => {
+            const roleTrigger = container.querySelector('[data-ref="invite_role"]');
+            const maxUsesEl = container.querySelector('[data-ref="invite-max-uses-val"]');
+            const expiresTrigger = container.querySelector('[data-ref="invite_expires_at"]');
+
+            const maxUsesVal = maxUsesEl ? maxUsesEl.getAttribute('data-value') : '0';
+            const expiresVal = expiresTrigger ? expiresTrigger.getAttribute('data-value') : '';
+
+            return {
+                role: roleTrigger ? roleTrigger.getAttribute('data-value') : '',
+                max_uses: (maxUsesVal && maxUsesVal !== '0') ? parseInt(maxUsesVal, 10) : null,
+                expires_at: expiresVal || null
+            };
+        }
+    },
+
     changeCanvasRoleModal: {
         build: (data = {}) => {
             const __ = (typeof window.__ === 'function') ? window.__ : (k => k);

@@ -271,7 +271,7 @@ export const InteractionPointer = {
                         this.selectedPixels.add(symKey);
                     }
                 } else {
-                    showMessage(__('err_pixel_limit')?.replace(':limit', maxBalance === Infinity ? 'Ôê×' : maxBalance), 'warning');
+                    showMessage(__('err_pixel_limit')?.replace(':limit', maxBalance === Infinity ? '∞' : maxBalance), 'warning');
                 }
             }
             this.isSelecting = true;
@@ -1541,7 +1541,7 @@ export const InteractionPointer = {
                                     this.selectedPixels.add(symKey);
                                 }
                             } else {
-                                showMessage(__('err_pixel_limit')?.replace(':limit', maxBalance === Infinity ? 'Ôê×' : maxBalance), 'warning');
+                                showMessage(__('err_pixel_limit')?.replace(':limit', maxBalance === Infinity ? '∞' : maxBalance), 'warning');
                             }
                         }
                         this.updateSelectionUI();

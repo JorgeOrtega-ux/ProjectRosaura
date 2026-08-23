@@ -503,6 +503,95 @@ export class ModalSystem {
         }
         // ── /calendarModal step navigation ──────────────────────────────────────
 
+        // ── Invite modal step navigation ─────────────────────────────────────────
+        const inviteNextBtn = e.target.closest('[data-action="inviteNextStep"]');
+        if (inviteNextBtn && this.activeBox) {
+            this._setInviteStep(2);
+
+            if (!this.calendarSystem) {
+                this.calendarSystem = new CalendarSystem(this.activeBox);
+                this.calendarSystem.disablePastDates = true;
+                this.calendarSystem.init();
+            }
+            const initialVal = inviteNextBtn.getAttribute('data-value') || '';
+            this.calendarSystem.setup(initialVal, null, null);
+            if (initialVal) {
+                const datePart = initialVal.split('T')[0];
+                const parts = datePart.split('-');
+                if (parts.length === 3) {
+                    this.calendarSystem.selectedDate = new Date(
+                        parseInt(parts[0], 10),
+                        parseInt(parts[1], 10) - 1,
+                        parseInt(parts[2], 10)
+                    );
+                }
+            }
+            return;
+        }
+
+        const invitePrevBtn = e.target.closest('[data-action="invitePrevStep"]');
+        if (invitePrevBtn && this.activeBox) {
+            this._setInviteStep(1);
+            return;
+        }
+
+        const inviteClearDateBtn = e.target.closest('[data-action="inviteClearDate"]');
+        if (inviteClearDateBtn && this.activeBox) {
+            if (this.calendarSystem) {
+                this.calendarSystem.selectedDate = null;
+            }
+            const endDateTrigger = this.activeBox.querySelector('[data-ref="invite_expires_at"]');
+            if (endDateTrigger) endDateTrigger.setAttribute('data-value', '');
+            const textEl = this.activeBox.querySelector('[data-ref="invite-endDate-text"]');
+            const __ = typeof window.__ === 'function' ? window.__ : k => k;
+            if (textEl) textEl.textContent = __('lbl_no_expiration');
+
+            this._setInviteStep(1);
+            return;
+        }
+
+        const inviteConfirmBtn = e.target.closest('[data-action="inviteConfirmDate"]');
+        if (inviteConfirmBtn && this.activeBox) {
+            if (!this.calendarSystem || !this.calendarSystem.selectedDate) {
+                const __ = typeof window.__ === 'function' ? window.__ : k => k;
+                if (window.showMessage) showMessage(__('err_select_day') || 'Selecciona un día', 'error');
+                return;
+            }
+            const step2 = this.activeBox.querySelector('.step-modal-step[data-step="2"]');
+            const hoursEl   = step2 ? step2.querySelector('[data-ref="calendar-modal-hours-val"]')   : null;
+            const minutesEl = step2 ? step2.querySelector('[data-ref="calendar-modal-minutes-val"]') : null;
+            const h = hoursEl   ? String(parseInt(hoursEl.getAttribute('data-value')   || '0')).padStart(2, '0') : '00';
+            const m = minutesEl ? String(parseInt(minutesEl.getAttribute('data-value') || '0')).padStart(2, '0') : '00';
+
+            const d   = this.calendarSystem.selectedDate;
+            const y   = d.getFullYear();
+            const mo  = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+
+            const selectedDateTime = new Date(y, d.getMonth(), parseInt(day, 10), parseInt(h, 10), parseInt(m, 10));
+            const now = new Date();
+            const minFuture = new Date(now.getTime() + 5 * 60 * 1000);
+            if (selectedDateTime < minFuture) {
+                const __ = typeof window.__ === 'function' ? window.__ : k => k;
+                if (window.showMessage) showMessage(__('err_date_minimum_5_minutes') || 'La fecha programada debe tener un margen mínimo de 5 minutos al futuro.', 'error');
+                return;
+            }
+
+            const isoString = `${y}-${mo}-${day}T${h}:${m}`;
+            const displayString = this.calendarSystem.getFormattedDisplayDate
+                ? this.calendarSystem.getFormattedDisplayDate(d, h, m)
+                : `${day}/${mo}/${y} ${h}:${m}`;
+
+            const endDateTrigger = this.activeBox.querySelector('[data-ref="invite_expires_at"]');
+            if (endDateTrigger) endDateTrigger.setAttribute('data-value', isoString);
+            const textEl = this.activeBox.querySelector('[data-ref="invite-endDate-text"]');
+            if (textEl) textEl.textContent = displayString;
+
+            this._setInviteStep(1);
+            return;
+        }
+        // ── /Invite modal step navigation ────────────────────────────────────
+
         const selectReasonBtn = e.target.closest('[data-action="selectReportReason"]');
         if (selectReasonBtn) {
             const val = selectReasonBtn.getAttribute('data-value');
@@ -583,6 +672,61 @@ export class ModalSystem {
                 } else if (module) {
                     module.classList.replace('active', 'disabled');
                 }
+            }
+            return;
+        }
+
+        const selectInviteRoleBtn = e.target.closest('[data-action="selectInviteRoleDropdownOption"]');
+        if (selectInviteRoleBtn && this.activeBox) {
+            e.preventDefault();
+            if (selectInviteRoleBtn.classList.contains('disabled') || selectInviteRoleBtn.classList.contains('disabled-interaction')) {
+                return;
+            }
+            const val = selectInviteRoleBtn.getAttribute('data-value');
+            const icon = selectInviteRoleBtn.getAttribute('data-icon');
+            const text = selectInviteRoleBtn.getAttribute('data-text') || selectInviteRoleBtn.getAttribute('data-label');
+
+            const trigger = this.activeBox.querySelector('[data-ref="invite_role"]');
+            if (trigger) {
+                trigger.setAttribute('data-value', val);
+                const triggerText = trigger.querySelector('[data-ref="invite_role_trigger_text"]') || trigger.querySelector('.component-dropdown-text');
+                if (triggerText) triggerText.textContent = text;
+                const triggerIcon = trigger.querySelector('[data-ref="invite_role_trigger_icon"]') || trigger.querySelector('.material-symbols-rounded:first-child');
+                if (triggerIcon && icon) triggerIcon.textContent = icon;
+            }
+
+            const menuList = selectInviteRoleBtn.closest('.component-menu-list');
+            if (menuList) {
+                menuList.querySelectorAll('[data-action="selectInviteRoleDropdownOption"]').forEach(el => el.classList.remove('active'));
+                selectInviteRoleBtn.classList.add('active');
+            }
+
+            const module = selectInviteRoleBtn.closest('.component-module');
+            if (module && window.appInstance && typeof window.appInstance.closeModule === 'function') {
+                window.appInstance.closeModule(module);
+            } else if (module) {
+                module.classList.replace('active', 'disabled');
+            }
+            return;
+        }
+
+        const btnAdjustInviteMax = e.target.closest('[data-action="adjustInviteMaxUses"]');
+        if (btnAdjustInviteMax && this.activeBox) {
+            e.preventDefault();
+            const step = parseInt(btnAdjustInviteMax.getAttribute('data-step')) || 0;
+            const min = parseInt(btnAdjustInviteMax.getAttribute('data-min')) || 0;
+            const max = parseInt(btnAdjustInviteMax.getAttribute('data-max')) || 999;
+
+            const centerEl = this.activeBox.querySelector('[data-ref="invite-max-uses-val"]');
+            if (centerEl) {
+                let current = parseInt(centerEl.getAttribute('data-value')) || 0;
+                current += step;
+                if (current < min) current = min;
+                if (current > max) current = max;
+
+                centerEl.setAttribute('data-value', current);
+                const __ = typeof window.__ === 'function' ? window.__ : k => k;
+                centerEl.textContent = current === 0 ? __('lbl_no_limit') : current;
             }
             return;
         }
@@ -836,9 +980,44 @@ export class ModalSystem {
         }
     }
 
+    _setInviteStep(step) {
+        if (!this.activeBox) return;
+        const steps = this.activeBox.querySelectorAll('.step-modal-step');
+        steps.forEach(s => {
+            const n = parseInt(s.getAttribute('data-step'), 10);
+            s.classList.toggle('active', n === step);
+            s.classList.toggle('disabled', n !== step);
+        });
+
+        const cancelBtn  = this.activeBox.querySelector('[data-modal-action="cancel"]');
+        const prevBtn    = this.activeBox.querySelector('[data-ref="btn-invite-prev"]');
+        const clearBtn   = this.activeBox.querySelector('[data-ref="btn-invite-clear"]');
+        const confirmBtn = this.activeBox.querySelector('[data-ref="btn-invite-confirm"]');
+        const acceptBtn  = this.activeBox.querySelector('[data-ref="btn-invite-accept"]');
+
+        if (step === 1) {
+            if (cancelBtn)  cancelBtn.classList.remove('disabled');
+            if (prevBtn)    prevBtn.classList.add('disabled');
+            if (clearBtn)   clearBtn.classList.add('disabled');
+            if (confirmBtn) confirmBtn.classList.remove('disabled');
+            if (acceptBtn)  acceptBtn.classList.add('disabled');
+        } else {
+            if (cancelBtn)  cancelBtn.classList.add('disabled');
+            if (prevBtn)    prevBtn.classList.remove('disabled');
+            if (clearBtn)   clearBtn.classList.remove('disabled');
+            if (confirmBtn) confirmBtn.classList.add('disabled');
+            if (acceptBtn)  acceptBtn.classList.remove('disabled');
+        }
+    }
+
     _getFormData() {
         let formData = {};
         if (!this.activeBox) return formData;
+
+        const template = this.templates ? this.templates[this.activeTemplateName] : null;
+        if (template && typeof template.getData === 'function') {
+            return template.getData(this.activeBox);
+        }
 
         if (this.activeTemplateName === 'calendarModal') {
             // Fuente primaria: selectedDate del CalendarSystem (cubre re-selección y pre-población)
