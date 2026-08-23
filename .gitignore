@@ -2,14 +2,17 @@
 .env
 .env.*
 !.env.example
+!.env.ws.example
 
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# Directorios de dependencias
+# Directorios de dependencias y compilación
 vendor/
 node_modules/
+target/
+scripts/ws_server/target/
 
 # Archivos de logs generales
 *.log
@@ -21,10 +24,11 @@ error_log
 /storage/private/canvases/
 !/storage/private/canvases/.gitkeep
 
-
 storage/private/backups/*.sql
 storage/private/backups/*.enc
 storage/private/backups/*.gz
+storage/private/backups/*.json
+storage/private/backups/*.meta.json
 !/storage/private/.htaccess
 
 # === BLOQUEO ESTRICTO: DATOS SENSIBLES Y ARCHIVOS BINARIOS ===
@@ -48,13 +52,12 @@ storage/private/backups/*.gz
 *.njsproj
 *.sln
 
-
-# Ignorar archivos generados dinámicamente en el storage público
+# Ignorar archivos generados dinámicamente en el storage público y timelapses
 /storage/public/thumbnails/
 /storage/public/snapshots_archive/
 /storage/public/templates/
-
 /storage/public/canvases/
+/storage/timelapses/
 
 # Ignorar imágenes de plantillas (templates)
 /public/assets/img/templates/
@@ -69,5 +72,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Carpeta de sonidos (archivos de audio pesados)
+# Carpeta de sonidos sin procesar y huérfanos
 /sounds/
+/public/sounds/
+
+# Pruebas de desarrollo, scripts temporales y agentes
+/scratch/
+/.agents/

@@ -22,6 +22,9 @@ storage/private/logs/
 storage/private/canvases/
 storage/private/backups/
 storage/public/
+storage/timelapses/
+scratch/
+.agents/
 *.log
 error_log
 

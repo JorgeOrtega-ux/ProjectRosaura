@@ -68,6 +68,7 @@ use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\Interfaces\ServerConfigRepositoryInterface;
 use App\Core\Routing\MiddlewarePipeline;
 use App\Core\Interfaces\SessionManagerInterface;
+use App\Core\System\PermissionsConstants;
 
 if (!function_exists('__')) { 
     function __($key, $params = []) { 
@@ -224,7 +225,7 @@ try {
     $serverConfig = $serverConfigRepo->getConfig();
 
 } catch (\Exception $e) {
-    file_put_contents(__DIR__ . '/debug_fatal_error.txt', date('Y-m-d H:i:s') . ' - ' . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n\n", FILE_APPEND);
+    Logger::database("API DB Initialization Exception: " . $e->getMessage(), 'critical', ['exception' => $e]);
     http_response_code(500);
     echo json_encode(['success' => false, 'message_key' => 'error.database_offline']);
     exit;
@@ -326,7 +327,7 @@ if (strpos($route, 'internal.') === 0 && !$isInternalApi) {
 
 if (isset($serverConfig['maintenance_mode']) && $serverConfig['maintenance_mode'] == 1) {
     $userPermissions = $sessionManager->get('user_permissions') ?? [];
-    $isPrivileged = in_array('access_admin_panel', $userPermissions);
+    $isPrivileged = in_array(PermissionsConstants::ACCESS_ADMIN_PANEL, $userPermissions);
     
     if (!$isPrivileged && $route !== 'auth.logout') {
         Logger::security("API request blocked by Maintenance mode. Route: {$route}", 'info', ['ip' => Utils::getIpAddress()]);
@@ -343,7 +344,7 @@ if (isset($serverConfig['maintenance_mode']) && $serverConfig['maintenance_mode'
 $routes = require __DIR__ . '/route-map.php';
 
 if (array_key_exists($route, $routes)) {
-    $routeConfig = $routes[$routes[$route] ? $route : ''];
+    $routeConfig = $routes[$route];
     
     $controllerName = $routeConfig['controller'];
     $action = $routeConfig['action'];

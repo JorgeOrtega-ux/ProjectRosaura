@@ -8,6 +8,13 @@
     RewriteRule ^storage/private(/.*)?$ - [F,L]
     RewriteRule ^config(/.*)?$ - [F,L]
     RewriteRule ^includes(/.*)?$ - [F,L]
+    RewriteRule ^admin_tools(/.*)?$ - [F,L]
+    RewriteRule ^scripts(/.*)?$ - [F,L]
+    RewriteRule ^docker(/.*)?$ - [F,L]
+    RewriteRule ^deploy(/.*)?$ - [F,L]
+    RewriteRule ^vendor(/.*)?$ - [F,L]
+    RewriteRule ^scratch(/.*)?$ - [F,L]
+    RewriteRule ^\.agents(/.*)?$ - [F,L]
 
     RewriteRule ^assets/(.*)$ public/assets/$1 [L]
 
@@ -27,7 +34,7 @@
     RewriteRule ^(.*)$ public/index.php [QSA,L]
 </IfModule>
 
-<FilesMatch "^\.|\.(env|log|lock|sql|md|yml|yaml|ini)$">
+<FilesMatch "^\.|\.(env|log|lock|sql|md|yml|yaml|ini|py|sh|cql|rs|toml|jsonl)$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>

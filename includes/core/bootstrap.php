@@ -23,7 +23,7 @@ if (\App\Core\Helpers\Utils::isSecureConnection()) {
 $s3Host = $_ENV['AWS_PUBLIC_URL'] ?? 'http://localhost:9000';
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://challenges.cloudflare.com https://cdn.jsdelivr.net https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://api.qrserver.com {$s3Host}; connect-src 'self' {$s3Host} https://unpkg.com https://cdn.jsdelivr.net https://accounts.google.com ws: wss:; frame-src 'self' https://challenges.cloudflare.com https://accounts.google.com; frame-ancestors 'none';");
 
-$appTimezone = $_ENV['APP_TIMEZONE'];
+$appTimezone = $_ENV['APP_TIMEZONE'] ?? 'UTC';
 date_default_timezone_set($appTimezone);
 
 $redisCache = null;
@@ -197,7 +197,6 @@ try {
             $accounts[$activeId]['user_pic'] = $liveUser['profile_picture'] ?? null;
             $accounts[$activeId]['subscription_tier'] = (int)($liveUser['subscription_tier'] ?? 0);
             $accounts[$activeId]['real_subscription_tier'] = (int)($liveUser['real_subscription_tier'] ?? ($liveUser['subscription_tier'] ?? 0));
-            $accounts[$activeId]['subscription_color'] = $liveUser['subscription_color'] ?? null;
             $accounts[$activeId]['google_id'] = $liveUser['google_id'] ?? null;
             $sessionManager->set(\App\Core\System\SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
             $sessionManager->syncRootState();
