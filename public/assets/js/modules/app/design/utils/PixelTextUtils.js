@@ -127,15 +127,8 @@ export function renderPixelText({
 
     let minX = originX;
     let minY = originY;
-    let maxX = originX + totalWidth - 1;
-    let maxY = originY + totalHeight - 1;
-
-    if (textPoints.length > 0) {
-        minX = Math.min(...textPoints.map(p => p.x));
-        minY = Math.min(...textPoints.map(p => p.y));
-        maxX = Math.max(...textPoints.map(p => p.x));
-        maxY = Math.max(...textPoints.map(p => p.y));
-    }
+    let maxX = originX + Math.max(0, totalWidth - 1);
+    let maxY = originY + Math.max(font.height * s - 1, totalHeight - 1);
 
     return {
         points: textPoints,
@@ -146,10 +139,14 @@ export function renderPixelText({
             minY,
             maxX,
             maxY,
-            w: Math.max(1, maxX - minX + 1),
-            h: Math.max(1, maxY - minY + 1)
+            w: Math.max(0, totalWidth),
+            h: Math.max(font.height * s, totalHeight),
+            originX,
+            originY
         },
         totalWidth,
-        totalHeight
+        totalHeight,
+        cursorX: originX + totalWidth,
+        cursorY: originY
     };
 }

@@ -1,4 +1,4 @@
-﻿import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiService.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
 import { CardTemplates } from '../../../core/components/CardTemplates.js';
@@ -49,6 +49,28 @@ class HomeController {
         
         this.contentArea = document.querySelector('[data-ref="dynamic-content-area"]');
         
+        const isGuest = !window.activeUserId;
+        if (isGuest && this.contentArea) {
+            this.contentArea.innerHTML = CardTemplates.emptyState({
+                type: 'canvas',
+                title: window.__('home_empty_guest_title', [], 'Tus murales aparecerán aquí'),
+                message: window.__('home_empty_guest_desc', [], 'Cuando crees o administres un lienzo de píxeles, podrás acceder a ellos directamente desde esta sección.'),
+                actions: `
+                    <a class="component-button component-button--h40" data-nav="${this.basePath}/login">
+                        <span class="material-symbols-rounded">login</span>
+                        <span>${window.__('link_login', [], 'Iniciar sesión')}</span>
+                    </a>
+                    <a class="component-button component-button--secondary component-button--h40" data-nav="${this.basePath}/explore">
+                        <span class="material-symbols-rounded">explore</span>
+                        <span>${window.__('btn_explore_canvases', [], 'Explorar murales')}</span>
+                    </a>
+                `
+            });
+            this.reinitializeUI();
+            this.checkCheckoutSuccess();
+            return;
+        }
+
         if (this.contentArea) {
             const initialData = this.contentArea.getAttribute('data-initial-canvases');
             if (initialData) {
@@ -150,6 +172,8 @@ class HomeController {
     }
 
     async loadCanvases(isLoadMore = false) {
+        if (!window.activeUserId) return;
+
         if (!isLoadMore) {
             if (this.feedAbortController) {
                 this.feedAbortController.abort();
@@ -164,8 +188,6 @@ class HomeController {
 
         if (!this.hasMore || this.isLoadingMore) return;
 
-        const isGuest = !window.activeUserId;
-
         this.isLoadingMore = true;
         if (isLoadMore && this.contentArea) {
             appendInfiniteScrollSkeletons(this.contentArea, 4);
@@ -174,18 +196,14 @@ class HomeController {
         let newCanvases = [];
         let isError = false;
         let res = null;
-        const limit = isGuest ? 20 : 50;
+        const limit = 50;
 
         if (window.initialHomeCanvases && this.currentFilter === 'all' && !isLoadMore) {
             newCanvases = window.initialHomeCanvases;
             window.initialHomeCanvases = null; 
         } else {
             const signal = this.feedAbortController ? this.feedAbortController.signal : this.abortController.signal;
-            if (isGuest) {
-                res = await this.api.post(ApiRoutes.Canvases.GetHomeFeed, { limit: limit, offset: this.currentOffset, tag: 'all' }, signal).catch(() => null);
-            } else {
-                res = await this.api.post(ApiRoutes.Canvases.GetMine, { limit: limit, offset: this.currentOffset, filter: this.currentFilter }, signal).catch(() => null);
-            }
+            res = await this.api.post(ApiRoutes.Canvases.GetMine, { limit: limit, offset: this.currentOffset, filter: this.currentFilter }, signal).catch(() => null);
             
             if (signal.aborted) {
                 this.isLoadingMore = false;
@@ -202,43 +220,61 @@ class HomeController {
         removeInfiniteScrollSkeletons(this.contentArea);
 
         let finalItems = newCanvases;
-        if (isGuest) {
-            await PromoService.ensureLoaded();
-            finalItems = PromoService.injectFeedCards(newCanvases, this.currentOffset);
-        }
 
         if (finalItems.length > 0 || (this.allCanvases.length > 0 && isLoadMore)) {
             renderVirtualGridItems(this.contentArea, isLoadMore ? finalItems : (this.allCanvases.length ? this.allCanvases.concat(finalItems) : finalItems), this.virtualObserver, isLoadMore, 'home-user-canvases');
             this.allCanvases = this.allCanvases.concat(finalItems);
         } else if (isError && !isLoadMore) {
-            this.showError(this.contentArea, (res && res.message) ? res.message : (window.__ ? window.__('err_load_canvases') : 'Error al cargar lienzos'));
+            this.showError(this.contentArea, (res && res.message) ? res.message : window.__('err_load_canvases'));
         } else if (!isLoadMore) {
-            let msgEmpty = isGuest ? (window.__ ? window.__('msg_explore_empty') : 'No hay murales disponibles por el momento.') : (window.__ ? window.__('msg_home_all_empty') : 'No tienes lienzos propios ni colaboraciones activas.');
-            if (!isGuest) {
-                if (this.currentFilter === 'mine') {
-                    msgEmpty = window.__ ? window.__('msg_home_mine_empty') : 'Aún no has creado ningún lienzo.';
-                } else if (this.currentFilter === 'joined') {
-                    msgEmpty = window.__ ? window.__('msg_home_joined_empty') : 'No te has unido a ningún lienzo.';
-                } else if (this.currentFilter === 'managed') {
-                    msgEmpty = window.__ ? window.__('msg_home_managed_empty') : 'No administras ningún lienzo adicional.';
-                }
-            }
-            
-            const btnExplore = window.__ ? window.__('btn_explore_canvases') : 'Explorar murales';
-            const emptyHtml = `
-                <div class="component-empty-state" data-ref="empty-state-rendered">
-                    <span class="material-symbols-rounded component-empty-state-icon">palette</span>
-                    <p class="component-empty-state-text">${msgEmpty}</p>
-                    ${!isGuest ? `
-                    <div class="component-actions">
-                        <a class="component-button component-button--secondary component-button--h40" data-nav="/explore">
-                            <span class="material-symbols-rounded">explore</span>
-                            <span>${btnExplore}</span>
-                        </a>
-                    </div>` : ''}
-                </div>
+            let emptyTitle = window.__('home_empty_all_title');
+            let emptyDesc = window.__('home_empty_all_desc');
+            let emptyActions = `
+                <a class="component-button component-button--h40" data-nav="${this.basePath}/canvases/create">
+                    <span class="material-symbols-rounded">add</span>
+                    <span>${window.__('btn_create_canvas')}</span>
+                </a>
+                <a class="component-button component-button--secondary component-button--h40" data-nav="${this.basePath}/explore">
+                    <span class="material-symbols-rounded">explore</span>
+                    <span>${window.__('btn_explore_canvases')}</span>
+                </a>
             `;
-            this.contentArea.innerHTML = emptyHtml;
+
+            if (this.currentFilter === 'mine') {
+                emptyTitle = window.__('home_empty_mine_title');
+                emptyDesc = window.__('home_empty_mine_desc');
+                emptyActions = `
+                    <a class="component-button component-button--h40" data-nav="${this.basePath}/canvases/create">
+                        <span class="material-symbols-rounded">add</span>
+                        <span>${window.__('btn_create_canvas')}</span>
+                    </a>
+                `;
+            } else if (this.currentFilter === 'joined') {
+                emptyTitle = window.__('home_empty_joined_title');
+                emptyDesc = window.__('home_empty_joined_desc');
+                emptyActions = `
+                    <a class="component-button component-button--secondary component-button--h40" data-nav="${this.basePath}/explore">
+                        <span class="material-symbols-rounded">explore</span>
+                        <span>${window.__('btn_explore_canvases')}</span>
+                    </a>
+                `;
+            } else if (this.currentFilter === 'managed') {
+                emptyTitle = window.__('home_empty_managed_title');
+                emptyDesc = window.__('home_empty_managed_desc');
+                emptyActions = `
+                    <a class="component-button component-button--secondary component-button--h40" data-nav="${this.basePath}/explore">
+                        <span class="material-symbols-rounded">explore</span>
+                        <span>${window.__('btn_explore_canvases')}</span>
+                    </a>
+                `;
+            }
+
+            this.contentArea.innerHTML = CardTemplates.emptyState({
+                type: 'canvas',
+                title: emptyTitle,
+                message: emptyDesc,
+                actions: emptyActions
+            });
         }
         
         if (newCanvases.length < limit) {

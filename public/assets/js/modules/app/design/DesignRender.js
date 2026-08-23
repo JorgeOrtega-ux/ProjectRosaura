@@ -225,11 +225,13 @@ export const DesignRender = {
                         ownerEraserBox: this.ownerEraserBox || null,
                         moveAreaBox: this.moveAreaBox || null,
                         shapePreviewPixels: this.shapePreviewPixels || null,
-                        shapePreviewBox: this.shapePreviewBox || null,
                         textPreviewPixels: this.textPreviewPixels || null,
                         textPreviewShadow: this.textPreviewShadow || null,
                         textPreviewOutline: this.textPreviewOutline || null,
                         textPreviewBox: this.textPreviewBox || null,
+                        interactionMode: this.interactionMode || 'normal',
+                        textPosition: this.textPosition || null,
+                        activePixelText: this.activePixelText || null,
                         isMirrorMode: !!this.isMirrorMode,
                         isEyedropperActive: (this.interactionMode === 'offline_eyedropper'),
                         tileGridSize: this.tileGridSize || 0,
@@ -630,11 +632,11 @@ export const DesignRender = {
             this.ctx.restore();
         }
 
-        if (this.textPreviewBox || (this.textPreviewPixels && this.textPreviewPixels.length > 0)) {
+        if (this.interactionMode === 'offline_text' && this.textPosition) {
             this.ctx.save();
 
             if (this.textPreviewShadow && this.textPreviewShadow.length > 0) {
-                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+                this.ctx.fillStyle = '#404040';
                 for (let i = 0; i < this.textPreviewShadow.length; i++) {
                     const key = this.textPreviewShadow[i];
                     const px = key & 0xFFFF;
@@ -669,39 +671,46 @@ export const DesignRender = {
                 }
             }
 
-            if (this.textPreviewBox) {
-                const { minX, minY, maxX, maxY, w, h, originX, originY } = this.textPreviewBox;
+            // Vertical Blinking Caret matching the selected font and scale
+            const isCaretVisible = (Math.floor(Date.now() / 500) % 2 === 0);
+            if (isCaretVisible) {
+                const scale = this.activePixelText?.scale || 1;
+                const fontHeights = { 'mini_3x5': 5, 'arcade_5x7': 7, 'cyber_6x8': 8 };
+                const fontH = (fontHeights[this.activePixelText?.fontId] || 7) * scale;
+
+                let caretX = (this.textPreviewBox && this.textPreviewBox.cursorX !== undefined) 
+                    ? this.textPreviewBox.cursorX 
+                    : (this.textPosition ? this.textPosition.x : 0);
+                let caretY = this.textPosition ? this.textPosition.y : 0;
+
+                if (caretX >= 0 && caretX < this.boardWidth && caretY >= 0 && caretY < this.boardHeight) {
+                    this.ctx.fillStyle = this.currentColor || '#ffffff';
+                    this.ctx.fillRect(caretX, caretY, 1, Math.min(fontH, this.boardHeight - caretY));
+
+                    if (this.isMirrorMode) {
+                        const symCaretX = this.boardWidth - 1 - caretX;
+                        if (symCaretX >= 0 && symCaretX < this.boardWidth) {
+                            this.ctx.fillRect(symCaretX, caretY, 1, Math.min(fontH, this.boardHeight - caretY));
+                        }
+                    }
+                }
+            }
+
+            if (this.textPreviewBox && this.activePixelText?.text && this.activePixelText.text.length > 0 && this.textPreviewBox.w > 0) {
+                const { minX, minY, maxX, maxY, w, h } = this.textPreviewBox;
 
                 this.ctx.strokeStyle = '#8b5cf6';
                 this.ctx.lineWidth = 1 / this.transform.scale;
-                this.ctx.setLineDash([3 / this.transform.scale, 3 / this.transform.scale]);
-                this.ctx.strokeRect(minX, minY, w, h);
+                this.ctx.setLineDash([2 / this.transform.scale, 2 / this.transform.scale]);
+                this.ctx.strokeRect(minX - 0.5, minY - 0.5, w + 1, h + 1);
 
                 if (this.isMirrorMode) {
                     const symMinX = this.boardWidth - 1 - maxX;
                     if (symMinX >= 0 && symMinX < this.boardWidth) {
-                        this.ctx.strokeRect(symMinX, minY, w, h);
+                        this.ctx.strokeRect(symMinX - 0.5, minY - 0.5, w + 1, h + 1);
                     }
                 }
-
                 this.ctx.setLineDash([]);
-                this.ctx.fillStyle = '#8b5cf6';
-                this.ctx.strokeStyle = '#ffffff';
-                this.ctx.lineWidth = 1 / this.transform.scale;
-                const handleR = Math.max(0.6, 2.5 / this.transform.scale);
-
-                this.ctx.beginPath();
-                this.ctx.arc(originX + 0.5, originY + 0.5, handleR, 0, Math.PI * 2);
-                this.ctx.fill();
-                this.ctx.stroke();
-
-                if (this.isMirrorMode) {
-                    const symOriginX = this.boardWidth - 1 - originX;
-                    this.ctx.beginPath();
-                    this.ctx.arc(symOriginX + 0.5, originY + 0.5, handleR, 0, Math.PI * 2);
-                    this.ctx.fill();
-                    this.ctx.stroke();
-                }
             }
 
             this.ctx.restore();

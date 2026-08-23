@@ -122,8 +122,11 @@ $appUrl = defined('APP_URL') ? APP_URL : '';
             </div>
             <?php else: ?>
             <div class="component-empty-state" data-ref="roles-empty-state">
-                <span class="material-symbols-rounded component-empty-state-icon">admin_panel_settings</span>
-                <p class="component-empty-state-text"><?php echo __('empty_roles_desc'); ?></p>
+                <div class="component-empty-state-badge">
+                    <span class="material-symbols-rounded">admin_panel_settings</span>
+                </div>
+                <h2 class="component-empty-state-title"><?php echo __('empty_roles_title'); ?></h2>
+                <p class="component-empty-state-desc"><?php echo __('empty_roles_desc'); ?></p>
             </div>
             <?php endif; ?>
         </div>

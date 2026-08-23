@@ -8,7 +8,7 @@ $isUserLoggedIn = !empty($_SESSION['active_account']) || isset($_SESSION['user_i
         
         <div class="component-top">
             <div class="component-top-left">
-                <h1 class="component-top-title"><?php echo $isUserLoggedIn ? __('home_title') : __('home_guest_title', [], 'Descubre murales de píxeles'); ?></h1>
+                <h1 class="component-top-title"><?php echo __('home_title'); ?></h1>
             </div>
 
             <div class="component-top-right">
@@ -24,6 +24,7 @@ $isUserLoggedIn = !empty($_SESSION['active_account']) || isset($_SESSION['user_i
                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-menu-header">
                                     <div class="component-menu-header-box">
+                                        <span class="material-symbols-rounded">filter_list</span>
                                         <span class="component-menu-header-title"><?php echo __('filter_search_title'); ?></span>
                                     </div>
                                 </div>
@@ -67,13 +68,6 @@ $isUserLoggedIn = !empty($_SESSION['active_account']) || isset($_SESSION['user_i
                             </div>
                         </div>
                     </div>
-                </div>
-                <?php else: ?>
-                <div class="component-actions active">
-                    <a class="component-button component-button--h40" data-nav="/explore">
-                        <span class="material-symbols-rounded">explore</span>
-                        <span><?php echo __('btn_explore_canvases', [], 'Explorar murales'); ?></span>
-                    </a>
                 </div>
                 <?php endif; ?>
             </div>

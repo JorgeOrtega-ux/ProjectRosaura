@@ -1,0 +1,123 @@
+================================================================================
+SPRINT 3: CALIDAD, CUMPLIMIENTO DE ESTÁNDARES Y LIMPIEZA (RIESGO BAJO Y ESTILO)
+Fecha: 2026-08-22
+Proyecto: Project Rosaura
+================================================================================
+
+OBJETIVO DEL SPRINT:
+Alinear el 100% de la base de código con las especificaciones de AI_INSTRUCTIONS.md:
+completar el catálogo de traducciones faltantes, erradicar fallbacks ilegales,
+eliminar llamadas fetch nativas no centralizadas, remover divs neutros sin clase,
+estilos inline estáticos y atributos 'id'.
+
+--------------------------------------------------------------------------------
+TAREA 3.1: COMPLETAR LAS 35 CLAVES DE TRADUCCIÓN FALTANTES EN ES-419
+--------------------------------------------------------------------------------
+Archivos afectados:
+  - translations/es-419/admin.json
+  - translations/es-419/general.json
+  - translations/es-419/settings.json
+
+Descripción del problema:
+  El escáner de internacionalización detectó 35 claves utilizadas en el código
+  que no existen en los archivos JSON de traducciones.
+
+Lista de claves a registrar con sus textos correspondientes:
+  1. admin_max_colors_reached: "Límite máximo de colores alcanzado."
+  2. admin_status_active: "Activo"
+  3. admin_status_inactive: "Inactivo"
+  4. admin_status_not_purchasable: "No Adquirible"
+  5. admin_status_purchasable: "Adquirible"
+  6. admin_tier_featured_desc: "Destaca este plan en la tabla de precios."
+  7. admin_tier_featured_title: "Plan Destacado"
+  8. admin_tier_visibility_desc: "Define si el plan está visible públicamente."
+  9. admin_tier_visibility_title: "Visibilidad del Plan"
+  10. btn_prev: "Anterior"
+  11. btn_select: "Seleccionar"
+  12. coins: "Monedas"
+  13. dt_zero_records: "No se encontraron registros coincidentes."
+  14. err_ad_url_required: "La URL de destino del anuncio es obligatoria."
+  15. err_canvas_is_online_mode: "El lienzo se encuentra actualmente en modo online."
+  16. err_email_delivery_failed: "Error al enviar el correo electrónico."
+  17. err_occurred: "Ha ocurrido un error inesperado."
+  18. err_provider_fetch_failed: "Error al obtener los detalles del proveedor."
+  19. err_reason_required: "Debes especificar un motivo o justificación."
+  20. err_role_name_exists: "Ya existe un rol con este nombre."
+  21. err_server: "Error interno del servidor."
+  22. lbl_grid_off: "Cuadrícula Desactivada"
+  23. lbl_text_scale: "Escala de Texto"
+  24. msg_max_palette_colors: "Has alcanzado el límite máximo de colores permitidos en la paleta."
+  25. refund_policy_section_3_p1: "Párrafo 1 de la sección 3 de reembolsos."
+  26. refund_policy_section_3_p2: "Párrafo 2 de la sección 3 de reembolsos."
+  27. refund_policy_section_3_summary: "Resumen de la política de reembolsos."
+  28. refund_policy_section_3_title: "Condiciones de Reembolso"
+  29. role_deleted_success: "Rol eliminado correctamente."
+  30. role_owner: "Propietario"
+  31. subscription_deleted_success: "Suscripción eliminada correctamente."
+  32. terms_conditions_section_4_p3: "Párrafo 3 de los términos y condiciones."
+  33. title_role_permissions: "Permisos del Rol"
+  34. tooltip_drag: "Arrastrar para reordenar"
+  35. unknown_provider: "Proveedor Desconocido"
+
+Criterio de Aceptación:
+  - El escáner 'i18n_scanner.py' reporta 0 claves faltantes.
+
+--------------------------------------------------------------------------------
+TAREA 3.2: ERRADICAR FALLBACKS Y TEXTOS HARDCODEADOS (REGLAS 2 Y 3)
+--------------------------------------------------------------------------------
+Archivos afectados:
+  - api/services/Stripe/StripeService.php (líneas 476, 1140, 1202, 1212)
+  - api/controllers/Canvas/CanvasAssetController.php (línea 330)
+  - public/assets/js/core/services/PromoCardService.js (líneas 10-100)
+
+Acciones requeridas:
+  1. Reemplazar expresiones como __('key') ?? 'Texto hardcodeado' por __('key').
+  2. En StripeService.php, cambiar los mensajes de éxito/error fijos por claves traducidas:
+     - 'message' => __('msg_subscription_canceled_period_end')
+     - 'message' => __('err_cannot_delete_active_card_autorenew')
+     - 'message' => __('msg_card_deleted_success')
+  3. En PromoCardService.js, eliminar los mocks con textos en español quemados en código.
+
+Criterio de Aceptación:
+  - Cero operadores de fallback '??', '?:' o '||' sobre funciones de traducción.
+
+--------------------------------------------------------------------------------
+TAREA 3.3: MIGRACIÓN DE LLAMADAS NATIVAS FETCH() A APISERVICE (REGLA 5)
+--------------------------------------------------------------------------------
+Archivos afectados:
+  - public/assets/js/modules/canvases/chat/CanvasChatViewerController.js (línea 135)
+  - public/assets/js/modules/canvases/history/CanvasSnapshotViewerController.js (línea 625)
+  - public/assets/js/modules/canvases/core/CanvasCreateController.js (línea 40)
+  - public/assets/js/modules/app/design/PerksRegistry.js (línea 39)
+
+Acciones requeridas:
+  1. Reemplazar las instancias directas de 'fetch()' por 'this.api.get()' o 'this.api.post()'.
+  2. Asegurar el paso de 'this.abortController.signal' para cancelación de peticiones.
+
+Criterio de Aceptación:
+  - Todas las peticiones HTTP cliente utilizan 'ApiService.js'.
+
+--------------------------------------------------------------------------------
+TAREA 3.4: LIMPIEZA DE ETIQUETAS HTML Y ESTÁNDARES DOM (REGLAS 1, 12 Y 14)
+--------------------------------------------------------------------------------
+Archivos afectados:
+  - includes/views/admin/users/manage-users.php (línea 252)
+  - includes/views/admin/users/user-history.php (líneas 202, 209, 217, 219, 228, 232)
+  - includes/views/canvases/chat/chat-viewer.php (líneas 41, 49)
+  - includes/views/canvases/workspace/reset.php (línea 22)
+  - includes/views/canvases/workspace/resize.php (línea 31)
+  - includes/views/settings/billing/billing.php (líneas 86, 104)
+  - includes/modules/moduleDesignTools.php (líneas 48, 51)
+  - public/assets/js/core/components/ModalTemplates.js (líneas 196, 351, 564, 1772, 1794, 2519)
+
+Acciones requeridas:
+  1. Asignar clases CSS a los 25 elementos '<div>' neutros identificados.
+  2. Reemplazar los 3 atributos 'id="..."' en ModalTemplates.js por 'data-ref="..."'.
+  3. Mover los estilos inline estáticos a clases en hojas de estilos CSS.
+
+Criterio de Aceptación:
+  - Cero divs sin clase, cero atributos id y cero estilos inline estáticos en plantillas.
+
+================================================================================
+FIN DE SPRINT 3
+================================================================================

@@ -2,22 +2,26 @@
 
 define('ROOT_PATH', dirname(__DIR__, 2));
 
-header("X-Frame-Options: SAMEORIGIN");
-header("X-Content-Type-Options: nosniff");
-header("Cross-Origin-Opener-Policy: same-origin-allow-popups");
 require_once ROOT_PATH . '/vendor/autoload.php';
 
 \App\Core\Helpers\EnvLoader::load(ROOT_PATH . '/.env');
-
-$s3Host = $_ENV['AWS_PUBLIC_URL'];
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://challenges.cloudflare.com https://cdn.jsdelivr.net https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://api.qrserver.com {$s3Host}; connect-src 'self' {$s3Host} https://unpkg.com https://cdn.jsdelivr.net https://accounts.google.com ws: wss:; frame-src 'self' https://challenges.cloudflare.com https://accounts.google.com; frame-ancestors 'none';");
-
 
 if (!isset($_ENV['APP_URL'])) {
     die("Critical Failure: APP_URL is not defined in the environment.");
 }
 define('APP_URL', rtrim($_ENV['APP_URL'], '/'));
-define('APP_NAME', $_ENV['APP_NAME']);
+define('APP_NAME', $_ENV['APP_NAME'] ?? 'ProjectRosaura');
+
+header("X-Frame-Options: SAMEORIGIN");
+header("X-Content-Type-Options: nosniff");
+header("Cross-Origin-Opener-Policy: same-origin-allow-popups");
+header("Referrer-Policy: strict-origin-when-cross-origin");
+if (\App\Core\Helpers\Utils::isSecureConnection()) {
+    header("Strict-Transport-Security: max-age=31536000; includeSubDomains; preload");
+}
+
+$s3Host = $_ENV['AWS_PUBLIC_URL'] ?? 'http://localhost:9000';
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://challenges.cloudflare.com https://cdn.jsdelivr.net https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://api.qrserver.com {$s3Host}; connect-src 'self' {$s3Host} https://unpkg.com https://cdn.jsdelivr.net https://accounts.google.com ws: wss:; frame-src 'self' https://challenges.cloudflare.com https://accounts.google.com; frame-ancestors 'none';");
 
 $appTimezone = $_ENV['APP_TIMEZONE'];
 date_default_timezone_set($appTimezone);
@@ -157,50 +161,46 @@ try {
     $prefsManager = $container->get(UserPrefsManagerInterface::class);
     $userRepo = $container->get(UserRepositoryInterface::class);
     if ($sessionManager->isLoggedIn()) {
+        $activeId = $sessionManager->getActiveAccountId();
+        
+        // Si hay una cookie remember_tokens pero no coincide con la base de datos,
+        // solo limpiamos la cookie huérfana sin destruir la sesión activa de Redis.
         if (!$authService->isCurrentDeviceValid()) {
+            $authService->clearRememberToken($activeId);
+        }
+
+        $liveUser = $userRepo->findById($activeId);
+        if (!$liveUser || !empty($liveUser['deletion_scheduled_at'])) {
             $authService->logout();
-            if ($sessionManager->isLoggedIn()) {
-                header("Location: " . APP_URL . "/?account_switched=1");
-            } else {
-                header("Location: " . APP_URL . "/login?reason=session_expired");
-            }
+            header("Location: " . APP_URL . "/account-deleted");
             exit;
-            
-        } else {
-            $activeId = $sessionManager->getActiveAccountId();
-            $liveUser = $userRepo->findById($activeId);
-            if (!$liveUser || !empty($liveUser['deletion_scheduled_at'])) {
+        }
+
+        if (isset($liveUser['is_suspended']) && $liveUser['is_suspended'] == 1) {
+            if ($liveUser['suspension_type'] === 'temporary' && $liveUser['suspension_end_date'] && strtotime($liveUser['suspension_end_date']) <= time()) {
+                $userRepo->liftSuspension($liveUser['id']);
+            } else {
                 $authService->logout();
-                header("Location: " . APP_URL . "/account-deleted");
+                header("Location: " . APP_URL . "/account-suspended");
                 exit;
             }
-
-            if (isset($liveUser['is_suspended']) && $liveUser['is_suspended'] == 1) {
-                if ($liveUser['suspension_type'] === 'temporary' && $liveUser['suspension_end_date'] && strtotime($liveUser['suspension_end_date']) <= time()) {
-                    $userRepo->liftSuspension($liveUser['id']);
-                } else {
-                    $authService->logout();
-                    header("Location: " . APP_URL . "/account-suspended");
-                    exit;
-                }
-            }
-            $roleRepo = $container->get(\App\Core\Interfaces\RoleRepositoryInterface::class);
-            $permissions = $roleRepo->getMergedPermissionsForUser($activeId);
-            $accounts = $sessionManager->get(\App\Core\System\SessionConstants::KEY_LINKED_ACCOUNTS, []);
-            if (isset($accounts[$activeId])) {
-                $accounts[$activeId]['user_role_id'] = $liveUser['role_id'] ?? null;
-                $accounts[$activeId]['user_role_name'] = $liveUser['role_name'] ?? __('user');
-                $accounts[$activeId]['user_role_weight'] = (int)($liveUser['role_weight'] ?? 1);
-                $accounts[$activeId]['subscription_color'] = $liveUser['subscription_color'] ?? '#808080';
-                $accounts[$activeId]['user_permissions'] = $permissions;
-                $accounts[$activeId]['user_pic'] = $liveUser['profile_picture'] ?? null;
-                $accounts[$activeId]['subscription_tier'] = (int)($liveUser['subscription_tier'] ?? 0);
-                $accounts[$activeId]['real_subscription_tier'] = (int)($liveUser['real_subscription_tier'] ?? ($liveUser['subscription_tier'] ?? 0));
-                $accounts[$activeId]['subscription_color'] = $liveUser['subscription_color'] ?? null;
-                $accounts[$activeId]['google_id'] = $liveUser['google_id'] ?? null;
-                $sessionManager->set(\App\Core\System\SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
-                $sessionManager->syncRootState();
-            }
+        }
+        $roleRepo = $container->get(\App\Core\Interfaces\RoleRepositoryInterface::class);
+        $permissions = $roleRepo->getMergedPermissionsForUser($activeId);
+        $accounts = $sessionManager->get(\App\Core\System\SessionConstants::KEY_LINKED_ACCOUNTS, []);
+        if (isset($accounts[$activeId])) {
+            $accounts[$activeId]['user_role_id'] = $liveUser['role_id'] ?? null;
+            $accounts[$activeId]['user_role_name'] = $liveUser['role_name'] ?? __('user');
+            $accounts[$activeId]['user_role_weight'] = (int)($liveUser['role_weight'] ?? 1);
+            $accounts[$activeId]['subscription_color'] = $liveUser['subscription_color'] ?? '#808080';
+            $accounts[$activeId]['user_permissions'] = $permissions;
+            $accounts[$activeId]['user_pic'] = $liveUser['profile_picture'] ?? null;
+            $accounts[$activeId]['subscription_tier'] = (int)($liveUser['subscription_tier'] ?? 0);
+            $accounts[$activeId]['real_subscription_tier'] = (int)($liveUser['real_subscription_tier'] ?? ($liveUser['subscription_tier'] ?? 0));
+            $accounts[$activeId]['subscription_color'] = $liveUser['subscription_color'] ?? null;
+            $accounts[$activeId]['google_id'] = $liveUser['google_id'] ?? null;
+            $sessionManager->set(\App\Core\System\SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+            $sessionManager->syncRootState();
         }
     } elseif (isset($_COOKIE['remember_token']) || isset($_COOKIE['remember_tokens'])) {
         $authService->autoLogin(); 

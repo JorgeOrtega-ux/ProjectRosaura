@@ -173,7 +173,9 @@ extract($membersData);
                             <tr class="disabled" data-ref="empty-search-table">
                                 <td colspan="3" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
-                                        <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
+                                        <div class="component-empty-state-badge">
+                                            <span class="material-symbols-rounded">search_off</span>
+                                        </div>
                                         <p class="component-empty-state-text"><?php echo __('empty_search_members'); ?></p>
                                     </div>
                                 </td>
@@ -183,7 +185,9 @@ extract($membersData);
                             <tr>
                                 <td colspan="3" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
-                                        <span class="material-symbols-rounded component-empty-state-icon">group_off</span>
+                                        <div class="component-empty-state-badge">
+                                            <span class="material-symbols-rounded">group_off</span>
+                                        </div>
                                         <p class="component-empty-state-text"><?php echo __('empty_members_system'); ?></p>
                                     </div>
                                 </td>

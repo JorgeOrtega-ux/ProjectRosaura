@@ -79,7 +79,7 @@ class AuthService {
         }
         
         $encodedTokens = json_encode($tokens);
-        $cookiePath = rtrim(parse_url(APP_URL, PHP_URL_PATH) ?: '/', '/') ?: '/';
+        $cookiePath = '/';
         $isSecure = Utils::isSecureConnection();
 
         setcookie('remember_tokens', $encodedTokens, [
@@ -93,13 +93,28 @@ class AuthService {
         $_COOKIE['remember_tokens'] = $encodedTokens;
     }
 
-    public function isCurrentDeviceValid() {
+    public function isCurrentDeviceValid(): bool {
         if (!$this->sessionManager->has(SessionConstants::KEY_ACTIVE_ACCOUNT)) return false;
-        $userId = $this->sessionManager->get(SessionConstants::KEY_ACTIVE_ACCOUNT);
+        $userId = (int)$this->sessionManager->get(SessionConstants::KEY_ACTIVE_ACCOUNT);
+        if ($userId <= 0) return false;
         
         $selector = Utils::getCurrentDeviceSelector($userId);
-        if (empty($selector)) return false;
+        if (empty($selector)) {
+            // Si la sesión activa existe en Redis pero no hay cookie remember_tokens, la sesión es válida.
+            return true;
+        }
 
+        // 1. Validar período de gracia en Redis para rotaciones recientes (mitiga race condition)
+        $redisCache = new RedisCache();
+        if ($redis = $redisCache->getClient()) {
+            $graceKey = "auth:grace_selector:" . md5($selector);
+            $graceUserId = $redis->get($graceKey);
+            if ($graceUserId !== null && (int)$graceUserId === $userId) {
+                return true;
+            }
+        }
+
+        // 2. Validar en repositorio de tokens
         $token = $this->tokenRepository->findValidTokenBySelectorAndUserId($selector, $userId);
         return $token !== null;
     }
@@ -131,7 +146,7 @@ class AuthService {
     }
 
     public function clearRememberToken($userId = null) {
-        $cookiePath = rtrim(parse_url(APP_URL, PHP_URL_PATH) ?: '/', '/') ?: '/';
+        $cookiePath = '/';
         $isSecure = Utils::isSecureConnection();
 
         if ($userId === null) {
@@ -237,7 +252,11 @@ class AuthService {
                     'user_uuid' => $user ? $user['uuid'] : null,
                     'ip_address' => Utils::getIpAddress()
                 ]);
-                return ['success' => true, 'message' => __('auth.account_switched')];
+                return [
+                    'success' => true, 
+                    'csrf_token' => $this->sessionManager->getCsrfToken(),
+                    'message' => __('auth.account_switched')
+                ];
             }
             $this->telemetryServices->logAuthEvent([
                 'event_type' => 'switch_account_failed',
@@ -296,6 +315,10 @@ class AuthService {
                         }
                         
                         if ($this->setAuthSession($user, false)) {
+                            $oldSelector = $token['selector'];
+                            if ($redis = $redisCache->getClient()) {
+                                $redis->setex("auth:grace_selector:" . md5($oldSelector), 60, (string)$user['id']);
+                            }
                             $this->tokenRepository->deleteById($token['id']);
                             $this->createRememberToken($user['id']);
                             $loginSuccess = true;
@@ -542,7 +565,11 @@ class AuthService {
                 $this->sessionManager->set(SessionConstants::KEY_REG_FLOWS, $regFlows);
                 $this->verificationCodeRepository->deleteById($verification['id']);
 
-                return ['success' => true, 'message' => __('auth.account_created')];
+                return [
+                    'success' => true, 
+                    'csrf_token' => $this->sessionManager->getCsrfToken(),
+                    'message' => __('auth.account_created')
+                ];
             });
         }
         
@@ -629,7 +656,12 @@ class AuthService {
                     'ip_address' => $ipAddress
                 ]);
                 
-                return ['success' => true, 'requires_2fa' => false, 'message' => __('auth.login_success')];
+                return [
+                    'success' => true, 
+                    'requires_2fa' => false, 
+                    'csrf_token' => $this->sessionManager->getCsrfToken(),
+                    'message' => __('auth.login_success')
+                ];
             });
         }
         
@@ -743,7 +775,12 @@ class AuthService {
                 'user_uuid' => $user['uuid'],
                 'ip_address' => $ipAddress
             ]);
-            return ['success' => true, 'requires_2fa' => false, 'message' => __('auth.login_success')];
+            return [
+                'success' => true, 
+                'requires_2fa' => false, 
+                'csrf_token' => $this->sessionManager->getCsrfToken(),
+                'message' => __('auth.login_success')
+            ];
         });
     }
 
@@ -806,7 +843,12 @@ class AuthService {
                     'ip_address' => Utils::getIpAddress()
                 ]);
                 
-                return ['success' => true, 'requires_2fa' => false, 'message' => __('auth.login_success')];
+                return [
+                    'success' => true, 
+                    'requires_2fa' => false, 
+                    'csrf_token' => $this->sessionManager->getCsrfToken(),
+                    'message' => __('auth.login_success')
+                ];
             });
         }
 
@@ -893,7 +935,11 @@ class AuthService {
                     'ip_address' => Utils::getIpAddress()
                 ]);
                 
-                return ['success' => true, 'message' => __('auth.login_success')];
+                return [
+                    'success' => true, 
+                    'csrf_token' => $this->sessionManager->getCsrfToken(),
+                    'message' => __('auth.login_success')
+                ];
             });
         }
 

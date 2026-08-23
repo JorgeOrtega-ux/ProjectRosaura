@@ -117,7 +117,7 @@ class SearchService {
                 $isMemberSelect = "CASE WHEN cm.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_member";
             }
 
-            $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.privacy, c.favorites_count, c.members_count,
+            $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.privacy, c.mode, c.is_online_active, c.favorites_count, c.members_count,
                            CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                            $isMemberSelect
                     FROM " . DB::TBL_CANVASES . " c
@@ -150,6 +150,8 @@ class SearchService {
                     'name'            => $row['name'],
                     'owner_id'        => $row['owner_id'] !== null ? (int)$row['owner_id'] : null,
                     'privacy'         => $row['privacy'],
+                    'mode'            => $row['mode'] ?? 'offline',
+                    'is_online_active'=> !empty($row['is_online_active']),
                     'is_favorite'     => (bool)$row['is_favorite'],
                     'favorites_count' => (int)$row['favorites_count'],
                     'members_count'   => (int)$row['members_count'],
@@ -197,7 +199,7 @@ class SearchService {
                 $isMemberSelect = "CASE WHEN cm.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_member";
             }
 
-            $sql = "SELECT c.id, c.favorites_count, c.members_count, 
+            $sql = "SELECT c.id, c.mode, c.is_online_active, c.favorites_count, c.members_count, 
                            CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                            $isMemberSelect
                     FROM " . DB::TBL_CANVASES . " c
@@ -221,6 +223,8 @@ class SearchService {
             foreach ($rows as $row) {
                 $id = (int)$row['id'];
                 if (isset($canvases[$id])) {
+                    $canvases[$id]['mode'] = $row['mode'] ?? 'offline';
+                    $canvases[$id]['is_online_active'] = !empty($row['is_online_active']);
                     $canvases[$id]['favorites_count'] = (int)$row['favorites_count'];
                     $canvases[$id]['members_count'] = (int)$row['members_count'];
                     $canvases[$id]['is_favorite'] = (bool)$row['is_favorite'];

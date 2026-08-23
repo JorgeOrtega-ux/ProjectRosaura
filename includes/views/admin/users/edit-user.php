@@ -293,118 +293,133 @@ $subscriptionPlanLabel = \App\Core\System\SubscriptionPlanConstants::getTierLimi
                     </div>
                 </div>
 
-                <div class="component-card--grouped admin-edit-group">
-                    <div class="component-group-item component-group-item--stacked">
+                <div class="component-card--grouped component-accordion admin-edit-group">
+                    <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
                         <div class="component-card__content">
                             <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('pref_lang_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('pref_lang_desc'); ?></p>
+                                <h2 class="component-card__title"><?php echo __('lbl_user_preferences_title'); ?></h2>
+                                <p class="component-card__description"><?php echo __('lbl_user_preferences_desc'); ?></p>
                             </div>
                         </div>
-                        <div class="component-card__actions component-card__actions--start">
-                            <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="adminModuleLanguage">
-                                    <span class="material-symbols-rounded">language</span>
-                                    <span class="component-dropdown-text" data-ref="admin-lang-text"><?php echo htmlspecialchars($langMap[$prefs['language']] ?? $prefs['language']); ?></span>
-                                    <span class="material-symbols-rounded">expand_more</span>
-                                </div>
-                                <div class="component-module component-module--dropdown disabled" data-module="adminModuleLanguage">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
-                                        <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-header">
-                                            <div class="component-search component-search--full component-search--h36">
-                                                <div class="component-search-icon">
-                                                    <span class="material-symbols-rounded">search</span>
-                                                </div>
-                                                <div class="component-search-input">
-                                                    <input type="text" placeholder="<?php echo __('search_language'); ?>">
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="component-menu-list component-menu-list--scrollable">
-                                            <?php foreach($langMap as $key => $name): ?>
-                                            <div class="component-menu-link <?php echo $prefs['language'] === $key ? 'active' : ''; ?>" data-action="adminSetPref" data-key="language" data-value="<?php echo $key; ?>">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">language</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo $name; ?></span></div>
-                                            </div>
-                                            <?php endforeach; ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="component-card__actions component-card__actions--end">
+                            <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
                         </div>
                     </div>
-                </div>
-
-                <div class="component-card--grouped admin-edit-group">
-                    <div class="component-group-item component-group-item--stacked">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('pref_theme_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('pref_theme_desc'); ?></p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--start">
-                            <div class="component-dropdown-wrapper">
-                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="adminModuleTheme">
-                                    <span class="material-symbols-rounded">brightness_auto</span>
-                                    <span class="component-dropdown-text" data-ref="admin-theme-text"><?php echo htmlspecialchars($themeMap[$prefs['theme']] ?? $prefs['theme']); ?></span>
-                                    <span class="material-symbols-rounded">expand_more</span>
+                    <div class="component-accordion-body">
+                        <div class="component-accordion-content">
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('pref_lang_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('pref_lang_desc'); ?></p>
+                                    </div>
                                 </div>
-                                <div class="component-module component-module--dropdown disabled" data-module="adminModuleTheme">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
-                                        <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list">
-                                            <div class="component-menu-link <?php echo $prefs['theme'] === DB::THEME_SYSTEM ? 'active' : ''; ?>" data-action="adminSetPref" data-key="theme" data-value="<?php echo DB::THEME_SYSTEM; ?>">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">brightness_auto</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('theme_system'); ?></span></div>
-                                            </div>
-                                            <div class="component-menu-link <?php echo $prefs['theme'] === DB::THEME_LIGHT ? 'active' : ''; ?>" data-action="adminSetPref" data-key="theme" data-value="<?php echo DB::THEME_LIGHT; ?>">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">light_mode</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('theme_light'); ?></span></div>
-                                            </div>
-                                            <div class="component-menu-link <?php echo $prefs['theme'] === DB::THEME_DARK ? 'active' : ''; ?>" data-action="adminSetPref" data-key="theme" data-value="<?php echo DB::THEME_DARK; ?>">
-                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">dark_mode</span></div>
-                                                <div class="component-menu-link-text"><span><?php echo __('theme_dark'); ?></span></div>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-dropdown-wrapper">
+                                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="adminModuleLanguage">
+                                            <span class="material-symbols-rounded">language</span>
+                                            <span class="component-dropdown-text" data-ref="admin-lang-text"><?php echo htmlspecialchars($langMap[$prefs['language']] ?? $prefs['language']); ?></span>
+                                            <span class="material-symbols-rounded">expand_more</span>
+                                        </div>
+                                        <div class="component-module component-module--dropdown disabled" data-module="adminModuleLanguage">
+                                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--no-padding component-menu--limited">
+                                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                                <div class="component-menu-header">
+                                                    <div class="component-search component-search--full component-search--h36">
+                                                        <div class="component-search-icon">
+                                                            <span class="material-symbols-rounded">search</span>
+                                                        </div>
+                                                        <div class="component-search-input">
+                                                            <input type="text" placeholder="<?php echo __('search_language'); ?>">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="component-menu-list component-menu-list--scrollable">
+                                                    <?php foreach($langMap as $key => $name): ?>
+                                                    <div class="component-menu-link <?php echo $prefs['language'] === $key ? 'active' : ''; ?>" data-action="adminSetPref" data-key="language" data-value="<?php echo $key; ?>">
+                                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">language</span></div>
+                                                        <div class="component-menu-link-text"><span><?php echo $name; ?></span></div>
+                                                    </div>
+                                                    <?php endforeach; ?>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="component-card--grouped admin-edit-group">
-                    <div class="component-group-item">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('pref_links_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('pref_links_desc'); ?></p>
-                            </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <label class="component-toggle-switch">
-                                <input type="checkbox" data-ref="admin-toggle-links" data-action="adminTogglePreference" data-key="open_links_new_tab" <?php echo ($prefs['open_links_new_tab'] == 1) ? 'checked' : ''; ?>>
-                                <span class="component-toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="component-card--grouped admin-edit-group">
-                    <div class="component-group-item">
-                        <div class="component-card__content">
-                            <div class="component-card__text">
-                                <h2 class="component-card__title"><?php echo __('pref_alerts_title'); ?></h2>
-                                <p class="component-card__description"><?php echo __('pref_alerts_desc'); ?></p>
+                            <hr class="component-divider">
+
+                            <div class="component-group-item component-group-item--stacked">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('pref_theme_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('pref_theme_desc'); ?></p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--start">
+                                    <div class="component-dropdown-wrapper">
+                                        <div class="component-dropdown-trigger" data-action="toggleModule" data-target="adminModuleTheme">
+                                            <span class="material-symbols-rounded">brightness_auto</span>
+                                            <span class="component-dropdown-text" data-ref="admin-theme-text"><?php echo htmlspecialchars($themeMap[$prefs['theme']] ?? $prefs['theme']); ?></span>
+                                            <span class="material-symbols-rounded">expand_more</span>
+                                        </div>
+                                        <div class="component-module component-module--dropdown disabled" data-module="adminModuleTheme">
+                                            <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                                <div class="pill-container"><div class="drag-handle"></div></div>
+                                                <div class="component-menu-list">
+                                                    <div class="component-menu-link <?php echo $prefs['theme'] === DB::THEME_SYSTEM ? 'active' : ''; ?>" data-action="adminSetPref" data-key="theme" data-value="<?php echo DB::THEME_SYSTEM; ?>">
+                                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">brightness_auto</span></div>
+                                                        <div class="component-menu-link-text"><span><?php echo __('theme_system'); ?></span></div>
+                                                    </div>
+                                                    <div class="component-menu-link <?php echo $prefs['theme'] === DB::THEME_LIGHT ? 'active' : ''; ?>" data-action="adminSetPref" data-key="theme" data-value="<?php echo DB::THEME_LIGHT; ?>">
+                                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">light_mode</span></div>
+                                                        <div class="component-menu-link-text"><span><?php echo __('theme_light'); ?></span></div>
+                                                    </div>
+                                                    <div class="component-menu-link <?php echo $prefs['theme'] === DB::THEME_DARK ? 'active' : ''; ?>" data-action="adminSetPref" data-key="theme" data-value="<?php echo DB::THEME_DARK; ?>">
+                                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">dark_mode</span></div>
+                                                        <div class="component-menu-link-text"><span><?php echo __('theme_dark'); ?></span></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="component-card__actions component-card__actions--end">
-                            <label class="component-toggle-switch">
-                                <input type="checkbox" data-ref="admin-toggle-alerts" data-action="adminTogglePreference" data-key="extended_alerts" <?php echo ($prefs['extended_alerts'] == 1) ? 'checked' : ''; ?>>
-                                <span class="component-toggle-slider"></span>
-                            </label>
+
+                            <hr class="component-divider">
+
+                            <div class="component-group-item">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('pref_links_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('pref_links_desc'); ?></p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--end">
+                                    <label class="component-toggle-switch">
+                                        <input type="checkbox" data-ref="admin-toggle-links" data-action="adminTogglePreference" data-key="open_links_new_tab" <?php echo ($prefs['open_links_new_tab'] == 1) ? 'checked' : ''; ?>>
+                                        <span class="component-toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <hr class="component-divider">
+
+                            <div class="component-group-item">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('pref_alerts_title'); ?></h2>
+                                        <p class="component-card__description"><?php echo __('pref_alerts_desc'); ?></p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--end">
+                                    <label class="component-toggle-switch">
+                                        <input type="checkbox" data-ref="admin-toggle-alerts" data-action="adminTogglePreference" data-key="extended_alerts" <?php echo ($prefs['extended_alerts'] == 1) ? 'checked' : ''; ?>>
+                                        <span class="component-toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

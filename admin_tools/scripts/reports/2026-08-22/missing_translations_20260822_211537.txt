@@ -1,0 +1,43 @@
+=== REPORTE DE TRADUCCIONES FALTANTES ===
+Fecha: 2026-08-22 21:15:37
+Archivos escaneados: 319
+Claves en código: 2379
+Claves en JSON: 3132
+Claves faltantes: 35
+
+=== LISTA DE CLAVES FALTANTES ===
+admin_max_colors_reached
+admin_status_active
+admin_status_inactive
+admin_status_not_purchasable
+admin_status_purchasable
+admin_tier_featured_desc
+admin_tier_featured_title
+admin_tier_visibility_desc
+admin_tier_visibility_title
+btn_prev
+btn_select
+coins
+dt_zero_records
+err_ad_url_required
+err_canvas_is_online_mode
+err_email_delivery_failed
+err_occurred
+err_provider_fetch_failed
+err_reason_required
+err_role_name_exists
+err_server
+lbl_grid_off
+lbl_text_scale
+msg_max_palette_colors
+refund_policy_section_3_p1
+refund_policy_section_3_p2
+refund_policy_section_3_summary
+refund_policy_section_3_title
+role_deleted_success
+role_owner
+subscription_deleted_success
+terms_conditions_section_4_p3
+title_role_permissions
+tooltip_drag
+unknown_provider

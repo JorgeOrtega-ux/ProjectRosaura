@@ -1,4 +1,4 @@
-﻿import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiService.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
 import { CardTemplates } from '../../../core/components/CardTemplates.js';
@@ -64,7 +64,11 @@ export class SearchController {
         if (!this.query.trim()) {
             if (this.title) this.title.textContent = window.__('msg_enter_search_term');
             if (this.contentArea) {
-                this.contentArea.innerHTML = CardTemplates.emptyState(window.__('msg_no_search_term'), 'search_off');
+                this.contentArea.innerHTML = CardTemplates.emptyState({
+                    type: 'search',
+                    title: window.__('search_empty_initial_title'),
+                    message: window.__('search_empty_initial_desc')
+                });
             }
             return;
         }
@@ -119,7 +123,7 @@ export class SearchController {
                 this.totalFound = typeof resData.total === 'number' ? resData.total : (this.allCanvases.length + newCanvases.length);
 
                 if (this.title) {
-                    const template = window.__('search_results_for', { count: this.totalFound, query: this.query }) || `${this.totalFound} resultados para "${this.query}"`;
+                    const template = window.__('search_results_for', { count: this.totalFound, query: this.query });
                     this.title.textContent = template
                         .replace(':count', this.totalFound)
                         .replace(':query', this.query);
@@ -128,7 +132,11 @@ export class SearchController {
                 if (!isLoadMore && newCanvases.length === 0) {
                     this.hasMore = false;
                     if (this.contentArea) {
-                        this.contentArea.innerHTML = CardTemplates.emptyState(window.__('msg_no_search_results'), 'search_off');
+                        this.contentArea.innerHTML = CardTemplates.emptyState({
+                            type: 'search',
+                            title: window.__('search_empty_no_results_title'),
+                            message: window.__('search_empty_no_results_desc')
+                        });
                     }
                     this.isLoadingMore = false;
                     return;
@@ -161,7 +169,11 @@ export class SearchController {
                 if (!isLoadMore) {
                     if (this.title) this.title.textContent = window.__('err_search_failed');
                     if (this.contentArea) {
-                        this.contentArea.innerHTML = CardTemplates.emptyState(window.__('err_search_problem'), 'error');
+                        this.contentArea.innerHTML = CardTemplates.emptyState({
+                            type: 'error',
+                            title: window.__('search_error_title'),
+                            message: window.__('search_error_desc')
+                        });
                     }
                 }
                 this.isLoadingMore = false;
@@ -174,7 +186,11 @@ export class SearchController {
             if (!isLoadMore) {
                 if (this.title) this.title.textContent = window.__('err_search_problem');
                 if (this.contentArea) {
-                    this.contentArea.innerHTML = CardTemplates.emptyState(window.__('err_search_network'), 'wifi_off');
+                    this.contentArea.innerHTML = CardTemplates.emptyState({
+                        type: 'error',
+                        title: window.__('search_error_title'),
+                        message: window.__('err_search_network')
+                    });
                 }
             }
             this.isLoadingMore = false;

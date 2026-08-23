@@ -1,4 +1,4 @@
-﻿import { ApiRoutes } from '../../core/api/ApiRoutes.js';
+import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiService.js';
 import { escapeHTML, showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
 
@@ -262,7 +262,9 @@ export class PurchaseHistoryController {
                 <tr>
                     <td colspan="4" class="component-empty-table-cell">
                         <div class="component-empty-state component-empty-state--table">
-                            <span class="material-symbols-rounded component-empty-state-icon">receipt_long</span>
+                            <div class="component-empty-state-badge">
+                                <span class="material-symbols-rounded">receipt_long</span>
+                            </div>
                             <p class="component-empty-state-text">${window.__('no_purchases')}</p>
                         </div>
                     </td>
@@ -558,7 +560,9 @@ export class PurchaseHistoryController {
                     <tr>
                         <td colspan="4" class="component-empty-table-cell">
                             <div class="component-empty-state component-empty-state--table">
-                                <span class="material-symbols-rounded component-empty-state-icon">receipt_long</span>
+                                <div class="component-empty-state-badge">
+                                    <span class="material-symbols-rounded">receipt_long</span>
+                                </div>
                                 <p class="component-empty-state-text">${window.__('empty_purchase_history')}</p>
                             </div>
                         </td>
@@ -571,7 +575,9 @@ export class PurchaseHistoryController {
                     <tr>
                         <td colspan="4" class="component-empty-table-cell">
                             <div class="component-empty-state component-empty-state--table">
-                                <span class="material-symbols-rounded component-empty-state-icon">error</span>
+                                <div class="component-empty-state-badge">
+                                    <span class="material-symbols-rounded">error</span>
+                                </div>
                                 <p class="component-empty-state-text">${window.__('err_connection')}</p>
                             </div>
                         </td>

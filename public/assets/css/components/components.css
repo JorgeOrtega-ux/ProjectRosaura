@@ -348,29 +348,76 @@ html.dark-theme .component-top.shadow {
 
 .component-empty-state {
     text-align: center;
-    padding: 40px;
+    padding: 48px 24px;
     background: transparent;
     border: none;
     border-radius: 0;
-    height: 100%;
+    min-height: 360px;
     width: 100%;
     flex: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    margin: auto;
 }
 
-.component-empty-state-icon {
-    font-size: 2.5rem;
+.component-empty-state-graphic {
+    width: 140px;
+    height: 140px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    user-select: none;
+}
+
+.component-empty-state-svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    display: block;
+}
+
+.component-empty-state-badge {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--bg-hover-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 0 12px 0;
+    border: 1px solid var(--border-lighter);
+}
+
+.component-empty-state-badge .material-symbols-rounded {
+    font-size: 1.5rem;
     color: var(--text-tertiary);
 }
 
+.component-empty-state-icon {
+    font-size: 2.75rem;
+    color: var(--text-tertiary);
+}
+
+.component-empty-state-title {
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    line-height: 1.35;
+    text-wrap: balance;
+}
+
+.component-empty-state-desc,
 .component-empty-state-text {
     color: var(--text-secondary);
-    font-size: 0.8rem;
-    margin-top: 8px;
-    margin-bottom: 0;
+    font-size: 0.8125rem;
+    line-height: 1.55;
+    margin: 0;
+    text-wrap: balance;
 }
 
 .component-empty-state-actions {
@@ -378,7 +425,8 @@ html.dark-theme .component-top.shadow {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
 .component-empty-table-cell {
@@ -391,6 +439,24 @@ html.dark-theme .component-top.shadow {
     border: none;
     background: transparent;
     width: 100%;
+    padding: 36px 16px;
+    min-height: 180px;
+}
+
+.component-empty-state--table .component-empty-state-graphic {
+    width: 64px;
+    height: 64px;
+    margin: 0;
+}
+
+.component-empty-state--table .component-empty-state-title {
+    font-size: 0.9375rem;
+    margin-bottom: 4px;
+}
+
+.component-empty-state--table .component-empty-state-desc,
+.component-empty-state--table .component-empty-state-text {
+    font-size: 0.8125rem;
 }
 
 .component-message-layout {
@@ -1917,22 +1983,47 @@ html.dark-theme .component-menu-header.shadow {
 }
 
 .component-menu-header-box {
-    padding: 8px 12px;
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
     border: 1px solid var(--border-color);
     border-radius: 12px;
     display: flex;
     align-items: center;
     gap: 8px;
+    box-sizing: border-box;
+    flex-shrink: 0;
 }
 
 .component-menu-header-box .material-symbols-rounded {
     color: var(--text-primary);
+    font-size: 1.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.component-menu-header-box .component-button--back {
+    margin-left: -4px;
+    height: 30px;
+    width: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 .component-menu-header-title {
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     font-weight: 600;
     color: var(--text-primary);
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .component-menu-top {
@@ -5769,31 +5860,54 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
 
 .component-canvas-floating-text {
     position: absolute;
-    display: flex;
+    z-index: 999;
+    height: auto;
+    width: auto;
+    display: none;
     align-items: center;
-    gap: 6px;
-    padding: 4px 6px;
-    background: var(--bg-card, rgba(15, 23, 42, 0.88));
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(139, 92, 246, 0.5);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(139, 92, 246, 0.2);
-    border-radius: 8px;
-    z-index: 40;
+    gap: 3px;
+    padding: 3px 5px;
+    background: #0d0d10;
+    background-color: #0d0d10;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 9999px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
     pointer-events: auto;
+    opacity: 0;
+    visibility: hidden;
+    margin: 0;
+    transform: translate(-50%, -100%);
+    will-change: transform, left, top;
     transition: opacity 0.15s ease, transform 0.1s ease;
 }
 
+.component-canvas-floating-text.active,
+.component-canvas-floating-text:not(.disabled) {
+    display: inline-flex;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
 .component-canvas-floating-text.disabled {
-    display: none;
+    display: none !important;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
 }
 
 .component-canvas-floating-text__handle {
     cursor: grab;
     display: flex;
     align-items: center;
-    color: var(--text-secondary);
+    justify-content: center;
+    color: var(--text-secondary, #94a3b8);
     user-select: none;
+    padding: 0 2px;
+}
+
+.component-canvas-floating-text__handle .material-symbols-rounded {
+    font-size: 16px;
 }
 
 .component-canvas-floating-text__handle:active {
@@ -5801,23 +5915,32 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
 }
 
 .component-canvas-floating-text__input {
-    background: rgba(0, 0, 0, 0.35);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    color: var(--text-primary);
-    font-family: var(--sl-font-mono, monospace);
-    font-size: 0.82rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 9999px;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 12px;
     font-weight: 500;
-    padding: 4px 8px;
-    min-width: 140px;
-    max-width: 220px;
+    padding: 2px 10px;
+    height: 24px;
+    min-width: 120px;
+    max-width: 180px;
     outline: none;
-    transition: border-color 0.15s ease;
+    transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .component-canvas-floating-text__input:focus {
-    border-color: #8b5cf6;
-    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.25);
+    border-color: #ffffff;
+    background: rgba(255, 255, 255, 0.16);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
+}
+
+.component-font-scale-tag {
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.5px;
 }
 
 .component-menu-header-box--section {

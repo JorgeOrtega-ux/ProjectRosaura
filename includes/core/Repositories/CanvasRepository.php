@@ -193,7 +193,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                 $isMemberSelect = "CASE WHEN cm.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_member";
             }
 
-            $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.favorites_count,
+            $sql = "SELECT c.id, c.uuid, c.name, c.privacy, c.mode, c.is_online_active, c.owner_id, c.favorites_count,
                            CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                            c.members_count,
                            $isMemberSelect
@@ -273,7 +273,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
                 c.created_at DESC,
                 c.id DESC";
             
-            $sql = "SELECT c.id, c.uuid, c.name, c.owner_id, c.favorites_count, c.tags, c.is_subscription_locked, c.locked_reasons,
+            $sql = "SELECT c.id, c.uuid, c.name, c.privacy, c.mode, c.is_online_active, c.owner_id, c.favorites_count, c.tags, c.is_subscription_locked, c.locked_reasons,
                            CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                            c.members_count,
                            $isMemberSelect
@@ -405,7 +405,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
             } catch (\Throwable $e) {}
         }
 
-        $sql = "SELECT c.id, c.uuid, c.name, c.privacy, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.is_subscription_locked, c.locked_reasons, c.favorites_count,
+        $sql = "SELECT c.id, c.uuid, c.name, c.privacy, c.mode, c.is_online_active, c.requires_approval, c.size, c.palette_id, c.max_participants, c.cooldown_pixels_batch, c.cooldown_seconds, c.created_at, c.is_subscription_locked, c.locked_reasons, c.favorites_count,
                        CASE WHEN f.canvas_id IS NOT NULL THEN 1 ELSE 0 END as is_favorite,
                        c.members_count
                 FROM " . DB::TBL_CANVASES . " c

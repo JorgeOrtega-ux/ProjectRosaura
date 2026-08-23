@@ -25,6 +25,11 @@ class TokenRepository implements TokenRepositoryInterface {
         $tblAuthTokens = DB::TBL_AUTH_TOKENS;
 
         try {
+            if ($this->redisClient) {
+                $hash = md5($selector);
+                $this->redisClient->del(CacheConstants::PREFIX_AUTH_TOKEN . "sel_" . $hash);
+                $this->redisClient->del(CacheConstants::PREFIX_AUTH_TOKEN . "uid_{$userId}_" . $hash);
+            }
             $stmt = $this->pdo->prepare("INSERT INTO {$tblAuthTokens} (user_id, selector, hashed_validator, expires_at, user_agent, ip_address, location, asn) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
             return $stmt->execute([$userId, $selector, $hashedValidator, $expiresAt, $userAgent, $ipAddress, $location, $asn]);
         } catch (PDOException $e) {
@@ -34,11 +39,16 @@ class TokenRepository implements TokenRepositoryInterface {
     }
 
     public function findValidTokenBySelectorAndUserId(string $selector, int $userId): ?array {
+        $hash = md5($selector);
+        $cacheKey = CacheConstants::PREFIX_AUTH_TOKEN . "uid_{$userId}_" . $hash;
+
         if ($this->redisClient) {
-            $cacheKey = CacheConstants::PREFIX_AUTH_TOKEN . md5($selector);
             $cached = $this->redisClient->get($cacheKey);
-            if ($cached !== null) {
-                return $cached ? json_decode($cached, true) : null;
+            if ($cached !== null && $cached !== '') {
+                $decoded = json_decode($cached, true);
+                if ($decoded !== null) {
+                    return $decoded;
+                }
             }
         }
 
@@ -56,8 +66,8 @@ class TokenRepository implements TokenRepositoryInterface {
             $token = $stmt->fetch(PDO::FETCH_ASSOC);
             $result = $token ?: null;
 
-            if ($this->redisClient) {
-                $this->redisClient->setex(CacheConstants::PREFIX_AUTH_TOKEN . md5($selector), 300, json_encode($result));
+            if ($this->redisClient && $result !== null) {
+                $this->redisClient->setex($cacheKey, 300, json_encode($result));
             }
 
             return $result;
@@ -68,11 +78,16 @@ class TokenRepository implements TokenRepositoryInterface {
     }
 
     public function findValidTokenBySelector(string $selector): ?array {
+        $hash = md5($selector);
+        $cacheKey = CacheConstants::PREFIX_AUTH_TOKEN . "sel_" . $hash;
+
         if ($this->redisClient) {
-            $cacheKey = CacheConstants::PREFIX_AUTH_TOKEN . md5($selector);
             $cached = $this->redisClient->get($cacheKey);
-            if ($cached !== null) {
-                return $cached ? json_decode($cached, true) : null;
+            if ($cached !== null && $cached !== '') {
+                $decoded = json_decode($cached, true);
+                if ($decoded !== null) {
+                    return $decoded;
+                }
             }
         }
 
@@ -84,8 +99,8 @@ class TokenRepository implements TokenRepositoryInterface {
             $token = $stmt->fetch(PDO::FETCH_ASSOC);
             $result = $token ?: null;
 
-            if ($this->redisClient) {
-                $this->redisClient->setex(CacheConstants::PREFIX_AUTH_TOKEN . md5($selector), 300, json_encode($result));
+            if ($this->redisClient && $result !== null) {
+                $this->redisClient->setex($cacheKey, 300, json_encode($result));
             }
 
             return $result;
@@ -138,7 +153,15 @@ class TokenRepository implements TokenRepositoryInterface {
 
         try {
             if ($this->redisClient) {
-                $this->redisClient->del(CacheConstants::PREFIX_AUTH_TOKEN . md5($selector));
+                $hash = md5($selector);
+                $this->redisClient->del(CacheConstants::PREFIX_AUTH_TOKEN . "sel_" . $hash);
+                // Also search and invalidate user specific key if needed
+                $stmtU = $this->pdo->prepare("SELECT user_id FROM {$tblAuthTokens} WHERE selector = ?");
+                $stmtU->execute([$selector]);
+                $uId = $stmtU->fetchColumn();
+                if ($uId) {
+                    $this->redisClient->del(CacheConstants::PREFIX_AUTH_TOKEN . "uid_{$uId}_" . $hash);
+                }
             }
             $stmt = $this->pdo->prepare("DELETE FROM {$tblAuthTokens} WHERE selector = ?");
             return $stmt->execute([$selector]);
@@ -157,7 +180,9 @@ class TokenRepository implements TokenRepositoryInterface {
                 $stmt->execute([$userId]);
                 $selectors = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
                 foreach ($selectors as $sel) {
-                    $this->redisClient->del(CacheConstants::PREFIX_AUTH_TOKEN . md5($sel));
+                    $hash = md5($sel);
+                    $this->redisClient->del(CacheConstants::PREFIX_AUTH_TOKEN . "sel_" . $hash);
+                    $this->redisClient->del(CacheConstants::PREFIX_AUTH_TOKEN . "uid_{$userId}_" . $hash);
                 }
             }
             $stmt = $this->pdo->prepare("DELETE FROM {$tblAuthTokens} WHERE user_id = ?");
@@ -173,11 +198,15 @@ class TokenRepository implements TokenRepositoryInterface {
 
         try {
             if ($this->redisClient) {
-                $stmtSel = $this->pdo->prepare("SELECT selector FROM {$tblAuthTokens} WHERE id = ?");
+                $stmtSel = $this->pdo->prepare("SELECT selector, user_id FROM {$tblAuthTokens} WHERE id = ?");
                 $stmtSel->execute([$id]);
-                $sel = $stmtSel->fetchColumn();
-                if ($sel) {
-                    $this->redisClient->del(CacheConstants::PREFIX_AUTH_TOKEN . md5($sel));
+                $row = $stmtSel->fetch(PDO::FETCH_ASSOC);
+                if ($row && !empty($row['selector'])) {
+                    $hash = md5($row['selector']);
+                    $this->redisClient->del(CacheConstants::PREFIX_AUTH_TOKEN . "sel_" . $hash);
+                    if (!empty($row['user_id'])) {
+                        $this->redisClient->del(CacheConstants::PREFIX_AUTH_TOKEN . "uid_{$row['user_id']}_" . $hash);
+                    }
                 }
             }
             $stmt = $this->pdo->prepare("DELETE FROM {$tblAuthTokens} WHERE id = ?");
@@ -218,7 +247,9 @@ class TokenRepository implements TokenRepositoryInterface {
                 $stmtSel->execute([$tokenId, $userId]);
                 $sel = $stmtSel->fetchColumn();
                 if ($sel) {
-                    $this->redisClient->del(CacheConstants::PREFIX_AUTH_TOKEN . md5($sel));
+                    $hash = md5($sel);
+                    $this->redisClient->del(CacheConstants::PREFIX_AUTH_TOKEN . "sel_" . $hash);
+                    $this->redisClient->del(CacheConstants::PREFIX_AUTH_TOKEN . "uid_{$userId}_" . $hash);
                 }
             }
             $stmt = $this->pdo->prepare("DELETE FROM {$tblAuthTokens} WHERE id = ? AND user_id = ?");
@@ -238,7 +269,9 @@ class TokenRepository implements TokenRepositoryInterface {
                 $stmt->execute([$userId, $currentSelector]);
                 $selectors = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
                 foreach ($selectors as $sel) {
-                    $this->redisClient->del(CacheConstants::PREFIX_AUTH_TOKEN . md5($sel));
+                    $hash = md5($sel);
+                    $this->redisClient->del(CacheConstants::PREFIX_AUTH_TOKEN . "sel_" . $hash);
+                    $this->redisClient->del(CacheConstants::PREFIX_AUTH_TOKEN . "uid_{$userId}_" . $hash);
                 }
             }
             $stmt = $this->pdo->prepare("DELETE FROM {$tblAuthTokens} WHERE user_id = ? AND selector != ?");

@@ -1,6 +1,7 @@
-﻿import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiService.js';
-import { showMessage, closeAllDropdowns } from '../../../core/utils/uiUtils.js';
+import { CardTemplates } from '../../../core/components/CardTemplates.js';
+import { closeAllDropdowns, showMessage } from '../../../core/utils/uiUtils.js';
 
 class CanvasSnapshotsGalleryController {
     constructor() {
@@ -172,12 +173,11 @@ class CanvasSnapshotsGalleryController {
                 if (grid && grid.querySelectorAll('.component-gallery-card:not([data-card-role="promo"])').length === 0) {
                     const bottomArea = document.querySelector('[data-ref="dynamic-content-area"]');
                     if (bottomArea) {
-                        bottomArea.innerHTML = `
-                            <div class="component-empty-state" data-ref="empty-state-rendered">
-                                <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
-                                <p class="component-empty-state-text">${window.__('empty_capturas_gallery')}</p>
-                            </div>
-                        `;
+                        bottomArea.innerHTML = CardTemplates.emptyState({
+                            type: 'snapshots',
+                            title: window.__('snapshots_empty_title'),
+                            message: window.__('snapshots_empty_desc')
+                        });
                     }
                 }
             }

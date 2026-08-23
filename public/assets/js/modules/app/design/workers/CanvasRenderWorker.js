@@ -40,6 +40,9 @@ let textPreviewPixelsArray = new Uint32Array(0);
 let textPreviewShadowArray = new Uint32Array(0);
 let textPreviewOutlineArray = new Uint32Array(0);
 let textPreviewBox = null;
+let interactionMode = 'normal';
+let textPosition = null;
+let activePixelText = null;
 
 let isOfflineMode = false;
 let isMirrorMode = false;
@@ -1206,11 +1209,11 @@ function render() {
         ctx.restore();
     }
 
-    if (textPreviewBox || (textPreviewPixelsArray && textPreviewPixelsArray.length > 0)) {
+    if (interactionMode === 'offline_text' && textPosition) {
         ctx.save();
 
         if (textPreviewShadowArray && textPreviewShadowArray.length > 0) {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+            ctx.fillStyle = '#404040';
             for (let i = 0; i < textPreviewShadowArray.length; i++) {
                 const key = textPreviewShadowArray[i];
                 const px = key & 0xFFFF;
@@ -1245,39 +1248,47 @@ function render() {
             }
         }
 
-        if (textPreviewBox) {
-            const { minX, minY, maxX, maxY, w, h, originX, originY } = textPreviewBox;
+        // Vertical Blinking Caret matching the selected font and scale
+        const isCaretVisible = (Math.floor(Date.now() / 500) % 2 === 0);
+        if (isCaretVisible) {
+            const scale = activePixelText?.scale || 1;
+            const fontHeights = { 'mini_3x5': 5, 'arcade_5x7': 7, 'cyber_6x8': 8 };
+            const fontH = (fontHeights[activePixelText?.fontId] || 7) * scale;
+
+            let caretX = (textPreviewBox && textPreviewBox.cursorX !== undefined) 
+                ? textPreviewBox.cursorX 
+                : (textPosition ? textPosition.x : 0);
+            let caretY = textPosition ? textPosition.y : 0;
+
+            if (caretX >= 0 && caretX < boardWidth && caretY >= 0 && caretY < boardHeight) {
+                ctx.fillStyle = currentColor || '#ffffff';
+                ctx.fillRect(caretX, caretY, 1, Math.min(fontH, boardHeight - caretY));
+
+                if (isMirrorMode) {
+                    const symCaretX = boardWidth - 1 - caretX;
+                    if (symCaretX >= 0 && symCaretX < boardWidth) {
+                        ctx.fillRect(symCaretX, caretY, 1, Math.min(fontH, boardHeight - caretY));
+                    }
+                }
+            }
+        }
+
+        if (textPreviewBox && activePixelText?.text && activePixelText.text.length > 0 && textPreviewBox.w > 0) {
+            const { minX, minY, maxX, maxY, w, h } = textPreviewBox;
 
             ctx.strokeStyle = '#8b5cf6';
             ctx.lineWidth = 1 / transform.scale;
-            ctx.setLineDash([3 / transform.scale, 3 / transform.scale]);
-            ctx.strokeRect(minX, minY, w, h);
+            ctx.setLineDash([2 / transform.scale, 2 / transform.scale]);
+            ctx.strokeRect(minX - 0.5, minY - 0.5, w + 1, h + 1);
 
             if (isMirrorMode) {
                 const symMinX = boardWidth - 1 - maxX;
                 if (symMinX >= 0 && symMinX < boardWidth) {
-                    ctx.strokeRect(symMinX, minY, w, h);
+                    ctx.strokeRect(symMinX - 0.5, minY - 0.5, w + 1, h + 1);
                 }
             }
 
             ctx.setLineDash([]);
-            ctx.fillStyle = '#8b5cf6';
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 1 / transform.scale;
-            const handleR = Math.max(0.6, 2.5 / transform.scale);
-
-            ctx.beginPath();
-            ctx.arc(originX + 0.5, originY + 0.5, handleR, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-
-            if (isMirrorMode) {
-                const symOriginX = boardWidth - 1 - originX;
-                ctx.beginPath();
-                ctx.arc(symOriginX + 0.5, originY + 0.5, handleR, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
-            }
         }
 
         ctx.restore();
@@ -2477,6 +2488,15 @@ self.onmessage = function (e) {
                 textPreviewOutlineArray = new Uint32Array(0);
             }
             textPreviewBox = payload.textPreviewBox || null;
+            if (payload.interactionMode !== undefined) {
+                interactionMode = payload.interactionMode;
+            }
+            if (payload.textPosition !== undefined) {
+                textPosition = payload.textPosition;
+            }
+            if (payload.activePixelText !== undefined) {
+                activePixelText = payload.activePixelText;
+            }
             topBarCenterX = payload.topBarCenterX || 0;
             topBarBottomY = payload.topBarBottomY || 0;
             if (payload.isEyedropperActive !== undefined) {

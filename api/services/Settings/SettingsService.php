@@ -740,16 +740,16 @@ class SettingsService
                 
                 $this->sessionManager->removeAccount($userId);
 
-                $cookiePath = parse_url(APP_URL, PHP_URL_PATH) ?: '/';
+                $cookiePath = '/';
                 $isSecure = Utils::isSecureConnection();
 
                 if (isset($_COOKIE['remember_tokens'])) {
-                    setcookie('remember_tokens', '', ['expires' => time() - 3600, 'path' => $cookiePath, 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Strict']);
+                    setcookie('remember_tokens', '', ['expires' => time() - 3600, 'path' => $cookiePath, 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Lax']);
                     unset($_COOKIE['remember_tokens']);
                 }
                 
                 if (isset($_COOKIE['remember_token'])) {
-                    setcookie('remember_token', '', ['expires' => time() - 3600, 'path' => $cookiePath, 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Strict']);
+                    setcookie('remember_token', '', ['expires' => time() - 3600, 'path' => $cookiePath, 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Lax']);
                     unset($_COOKIE['remember_token']);
                 }
                 return ['success' => true, 'message' => __('settings.all_sessions_revoked')];

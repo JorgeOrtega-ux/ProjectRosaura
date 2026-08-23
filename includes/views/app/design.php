@@ -278,15 +278,27 @@ extract($designData);
                 </button>
             </div>
 
-            <div class="component-canvas-floating-text disabled" data-ref="canvas-floating-text">
-                <div class="component-canvas-floating-text__handle" data-action="dragFloatingText">
+            <div class="component-badge component-badge--dark component-badge--toolbar component-canvas-floating-text disabled" data-ref="canvas-floating-text">
+                <div class="component-canvas-floating-text__handle" data-action="dragFloatingText" data-tooltip="<?php echo __('tooltip_drag'); ?>" data-position="top">
                     <span class="material-symbols-rounded">drag_indicator</span>
                 </div>
                 <input class="component-canvas-floating-text__input" data-ref="floating-text-input" type="text" placeholder="<?php echo __('placeholder_text_input'); ?>" maxlength="60" />
-                <button class="component-button component-button--icon component-button--h24 component-button--success" data-action="commitPixelText" data-tooltip="<?php echo __('lbl_stamp_text'); ?> [Enter]" data-position="top">
+                <button class="component-button component-button--icon component-button--h24" data-action="cyclePixelFont" data-ref="btn-text-font" data-tooltip="<?php echo __('lbl_font_family'); ?>" data-position="top">
+                    <span class="material-symbols-rounded">font_download</span>
+                </button>
+                <button class="component-button component-button--icon component-button--h24" data-action="cyclePixelTextScale" data-ref="btn-text-scale" data-tooltip="<?php echo __('lbl_text_scale'); ?> (1x)" data-position="top">
+                    <span data-ref="text-scale-label" class="component-font-scale-tag">1x</span>
+                </button>
+                <button class="component-button component-button--icon component-button--h24" data-action="togglePixelTextOutline" data-ref="btn-text-outline" data-tooltip="<?php echo __('lbl_text_outline'); ?>" data-position="top">
+                    <span class="material-symbols-rounded">border_outer</span>
+                </button>
+                <button class="component-button component-button--icon component-button--h24" data-action="togglePixelTextShadow" data-ref="btn-text-shadow" data-tooltip="<?php echo __('lbl_text_shadow'); ?>" data-position="top">
+                    <span class="material-symbols-rounded">shadow</span>
+                </button>
+                <button class="component-button component-button--icon component-button--h24 component-button--success" data-action="commitPixelText" data-ref="btn-commit-pixel-text" data-tooltip="<?php echo __('lbl_stamp_text'); ?> [Enter]" data-position="top">
                     <span class="material-symbols-rounded">check</span>
                 </button>
-                <button class="component-button component-button--icon component-button--h24" data-action="cancelPixelText" data-tooltip="<?php echo __('lbl_cancel_text'); ?> [Esc]" data-position="top">
+                <button class="component-button component-button--icon component-button--h24" data-action="cancelPixelText" data-ref="btn-cancel-pixel-text" data-tooltip="<?php echo __('lbl_cancel_text'); ?> [Esc]" data-position="top">
                     <span class="material-symbols-rounded">close</span>
                 </button>
             </div>

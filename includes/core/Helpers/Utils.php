@@ -595,15 +595,32 @@ class Utils {
         }
     }
 
-    public static function isSecureConnection() {
-        if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+    public static function isSecureConnection(): bool {
+        if (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] === 'on' || $_SERVER['HTTPS'] === '1')) {
             return true;
         }
 
-        if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
-            if (self::isTrustedProxy()) {
+        if (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443) {
+            return true;
+        }
+
+        if (self::isTrustedProxy()) {
+            if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') {
                 return true;
             }
+            if (isset($_SERVER['HTTP_CF_VISITOR']) && strpos($_SERVER['HTTP_CF_VISITOR'], '"scheme":"https"') !== false) {
+                return true;
+            }
+            if (isset($_SERVER['HTTP_X_FORWARDED_SSL']) && strtolower($_SERVER['HTTP_X_FORWARDED_SSL']) === 'on') {
+                return true;
+            }
+            if (isset($_SERVER['HTTP_FRONT_END_HTTPS']) && strtolower($_SERVER['HTTP_FRONT_END_HTTPS']) === 'on') {
+                return true;
+            }
+        }
+
+        if (defined('APP_URL') && str_starts_with(APP_URL, 'https://')) {
+            return true;
         }
 
         return false;

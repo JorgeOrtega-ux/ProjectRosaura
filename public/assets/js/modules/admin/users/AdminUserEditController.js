@@ -1,4 +1,4 @@
-﻿import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiService.js';
 import { showMessage, setButtonLoading, restoreButton, handleInlineNumberAdjustment } from '../../../core/utils/uiUtils.js';
 import { AdminModalTemplates } from '../AdminModalTemplates.js';
@@ -220,31 +220,39 @@ class AdminUserEditController {
         const modalBody = document.querySelector('[data-ref="admin-confirm-user-admin-action-body"]');
         if (!modalBody) return;
         const actionType = modalBody.getAttribute('data-action-type');
-        if (window.modalSystem && window.modalSystem.closeCurrent) window.modalSystem.closeCurrent(true);
 
         if (!this.targetUserId) {
             this.targetUserId = document.querySelector('.view-content[data-user-id]')?.getAttribute('data-user-id');
         }
 
+        let endpoint = null;
+        if (actionType === 'resetPassword') endpoint = ApiRoutes.Admin.SendPasswordReset;
+        else if (actionType === 'unlockRateLimit') endpoint = ApiRoutes.Admin.UnlockRateLimit;
+        else if (actionType === 'terminateSessions') endpoint = ApiRoutes.Admin.TerminateSessions;
+        else if (actionType === 'syncStripe') endpoint = ApiRoutes.Admin.SyncStripe;
+
+        if (!endpoint) return;
+
+        setButtonLoading(btn);
         try {
-            let endpoint = null;
-            if (actionType === 'resetPassword') endpoint = ApiRoutes.Admin.SendPasswordReset;
-            else if (actionType === 'unlockRateLimit') endpoint = ApiRoutes.Admin.UnlockRateLimit;
-            else if (actionType === 'terminateSessions') endpoint = ApiRoutes.Admin.TerminateSessions;
-            else if (actionType === 'syncStripe') endpoint = ApiRoutes.Admin.SyncStripe;
-
-            if (!endpoint) return;
-
             const res = await this.api.post(endpoint, {
                 target_user_id: this.targetUserId
             }, this.abortController?.signal);
 
+            restoreButton(btn);
+
             if (res && res.success) {
                 showMessage(res.message || this.translateKey('msg_action_success', [], 'Acción completada con éxito.'), 'success');
+                if (window.modalSystem && window.modalSystem.closeCurrent) window.modalSystem.closeCurrent(true);
+                if (actionType === 'syncStripe' && res.subscription_plan) {
+                    const dispSub = document.querySelector('[data-ref="admin-display-subscription"]');
+                    if (dispSub) dispSub.textContent = res.subscription_plan;
+                }
             } else {
                 showMessage(res?.message || this.translateKey('err_generic', [], 'Error al procesar solicitud.'), 'error');
             }
         } catch (e) {
+            restoreButton(btn);
             showMessage(this.translateKey('err_generic', [], 'Error al conectar con el servidor.'), 'error');
         }
     }

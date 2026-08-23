@@ -90,7 +90,9 @@ extract($invitesData);
                             <tr>
                                 <td colspan="4" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
-                                        <span class="material-symbols-rounded component-empty-state-icon">link_off</span>
+                                        <div class="component-empty-state-badge">
+                                            <span class="material-symbols-rounded">link_off</span>
+                                        </div>
                                         <p class="component-empty-state-text"><?php echo __('empty_no_active_invites'); ?></p>
                                     </div>
                                 </td>

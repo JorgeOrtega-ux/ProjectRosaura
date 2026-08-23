@@ -63,7 +63,7 @@ class CanvasTrashController {
     }
 
     handlePaginationClick(e) {
-        catchPaginationClick(e, url => this.handlePagination(url));
+        catchPaginationClick(e, url => this.handlePagination(url, false));
     }
 
     handleGlobalClick(e) {
@@ -157,12 +157,6 @@ class CanvasTrashController {
             cb.checked = typeList ? typeList.includes(cb.value) : true;
         });
 
-        const sizeParam = urlParams.get('size');
-        const sizeList = sizeParam ? sizeParam.split(',') : null;
-        document.querySelectorAll('.filter-checkbox[data-filter-type="size"]').forEach(cb => {
-            cb.checked = sizeList ? sizeList.includes(cb.value) : true;
-        });
-
         const privacyParam = urlParams.get('privacy');
         const privacyList = privacyParam ? privacyParam.split(',') : null;
         document.querySelectorAll('.filter-checkbox[data-filter-type="privacy"]').forEach(cb => {
@@ -183,7 +177,7 @@ class CanvasTrashController {
         this.clearSelection();
     }
 
-    async handlePagination(url) {
+    async handlePagination(url, updateHistory = false) {
         const gridContainer = document.querySelector('[data-ref="view-grid"]');
         const currentPaginations = document.querySelectorAll('[data-ref="pagination-container"], [class*="pagin"]');
 
@@ -213,7 +207,9 @@ class CanvasTrashController {
                 });
             }
 
-            window.history.pushState({ path: url, fromDynamicPagination: true }, '', url);
+            if (updateHistory) {
+                window.history.pushState({ path: url, fromDynamicPagination: true }, '', url);
+            }
             this.resetViewState();
             this.updateFilterButtonsState();
         } catch (error) {
@@ -232,11 +228,9 @@ class CanvasTrashController {
         const query = (queryInput ? queryInput.value : '').toLowerCase().trim();
 
         const typeCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="type"]'));
-        const sizeCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="size"]'));
         const privacyCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="privacy"]'));
 
         const checkedTypes = typeCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
-        const checkedSizes = sizeCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
         const checkedPrivacy = privacyCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
 
         const searchBtn = document.querySelector('[data-ref="btn-toggle-search"]');
@@ -245,9 +239,8 @@ class CanvasTrashController {
         const filtersBtn = document.querySelector('[data-ref="btn-toggle-filters"]');
         if (filtersBtn) {
             const hasTypeFilter = typeCheckboxes.length > 0 && checkedTypes.length < typeCheckboxes.length;
-            const hasSizeFilter = sizeCheckboxes.length > 0 && checkedSizes.length < sizeCheckboxes.length;
             const hasPrivacyFilter = privacyCheckboxes.length > 0 && checkedPrivacy.length < privacyCheckboxes.length;
-            updateFilterIndicator(filtersBtn, hasTypeFilter || hasSizeFilter || hasPrivacyFilter);
+            updateFilterIndicator(filtersBtn, hasTypeFilter || hasPrivacyFilter);
         }
     }
 
@@ -256,11 +249,9 @@ class CanvasTrashController {
         const query = (queryInput ? queryInput.value : '').trim();
 
         const typeCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="type"]'));
-        const sizeCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="size"]'));
         const privacyCheckboxes = Array.from(document.querySelectorAll('.filter-checkbox[data-filter-type="privacy"]'));
 
         const checkedTypes = typeCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
-        const checkedSizes = sizeCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
         const checkedPrivacy = privacyCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
 
         this.updateFilterButtonsState();
@@ -273,15 +264,12 @@ class CanvasTrashController {
         if (checkedTypes.length > 0 && checkedTypes.length < typeCheckboxes.length) {
             urlParams.set('type', checkedTypes.join(','));
         }
-        if (checkedSizes.length > 0 && checkedSizes.length < sizeCheckboxes.length) {
-            urlParams.set('size', checkedSizes.join(','));
-        }
         if (checkedPrivacy.length > 0 && checkedPrivacy.length < privacyCheckboxes.length) {
             urlParams.set('privacy', checkedPrivacy.join(','));
         }
 
         const url = `${this.basePath}/trash?${urlParams.toString()}`;
-        this.handlePagination(url);
+        this.handlePagination(url, false);
     }
 
     handleCardSelection(card, event) {
@@ -412,7 +400,7 @@ class CanvasTrashController {
             if (result.success) {
                 showMessage(result.message || window.__('msg_canvas_restored'), 'success');
                 this.clearSelection();
-                await this.handlePagination(window.location.href);
+                this.executeServerFilters();
             } else {
                 showMessage(result.message || window.__('err_canvas_restore_failed'), 'error');
             }
@@ -462,7 +450,7 @@ class CanvasTrashController {
             if (result.success) {
                 showMessage(result.message || window.__('msg_canvas_permanent_deleted'), 'success');
                 this.clearSelection();
-                await this.handlePagination(window.location.href);
+                this.executeServerFilters();
             } else {
                 showMessage(result.message || window.__('err_canvas_permanent_delete_failed'), 'error');
             }
@@ -493,7 +481,7 @@ class CanvasTrashController {
             if (result.success) {
                 showMessage(result.message || window.__('msg_template_restored'), 'success');
                 this.clearSelection();
-                await this.handlePagination(window.location.href);
+                this.executeServerFilters();
             } else {
                 showMessage(result.message || window.__('err_template_restore_failed'), 'error');
             }
@@ -540,7 +528,7 @@ class CanvasTrashController {
             if (result.success) {
                 showMessage(result.message || window.__('msg_template_permanent_deleted'), 'success');
                 this.clearSelection();
-                await this.handlePagination(window.location.href);
+                this.executeServerFilters();
             } else {
                 showMessage(result.message || window.__('err_template_permanent_delete_failed'), 'error');
             }
@@ -591,7 +579,7 @@ class CanvasTrashController {
             if (successCount > 0) {
                 showMessage(lastMessage || window.__('msg_canvas_restored'), 'success');
                 this.clearSelection();
-                await this.handlePagination(window.location.href);
+                this.executeServerFilters();
             } else {
                 showMessage(window.__('err_canvas_restore_failed'), 'error');
             }
@@ -670,7 +658,7 @@ class CanvasTrashController {
             restoreButton(btn);
             showMessage(window.__('msg_canvases_permanent_deleted') || window.__('msg_canvas_permanent_deleted'), 'success');
             this.clearSelection();
-            await this.handlePagination(window.location.href);
+            this.executeServerFilters();
         } catch (error) {
             restoreButton(btn);
             if (error && error.name !== 'AbortError') {

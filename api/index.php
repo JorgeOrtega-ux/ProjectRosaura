@@ -33,8 +33,17 @@ register_shutdown_function(function() {
     }
 });
 
+if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    header("Access-Control-Allow-Origin: *");
+    header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS");
+    header("Access-Control-Allow-Headers: Content-Type, X-CSRF-Token, X-SPA-Request, Authorization, X-Internal-Api-Key");
+    http_response_code(204);
+    exit;
+}
+
 header("X-Frame-Options: DENY");
 header("X-Content-Type-Options: nosniff");
+header("Referrer-Policy: strict-origin-when-cross-origin");
 header("Content-Security-Policy: default-src 'none'; frame-ancestors 'none';");
 
 require_once __DIR__ . '/../vendor/autoload.php';
@@ -106,10 +115,11 @@ try {
         $redisClient = new \Predis\Client($redisParams);
         $redisClient->ping(); 
         
-        $redisHostNative = getenv('REDIS_HOST');
-        $redisPassNative = getenv('REDIS_PASS');
+        $redisHostNative = getenv('REDIS_HOST') ?: ($_ENV['REDIS_HOST'] ?? '127.0.0.1');
+        $redisPortNative = (int)(getenv('REDIS_PORT') ?: ($_ENV['REDIS_PORT'] ?? 6379));
+        $redisPassNative = getenv('REDIS_PASS') ?: ($_ENV['REDIS_PASS'] ?? '');
         ini_set('session.save_handler', 'redis');
-        $redisPath = "tcp://$redisHostNative:6379" . (!empty($redisPassNative) ? "?auth=$redisPassNative" : "");
+        $redisPath = "tcp://$redisHostNative:$redisPortNative" . (!empty($redisPassNative) ? "?auth=$redisPassNative" : "");
         ini_set('session.save_path', $redisPath);
     } else {
         throw new \Exception("REDIS_HOST or REDIS_PORT variables are not defined in the API environment.");
@@ -159,54 +169,52 @@ try {
     $userRepo = $container->get(UserRepositoryInterface::class);
 
     if ($sessionManager->isLoggedIn()) {
+        $activeId = $sessionManager->getActiveAccountId();
+        
+        // Si hay una cookie remember_tokens pero no coincide con la BD, limpiamos la cookie sin destruir la sesión activa
         if (!$authService->isCurrentDeviceValid()) {
-            Logger::security("Session revoked for user ID: " . $sessionManager->getActiveAccountId(), 'warning', ['ip' => Utils::getIpAddress()]);
+            $authService->clearRememberToken($activeId);
+        }
+
+        $liveUser = $userRepo->findById($activeId);
+        
+        if (!$liveUser || !empty($liveUser['deletion_scheduled_at'])) {
             $authService->logout();
-            http_response_code(401);
-            echo json_encode(['success' => false, 'message_key' => 'error.session_revoked']);
+            http_response_code(403); 
+            echo json_encode(['success' => false, 'status' => 'deleted', 'message_key' => 'error.account_deleted']);
             exit;
-        } else {
-            $liveUser = $userRepo->findById($sessionManager->getActiveAccountId());
-            
-            if (!$liveUser || !empty($liveUser['deletion_scheduled_at'])) {
+        }
+        
+        if (isset($liveUser['is_suspended']) && $liveUser['is_suspended'] == 1) {
+            if ($liveUser['suspension_type'] === 'temporary' && $liveUser['suspension_end_date'] && strtotime($liveUser['suspension_end_date']) <= time()) {
+                $userRepo->liftSuspension($liveUser['id']);
+            } else {
                 $authService->logout();
-                http_response_code(403); 
-                echo json_encode(['success' => false, 'status' => 'deleted', 'message_key' => 'error.account_deleted']);
+                http_response_code(403);
+                echo json_encode(['success' => false, 'status' => 'suspended', 'message_key' => 'error.account_suspended']);
                 exit;
             }
-            
-            if (isset($liveUser['is_suspended']) && $liveUser['is_suspended'] == 1) {
-                if ($liveUser['suspension_type'] === 'temporary' && $liveUser['suspension_end_date'] && strtotime($liveUser['suspension_end_date']) <= time()) {
-                    $userRepo->liftSuspension($liveUser['id']);
-                } else {
-                    $authService->logout();
-                    http_response_code(403);
-                    echo json_encode(['success' => false, 'status' => 'suspended', 'message_key' => 'error.account_suspended']);
-                    exit;
-                }
-            }
+        }
 
-            $activeId = $sessionManager->getActiveAccountId();
-            $roleRepo = $container->get(\App\Core\Interfaces\RoleRepositoryInterface::class);
-            $permissions = $roleRepo->getMergedPermissionsForUser($activeId);
-            $accounts = $sessionManager->get(\App\Core\System\SessionConstants::KEY_LINKED_ACCOUNTS, []);
-            if (isset($accounts[$activeId])) {
-                $accounts[$activeId]['user_role_id'] = $liveUser['role_id'] ?? null;
-                $accounts[$activeId]['user_role_name'] = $liveUser['role_name'] ?? __('user');
-                $accounts[$activeId]['user_role_weight'] = (int)($liveUser['role_weight'] ?? 1);
-                $accounts[$activeId]['subscription_color'] = $liveUser['subscription_color'] ?? '#808080';
-                $accounts[$activeId]['user_permissions'] = $permissions;
-                $accounts[$activeId]['user_pic'] = $liveUser['profile_picture'] ?? null;
-                $accounts[$activeId]['subscription_tier'] = (int)($liveUser['subscription_tier'] ?? 0);
-                $accounts[$activeId]['real_subscription_tier'] = (int)($liveUser['real_subscription_tier'] ?? ($liveUser['subscription_tier'] ?? 0));
-                $accounts[$activeId]['google_id'] = $liveUser['google_id'] ?? null;
-                $sessionManager->set(\App\Core\System\SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
-                $sessionManager->syncRootState();
-            } else {
-                $sessionManager->set('user_role', $liveUser['role_name'] ?? '');
-                $sessionManager->set('user_permissions', $permissions);
-                $sessionManager->set('user_role_weight', (int)($liveUser['role_weight'] ?? 1));
-            }
+        $roleRepo = $container->get(\App\Core\Interfaces\RoleRepositoryInterface::class);
+        $permissions = $roleRepo->getMergedPermissionsForUser($activeId);
+        $accounts = $sessionManager->get(\App\Core\System\SessionConstants::KEY_LINKED_ACCOUNTS, []);
+        if (isset($accounts[$activeId])) {
+            $accounts[$activeId]['user_role_id'] = $liveUser['role_id'] ?? null;
+            $accounts[$activeId]['user_role_name'] = $liveUser['role_name'] ?? __('user');
+            $accounts[$activeId]['user_role_weight'] = (int)($liveUser['role_weight'] ?? 1);
+            $accounts[$activeId]['subscription_color'] = $liveUser['subscription_color'] ?? '#808080';
+            $accounts[$activeId]['user_permissions'] = $permissions;
+            $accounts[$activeId]['user_pic'] = $liveUser['profile_picture'] ?? null;
+            $accounts[$activeId]['subscription_tier'] = (int)($liveUser['subscription_tier'] ?? 0);
+            $accounts[$activeId]['real_subscription_tier'] = (int)($liveUser['real_subscription_tier'] ?? ($liveUser['subscription_tier'] ?? 0));
+            $accounts[$activeId]['google_id'] = $liveUser['google_id'] ?? null;
+            $sessionManager->set(\App\Core\System\SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+            $sessionManager->syncRootState();
+        } else {
+            $sessionManager->set('user_role', $liveUser['role_name'] ?? '');
+            $sessionManager->set('user_permissions', $permissions);
+            $sessionManager->set('user_role_weight', (int)($liveUser['role_weight'] ?? 1));
         }
     } elseif (isset($_COOKIE['remember_tokens']) || isset($_COOKIE['remember_token'])) {
         $authService->autoLogin(); 
@@ -270,7 +278,11 @@ if (!empty($configuredSecret) && $internalApiKey === $configuredSecret) {
     $isInternalApi = true;
 }
 
-if (!$isChatAttachment && !$isReceiptDownload && !$isInternalApi && !Utils::validateCSRFToken($requestToken, $sessionManager)) {
+$requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+$isMutatingMethod = in_array($requestMethod, ['POST', 'PUT', 'DELETE', 'PATCH'], true);
+$requiresCsrf = $isMutatingMethod && !$isChatAttachment && !$isReceiptDownload && !$isInternalApi;
+
+if ($requiresCsrf && !Utils::validateCSRFToken($requestToken, $sessionManager)) {
     Logger::security("CSRF validation failed.", 'warning', ['ip' => Utils::getIpAddress(), 'token_provided' => $requestToken]);
     http_response_code(403);
     echo json_encode([

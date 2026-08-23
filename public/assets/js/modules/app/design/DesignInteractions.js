@@ -516,6 +516,33 @@ export const DesignInteractions = {
             return;
         }
 
+        const btnToggleOfflineText = e.target.closest('[data-action="toggleOfflineText"]');
+        if (btnToggleOfflineText) {
+            e.preventDefault();
+            if (typeof this.toggleOfflineText === 'function') {
+                this.toggleOfflineText();
+            }
+            return;
+        }
+
+        const btnCycleFont = e.target.closest('[data-action="cyclePixelFont"]');
+        if (btnCycleFont) {
+            e.preventDefault();
+            if (typeof this.cyclePixelFont === 'function') {
+                this.cyclePixelFont();
+            }
+            return;
+        }
+
+        const btnCycleTextScale = e.target.closest('[data-action="cyclePixelTextScale"]');
+        if (btnCycleTextScale) {
+            e.preventDefault();
+            if (typeof this.cyclePixelTextScale === 'function') {
+                this.cyclePixelTextScale();
+            }
+            return;
+        }
+
         const btnSelectFont = e.target.closest('[data-action="selectPixelFont"]');
         if (btnSelectFont) {
             e.preventDefault();
@@ -834,12 +861,9 @@ export const DesignInteractions = {
                 }
             }
         } else if (keyUpper === 'Y') {
-            if (this.isOfflineMode) {
-                const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-text"]');
-                if (btn && !btn.classList.contains('disabled')) {
-                    e.preventDefault();
-                    btn.click();
-                }
+            if (this.isOfflineMode && typeof this.toggleOfflineText === 'function') {
+                e.preventDefault();
+                this.toggleOfflineText();
             }
         } else if (keyUpper === 'J') {
             const btn = document.querySelector('[data-action="openJoinLiveModal"]');
@@ -1170,19 +1194,35 @@ export const DesignInteractions = {
             }
 
             if (this.interactionMode === 'offline_text') {
-                const box = this.textPreviewBox;
-                if (box && coords.x >= box.minX && coords.x <= box.maxX && coords.y >= box.minY && coords.y <= box.maxY) {
-                    this.isTextDragging = true;
-                    this.textDragStart = {
-                        offsetX: coords.x - (this.textPosition ? this.textPosition.x : box.originX),
-                        offsetY: coords.y - (this.textPosition ? this.textPosition.y : box.originY)
-                    };
-                } else {
+                if (!this.textPosition) {
                     this.textPosition = { x: coords.x, y: coords.y };
+                    this.updatePixelTextControlsUI();
+                    const floatingEl = document.querySelector('[data-ref="canvas-floating-text"]');
+                    if (floatingEl) {
+                        floatingEl.classList.remove('disabled');
+                        floatingEl.classList.add('active');
+                    }
                     this.updatePixelTextPreview();
                     const floatingInput = document.querySelector('[data-ref="floating-text-input"]');
                     if (floatingInput) {
-                        floatingInput.focus();
+                        floatingInput.value = this.activePixelText?.text || '';
+                        setTimeout(() => floatingInput.focus(), 60);
+                    }
+                } else {
+                    const box = this.textPreviewBox;
+                    if (box && coords.x >= box.minX && coords.x <= box.maxX && coords.y >= box.minY && coords.y <= box.maxY && this.activePixelText?.text?.length > 0) {
+                        this.isTextDragging = true;
+                        this.textDragStart = {
+                            offsetX: coords.x - this.textPosition.x,
+                            offsetY: coords.y - this.textPosition.y
+                        };
+                    } else {
+                        this.textPosition = { x: coords.x, y: coords.y };
+                        this.updatePixelTextPreview();
+                        const floatingInput = document.querySelector('[data-ref="floating-text-input"]');
+                        if (floatingInput) {
+                            floatingInput.focus();
+                        }
                     }
                 }
                 return;
@@ -1993,19 +2033,35 @@ export const DesignInteractions = {
                 const coords = this.getBoardCoords(this.touchStartX, this.touchStartY);
                 if (coords) {
                     e.preventDefault();
-                    const box = this.textPreviewBox;
-                    if (box && coords.x >= box.minX && coords.x <= box.maxX && coords.y >= box.minY && coords.y <= box.maxY) {
-                        this.isTextDragging = true;
-                        this.textDragStart = {
-                            offsetX: coords.x - (this.textPosition ? this.textPosition.x : box.originX),
-                            offsetY: coords.y - (this.textPosition ? this.textPosition.y : box.originY)
-                        };
-                    } else {
+                    if (!this.textPosition) {
                         this.textPosition = { x: coords.x, y: coords.y };
+                        this.updatePixelTextControlsUI();
+                        const floatingEl = document.querySelector('[data-ref="canvas-floating-text"]');
+                        if (floatingEl) {
+                            floatingEl.classList.remove('disabled');
+                            floatingEl.classList.add('active');
+                        }
                         this.updatePixelTextPreview();
                         const floatingInput = document.querySelector('[data-ref="floating-text-input"]');
                         if (floatingInput) {
-                            floatingInput.focus();
+                            floatingInput.value = this.activePixelText?.text || '';
+                            setTimeout(() => floatingInput.focus(), 60);
+                        }
+                    } else {
+                        const box = this.textPreviewBox;
+                        if (box && coords.x >= box.minX && coords.x <= box.maxX && coords.y >= box.minY && coords.y <= box.maxY && this.activePixelText?.text?.length > 0) {
+                            this.isTextDragging = true;
+                            this.textDragStart = {
+                                offsetX: coords.x - this.textPosition.x,
+                                offsetY: coords.y - this.textPosition.y
+                            };
+                        } else {
+                            this.textPosition = { x: coords.x, y: coords.y };
+                            this.updatePixelTextPreview();
+                            const floatingInput = document.querySelector('[data-ref="floating-text-input"]');
+                            if (floatingInput) {
+                                floatingInput.focus();
+                            }
                         }
                     }
                     return;
@@ -4684,6 +4740,16 @@ export const DesignInteractions = {
         this.requestRender();
     },
 
+    toggleOfflineText() {
+        if (this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+
+        if (this.interactionMode === 'offline_text') {
+            this.deactivatePixelTextMode();
+        } else {
+            this.activatePixelTextMode();
+        }
+    },
+
     activatePixelTextMode() {
         if (this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
 
@@ -4705,6 +4771,11 @@ export const DesignInteractions = {
 
         this.interactionMode = 'offline_text';
         this.selectedPixels.clear();
+        this.textPosition = null;
+        this.textPreviewPixels = null;
+        this.textPreviewShadow = null;
+        this.textPreviewOutline = null;
+        this.textPreviewBox = null;
 
         const btnText = document.querySelector('[data-ref="btn-offline-text"]');
         if (btnText) btnText.classList.add('active');
@@ -4719,39 +4790,46 @@ export const DesignInteractions = {
                 hasOutline: false,
                 hasShadow: false
             };
+        } else {
+            this.activePixelText.text = '';
         }
 
-        if (!this.textPosition) {
-            const bw = this.boardWidth || 64;
-            const bh = this.boardHeight || 64;
-            this.textPosition = {
-                x: Math.max(0, Math.floor(bw / 4)),
-                y: Math.max(0, Math.floor(bh / 3))
-            };
+        const floatingInput = document.querySelector('[data-ref="floating-text-input"]');
+        if (floatingInput) {
+            floatingInput.value = '';
         }
 
         const floatingEl = document.querySelector('[data-ref="canvas-floating-text"]');
-        const floatingInput = document.querySelector('[data-ref="floating-text-input"]');
-        const menuInput = document.querySelector('[data-ref="text-menu-input"]');
-        if (floatingInput && this.activePixelText.text) {
-            floatingInput.value = this.activePixelText.text;
-        }
-        if (menuInput && this.activePixelText.text) {
-            menuInput.value = this.activePixelText.text;
-        }
-
         if (floatingEl) {
-            floatingEl.classList.remove('disabled');
-            this.updateFloatingTextPosition();
+            floatingEl.classList.remove('active');
+            floatingEl.classList.add('disabled');
         }
 
-        showMessage(__('msg_text_selected'), 'info');
+        this.updatePixelTextControlsUI();
+
+        if (this.textCaretInterval) clearInterval(this.textCaretInterval);
+        this.textCaretInterval = setInterval(() => {
+            if (this.interactionMode === 'offline_text' && this.textPosition) {
+                this.requestRender();
+            }
+        }, 500);
+
+        if (typeof showMessage === 'function') {
+            const msg = (typeof window.__ === 'function' ? window.__('msg_text_selected') : null) || 'Modo Texto activado. Haz clic en el lienzo donde desees escribir.';
+            showMessage(msg, 'info');
+        }
         this.updateSelectionUI();
-        this.updatePixelTextPreview();
+        this.requestRender();
     },
 
     deactivatePixelTextMode() {
+        if (this.textCaretInterval) {
+            clearInterval(this.textCaretInterval);
+            this.textCaretInterval = null;
+        }
+
         this.interactionMode = 'normal';
+        this.textPosition = null;
         this.textPreviewPixels = null;
         this.textPreviewShadow = null;
         this.textPreviewOutline = null;
@@ -4760,15 +4838,49 @@ export const DesignInteractions = {
         this.textDragStart = null;
         this.selectedPixels.clear();
 
+        if (this.activePixelText) {
+            this.activePixelText.text = '';
+        }
+
+        const floatingInput = document.querySelector('[data-ref="floating-text-input"]');
+        if (floatingInput) {
+            floatingInput.value = '';
+        }
+
         const btnText = document.querySelector('[data-ref="btn-offline-text"]');
         if (btnText) btnText.classList.remove('active');
 
         const floatingEl = document.querySelector('[data-ref="canvas-floating-text"]');
-        if (floatingEl) floatingEl.classList.add('disabled');
+        if (floatingEl) {
+            floatingEl.classList.remove('active');
+            floatingEl.classList.add('disabled');
+        }
 
-        showMessage(__('msg_text_mode_off'), 'info');
+        if (typeof showMessage === 'function') {
+            const msg = (typeof window.__ === 'function' ? window.__('msg_text_mode_off') : null) || 'Modo Texto desactivado';
+            showMessage(msg, 'info');
+        }
         this.updateSelectionUI();
         this.requestRender();
+    },
+
+    cyclePixelFont() {
+        if (!this.activePixelText) {
+            this.activePixelText = { text: '', fontId: 'arcade_5x7', scale: 1, letterSpacing: 1, lineSpacing: 2, hasOutline: false, hasShadow: false };
+        }
+        const fonts = ['arcade_5x7', 'mini_3x5', 'cyber_6x8'];
+        const curIdx = fonts.indexOf(this.activePixelText.fontId);
+        const nextFont = fonts[(curIdx + 1) % fonts.length];
+        this.selectPixelFont(nextFont);
+    },
+
+    cyclePixelTextScale() {
+        if (!this.activePixelText) {
+            this.activePixelText = { text: '', fontId: 'arcade_5x7', scale: 1, letterSpacing: 1, lineSpacing: 2, hasOutline: false, hasShadow: false };
+        }
+        const currentScale = this.activePixelText.scale || 1;
+        const nextScale = currentScale >= 4 ? 1 : currentScale + 1;
+        this.setPixelTextScale(nextScale);
     },
 
     selectPixelFont(fontId, targetEl) {
@@ -4778,14 +4890,7 @@ export const DesignInteractions = {
             this.activePixelText.fontId = fontId;
         }
 
-        const grid = document.querySelector('[data-ref="fonts-grid"]');
-        if (grid) {
-            grid.querySelectorAll('.component-font-card').forEach(c => {
-                const cId = c.getAttribute('data-font-id');
-                c.classList.toggle('active', cId === fontId);
-            });
-        }
-
+        this.updatePixelTextControlsUI();
         this.updatePixelTextPreview();
     },
 
@@ -4796,14 +4901,7 @@ export const DesignInteractions = {
             this.activePixelText.scale = scale;
         }
 
-        const bar = document.querySelector('[data-ref="text-scale-bar"]');
-        if (bar) {
-            bar.querySelectorAll('.component-shape-mode-pill').forEach(btn => {
-                const s = parseInt(btn.getAttribute('data-scale'), 10) || 1;
-                btn.classList.toggle('active', s === scale);
-            });
-        }
-
+        this.updatePixelTextControlsUI();
         this.updatePixelTextPreview();
     },
 
@@ -4814,11 +4912,7 @@ export const DesignInteractions = {
             this.activePixelText.hasOutline = !this.activePixelText.hasOutline;
         }
 
-        const btnOutline = document.querySelector('[data-ref="btn-text-outline"]');
-        if (btnOutline) {
-            btnOutline.classList.toggle('active', !!this.activePixelText.hasOutline);
-        }
-
+        this.updatePixelTextControlsUI();
         this.updatePixelTextPreview();
     },
 
@@ -4829,28 +4923,77 @@ export const DesignInteractions = {
             this.activePixelText.hasShadow = !this.activePixelText.hasShadow;
         }
 
+        this.updatePixelTextControlsUI();
+        this.updatePixelTextPreview();
+    },
+
+    updatePixelTextControlsUI() {
+        if (!this.activePixelText) return;
+
+        const btnOutline = document.querySelector('[data-ref="btn-text-outline"]');
+        if (btnOutline) {
+            btnOutline.classList.toggle('active', !!this.activePixelText.hasOutline);
+        }
+
         const btnShadow = document.querySelector('[data-ref="btn-text-shadow"]');
         if (btnShadow) {
             btnShadow.classList.toggle('active', !!this.activePixelText.hasShadow);
         }
 
-        this.updatePixelTextPreview();
+        const scaleLabel = document.querySelector('[data-ref="text-scale-label"]');
+        const btnScale = document.querySelector('[data-ref="btn-text-scale"]');
+        if (scaleLabel) {
+            scaleLabel.textContent = `${this.activePixelText.scale || 1}x`;
+        }
+        if (btnScale) {
+            const scaleTooltip = (typeof window.__ === 'function' ? window.__('lbl_text_scale') : null) || 'Escala';
+            btnScale.setAttribute('data-tooltip', `${scaleTooltip}: ${this.activePixelText.scale || 1}x`);
+        }
+
+        const btnFont = document.querySelector('[data-ref="btn-text-font"]');
+        if (btnFont) {
+            const fontNames = {
+                'arcade_5x7': (typeof window.__ === 'function' ? window.__('font_arcade') : null) || 'Arcade',
+                'mini_3x5': (typeof window.__ === 'function' ? window.__('font_mini') : null) || 'Mini',
+                'cyber_6x8': (typeof window.__ === 'function' ? window.__('font_cyber') : null) || 'Cyber'
+            };
+            const currentName = fontNames[this.activePixelText.fontId] || this.activePixelText.fontId;
+            const fontTooltip = (typeof window.__ === 'function' ? window.__('lbl_font_family') : null) || 'Fuente';
+            btnFont.setAttribute('data-tooltip', `${fontTooltip}: ${currentName}`);
+        }
     },
 
     updateFloatingTextPosition() {
         const floatingEl = document.querySelector('[data-ref="canvas-floating-text"]');
-        if (!floatingEl || !this.canvas || !this.textPosition) return;
+        if (!floatingEl || !this.canvas || !this.textPosition || !this.transform) return;
 
-        const rect = this.canvas.getBoundingClientRect();
-        const screenX = rect.left + this.transform.x + (this.textPosition.x * this.transform.scale);
-        const screenY = rect.top + this.transform.y + (this.textPosition.y * this.transform.scale) - 38;
+        const canvasRect = this.canvas.getBoundingClientRect();
+        const containerRect = this.canvas.parentNode ? this.canvas.parentNode.getBoundingClientRect() : canvasRect;
 
-        floatingEl.style.left = `${Math.max(10, Math.min(window.innerWidth - 240, screenX))}px`;
-        floatingEl.style.top = `${Math.max(60, Math.min(window.innerHeight - 50, screenY))}px`;
+        let targetX = this.textPosition.x;
+        let targetY = this.textPosition.y;
+
+        if (this.textPreviewBox && this.activePixelText?.text && this.activePixelText.text.length > 0) {
+            targetX = this.textPosition.x + (this.textPreviewBox.w / 2);
+            targetY = this.textPosition.y;
+        }
+
+        const screenX = canvasRect.left + (targetX * this.transform.scale) + this.transform.x;
+        const screenY = canvasRect.top + (targetY * this.transform.scale) + this.transform.y;
+
+        const leftPx = screenX - containerRect.left;
+        const topPx = screenY - containerRect.top - 8;
+
+        floatingEl.style.position = 'absolute';
+        floatingEl.style.left = `${Math.round(leftPx)}px`;
+        floatingEl.style.top = `${Math.round(topPx)}px`;
+        floatingEl.style.transform = 'translate(-50%, -100%)';
+        floatingEl.classList.remove('disabled');
+        floatingEl.classList.add('active');
     },
 
     updatePixelTextPreview() {
-        if (this.interactionMode !== 'offline_text') return;
+        if (this.interactionMode !== 'offline_text' || !this.textPosition) return;
 
         const text = this.activePixelText?.text || '';
         const fontId = this.activePixelText?.fontId || 'arcade_5x7';
@@ -4862,26 +5005,21 @@ export const DesignInteractions = {
         const bw = this.boardWidth || 64;
         const bh = this.boardHeight || 64;
 
-        if (!this.textPosition) {
-            this.textPosition = {
-                x: Math.max(0, Math.floor(bw / 4)),
-                y: Math.max(0, Math.floor(bh / 3))
-            };
-        }
-
-        if (!text || text.trim().length === 0) {
+        if (!text || text.length === 0) {
             this.textPreviewPixels = null;
             this.textPreviewShadow = null;
             this.textPreviewOutline = null;
             this.textPreviewBox = {
                 minX: this.textPosition.x,
                 minY: this.textPosition.y,
-                maxX: this.textPosition.x + 8,
-                maxY: this.textPosition.y + 8,
-                w: 8,
-                h: 8,
+                maxX: this.textPosition.x,
+                maxY: this.textPosition.y,
+                w: 0,
+                h: 0,
                 originX: this.textPosition.x,
-                originY: this.textPosition.y
+                originY: this.textPosition.y,
+                cursorX: this.textPosition.x,
+                cursorY: this.textPosition.y
             };
             this.updateFloatingTextPosition();
             this.requestRender();
@@ -4934,7 +5072,9 @@ export const DesignInteractions = {
         this.textPreviewBox = {
             ...result.bounds,
             originX: this.textPosition.x,
-            originY: this.textPosition.y
+            originY: this.textPosition.y,
+            cursorX: result.cursorX,
+            cursorY: result.cursorY
         };
 
         this.updateFloatingTextPosition();
@@ -4943,10 +5083,10 @@ export const DesignInteractions = {
     },
 
     commitPixelText() {
-        if (this.interactionMode !== 'offline_text' || !this.activePixelText) return;
+        if (this.interactionMode !== 'offline_text' || !this.activePixelText || !this.textPosition) return;
 
         const text = this.activePixelText.text || '';
-        if (!text || text.trim().length === 0) {
+        if (!text || text.length === 0) {
             this.deactivatePixelTextMode();
             return;
         }
@@ -5002,7 +5142,7 @@ export const DesignInteractions = {
         };
 
         if (hasShadow) {
-            addPoints(result.shadowPoints, '#000000');
+            addPoints(result.shadowPoints, '#404040');
         }
         if (hasOutline) {
             addPoints(result.outlinePoints, '#000000');
@@ -5030,7 +5170,10 @@ export const DesignInteractions = {
             }
         }
 
-        showMessage(__('msg_text_stamped'), 'success');
+        if (typeof showMessage === 'function') {
+            const msg = (typeof window.__ === 'function' ? window.__('msg_text_stamped') : null) || 'Texto estampado en el lienzo';
+            showMessage(msg, 'success');
+        }
         this.deactivatePixelTextMode();
     },
 
@@ -5058,23 +5201,14 @@ export const DesignInteractions = {
             return;
         }
 
-        const isMenuInput = e.target.matches('[data-ref="text-menu-input"]');
         const isFloatingInput = e.target.matches('[data-ref="floating-text-input"]');
 
-        if (isMenuInput || isFloatingInput) {
+        if (isFloatingInput) {
             const val = e.target.value;
             if (!this.activePixelText) {
                 this.activePixelText = { text: val, fontId: 'arcade_5x7', scale: 1, letterSpacing: 1, lineSpacing: 2, hasOutline: false, hasShadow: false };
             } else {
                 this.activePixelText.text = val;
-            }
-
-            if (isMenuInput) {
-                const floatingInput = document.querySelector('[data-ref="floating-text-input"]');
-                if (floatingInput && floatingInput !== e.target) floatingInput.value = val;
-            } else if (isFloatingInput) {
-                const menuInput = document.querySelector('[data-ref="text-menu-input"]');
-                if (menuInput && menuInput !== e.target) menuInput.value = val;
             }
 
             if (this.interactionMode !== 'offline_text') {

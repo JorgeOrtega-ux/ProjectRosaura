@@ -11,7 +11,14 @@ $routeData = $router->resolve();
 $currentView = $routeData['view'];
 
 $redirectUrl = null;
-$requestUriPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$requestUriPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/';
+$basePath = parse_url(APP_URL, PHP_URL_PATH) ?? '';
+$basePath = rtrim($basePath, '/');
+$cleanPath = $requestUriPath;
+if (!empty($basePath) && strpos($cleanPath, $basePath) === 0) {
+    $cleanPath = substr($cleanPath, strlen($basePath));
+}
+$cleanPath = rtrim($cleanPath, '/') ?: '/';
 
 $systemMessageType = null;
 $serverConfig = $serverConfig ?? [];
@@ -28,9 +35,9 @@ if ($isMaintenanceActive && !$isPrivileged) {
     $redirectUrl = null; 
 } else {
     
-    if ($requestUriPath === APP_URL . '/account-suspended' || $requestUriPath === APP_URL . '/account-suspended/') {
+    if ($cleanPath === '/account-suspended') {
         $systemMessageType = 'suspended';
-    } elseif ($requestUriPath === APP_URL . '/account-deleted' || $requestUriPath === APP_URL . '/account-deleted/') {
+    } elseif ($cleanPath === '/account-deleted') {
         $systemMessageType = 'deleted';
     }
 
@@ -100,7 +107,7 @@ if ($isMaintenanceActive && !$isPrivileged) {
     }
 
     if ($currentView !== 'system/message.php' && !$redirectUrl) {
-        if ($requestUriPath === APP_URL . '/admin' || $requestUriPath === APP_URL . '/admin/') {
+        if ($cleanPath === '/admin') {
             $currentView = 'admin/dashboard.php';
             $redirectUrl = APP_URL . '/admin/dashboard';
         } elseif ($currentView === 'settings/index.php') {
@@ -114,7 +121,7 @@ if ($isMaintenanceActive && !$isPrivileged) {
 }
 
 $isSpaRequest = !empty($_SERVER['HTTP_X_SPA_REQUEST']);
-$isAuthRoute = (strpos($currentView, 'auth/') === 0) || in_array($requestUriPath, [APP_URL . '/account-suspended', APP_URL . '/account-suspended/', APP_URL . '/account-deleted', APP_URL . '/account-deleted/']);
+$isAuthRoute = (strpos($currentView, 'auth/') === 0) || in_array($cleanPath, ['/account-suspended', '/account-deleted']);
 
 if ($redirectUrl) {
     if ($isSpaRequest) header("X-SPA-Update-URL: " . $redirectUrl);

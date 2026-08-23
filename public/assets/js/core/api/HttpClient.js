@@ -78,19 +78,15 @@ export class HttpClient {
 
             if (!HttpClient.isRefreshingCsrf) {
                 HttpClient.isRefreshingCsrf = true;
-                fetch(window.location.href, { cache: 'no-store', credentials: 'same-origin', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } })
-                    .then(res => res.text())
-                    .then(text => {
-                        const match = text.match(/<meta name="csrf-token" content="([^"]+)">/);
-                        const newToken = (match && match[1]) ? match[1] : null;
-                        if (newToken) {
-                            const meta = document.querySelector('meta[name="csrf-token"]');
-                            if (meta) meta.setAttribute('content', newToken);
-                        }
+                HttpClient.refreshCsrfTokenProactively()
+                    .then(newToken => {
                         HttpClient.isRefreshingCsrf = false;
                         HttpClient.onCsrfRefreshed(newToken);
                     })
-                    .catch(() => { HttpClient.isRefreshingCsrf = false; HttpClient.onCsrfRefreshed(null); });
+                    .catch(() => { 
+                        HttpClient.isRefreshingCsrf = false; 
+                        HttpClient.onCsrfRefreshed(null); 
+                    });
             }
         });
     }
@@ -98,6 +94,12 @@ export class HttpClient {
     // ─── Response helpers ──────────────────────────────────────────────────────
 
     _processResponse(result) {
+        if (result && result.csrf_token) {
+            HttpClient._csrfCache = result.csrf_token;
+            const meta = document.querySelector('meta[name="csrf-token"]');
+            if (meta) meta.setAttribute('content', result.csrf_token);
+        }
+
         if (result && !result.message && result.message_key) {
             let translated = result.message_key;
             if (typeof window.__ === 'function') translated = window.__(result.message_key);

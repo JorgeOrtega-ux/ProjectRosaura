@@ -467,7 +467,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
         
         <div class="component-menu-header">
             <div class="component-menu-header-box">
-                <button type="button" class="component-button--icon-sm" data-action="backToShapesMainMenu" data-tooltip="<?php echo __('btn_back') ?: 'Volver'; ?>" style="border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; color: inherit; margin-right: 4px;">
+                <button class="component-button component-button--icon component-button--h30 component-button--back" data-action="backToShapesMainMenu" data-tooltip="<?php echo __('btn_back'); ?>">
                     <span class="material-symbols-rounded">arrow_back</span>
                 </button>
                 <span class="material-symbols-rounded"><?php echo htmlspecialchars($catData['icon']); ?></span>
@@ -500,94 +500,5 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
         <div class="component-menu-bottom component-menu-bottom--no-border"></div>
     </div>
     <?php endforeach; ?>
-
-    <?php
-    $pixelFonts = [
-        ['id' => 'arcade_5x7', 'name_key' => 'font_arcade', 'preview' => 'ARCADE', 'icon' => 'videogame_asset'],
-        ['id' => 'mini_3x5', 'name_key' => 'font_mini', 'preview' => 'MINI', 'icon' => 'compress'],
-        ['id' => 'cyber_6x8', 'name_key' => 'font_cyber', 'preview' => 'CYBER', 'icon' => 'terminal']
-    ];
-    ?>
-
-    <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding disabled" data-ref="menu-text">
-        <div class="pill-container"><div class="drag-handle"></div></div>
-        
-        <div class="component-menu-header">
-            <div class="component-menu-header-box">
-                <span class="material-symbols-rounded">title</span>
-                <span class="component-menu-header-title"><?php echo __('dt_pixel_text'); ?></span>
-            </div>
-        </div>
-
-        <div class="component-text-settings-container">
-            <div class="component-form-group">
-                <input class="component-input component-input--full" 
-                       data-ref="text-menu-input" 
-                       type="text" 
-                       placeholder="<?php echo __('placeholder_text_input'); ?>" 
-                       value="" 
-                       maxlength="60" />
-            </div>
-
-            <div class="component-shape-mode-bar" data-ref="text-scale-bar">
-                <button class="component-shape-mode-pill active" data-action="setPixelTextScale" data-scale="1">
-                    <span>1x</span>
-                </button>
-                <button class="component-shape-mode-pill" data-action="setPixelTextScale" data-scale="2">
-                    <span>2x</span>
-                </button>
-                <button class="component-shape-mode-pill" data-action="setPixelTextScale" data-scale="3">
-                    <span>3x</span>
-                </button>
-                <button class="component-shape-mode-pill" data-action="setPixelTextScale" data-scale="4">
-                    <span>4x</span>
-                </button>
-            </div>
-        </div>
-        
-        <div class="component-menu-section-parent component-menu-section-parent--scrollable">
-            <div class="component-menu-section-header">
-                <div class="component-menu-header-box">
-                    <span class="material-symbols-rounded">font_download</span>
-                    <span class="component-menu-header-title"><?php echo __('lbl_font_family'); ?></span>
-                </div>
-            </div>
-            <div class="component-menu-section-body">
-                <div class="component-items-grid component-items-grid--1 active" data-ref="fonts-grid">
-                    <?php foreach ($pixelFonts as $idx => $fnt): ?>
-                    <div class="component-library-card component-font-card <?php echo $idx === 0 ? 'active' : ''; ?>" 
-                         data-action="selectPixelFont" 
-                         data-font-id="<?php echo htmlspecialchars($fnt['id']); ?>" 
-                         data-tooltip="<?php echo htmlspecialchars(__($fnt['name_key'])); ?>" 
-                         data-position="top">
-                        <span class="material-symbols-rounded"><?php echo $fnt['icon']; ?></span>
-                        <span class="component-font-card__title"><?php echo htmlspecialchars(__($fnt['name_key'])); ?></span>
-                        <span class="component-font-card__sample"><?php echo $fnt['preview']; ?></span>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-
-                <div class="component-text-effects-bar">
-                    <button class="component-button component-button--secondary component-button--full component-button--h36" data-action="togglePixelTextOutline" data-ref="btn-text-outline">
-                        <span class="material-symbols-rounded">border_outer</span>
-                        <span><?php echo __('lbl_text_outline'); ?></span>
-                    </button>
-                    <button class="component-button component-button--secondary component-button--full component-button--h36" data-action="togglePixelTextShadow" data-ref="btn-text-shadow">
-                        <span class="material-symbols-rounded">shadow</span>
-                        <span><?php echo __('lbl_text_shadow'); ?></span>
-                    </button>
-                </div>
-
-                <div class="component-text-actions-bar">
-                    <button class="component-button component-button--primary component-button--full component-button--h40" data-action="commitPixelText" data-ref="btn-commit-pixel-text">
-                        <span class="material-symbols-rounded">check</span>
-                        <span><?php echo __('lbl_stamp_text'); ?></span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div class="component-menu-bottom component-menu-bottom--no-border" data-ref="module-promo-bottom-text"></div>
-    </div>
 
 </div>

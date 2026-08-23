@@ -175,9 +175,7 @@ export const OfflineToolsConfig = {
         nameKey: 'tooltip_text_tool',
         icon: 'title',
         shortcut: 'Y',
-        action: 'toggleMenuInModule',
-        moduleTarget: 'moduleDesignTools',
-        menuTarget: 'menu-text',
+        action: 'toggleOfflineText',
         ref: 'btn-offline-text'
     },
     stickers: {

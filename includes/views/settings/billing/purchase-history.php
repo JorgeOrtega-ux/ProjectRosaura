@@ -23,6 +23,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
                                 <div class="pill-container"><div class="drag-handle"></div></div>
                                 <div class="component-menu-header">
                                     <div class="component-menu-header-box">
+                                        <span class="material-symbols-rounded">filter_list</span>
                                         <span class="component-menu-header-title"><?php echo __('filter_search_title'); ?></span>
                                     </div>
                                 </div>

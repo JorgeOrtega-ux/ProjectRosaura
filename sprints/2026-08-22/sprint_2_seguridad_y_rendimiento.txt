@@ -1,0 +1,121 @@
+================================================================================
+SPRINT 2: SEGURIDAD, CONCURRENCIA Y RENDIMIENTO (RIESGO MEDIO)
+Fecha: 2026-08-22
+Proyecto: Project Rosaura
+================================================================================
+
+OBJETIVO DEL SPRINT:
+Blindar la seguridad ante ataques de temporización, optimizar el registro masivo
+de eventos de métricas para evitar cuellos de botella en la base de datos MySQL,
+corregir la medición real de impresiones publicitarias y asegurar el ciclo de
+vida de las cookies de sesión.
+
+--------------------------------------------------------------------------------
+TAREA 2.1: MITIGACIÓN DE TIMING ATTACK EN API INTERNA
+--------------------------------------------------------------------------------
+Archivo afectado:
+  - api/index.php (líneas 275-279)
+
+Descripción del problema:
+  La comprobación de la clave de API interna '$internalApiKey === $configuredSecret'
+  emplea comparación de strings estándar, lo que permite ataques de temporización
+  donde un atacante puede adivinar el secreto midiendo tiempos de respuesta.
+
+Acciones requeridas:
+  1. Reemplazar la comparación por la función nativa hash_equals():
+     if (!empty($configuredSecret) && !empty($internalApiKey) && hash_equals($configuredSecret, $internalApiKey)) {
+         $isInternalApi = true;
+     }
+
+Criterio de Aceptación:
+  - La verificación del secreto de API interna se realiza en tiempo constante (constant-time).
+
+--------------------------------------------------------------------------------
+TAREA 2.2: ENCOLAMIENTO ASÍNCRONO DE MÉTRICAS PUBLICITARIAS EN REDIS
+--------------------------------------------------------------------------------
+Archivos afectados:
+  - api/services/Admin/AdminAdvertisementsService.php (líneas 878-908)
+  - api/controllers/Admin/AdminController.php
+  - scripts/ o worker de fondo existente
+
+Descripción del problema:
+  Cada evento de impresión, clic o vista de video de un anuncio ejecuta una inserción
+  síncrona directa en la base de datos MySQL 'ad_metrics'. Bajo tráfico masivo, esto
+  provoca contención de bloqueos e incrementa los tiempos de respuesta.
+
+Acciones requeridas:
+  1. En AdminAdvertisementsService::recordAdMetric():
+     - Encolar el payload en Redis: $this->redis->rpush('queue:ad_metrics', json_encode($eventData));
+  2. Implementar o actualizar el worker de fondo para procesar la cola 'queue:ad_metrics'
+     en inserciones masivas por lotes (batch INSERT de 100 registros).
+
+Criterio de Aceptación:
+  - El endpoint 'advertisements.track_event' responde en menos de 5ms sin bloquear MySQL.
+
+--------------------------------------------------------------------------------
+TAREA 2.3: REGISTRO DE IMPRESIONES BASADO EN VISIBILIDAD REAL (VIEWPORT)
+--------------------------------------------------------------------------------
+Archivo afectado:
+  - public/assets/js/core/services/PromoCardService.js (líneas 362-371)
+
+Descripción del problema:
+  Actualmente, 'initCardInteractions()' dispara 'trackImpression()' de forma inmediata
+  para todas las cards renderizadas en el DOM, inflando las métricas de anuncios que
+  el usuario nunca llegó a ver en pantalla.
+
+Acciones requeridas:
+  1. Implementar un IntersectionObserver en PromoCardService:
+     - Configurar threshold: 0.5 (al menos 50% de la card visible).
+     - Exigir que la tarjeta permanezca visible al menos 1 segundo antes de enviar la métrica.
+     - Desconectar el observador para esa tarjeta una vez registrada la impresión.
+
+Criterio de Aceptación:
+  - Las impresiones sólo se envían al servidor cuando la tarjeta entra activamente
+    en el campo visual del usuario.
+
+--------------------------------------------------------------------------------
+TAREA 2.4: INVALIDACIÓN Y DESTRUCCIÓN TOTAL DE COOKIES DE SESIÓN
+--------------------------------------------------------------------------------
+Archivo afectado:
+  - includes/core/System/SessionManager.php (líneas 67-87)
+
+Descripción del problema:
+  Al invocar 'SessionManager::destroy()', se eliminan las variables de sesión en Redis,
+  pero el navegador del cliente conserva la cookie 'PHPSESSID' válida.
+
+Acciones requeridas:
+  1. En el método destroy():
+     - Enviar cabecera de expiración de cookie:
+       if (ini_get("session.use_cookies")) {
+           $params = session_get_cookie_params();
+           setcookie(session_name(), '', time() - 42000,
+               $params["path"], $params["domain"],
+               $params["secure"], $params["httponly"]
+           );
+       }
+
+Criterio de Aceptación:
+  - Al cerrar sesión, la cookie de sesión en el navegador queda totalmente revocada.
+
+--------------------------------------------------------------------------------
+TAREA 2.5: REEMPLAZO DE SCRAPING DE RECIBOS STRIPE POR API NATIVA
+--------------------------------------------------------------------------------
+Archivo afectado:
+  - api/services/Stripe/StripeService.php (líneas 744-760)
+
+Descripción del problema:
+  El método 'getStripePdfUrl()' realiza scraping HTML mediante cURL sobre la URL del
+  recibo de Stripe para buscar enlaces PDF. Esto es frágil y propenso a fallas.
+
+Acciones requeridas:
+  1. Eliminar el scraping HTML con cURL.
+  2. Consultar directamente el objeto Invoice en Stripe (\Stripe\Invoice::retrieve($invId)->invoice_pdf)
+     o utilizar el generador interno en bytes 'createStyledPdfReceiptBytes()'.
+
+Criterio de Aceptación:
+  - La descarga de comprobantes de pago funciona de manera consistente y sin depender
+    de scraping web externo.
+
+================================================================================
+FIN DE SPRINT 2
+================================================================================

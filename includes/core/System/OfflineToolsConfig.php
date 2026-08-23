@@ -186,9 +186,7 @@ class OfflineToolsConfig {
                 'name_key'      => 'tooltip_text_tool',
                 'icon'          => 'title',
                 'shortcut'      => 'Y',
-                'action'        => 'toggleMenuInModule',
-                'module_target' => 'moduleDesignTools',
-                'menu_target'   => 'menu-text',
+                'action'        => 'toggleOfflineText',
                 'ref'           => 'btn-offline-text',
             ],
             'stickers' => [

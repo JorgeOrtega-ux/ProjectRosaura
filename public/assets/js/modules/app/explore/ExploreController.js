@@ -1,4 +1,4 @@
-﻿import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiService.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
 import { CardTemplates } from '../../../core/components/CardTemplates.js';
@@ -278,14 +278,11 @@ class ExploreController {
         } else if (isError && !isLoadMore) {
             this.showError(this.contentArea, (res && res.message) ? res.message : window.__('err_load_canvases'));
         } else if (!isLoadMore) {
-            const msgEmpty = window.__('msg_explore_empty');
-            const emptyHtml = `
-                <div class="component-empty-state" data-ref="empty-state-rendered">
-                    <span class="material-symbols-rounded component-empty-state-icon">dashboard_customize</span>
-                    <p class="component-empty-state-text">${msgEmpty}</p>
-                </div>
-            `;
-            this.contentArea.innerHTML = emptyHtml;
+            this.contentArea.innerHTML = CardTemplates.emptyState({
+                type: 'explore',
+                title: window.__('explore_empty_title'),
+                message: window.__('explore_empty_desc')
+            });
         }
         
         if (newCanvases.length < limit) {

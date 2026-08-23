@@ -1,0 +1,95 @@
+================================================================================
+SPRINT 1: EMERGENCIAS, FALLOS CRÍTICOS Y BLOQUEANTES (RIESGO ALTO)
+Fecha: 2026-08-22
+Proyecto: Project Rosaura
+================================================================================
+
+OBJETIVO DEL SPRINT:
+Resolver de inmediato los fallos que provocan errores de ejecución en Javascript
+(TypeError: undefined), rutas 404/500 por vistas inexistentes y desincronización
+automática de suscripciones pagadas en Stripe.
+
+--------------------------------------------------------------------------------
+TAREA 1.1: CORRECCIÓN DE DESINCRONIZACIÓN DE TIER EN WEBHOOK DE STRIPE
+--------------------------------------------------------------------------------
+Archivo afectado:
+  - api/controllers/Stripe/StripeWebhookController.php (líneas 181-212)
+
+Descripción del problema:
+  Al procesar el evento 'customer.subscription.updated', el controlador actualiza
+  únicamente el estado y fechas de vigencia, pero NO actualiza el nivel de
+  suscripción ('subscription_tier') en la base de datos de usuarios. Si un cliente
+  cambia de plan desde el Portal de Stripe, la web no le otorga sus beneficios.
+
+Acciones requeridas:
+  1. En el método handleSubscriptionUpdated($subscription):
+     - Extraer el ID de precio del primer ítem: $subscription->items->data[0]->price->id
+     - Mapear el price ID al nivel de suscripción (Tier 1 Plus, Tier 2 Pro, Tier 3 Ultra).
+     - Ejecutar $this->subRepo->updateUserTier((int)$localSub['user_id'], $newTier)
+     - Ejecutar $this->setUserTierAndEvaluateCanvases((int)$localSub['user_id'], $newTier)
+     - Invalidar la caché de usuario con CacheInvalidator.
+
+Criterio de Aceptación:
+  - Al recibir un webhook de actualización de plan de Stripe, la base de datos
+    actualiza instantáneamente el 'subscription_tier' y reevalúa los lienzos bloqueados.
+
+--------------------------------------------------------------------------------
+TAREA 1.2: CENTRALIZACIÓN Y CORRECCIÓN DE RUTAS EN APIROUTES.JS
+--------------------------------------------------------------------------------
+Archivos afectados:
+  - public/assets/js/core/api/ApiRoutes.js
+  - public/assets/js/modules/admin/backups/AdminBackupsCreateController.js
+  - public/assets/js/modules/admin/backups/AdminBackupsRestoreController.js
+  - public/assets/js/modules/admin/logs/AdminLogsViewerController.js
+  - public/assets/js/modules/settings/PurchaseHistoryController.js
+
+Descripción del problema:
+  Existen 6 llamadas a propiedades de ApiRoutes que no están definidas o pertenecen
+  a namespaces inexistentes, causando errores fatales en runtime.
+
+Acciones requeridas:
+  1. En public/assets/js/core/api/ApiRoutes.js, dentro del objeto Admin, agregar:
+     - GetBackupSchema: 'admin.get_backup_schema'
+     - CreateCustomBackup: 'admin.create_custom_backup'
+     - BackupStatus: 'admin.backup_status'
+     - CheckWorkerStatus: 'admin.check_worker_status'
+     - ReadLogs: 'admin.read_logs'
+
+  2. En public/assets/js/modules/settings/PurchaseHistoryController.js (línea 491):
+     - Corregir la llamada que invoca a ApiRoutes.Store.GetTransactionHistory
+     - Redirigir a ApiRoutes.Stripe.GetPaymentHistory o crear el endpoint correspondiente
+       si se implementa el historial de monedas (Coins Ledger).
+
+Criterio de Aceptación:
+  - Las vistas de creación de backups, restauración, visor de logs y compras cargan
+    sin errores en la consola del navegador.
+
+--------------------------------------------------------------------------------
+TAREA 1.3: RESOLUCIÓN DE VISTAS INEXISTENTES EN ROUTES.PHP
+--------------------------------------------------------------------------------
+Archivos afectados:
+  - config/Routes/routes.php (líneas 8, 23, 29, 70)
+  - includes/views/admin/messages/ (creación o mapeo)
+  - includes/views/site-policy/ (creación o mapeo)
+  - includes/views/settings/ (creación o mapeo)
+
+Descripción del problema:
+  Las siguientes rutas en routes.php apuntan a archivos que no existen físicamente:
+    1. '/build-audio-sprite' => 'system/build_sprite.php'
+    2. '/site-policy' => 'site-policy/site-policy.php'
+    3. '/settings' => 'settings/index.php'
+    4. '/admin/messages/visibility/:uuid' => 'admin/messages/edit-visibility.php'
+
+Acciones requeridas:
+  1. Para '/settings': Configurar redirección a '/settings/your-account' o crear la vista base.
+  2. Para '/site-policy': Redirigir a '/site-policy/terms-conditions' o crear índice de políticas.
+  3. Para '/admin/messages/visibility/:uuid': Crear la vista 'edit-visibility.php' vinculada con
+     AdminMessagesVisibilityController.js o integrar el modal en manage-messages.php.
+  4. Para '/build-audio-sprite': Deprecar la ruta si es una herramienta CLI o crear la vista administrativa.
+
+Criterio de Aceptación:
+  - Ninguna ruta declarada en routes.php genera un error de archivo no encontrado.
+
+================================================================================
+FIN DE SPRINT 1
+================================================================================

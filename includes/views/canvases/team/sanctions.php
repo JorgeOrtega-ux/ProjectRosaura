@@ -230,7 +230,9 @@ $predefinedSuspension = [
                             <tr class="disabled" data-ref="empty-search-table">
                                 <td colspan="5" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
-                                        <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
+                                        <div class="component-empty-state-badge">
+                                            <span class="material-symbols-rounded">search_off</span>
+                                        </div>
                                         <p class="component-empty-state-text"><?php echo __('lbl_no_users_found'); ?></p>
                                     </div>
                                 </td>
@@ -239,7 +241,9 @@ $predefinedSuspension = [
                             <tr data-ref="empty-table">
                                 <td colspan="5" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
-                                        <span class="material-symbols-rounded component-empty-state-icon">shield_person</span>
+                                        <div class="component-empty-state-badge">
+                                            <span class="material-symbols-rounded">shield_person</span>
+                                        </div>
                                         <p class="component-empty-state-text"><?php echo __('lbl_no_sanctions_found'); ?></p>
                                     </div>
                                 </td>

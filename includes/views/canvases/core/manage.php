@@ -245,7 +245,9 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                             <tr class="disabled" data-ref="empty-search-table">
                                 <td colspan="7" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
-                                        <span class="material-symbols-rounded component-empty-state-icon">search_off</span>
+                                        <div class="component-empty-state-badge">
+                                            <span class="material-symbols-rounded">search_off</span>
+                                        </div>
                                         <p class="component-empty-state-text"><?php echo __('empty_search_canvases'); ?></p>
                                     </div>
                                 </td>
@@ -255,7 +257,9 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/canvases/manage?page=' . ($page
                             <tr>
                                 <td colspan="7" class="component-empty-table-cell">
                                     <div class="component-empty-state component-empty-state--table">
-                                        <span class="material-symbols-rounded component-empty-state-icon">palette</span>
+                                        <div class="component-empty-state-badge">
+                                            <span class="material-symbols-rounded">palette</span>
+                                        </div>
                                         <p class="component-empty-state-text"><?php echo __('empty_canvases_system'); ?></p>
                                     </div>
                                 </td>
