@@ -491,10 +491,15 @@ def cleanup_old_telemetry():
 
 def get_email_template(template_name, lang, data):
     try:
-        json_path = "/app/config/email_templates.json"
+        json_path = "/app/config/data/email_templates.json"
         if not os.path.exists(json_path):
-            Logger.error(f"Email templates JSON not found at {json_path}")
-            return None, None
+            # Fallback for local execution outside docker container
+            local_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../config/data/email_templates.json'))
+            if os.path.exists(local_path):
+                json_path = local_path
+            else:
+                Logger.error(f"Email templates JSON not found at {json_path}")
+                return None, None
             
         with open(json_path, 'r', encoding='utf-8') as f:
             templates = json.load(f)

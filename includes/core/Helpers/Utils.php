@@ -115,7 +115,7 @@ class Utils {
             return self::$sanctionReasons;
         }
 
-        $path = defined('ROOT_PATH') ? ROOT_PATH . '/config/reasons.json' : dirname(__DIR__, 3) . '/config/reasons.json';
+        $path = defined('ROOT_PATH') ? ROOT_PATH . '/config/data/reasons.json' : dirname(__DIR__, 3) . '/config/data/reasons.json';
         if (file_exists($path)) {
             $json = file_get_contents($path);
             $data = json_decode($json, true);
@@ -667,7 +667,7 @@ class Utils {
         if (empty($text)) return $text;
         static $badWords = null;
         if ($badWords === null) {
-            $path = dirname(__DIR__, 3) . '/config/bad_words.json';
+            $path = defined('ROOT_PATH') ? ROOT_PATH . '/config/data/bad_words.json' : dirname(__DIR__, 3) . '/config/data/bad_words.json';
             if (file_exists($path)) {
                 $badWords = json_decode(file_get_contents($path), true) ?? [];
             } else {

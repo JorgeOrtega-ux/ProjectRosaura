@@ -6,9 +6,9 @@ use App\Core\System\Translator;
 class EmailTemplates {
     
     public static function get($templateName, $data = [], $lang = 'es-419') {
-        $jsonPath = defined('ROOT_PATH') ? ROOT_PATH . '/config/email_templates.json' : dirname(__DIR__, 3) . '/config/email_templates.json';
+        $jsonPath = defined('ROOT_PATH') ? ROOT_PATH . '/config/data/email_templates.json' : dirname(__DIR__, 3) . '/config/data/email_templates.json';
         if (!file_exists($jsonPath)) {
-            $jsonPath = '/var/www/html/config/email_templates.json';
+            $jsonPath = '/var/www/html/config/data/email_templates.json';
         }
         if (!file_exists($jsonPath)) {
             return "<p style='color: #111;'>Template system configuration missing.</p>";
