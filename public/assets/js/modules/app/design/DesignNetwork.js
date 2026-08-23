@@ -1834,7 +1834,7 @@ export const DesignNetwork = {
                     this.wsManager.disconnect();
                 }
                 setTimeout(() => {
-                    window.location.href = (window.AppBasePath || '') + '/explore';
+                    window.location.href = (window.AppBasePath || '') + '/';
                 }, 2000);
             } else {
                 if (!this._isChangingMode) {

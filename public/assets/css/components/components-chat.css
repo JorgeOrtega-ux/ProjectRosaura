@@ -641,6 +641,15 @@ html.dark-theme .component-skeleton-design-bottom {
     }
 }
 
+.component-tags-carousel-divider {
+    flex-shrink: 0;
+    width: 1px;
+    height: 24px;
+    align-self: center;
+    background-color: var(--border-color, #3f3f46);
+    margin: 0 4px;
+}
+
 .component-tags-carousel-wrapper {
     position: relative;
     width: 100%;

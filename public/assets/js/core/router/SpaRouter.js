@@ -60,6 +60,10 @@ export class SpaRouter {
             cleanUrl = '/';
         }
 
+        if (cleanUrl === '/explore') {
+            cleanUrl = '/';
+        }
+
         // Shortcut compatibility mapping for resize redirection
         if (cleanUrl.startsWith('/canvases/resize/')) {
             cleanUrl = '/canvases/manage/resize/' + cleanUrl.substring('/canvases/resize/'.length);

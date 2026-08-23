@@ -1,79 +1,67 @@
 <?php
+use App\Api\Services\App\AppViewService;
+
 global $initialCanvasesJson;
 $initialCanvasesJson = $initialCanvasesJson ?? '[]';
+
 $isUserLoggedIn = !empty($_SESSION['active_account']) || isset($_SESSION['user_id']);
+$initialMode = $isUserLoggedIn ? 'personal' : 'explore';
+$initialKey = $isUserLoggedIn ? 'mine' : 'all';
+
+$viewService = new AppViewService();
+$tagsList = $viewService->getHomeTags();
 ?>
 <div class="view-content">
     <div class="component-wrapper component-wrapper--full no-padding" data-ref="home-wrapper">
-        
+
         <div class="component-top">
-            <div class="component-top-left">
-                <h1 class="component-top-title"><?php echo __('home_title'); ?></h1>
-            </div>
+            <div class="component-top-right component-top-right--full">
+                <div class="component-tags-carousel-wrapper">
+                    <button class="component-tag-nav-btn component-tag-nav-left disabled" data-action="scrollTagsLeft">
+                        <span class="material-symbols-rounded">chevron_left</span>
+                    </button>
 
-            <div class="component-top-right">
-                <?php if ($isUserLoggedIn): ?>
-                <div class="component-actions active" data-ref="header-default-actions">
-                    <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
-                        <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="moduleHomeFilters" data-ref="btn-toggle-filters" data-tooltip="<?php echo __('tooltip_filters'); ?>" data-position="bottom">
-                            <span class="material-symbols-rounded">tune</span>
+                    <div class="component-tags-carousel" data-ref="home-tags-carousel">
+                        <?php if ($isUserLoggedIn): ?>
+                            <button class="component-badge component-badge--interactive active" data-action="filterHomePersonal" data-filter="mine">
+                                <span class="material-symbols-rounded">person</span>
+                                <?php echo __('filter_home_mine'); ?>
+                            </button>
+                            <button class="component-badge component-badge--interactive" data-action="filterHomePersonal" data-filter="favorites">
+                                <span class="material-symbols-rounded">star</span>
+                                <?php echo __('filter_home_favorites'); ?>
+                            </button>
+                            <button class="component-badge component-badge--interactive" data-action="filterHomePersonal" data-filter="joined">
+                                <span class="material-symbols-rounded">group</span>
+                                <?php echo __('filter_home_joined'); ?>
+                            </button>
+                            <span class="component-tags-carousel-divider" aria-hidden="true"></span>
+                        <?php endif; ?>
+
+                        <button class="component-badge component-badge--interactive<?php echo $isUserLoggedIn ? '' : ' active'; ?>" data-action="filterHomeTag" data-tag="all">
+                            <span class="material-symbols-rounded">explore</span>
+                            <?php echo __('filter_all_canvases'); ?>
                         </button>
-                        
-                        <div class="component-module component-module--dropdown disabled" data-module="moduleHomeFilters">
-                            <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding active" data-ref="menuMainFilters">
-                                <div class="pill-container"><div class="drag-handle"></div></div>
-                                <div class="component-menu-header">
-                                    <div class="component-menu-header-box">
-                                        <span class="material-symbols-rounded">filter_list</span>
-                                        <span class="component-menu-header-title"><?php echo __('filter_search_title'); ?></span>
-                                    </div>
-                                </div>
-                                <div class="component-menu-list">
-                                    <div class="component-menu-link component-menu-link--bordered" data-action="openFilterSubMenu" data-target="menuFilterCategory">
-                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">category</span></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('filter_category'); ?></span></div>
-                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">chevron_right</span></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding disabled" data-ref="menuFilterCategory">
-                                <div class="pill-container"><div class="drag-handle"></div></div>
-                                <div class="component-menu-header">
-                                    <div class="component-menu-header-box">
-                                        <button class="component-button component-button--icon component-button--h30 component-button--back" data-action="backToMainFilters">
-                                            <span class="material-symbols-rounded">arrow_back</span>
-                                        </button>
-                                        <span class="component-menu-header-title"><?php echo __('filter_by_category'); ?></span>
-                                    </div>
-                                </div>
-                                <div class="component-menu-list component-menu-list--scrollable">
-                                    <div class="component-menu-link component-menu-link--bordered active" data-action="filterHomeCategory" data-filter="all">
-                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">dashboard</span></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('filter_home_all'); ?></span></div>
-                                    </div>
-                                    <div class="component-menu-link component-menu-link--bordered" data-action="filterHomeCategory" data-filter="mine">
-                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">person</span></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('filter_home_mine'); ?></span></div>
-                                    </div>
-                                    <div class="component-menu-link component-menu-link--bordered" data-action="filterHomeCategory" data-filter="joined">
-                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">group</span></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('filter_home_joined'); ?></span></div>
-                                    </div>
-                                    <div class="component-menu-link component-menu-link--bordered" data-action="filterHomeCategory" data-filter="managed">
-                                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">admin_panel_settings</span></div>
-                                        <div class="component-menu-link-text"><span><?php echo __('filter_home_managed'); ?></span></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <?php foreach ($tagsList as $tag => $icon): ?>
+                            <button class="component-badge component-badge--interactive" data-action="filterHomeTag" data-tag="<?php echo $tag; ?>">
+                                <span class="material-symbols-rounded"><?php echo $icon; ?></span>
+                                <?php echo __('tag_' . $tag); ?>
+                            </button>
+                        <?php endforeach; ?>
                     </div>
+
+                    <button class="component-tag-nav-btn component-tag-nav-right disabled" data-action="scrollTagsRight">
+                        <span class="material-symbols-rounded">chevron_right</span>
+                    </button>
                 </div>
-                <?php endif; ?>
             </div>
         </div>
 
-        <div class="component-bottom" data-ref="dynamic-content-area" data-initial-canvases="<?php echo $initialCanvasesJson; ?>">
+        <div class="component-bottom"
+             data-ref="dynamic-content-area"
+             data-initial-canvases="<?php echo $initialCanvasesJson; ?>"
+             data-initial-mode="<?php echo $initialMode; ?>"
+             data-initial-key="<?php echo $initialKey; ?>">
         </div>
     </div>
 </div>

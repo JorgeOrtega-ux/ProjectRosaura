@@ -107,7 +107,9 @@ if ($isMaintenanceActive && !$isPrivileged) {
     }
 
     if ($currentView !== 'system/message.php' && !$redirectUrl) {
-        if ($cleanPath === '/admin') {
+        if ($cleanPath === '/explore') {
+            $redirectUrl = APP_URL . '/';
+        } elseif ($cleanPath === '/admin') {
             $currentView = 'admin/dashboard.php';
             $redirectUrl = APP_URL . '/admin/dashboard';
         } elseif ($currentView === 'settings/index.php') {
@@ -129,17 +131,16 @@ if ($redirectUrl) {
 }
 
 $initialCanvasesJson = '[]';
-if (in_array($currentView, ['app/home.php', 'app/explore.php']) && class_exists('\App\Api\Services\Canvas\CanvasCoreService')) {
+if ($currentView === 'app/home.php' && class_exists('\App\Api\Services\Canvas\CanvasCoreService')) {
     try {
         global $container, $sessionManager;
         if ($container && $sessionManager) {
             $canvasServices = $container->get(\App\Api\Services\Canvas\CanvasCoreService::class);
             $userId = $isLoggedIn ? $sessionManager->getActiveAccountId() : null;
-            $res = null;
-            if ($currentView === 'app/explore.php') {
-                $res = $canvasServices->getHomeFeed($userId, 'all', 20, 0);
+            if ($userId) {
+                $res = $canvasServices->getMine($userId, 50, 'mine', 0);
             } else {
-                $res = $userId ? $canvasServices->getMine($userId, 50, 'all', 0) : $canvasServices->getHomeFeed(null, 'all', 20, 0);
+                $res = $canvasServices->getHomeFeed(null, 'all', 20, 0);
             }
             if ($res && isset($res['success']) && $res['success'] && isset($res['data'])) {
                 $initialCanvasesJson = htmlspecialchars(json_encode($res['data']), ENT_QUOTES, 'UTF-8');

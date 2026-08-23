@@ -3,12 +3,13 @@ import { ApiService } from '../../../core/api/ApiService.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
 import { CardTemplates } from '../../../core/components/CardTemplates.js';
 import { PromoService } from '../../../core/services/PromoCardService.js';
-import { 
-    appendInfiniteScrollSkeletons, 
-    removeInfiniteScrollSkeletons, 
-    renderSkeleton, 
-    renderVirtualGridItems, 
-    setupGridInfiniteScroll 
+import {
+    appendInfiniteScrollSkeletons,
+    initCarouselScroll,
+    removeInfiniteScrollSkeletons,
+    renderSkeleton,
+    renderVirtualGridItems,
+    setupGridInfiniteScroll
 } from '../../../core/utils/uiUtils.js';
 import { VirtualGridObserver } from '../../../core/utils/VirtualGridObserver.js';
 
@@ -18,94 +19,204 @@ class HomeController {
         this.basePath = window.AppBasePath || '';
         this.abortController = null;
         this.feedAbortController = null;
-        
+
         this.contentArea = null;
         this.cardInteractions = null;
-        
+
         this.currentOffset = 0;
         this.allCanvases = [];
         this.isLoadingMore = false;
         this.hasMore = true;
-        this.currentFilter = 'all';
+        this.currentViewMode = 'explore';
+        this.currentPersonalFilter = 'mine';
+        this.currentTag = 'all';
+        this.initialMode = null;
+        this.initialKey = null;
         this.observer = null;
         this.virtualObserver = null;
         this._filterThrottle = null;
-        
+
         this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
+        this.updateCarouselButtonsBound = this.updateCarouselButtons.bind(this);
     }
 
     init() {
         this.abortController = new AbortController();
         this.cardInteractions = new CanvasCardInteractions(this.api, this.basePath, this.abortController);
-        
+
         this.virtualObserver = new VirtualGridObserver((item) => {
             if (item && item.is_promo) {
                 return CardTemplates.promoCard(item, { basePath: this.basePath });
             }
             return CardTemplates.canvasCard(item, { basePath: this.basePath });
         });
-        
+
         this.bindEvents();
-        
+
         this.contentArea = document.querySelector('[data-ref="dynamic-content-area"]');
-        
-        const isGuest = !window.activeUserId;
-        if (isGuest && this.contentArea) {
-            this.contentArea.innerHTML = CardTemplates.emptyState({
-                type: 'canvas',
-                title: window.__('home_empty_guest_title'),
-                message: window.__('home_empty_guest_desc'),
-                actions: `
-                    <a class="component-button component-button--h40" data-nav="${this.basePath}/login">
-                        <span class="material-symbols-rounded">login</span>
-                        <span>${window.__('link_login')}</span>
-                    </a>
-                    <a class="component-button component-button--secondary component-button--h40" data-nav="${this.basePath}/explore">
-                        <span class="material-symbols-rounded">explore</span>
-                        <span>${window.__('btn_explore_canvases')}</span>
-                    </a>
-                `
-            });
-            this.reinitializeUI();
-            this.checkCheckoutSuccess();
-            return;
-        }
 
         if (this.contentArea) {
+            this.initialMode = this.contentArea.getAttribute('data-initial-mode');
+            this.initialKey = this.contentArea.getAttribute('data-initial-key');
+            this.contentArea.removeAttribute('data-initial-mode');
+            this.contentArea.removeAttribute('data-initial-key');
+
             const initialData = this.contentArea.getAttribute('data-initial-canvases');
             if (initialData) {
                 try {
                     window.initialHomeCanvases = JSON.parse(initialData);
                     this.contentArea.removeAttribute('data-initial-canvases');
-                } catch(e) {}
+                } catch (e) {}
             }
 
             if (!window.initialHomeCanvases) {
-                this.contentArea.innerHTML = '<div class="component-grid" data-ref="home-user-canvases"></div>';
+                this.contentArea.innerHTML = '<div class="component-grid" data-ref="home-canvases"></div>';
                 renderSkeleton(this.contentArea.querySelector('.component-grid'), 'homeCanvasGrid');
             }
         }
-        
+
+        this.syncSelectionFromDom();
         this.loadCanvases();
         this.checkCheckoutSuccess();
+        this.setupCarouselDrag();
     }
 
     destroy() {
         if (this.abortController) this.abortController.abort();
         if (this.feedAbortController) this.feedAbortController.abort();
         document.removeEventListener('click', this.handleGlobalClickBound);
+        const carousel = document.querySelector('[data-ref="home-tags-carousel"]');
+        if (carousel) {
+            carousel.removeEventListener('scroll', this.updateCarouselButtonsBound);
+        }
+        window.removeEventListener('resize', this.updateCarouselButtonsBound);
         if (this.observer) this.observer.disconnect();
         if (this.virtualObserver) this.virtualObserver.disconnect();
     }
 
     bindEvents() {
         document.addEventListener('click', this.handleGlobalClickBound);
+
+        const wrapper = document.querySelector('.component-tags-carousel-wrapper');
+        if (wrapper) {
+            initCarouselScroll(wrapper);
+        }
+    }
+
+    syncSelectionFromDom() {
+        const selection = this.getActiveSelection();
+        this.currentViewMode = selection.mode;
+        if (selection.mode === 'personal') {
+            this.currentPersonalFilter = selection.key;
+        } else {
+            this.currentTag = selection.key;
+        }
+    }
+
+    getActiveSelection() {
+        const active = document.querySelector('[data-ref="home-tags-carousel"] .component-badge.active');
+        if (!active) {
+            return { mode: 'explore', key: 'all' };
+        }
+        const action = active.getAttribute('data-action');
+        if (action === 'filterHomePersonal') {
+            return { mode: 'personal', key: active.getAttribute('data-filter') || 'mine' };
+        }
+        return { mode: 'explore', key: active.getAttribute('data-tag') || 'all' };
+    }
+
+    activateBadge(actionBtn) {
+        document.querySelectorAll('[data-ref="home-tags-carousel"] .component-badge').forEach(btn => btn.classList.remove('active'));
+        actionBtn.classList.add('active');
+        this.syncSelectionFromDom();
+    }
+
+    resetGridWithSkeleton() {
+        this.contentArea.innerHTML = '<div class="component-grid" data-ref="home-canvases"></div>';
+        renderSkeleton(this.contentArea.querySelector('.component-grid'), 'homeCanvasGrid');
+    }
+
+    scheduleReload() {
+        if (this._filterThrottle) clearTimeout(this._filterThrottle);
+        this._filterThrottle = setTimeout(() => {
+            this._filterThrottle = null;
+            this.loadCanvases();
+        }, 400);
+    }
+
+    updateCarouselButtons() {
+        const carousel = document.querySelector('[data-ref="home-tags-carousel"]');
+        const leftBtn = document.querySelector('.component-tag-nav-left');
+        const rightBtn = document.querySelector('.component-tag-nav-right');
+
+        if (!carousel || !leftBtn || !rightBtn) return;
+
+        if (carousel.scrollLeft > 0) {
+            leftBtn.classList.remove('disabled');
+        } else {
+            leftBtn.classList.add('disabled');
+        }
+
+        if (carousel.scrollWidth > carousel.clientWidth && Math.ceil(carousel.scrollLeft + carousel.clientWidth) < carousel.scrollWidth) {
+            rightBtn.classList.remove('disabled');
+        } else {
+            rightBtn.classList.add('disabled');
+        }
+    }
+
+    setupCarouselDrag() {
+        const carousel = document.querySelector('[data-ref="home-tags-carousel"]');
+        if (!carousel) return;
+
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+        let isDragging = false;
+
+        carousel.addEventListener('mousedown', (e) => {
+            isDown = true;
+            isDragging = false;
+            startX = e.pageX - carousel.offsetLeft;
+            scrollLeft = carousel.scrollLeft;
+        });
+
+        carousel.addEventListener('mouseleave', () => {
+            isDown = false;
+            carousel.classList.remove('is-dragging');
+        });
+
+        carousel.addEventListener('mouseup', () => {
+            isDown = false;
+            carousel.classList.remove('is-dragging');
+            setTimeout(() => { isDragging = false; }, 50);
+        });
+
+        carousel.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - carousel.offsetLeft;
+            const walk = (x - startX) * 2;
+            if (Math.abs(walk) > 5) {
+                isDragging = true;
+                carousel.classList.add('is-dragging');
+            }
+            if (isDragging) {
+                carousel.scrollLeft = scrollLeft - walk;
+            }
+        });
+
+        carousel.addEventListener('click', (e) => {
+            if (isDragging) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, { capture: true });
     }
 
     handleGlobalClick(e) {
         const actionBtn = e.target.closest('[data-action]');
         if (!actionBtn) return;
-        
+
         const action = actionBtn.getAttribute('data-action');
 
         if (action === 'reloadHome') {
@@ -114,46 +225,35 @@ class HomeController {
             return;
         }
 
-        if (action === 'filterHomeCategory') {
-            const selectedFilter = actionBtn.getAttribute('data-filter') || 'all';
-            
-            if (selectedFilter === this.currentFilter) return;
-            
-            const menu = actionBtn.closest('.component-menu-list');
-            if (menu) {
-                menu.querySelectorAll('.component-menu-link').forEach(btn => btn.classList.remove('active'));
-            }
-            actionBtn.classList.add('active');
+        if (action === 'filterHomePersonal') {
+            const selectedFilter = actionBtn.getAttribute('data-filter') || 'mine';
+            if (this.currentViewMode === 'personal' && this.currentPersonalFilter === selectedFilter) return;
 
-            const filterBtn = document.querySelector('[data-ref="btn-toggle-filters"]');
-            if (filterBtn) {
-                if (selectedFilter !== 'all') {
-                    filterBtn.classList.add('has-active-filter');
-                } else {
-                    filterBtn.classList.remove('has-active-filter');
-                }
-            }
+            this.activateBadge(actionBtn);
+            this.resetGridWithSkeleton();
+            this.scheduleReload();
+            return;
+        }
 
-            const moduleEl = actionBtn.closest('.component-module');
-            if (moduleEl) {
-                moduleEl.classList.add('disabled');
-                if (window.appInstance?.moduleManager?.resetToMainMenu) {
-                    window.appInstance.moduleManager.resetToMainMenu(moduleEl);
-                }
-            }
-            
-            this.currentFilter = selectedFilter;
-            
-            if (this.contentArea) {
-                this.contentArea.innerHTML = '<div class="component-grid" data-ref="home-user-canvases"></div>';
-                renderSkeleton(this.contentArea.querySelector('.component-grid'), 'homeCanvasGrid');
-            }
-            
-            if (this._filterThrottle) clearTimeout(this._filterThrottle);
-            this._filterThrottle = setTimeout(() => {
-                this._filterThrottle = null;
-                this.loadCanvases();
-            }, 300);
+        if (action === 'filterHomeTag') {
+            const selectedTag = actionBtn.getAttribute('data-tag') || 'all';
+            if (this.currentViewMode === 'explore' && this.currentTag === selectedTag) return;
+
+            this.activateBadge(actionBtn);
+            this.resetGridWithSkeleton();
+            this.scheduleReload();
+            return;
+        }
+
+        if (action === 'scrollTagsLeft') {
+            const carousel = document.querySelector('[data-ref="home-tags-carousel"]');
+            if (carousel) carousel.scrollBy({ left: -200, behavior: 'smooth' });
+            return;
+        }
+
+        if (action === 'scrollTagsRight') {
+            const carousel = document.querySelector('[data-ref="home-tags-carousel"]');
+            if (carousel) carousel.scrollBy({ left: 200, behavior: 'smooth' });
             return;
         }
 
@@ -171,15 +271,61 @@ class HomeController {
         }
     }
 
-    async loadCanvases(isLoadMore = false) {
-        if (!window.activeUserId) return;
+    canUseInitialData(isLoadMore) {
+        if (!window.initialHomeCanvases || isLoadMore) return false;
+        const selection = this.getActiveSelection();
+        return selection.mode === this.initialMode && selection.key === this.initialKey;
+    }
 
+    getPersonalEmptyState(filter) {
+        const createBtn = `
+            <a class="component-button component-button--h40" data-nav="${this.basePath}/canvases/create">
+                <span class="material-symbols-rounded">add</span>
+                <span>${window.__('btn_create_canvas')}</span>
+            </a>
+        `;
+        const exploreBtn = `
+            <button class="component-button component-button--secondary component-button--h40" data-action="filterHomeTag" data-tag="all">
+                <span class="material-symbols-rounded">explore</span>
+                <span>${window.__('btn_explore_canvases')}</span>
+            </button>
+        `;
+
+        if (filter === 'mine') {
+            return {
+                title: window.__('home_empty_mine_title'),
+                message: window.__('home_empty_mine_desc'),
+                actions: createBtn
+            };
+        }
+        if (filter === 'favorites') {
+            return {
+                title: window.__('home_empty_favorites_title'),
+                message: window.__('home_empty_favorites_desc'),
+                actions: exploreBtn
+            };
+        }
+        if (filter === 'joined') {
+            return {
+                title: window.__('home_empty_joined_title'),
+                message: window.__('home_empty_joined_desc'),
+                actions: exploreBtn
+            };
+        }
+        return {
+            title: window.__('home_empty_all_title'),
+            message: window.__('home_empty_all_desc'),
+            actions: `${createBtn}${exploreBtn}`
+        };
+    }
+
+    async loadCanvases(isLoadMore = false) {
         if (!isLoadMore) {
             if (this.feedAbortController) {
                 this.feedAbortController.abort();
             }
             this.feedAbortController = new AbortController();
-            
+
             this.currentOffset = 0;
             this.allCanvases = [];
             this.hasMore = true;
@@ -187,6 +333,9 @@ class HomeController {
         }
 
         if (!this.hasMore || this.isLoadingMore) return;
+
+        this.syncSelectionFromDom();
+        const isPersonal = this.currentViewMode === 'personal';
 
         this.isLoadingMore = true;
         if (isLoadMore && this.contentArea) {
@@ -196,20 +345,39 @@ class HomeController {
         let newCanvases = [];
         let isError = false;
         let res = null;
-        const limit = 50;
+        const limit = isPersonal ? 50 : 20;
 
-        if (window.initialHomeCanvases && this.currentFilter === 'all' && !isLoadMore) {
+        if (this.canUseInitialData(isLoadMore)) {
             newCanvases = window.initialHomeCanvases;
-            window.initialHomeCanvases = null; 
+            window.initialHomeCanvases = null;
+            this.initialMode = null;
+            this.initialKey = null;
         } else {
             const signal = this.feedAbortController ? this.feedAbortController.signal : this.abortController.signal;
-            res = await this.api.post(ApiRoutes.Canvases.GetMine, { limit: limit, offset: this.currentOffset, filter: this.currentFilter }, signal).catch(() => null);
-            
+
+            if (isPersonal) {
+                if (!window.activeUserId) {
+                    this.isLoadingMore = false;
+                    return;
+                }
+                res = await this.api.post(
+                    ApiRoutes.Canvases.GetMine,
+                    { limit, offset: this.currentOffset, filter: this.currentPersonalFilter },
+                    signal
+                ).catch(() => null);
+            } else {
+                res = await this.api.post(
+                    ApiRoutes.Canvases.GetHomeFeed,
+                    { limit, offset: this.currentOffset, tag: this.currentTag },
+                    signal
+                ).catch(() => null);
+            }
+
             if (signal.aborted) {
                 this.isLoadingMore = false;
                 return;
             }
-            
+
             if (res && res.success) {
                 newCanvases = res.data || [];
             } else {
@@ -220,63 +388,40 @@ class HomeController {
         removeInfiniteScrollSkeletons(this.contentArea);
 
         let finalItems = newCanvases;
+        if (!isPersonal) {
+            await PromoService.ensureLoaded();
+            finalItems = PromoService.injectFeedCards(newCanvases, this.currentOffset);
+        }
 
         if (finalItems.length > 0 || (this.allCanvases.length > 0 && isLoadMore)) {
-            renderVirtualGridItems(this.contentArea, isLoadMore ? finalItems : (this.allCanvases.length ? this.allCanvases.concat(finalItems) : finalItems), this.virtualObserver, isLoadMore, 'home-user-canvases');
+            renderVirtualGridItems(
+                this.contentArea,
+                isLoadMore ? finalItems : (this.allCanvases.length ? this.allCanvases.concat(finalItems) : finalItems),
+                this.virtualObserver,
+                isLoadMore,
+                'home-canvases'
+            );
             this.allCanvases = this.allCanvases.concat(finalItems);
         } else if (isError && !isLoadMore) {
             this.showError(this.contentArea, (res && res.message) ? res.message : window.__('err_load_canvases'));
         } else if (!isLoadMore) {
-            let emptyTitle = window.__('home_empty_all_title');
-            let emptyDesc = window.__('home_empty_all_desc');
-            let emptyActions = `
-                <a class="component-button component-button--h40" data-nav="${this.basePath}/canvases/create">
-                    <span class="material-symbols-rounded">add</span>
-                    <span>${window.__('btn_create_canvas')}</span>
-                </a>
-                <a class="component-button component-button--secondary component-button--h40" data-nav="${this.basePath}/explore">
-                    <span class="material-symbols-rounded">explore</span>
-                    <span>${window.__('btn_explore_canvases')}</span>
-                </a>
-            `;
-
-            if (this.currentFilter === 'mine') {
-                emptyTitle = window.__('home_empty_mine_title');
-                emptyDesc = window.__('home_empty_mine_desc');
-                emptyActions = `
-                    <a class="component-button component-button--h40" data-nav="${this.basePath}/canvases/create">
-                        <span class="material-symbols-rounded">add</span>
-                        <span>${window.__('btn_create_canvas')}</span>
-                    </a>
-                `;
-            } else if (this.currentFilter === 'joined') {
-                emptyTitle = window.__('home_empty_joined_title');
-                emptyDesc = window.__('home_empty_joined_desc');
-                emptyActions = `
-                    <a class="component-button component-button--secondary component-button--h40" data-nav="${this.basePath}/explore">
-                        <span class="material-symbols-rounded">explore</span>
-                        <span>${window.__('btn_explore_canvases')}</span>
-                    </a>
-                `;
-            } else if (this.currentFilter === 'managed') {
-                emptyTitle = window.__('home_empty_managed_title');
-                emptyDesc = window.__('home_empty_managed_desc');
-                emptyActions = `
-                    <a class="component-button component-button--secondary component-button--h40" data-nav="${this.basePath}/explore">
-                        <span class="material-symbols-rounded">explore</span>
-                        <span>${window.__('btn_explore_canvases')}</span>
-                    </a>
-                `;
+            if (isPersonal) {
+                const empty = this.getPersonalEmptyState(this.currentPersonalFilter);
+                this.contentArea.innerHTML = CardTemplates.emptyState({
+                    type: 'canvas',
+                    title: empty.title,
+                    message: empty.message,
+                    actions: empty.actions
+                });
+            } else {
+                this.contentArea.innerHTML = CardTemplates.emptyState({
+                    type: 'explore',
+                    title: window.__('explore_empty_title'),
+                    message: window.__('explore_empty_desc')
+                });
             }
-
-            this.contentArea.innerHTML = CardTemplates.emptyState({
-                type: 'canvas',
-                title: emptyTitle,
-                message: emptyDesc,
-                actions: emptyActions
-            });
         }
-        
+
         if (newCanvases.length < limit) {
             this.hasMore = false;
         }
@@ -301,11 +446,15 @@ class HomeController {
     reinitializeUI() {
         if (!this.contentArea) return;
         const grid = this.contentArea.querySelector('.component-grid');
-        if (!grid) return; 
-        
+        if (!grid) return;
+
         if (window.app && typeof window.app.initModules === 'function') window.app.initModules(grid);
-        
+
         if (window.router && typeof window.router.bindLinks === 'function') window.router.bindLinks(grid);
+
+        if (this.currentViewMode === 'explore') {
+            PromoService.initCardInteractions(this.contentArea);
+        }
     }
 
     async checkCheckoutSuccess() {
