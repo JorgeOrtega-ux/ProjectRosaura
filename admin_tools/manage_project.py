@@ -261,8 +261,8 @@ def generate_svg_icons(target_path):
             "  width: 1em;",
             "  height: 1em;",
             "  background-color: currentColor;",
-            "  -webkit-mask-image: url('../icons/sprite.svg');",
-            "  mask-image: url('../icons/sprite.svg');",
+            "  -webkit-mask-image: url('../../icons/sprite.svg');",
+            "  mask-image: url('../../icons/sprite.svg');",
             f"  -webkit-mask-size: {COLS * 100}% {ROWS * 100}%;",
             f"  mask-size: {COLS * 100}% {ROWS * 100}%;",
             "  -webkit-mask-repeat: no-repeat;",
@@ -296,11 +296,12 @@ def generate_svg_icons(target_path):
         public_dir = os.path.join(target_path, 'public')
         icons_dir = os.path.join(public_dir, 'assets', 'icons')
         css_dir = os.path.join(public_dir, 'assets', 'css')
+        base_css_dir = os.path.join(css_dir, 'base')
         os.makedirs(icons_dir, exist_ok=True)
-        os.makedirs(css_dir, exist_ok=True)
+        os.makedirs(base_css_dir, exist_ok=True)
 
         sprite_path = os.path.join(icons_dir, 'sprite.svg')
-        css_path = os.path.join(css_dir, 'icons.css')
+        css_path = os.path.join(base_css_dir, 'icons.css')
 
         with open(sprite_path, 'w', encoding='utf-8') as f:
             f.write("\n".join(svg_content))

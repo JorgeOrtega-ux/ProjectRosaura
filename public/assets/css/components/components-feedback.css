@@ -1,0 +1,975 @@
+/* ==========================================================================
+   COMPONENTS: Feedback, Spinners, Loaders, Skeletons, Alerts & Toasts
+   ========================================================================== */
+
+.component-spinner--sm {
+    width: 16px;
+    height: 16px;
+}
+.component-spinner--xs {
+    width: 14px;
+    height: 14px;
+}
+.component-button--h36 .component-spinner,
+.component-button--h34 .component-spinner,
+.component-button--h32 .component-spinner {
+    width: 16px;
+    height: 16px;
+}
+.component-button--h30 .component-spinner {
+    width: 14px;
+    height: 14px;
+}
+.component-button .component-spinner {
+    max-width: 50%;
+    max-height: 50%;
+    aspect-ratio: 1;
+}
+.component-loader-center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 200px;
+}
+.component-loader-center.disabled {
+    display: none;
+}
+.component-message-layout {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-height: calc(100vh - 120px);
+    padding: 24px;
+}
+.component-message-box {
+    width: 500px;
+    height: 350px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background-color: transparent;
+    border: none;
+}
+.component-message-icon-wrapper {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.component-message-icon {
+    font-size: 2.5rem;
+    color: var(--color-error);
+}
+.component-message-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--color-error);
+    margin-bottom: 12px;
+}
+.component-message-desc {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    margin: 0;
+}
+.component-button--processing>*:not(.component-spinner) {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+.component-button--processing .component-spinner {
+    position: absolute !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin: auto !important;
+}
+.google-verify-badge .component-spinner {
+    width: 13px !important;
+    height: 13px !important;
+    border-width: 2px !important;
+}
+.component-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 9999;
+    pointer-events: none;
+}
+.component-toast-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 280px;
+    max-width: 350px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    background-color: var(--text-primary);
+    box-shadow: var(--shadow-card);
+    pointer-events: auto;
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.95);
+    transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.component-toast-item.active {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+}
+.component-toast-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.component-toast-icon .material-symbols-rounded {
+    font-size: 1.1rem;
+    color: var(--bg-surface);
+}
+.component-toast-text {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--bg-surface);
+}
+.component-alert-error {
+    background-color: var(--color-error-bg);
+    border: 1px solid var(--color-error);
+    color: var(--color-error);
+
+}
+.component-alert-error,
+.component-alert-success {
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    text-align: center;
+    display: none;
+    width: 100%;
+}
+.component-alert-error.active {
+    display: flex;
+}
+.component-alert-success {
+    background-color: var(--color-success-bg);
+    border: 1px solid var(--color-success);
+    color: var(--color-success);
+}
+.component-alert-success.active {
+    display: block;
+}
+.component-alert {
+    display: none;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    gap: 8px;
+    width: 100%;
+}
+.component-alert.active {
+    display: flex;
+}
+.component-alert.disabled {
+    display: none;
+}
+.component-alert-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.component-alert-icon .material-symbols-rounded {
+    font-size: 1rem;
+}
+.component-alert-text {
+    flex: 1;
+    text-align: left;
+    line-height: 1.4;
+}
+.component-alert--info {
+    background-color: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    color: var(--color-info, #3b82f6);
+}
+.component-alert--warning {
+    background-color: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    color: var(--color-info, #f59e0b);
+}
+.component-alert--error {
+    background-color: var(--color-error-bg);
+    border: 1px solid var(--color-error);
+    color: var(--color-error);
+}
+.component-alert--success {
+    background-color: var(--color-success-bg);
+    border: 1px solid var(--color-success);
+    color: var(--color-success);
+}
+.component-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--action-primary);
+    border-radius: 50%;
+    animation: component-spin 0.8s linear infinite;
+    box-sizing: border-box;
+}
+.component-spinner--sm {
+    width: 16px;
+    height: 16px;
+}
+.component-spinner--xs {
+    width: 14px;
+    height: 14px;
+}
+.component-spinner--lg {
+    width: 28px;
+    height: 28px;
+}
+.component-spinner--centered {
+    margin: 0 auto;
+    display: block;
+}
+.component-badge .component-spinner {
+    width: 14px;
+    height: 14px;
+}
+.component-badge--sm .component-spinner {
+    width: 12px;
+    height: 12px;
+}
+.component-button--h36 .component-spinner,
+.component-button--h34 .component-spinner,
+.component-button--h32 .component-spinner {
+    width: 16px;
+    height: 16px;
+}
+.component-button--h30 .component-spinner {
+    width: 14px;
+    height: 14px;
+}
+.component-button--primary .component-spinner,
+.component-badge--dark .component-spinner {
+    border-color: rgba(255, 255, 255, 0.3);
+    border-top-color: var(--text-inverse, #ffffff);
+}
+@media (max-width: 600px) {
+    .component-group-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .component-state-box.active {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .component-edit-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .component-edit-row .component-input-group {
+        flex: none;
+        width: 100%;
+    }
+
+    .component-card__actions {
+        margin-top: 8px;
+    }
+
+    .component-group-item--stacked .component-card__actions,
+    .component-edit-row .component-card__actions {
+        margin-top: 0;
+    }
+
+    .component-card__actions--stretch {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+    }
+
+    .component-card__actions--stretch .component-button {
+        flex: 1;
+        width: auto;
+    }
+
+    .component-card__actions--start {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start;
+    }
+
+    .component-card__actions--end {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-end;
+    }
+
+    .component-card__actions--end .component-button {
+        width: 100%;
+    }
+
+    .component-toast {
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+        align-items: center;
+    }
+
+    .component-toast-item {
+        width: 100%;
+        max-width: 100%;
+    }
+}
+/* Backgrounds for skeletons */
+@keyframes loadingSkeleton {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+.component-loader-center--compact {
+    min-height: 100px;
+    padding: 20px;
+}
+.component-library-card:not(.component-skeleton):hover,
+.component-library-card.active:not(.component-skeleton) {
+    box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--action-primary), inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+    transform: scale(0.82);
+}
+.component-library-card.component-skeleton {
+    cursor: default;
+}
+.component-skeleton {
+    background-color: var(--sk-bg-light);
+    position: relative;
+    overflow: hidden;
+    border-radius: 6px;
+    border: none;
+    width: 100%;
+}
+html[data-theme="dark"] .component-skeleton,
+html.dark-theme .component-skeleton {
+    background-color: var(--sk-bg-dark);
+}
+.component-skeleton::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background-image: var(--sk-shimmer-light);
+    animation: sk-shimmer 1.5s infinite;
+}
+html[data-theme="dark"] .component-skeleton::after,
+html.dark-theme .component-skeleton::after {
+    background-image: var(--sk-shimmer-dark);
+}
+.component-skeleton--avatar {
+    border-radius: 50%;
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+}
+.component-skeleton--avatar-chat {
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+}
+.component-skeleton--avatar-sm {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+}
+.component-top-title.component-skeleton,
+.component-skeleton--title {
+    height: 24px;
+    width: 140px;
+    border-radius: 6px;
+    display: inline-block;
+}
+.component-skeleton--text {
+    height: 14px;
+    width: 100%;
+    border-radius: 4px;
+}
+.component-skeleton--text-short {
+    height: 14px;
+    width: 30%;
+    border-radius: 4px;
+}
+.component-skeleton--text-medium {
+    height: 14px;
+    width: 60%;
+    border-radius: 4px;
+}
+.component-skeleton--button {
+    height: 40px;
+    width: 120px;
+    border-radius: 8px;
+}
+.component-skeleton--button-full {
+    height: 40px;
+    width: 100%;
+    border-radius: 8px;
+}
+.component-skeleton--card {
+    height: 180px;
+    width: 100%;
+    border-radius: 12px;
+}
+.component-skeleton--h14 {
+    height: 14px;
+}
+.component-skeleton--h16 {
+    height: 16px;
+}
+.component-skeleton--h20 {
+    height: 20px;
+}
+.component-skeleton--h24 {
+    height: 24px;
+}
+.component-skeleton--h34 {
+    height: 34px;
+}
+.component-skeleton--h40 {
+    height: 40px;
+}
+.component-skeleton--h45 {
+    height: 45px;
+}
+.component-skeleton--h100 {
+    height: 100px;
+}
+.component-skeleton--centered {
+    margin-left: auto;
+    margin-right: auto;
+}
+.component-skeleton--h16,
+.component-skeleton--badge {
+    border-radius: 9999px;
+    height: 16px;
+}
+.component-skeleton--w40 {
+    width: 40px;
+}
+.component-skeleton--w70 {
+    width: 70px;
+}
+.component-skeleton--w80 {
+    width: 80px;
+}
+.component-skeleton--w90 {
+    width: 90px;
+}
+.component-skeleton--w100 {
+    width: 100px;
+}
+.component-skeleton--w110 {
+    width: 110px;
+}
+.component-skeleton--w140 {
+    width: 140px;
+}
+.component-skeleton--btn-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+}
+.component-skeleton--control,
+.component-skeleton--pagination {
+    width: 100px;
+    height: 40px;
+    border-radius: 10px;
+    display: inline-block;
+}
+/* Skeleton Header Centered Modifier */
+.component-skeleton-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+/* Skeleton Element Sizing Modifiers */
+.component-skeleton--header-title {
+    width: 220px;
+    height: 22px;
+}
+.component-skeleton--header-desc {
+    width: 55%;
+    height: 14px;
+}
+.component-skeleton--title-sm {
+    width: 140px;
+    height: 16px;
+    margin-bottom: 6px;
+}
+.component-skeleton--desc-sm {
+    width: 230px;
+    height: 12px;
+}
+.component-skeleton--title-md {
+    width: 170px;
+    height: 16px;
+    margin-bottom: 6px;
+}
+.component-skeleton--desc-md {
+    width: 280px;
+    height: 12px;
+}
+.component-skeleton--title-xs {
+    width: 130px;
+    height: 16px;
+    margin-bottom: 6px;
+}
+.component-skeleton--desc-xs {
+    width: 210px;
+    height: 12px;
+}
+.component-skeleton--icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.component-skeleton--btn-sm {
+    width: 100px;
+    height: 34px;
+    border-radius: 8px;
+}
+.component-skeleton--btn-md {
+    width: 110px;
+    height: 34px;
+    border-radius: 8px;
+}
+.component-skeleton--btn-xs {
+    width: 90px;
+    height: 34px;
+    border-radius: 8px;
+}
+.component-skeleton--pill-badge {
+    width: 70px;
+    height: 24px;
+    border-radius: 9999px;
+}
+.component-skeleton--btn-square {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+}
+.component-skeleton--label-sm {
+    width: 110px;
+    height: 14px;
+    margin-bottom: 6px;
+}
+.component-skeleton--label-md {
+    width: 140px;
+    height: 14px;
+    margin-bottom: 6px;
+}
+.component-skeleton--input-box {
+    width: 100%;
+    height: 40px;
+    border-radius: 8px;
+}
+.component-skeleton-card {
+    pointer-events: none;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 200px;
+}
+.component-skeleton-card__img {
+    height: 135px;
+    width: 100%;
+    border-radius: 0;
+}
+.component-skeleton-card__body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    justify-content: center;
+}
+/* Dashboard & Analytics Skeletons */
+.component-skeleton-stat-card {
+    height: 72px;
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-surface);
+}
+.component-skeleton-charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+    width: 100%;
+}
+.component-skeleton-chart-box {
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-surface);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.component-skeleton-chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+.component-skeleton-chart-body {
+    height: 200px;
+    width: 100%;
+    border-radius: 8px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    padding: 16px 20px;
+    gap: 12px;
+    background-color: rgba(0, 0, 0, 0.03);
+}
+html[data-theme="dark"] .component-skeleton-chart-body,
+html.dark-theme .component-skeleton-chart-body {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+.component-skeleton-chart-body--horizontal {
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    padding: 16px 20px;
+    gap: 12px;
+}
+.component-skeleton-chart-bar {
+    width: 100%;
+    max-width: 36px;
+    border-radius: 6px 6px 0 0;
+}
+.component-skeleton-chart-bar--h40 {
+    height: 40%;
+}
+.component-skeleton-chart-bar--h45 {
+    height: 45%;
+}
+.component-skeleton-chart-bar--h55 {
+    height: 55%;
+}
+.component-skeleton-chart-bar--h60 {
+    height: 60%;
+}
+.component-skeleton-chart-bar--h70 {
+    height: 70%;
+}
+.component-skeleton-chart-bar--h80 {
+    height: 80%;
+}
+.component-skeleton-chart-bar--h85 {
+    height: 85%;
+}
+.component-skeleton-chart-bar--h95 {
+    height: 95%;
+}
+/* Auth Card Skeleton */
+.component-skeleton-auth-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+    min-height: 80vh;
+}
+.component-skeleton-auth-card {
+    max-width: 420px;
+    width: 100%;
+    padding: 32px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+/* Policy Document Skeleton */
+.component-skeleton-policy-block {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px 0;
+}
+/* Design Canvas Skeleton */
+.component-skeleton-design-bottom {
+    position: relative;
+    flex: 1;
+    min-height: 70vh;
+    display: flex;
+    overflow: hidden;
+    background-color: var(--bg-app, #f5f5f5);
+}
+html[data-theme="dark"] .component-skeleton-design-bottom,
+html.dark-theme .component-skeleton-design-bottom {
+    background-color: var(--bg-app, #1a1a1a);
+}
+.component-skeleton-design-bottom canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    inset: 0;
+}
+.component-skeleton-design-badges {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    z-index: 1;
+}
+.component-skeleton-design-pill {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+}
+.ui-skeleton-loader {
+    position: relative;
+    background-color: var(--sk-bg-dark);
+    transition: background-color 0.3s ease;
+}
+.ui-skeleton-loader::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background-image: linear-gradient(90deg, rgba(255, 255, 255, 0) 0, rgba(255, 255, 255, 0.05) 20%, rgba(255, 255, 255, 0.1) 60%, rgba(255, 255, 255, 0));
+    animation: sk-shimmer 2s infinite;
+    z-index: 1;
+    pointer-events: none;
+}
+.ui-skeleton-loader img {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 2;
+    position: relative;
+}
+.ui-skeleton-loader.is-loaded {
+    background-color: transparent;
+}
+.ui-skeleton-loader.is-loaded::after {
+    display: none;
+}
+.ui-skeleton-loader.is-loaded img {
+    opacity: 1;
+}
+/* Skeleton and Loader Components */
+.component-skeleton--card {
+    width: 100%;
+    height: 180px;
+    border-radius: 12px;
+}
+.component-loader-center--chat {
+    justify-content: flex-end;
+    padding: 16px;
+    background: transparent;
+    height: 100%;
+}
+.notice-container-root {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+}
+.notice-container {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px;
+}
+.notice-container--bottom-left {
+    bottom: 0;
+    left: 0;
+    align-items: flex-start;
+}
+.notice-container--bottom-right {
+    bottom: 0;
+    right: 0;
+    align-items: flex-end;
+}
+.notice-container--top-left {
+    top: 0;
+    left: 0;
+    align-items: flex-start;
+}
+.notice-container--top-right {
+    top: 0;
+    right: 0;
+    align-items: flex-end;
+}
+.notice-container--bottom-center {
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    align-items: center;
+    width: 100%;
+}
+.component-notice-box {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    position: relative;
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow: hidden;
+}
+.component-notice-box.active {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+.component-notice-box--promo {
+    width: 425px;
+    padding: 24px;
+}
+.component-notice-box--banner {
+    width: 100%;
+    max-width: 800px;
+    padding: 24px;
+}
+.component-notice-close-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+.component-notice-close-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-main);
+}
+.component-notice-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.component-notice-header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+}
+.component-notice-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+.component-notice-actions--left {
+    justify-content: flex-start;
+}
+.component-notice-actions--right {
+    justify-content: flex-end;
+}
+.component-notice-banner-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.component-notice-banner-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+@media (max-width: 768px) {
+    .notice-container {
+        padding: 0;
+        /* No padding on mobile container */
+    }
+
+    .notice-container--bottom-left,
+    .notice-container--bottom-right,
+    .notice-container--bottom-center {
+        left: 0;
+        right: 0;
+        transform: none;
+        width: 100%;
+        align-items: stretch;
+    }
+
+    .component-notice-box {
+        width: 100% !important;
+        max-width: none !important;
+        border-radius: 0;
+        /* Remove radius on mobile */
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+    }
+
+    .component-notice-actions,
+    .component-notice-banner-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .component-notice-actions .component-button,
+    .component-notice-banner-actions .component-button {
+        width: 100%;
+    }
+}
+.component-details-header-skeleton.disabled {
+    display: none !important;
+}
+.component-details-header-skeleton {
+    margin: 4px 0;
+}

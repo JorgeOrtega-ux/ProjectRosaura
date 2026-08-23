@@ -302,7 +302,7 @@ Todos los menús desplegables del proyecto siguen una arquitectura unificada ges
 > 
 > **Solución de Estilos Implementada:**
 > Para resolver esto sin hacks ni pseudoelementos `::after`, eliminamos `display: flex; flex-direction: column;` de los contenedores de scroll principales:
-> - **`.general-content-scrolleable`** (en [styles.css](file:///f:/htdocs/ProjectRosaura/public/assets/css/styles.css))
-> - **`.component-viewport`** (en [components.css](file:///f:/htdocs/ProjectRosaura/public/assets/css/components/components.css))
+> - **`.general-content-scrolleable`** (en [styles.css](file:///f:/htdocs/ProjectRosaura/public/assets/css/base/styles.css))
+> - **`.component-viewport`** (en [components-layout.css](file:///f:/htdocs/ProjectRosaura/public/assets/css/components/components-layout.css))
 > 
 > Al comportarse ahora como contenedores de bloque normales (`display: block` implícito por ser `div`s), el motor de renderizado del navegador calcula la altura del scroll en base al flujo estándar de bloques, respetando de forma nativa los paddings inferiores de todos los hijos en todas las vistas de la web de manera limpia y global.

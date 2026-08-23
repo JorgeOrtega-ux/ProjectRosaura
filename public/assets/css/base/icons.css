@@ -5,8 +5,8 @@
   width: 1em;
   height: 1em;
   background-color: currentColor;
-  -webkit-mask-image: url('../icons/sprite.svg');
-  mask-image: url('../icons/sprite.svg');
+  -webkit-mask-image: url('../../icons/sprite.svg');
+  mask-image: url('../../icons/sprite.svg');
   -webkit-mask-size: 1000% 4500%;
   mask-size: 1000% 4500%;
   -webkit-mask-repeat: no-repeat;

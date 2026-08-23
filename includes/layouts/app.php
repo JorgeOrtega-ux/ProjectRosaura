@@ -230,9 +230,8 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
     ?>
     <base href="<?php echo $appPath; ?>/">
     <meta name="csrf-token" content="<?php echo htmlspecialchars($csrfToken ?? '', ENT_QUOTES, 'UTF-8'); ?>">
-    
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/icons.css?v=<?php echo file_exists(ROOT_PATH . '/public/assets/css/icons.css') ? filemtime(ROOT_PATH . '/public/assets/css/icons.css') : '1.0'; ?>">
+     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/base/icons.css?v=<?php echo file_exists(ROOT_PATH . '/public/assets/css/base/icons.css') ? filemtime(ROOT_PATH . '/public/assets/css/base/icons.css') : '1.0'; ?>">
     <script>
         (function() {
             function applyIcon(el) {
@@ -268,15 +267,15 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
             });
             iconObserver.observe(document.documentElement, { 
                 childList: true, 
-                subtree: true,
+                subtree: true, 
                 characterData: true 
             });
         })();
     </script>
     
-    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/styles.css?v=<?php echo filemtime(dirname(__DIR__, 2) . '/public/assets/css/styles.css'); ?>">
+    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/base/styles.css?v=<?php echo filemtime(dirname(__DIR__, 2) . '/public/assets/css/base/styles.css'); ?>">
     <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/components/components.css?v=<?php echo filemtime(dirname(__DIR__, 2) . '/public/assets/css/components/components.css'); ?>">
-    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/root.css?v=<?php echo filemtime(dirname(__DIR__, 2) . '/public/assets/css/root.css'); ?>">
+    <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/base/root.css?v=<?php echo filemtime(dirname(__DIR__, 2) . '/public/assets/css/base/root.css'); ?>">
     <title><?php echo htmlspecialchars($initialTitle); ?></title>
     
     <?php if (!empty(\App\Core\Helpers\EnvLoader::get('TURNSTILE_SITE_KEY', ''))): ?>
