@@ -136,7 +136,7 @@ services:
       - TYPESENSE_DATA_DIR=/data
       - TYPESENSE_API_KEY=${TYPESENSE_API_KEY}
     ports:
-      - "8108:8108"
+      - "127.0.0.1:8108:8108"
     volumes:
       - typesense_data:/data
     networks:
@@ -282,8 +282,8 @@ services:
       exec /usr/bin/docker-entrypoint.sh minio server /data --console-address ':9001'
       "
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
     volumes:
       - minio_data:/data
     networks:
@@ -294,7 +294,7 @@ services:
     container_name: rosaura_db_cassandra
     restart: always
     ports:
-      - "9042:9042"
+      - "127.0.0.1:9042:9042"
     volumes:
       - cassandra_data:/var/lib/cassandra
     networks:

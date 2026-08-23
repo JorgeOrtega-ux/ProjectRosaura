@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ==========================================
   # SERVICIOS DE DATOS BASE
@@ -15,7 +13,7 @@ services:
       MYSQL_PASSWORD: ${DB_PASS}
       TZ: ${APP_TIMEZONE:-UTC}
     ports:
-      - "3306:3306" # Expuesto para que los VPS 2 y 3 puedan conectarse (Asegurar con Firewall/VPC)
+      - "${DATA_BIND_IP:-127.0.0.1}:3306:3306"
     volumes:
       - db_data:/var/lib/mysql
       - ../docker/mysql/init:/docker-entrypoint-initdb.d 
@@ -37,7 +35,7 @@ services:
     env_file:
       - ../.env
     ports:
-      - "6379:6379" # Expuesto para App Nodes (Sesiones y Caché)
+      - "${DATA_BIND_IP:-127.0.0.1}:6379:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -56,7 +54,7 @@ services:
       - TYPESENSE_DATA_DIR=/data
       - TYPESENSE_API_KEY=${TYPESENSE_API_KEY}
     ports:
-      - "8108:8108" # Expuesto para App Nodes y Frontend
+      - "${DATA_BIND_IP:-127.0.0.1}:8108:8108"
     volumes:
       - typesense_data:/data
     networks:
@@ -70,8 +68,8 @@ services:
     container_name: rosaura_minio
     restart: always
     ports:
-      - "9000:9000" # API (Donde los App Nodes guardan/leen archivos)
-      - "9001:9001" # Consola Web de Administración
+      - "${DATA_BIND_IP:-127.0.0.1}:9000:9000" 
+      - "${DATA_BIND_IP:-127.0.0.1}:9001:9001" 
     environment:
       MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:-admin}
       MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY:-password}
@@ -91,110 +89,14 @@ services:
       - rosaura_data_network
 
   # ==========================================
-  # SERVIDOR WEBSOCKET
+  # SERVIDOR CASSANDRA (NoSQL)
   # ==========================================
-  websocket_server:
-    build:
-      context: ../
-      dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_websocket_server
-    restart: always
-    command: python -u scripts/websocket_server.py
-    volumes:
-      - ../:/app
-    ports:
-      - "${WS_PORT:-8765}:${WS_PORT:-8765}"
-    depends_on:
-      redis:
-        condition: service_healthy
-    env_file:
-      - ../.env
-    environment:
-      - TZ=${APP_TIMEZONE:-UTC}
-      - REDIS_HOST=redis
-    networks:
-      - rosaura_data_network
-
-  # ==========================================
-  # ==========================================
-  worker_backups:
-    build:
-      context: ../
-      dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_backups
-    restart: always
-    command: python -u scripts/workers/worker_backups.py
-    volumes:
-      - ../:/app
-    depends_on:
-      db:
-        condition: service_healthy
-      db_cassandra:
-        condition: service_healthy
-    env_file:
-      - ../.env
-    networks:
-      - rosaura_data_network
-
-  worker_system_tasks:
-    build:
-      context: ../
-      dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_system_tasks
-    restart: always
-    command: python -u scripts/workers/worker_system_tasks.py
-    volumes:
-      - ../:/app
-    depends_on:
-      db:
-        condition: service_healthy
-    env_file:
-      - ../.env
-    networks:
-      - rosaura_data_network
-
-  worker_persistence:
-    build:
-      context: ../
-      dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_persistence
-    restart: always
-    command: python -u scripts/workers/worker_persistence.py
-    volumes:
-      - ../:/app
-    depends_on:
-      db:
-        condition: service_healthy
-      db_cassandra:
-        condition: service_healthy
-    env_file:
-      - ../.env
-    networks:
-      - rosaura_data_network
-
-  worker_canvas_jobs:
-    build:
-      context: ../
-      dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_canvas_jobs
-    restart: always
-    command: python -u scripts/workers/worker_canvas_jobs.py
-    volumes:
-      - ../:/app
-    depends_on:
-      db:
-        condition: service_healthy
-    env_file:
-      - ../.env
-    networks:
-      - rosaura_data_network
-
   db_cassandra:
     image: cassandra:4.1
     container_name: rosaura_db_cassandra
     restart: always
     ports:
-      - "9042:9042"
+      - "${DATA_BIND_IP:-127.0.0.1}:9042:9042"
     volumes:
       - cassandra_data:/var/lib/cassandra
     networks:

@@ -24,6 +24,7 @@ class DatabaseManager {
         }
 
         $host = $_ENV['DB_HOST'];
+        $port = $_ENV['DB_PORT'] ?? 3306;
         $user = $_ENV['DB_USER'];
         $pass = $_ENV['DB_PASS']; 
         
@@ -34,14 +35,14 @@ class DatabaseManager {
             throw new Exception('err_db_name_missing');
         }
 
-        $connectionKey = $host . '_' . $dbname;
+        $connectionKey = $host . ':' . $port . '_' . $dbname;
 
         if (isset(self::$connections[$connectionKey])) {
             return self::$connections[$connectionKey];
         }
 
         try {
-            $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass);
+            $pdo = new PDO("mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4", $user, $pass);
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
             
@@ -69,17 +70,18 @@ class DatabaseManager {
         }
 
         $host = $_ENV['DB_HOST'];
+        $port = $_ENV['DB_PORT'] ?? 3306;
         $user = $_ENV['DB_USER'];
         $pass = $_ENV['DB_PASS'];
         
-        $connectionKey = $host . '_global';
+        $connectionKey = $host . ':' . $port . '_global';
 
         if (isset(self::$connections[$connectionKey])) {
             return self::$connections[$connectionKey];
         }
 
         try {
-            $pdo = new PDO("mysql:host=$host;charset=utf8mb4", $user, $pass);
+            $pdo = new PDO("mysql:host=$host;port=$port;charset=utf8mb4", $user, $pass);
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
             

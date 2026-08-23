@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     build:
@@ -8,19 +6,34 @@ services:
     container_name: rosaura_app
     restart: always
     ports:
-      - "80:80"
+      - "${APP_BIND_IP:-127.0.0.1}:80:80"
     volumes:
       - ../:/var/www/html
     env_file:
       - ../.env
     environment:
       - TZ=${APP_TIMEZONE:-UTC}
-      # Estas variables deben apuntar a la IP PRIVADA del VPS 4
-      - DB_HOST=${DB_HOST_PROD} 
-      - REDIS_HOST=${REDIS_HOST_PROD}
-      - TYPESENSE_HOST=${TYPESENSE_HOST_PROD}
+      - DB_HOST=${DB_HOST} 
+      - REDIS_HOST=${REDIS_HOST}
+      - TYPESENSE_HOST=${TYPESENSE_HOST}
       - AWS_ENDPOINT=${AWS_ENDPOINT}
       - SESSION_DRIVER=redis
+    networks:
+      - rosaura_app_network
+
+  go_service:
+    build:
+      context: ../docker/go
+      dockerfile: Dockerfile
+    container_name: rosaura_go_service
+    restart: always
+    ports:
+      - "${APP_BIND_IP:-127.0.0.1}:8080:8080"
+    env_file:
+      - ../.env
+    environment:
+      - TZ=${APP_TIMEZONE:-UTC}
+      - REDIS_HOST=${REDIS_HOST}
     networks:
       - rosaura_app_network
 
