@@ -3750,7 +3750,7 @@ export const DesignInteractions = {
             this.ownerEraserStep = 0;
             this.ownerEraserStart = null;
             if (btnEraser) btnEraser.classList.add('active');
-            if (typeof showMessage === 'function') showMessage('Modo Borrador de Lienzo activado. Haz clic en la primera esquina para definir la zona.', 'info');
+            if (typeof showMessage === 'function') showMessage(window.__('msg_eraser_mode_corner'), 'info');
         }
         this.updateSelectionUI();
         if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
@@ -5611,7 +5611,7 @@ export const DesignInteractions = {
         this.updateSelectionUI();
         if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
         this.requestRender();
-        if (typeof showMessage === 'function') showMessage('Zona vaciada con éxito', 'success');
+        if (typeof showMessage === 'function') showMessage(window.__('msg_zone_cleared_success'), 'success');
     },
 
     toggleOwnerFreeze() {
@@ -5621,7 +5621,7 @@ export const DesignInteractions = {
         if (this.ownerCooldowns && this.ownerCooldowns.freeze && this.ownerCooldowns.freeze > now) {
             const secondsLeft = Math.ceil((this.ownerCooldowns.freeze - now) / 1000);
             if (typeof showMessage === 'function') {
-                showMessage(`Congelación de lienzo en cooldown. Espera ${secondsLeft} segundos.`, 'warning');
+                showMessage(window.__('msg_freeze_cooldown').replace(':seconds', secondsLeft), 'warning');
             }
             return;
         }
@@ -5648,7 +5648,7 @@ export const DesignInteractions = {
             this.ownerEraserBox = null;
             this.ownerEraserStep = 0;
             this.ownerEraserStart = null;
-            if (typeof showMessage === 'function') showMessage('Modo Protector de Zonas desactivado', 'info');
+            if (typeof showMessage === 'function') showMessage(window.__('msg_protect_mode_off'), 'info');
         } else {
             this.interactionMode = 'owner_protecting';
             this.activeBomb = null;
@@ -5656,7 +5656,7 @@ export const DesignInteractions = {
             this.ownerEraserBox = null;
             this.ownerEraserStep = 0;
             this.ownerEraserStart = null;
-            if (typeof showMessage === 'function') showMessage('Modo Protector de Zonas activado. Haz clic en la primera esquina para definir la zona.', 'info');
+            if (typeof showMessage === 'function') showMessage(window.__('msg_protect_mode_corner'), 'info');
         }
         this.updateSelectionUI();
         if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
@@ -5758,9 +5758,9 @@ export const DesignInteractions = {
         this.showMyProtectionsHighlight = !this.showMyProtectionsHighlight;
         if (typeof showMessage === 'function') {
             if (this.showMyProtectionsHighlight) {
-                showMessage('Mostrando tus zonas protegidas', 'info');
+                showMessage(window.__('msg_showing_protected_zones'), 'info');
             } else {
-                showMessage('Ocultando tus zonas protegidas', 'info');
+                showMessage(window.__('msg_hiding_protected_zones'), 'info');
             }
         }
         this.updatePerkBadges();

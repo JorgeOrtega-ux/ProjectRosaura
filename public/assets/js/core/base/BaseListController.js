@@ -1,4 +1,4 @@
-﻿import { ApiService }          from '../api/ApiService.js';
+import { ApiService }          from '../api/ApiService.js';
 import { catchPaginationClick, debounce } from '../utils/uiUtils.js';
 
 /**
@@ -142,6 +142,9 @@ class BaseListController {
     /** @abstract @returns {string} data-ref del input de búsqueda (ej: 'role-search-input') */
     getSearchInputRef() { return ''; }
 
+    /** @abstract @returns {string} data-ref del contenedor principal de la tabla (por defecto 'view-table') */
+    getTableContainerRef() { return 'view-table'; }
+
     /** @abstract Manejador de clicks globales — implementado en cada subclase */
     handleGlobalClick(e) {}
 
@@ -151,8 +154,71 @@ class BaseListController {
     /** @abstract Construye la URL de búsqueda/filtro y llama a handlePagination */
     executeServerFilters() {}
 
-    /** @abstract Carga y reemplaza el contenido de la vista para una URL dada */
-    async handlePagination(url) {}
+    /**
+     * Carga de forma asíncrona una nueva página/filtro HTML y actualiza la tabla y paginación en el DOM.
+     * @param {string} url - URL destino a cargar
+     * @param {Object} [options]
+     */
+    async handlePagination(url, options = {}) {
+        if (!url || typeof url !== 'string' || url === '#') return;
+
+        const tableContainerRef = options.containerRef || this.getTableContainerRef() || 'view-table';
+        const tableContainer = document.querySelector(`[data-ref="${tableContainerRef}"]`);
+        const currentPaginations = document.querySelectorAll('[data-ref="pagination-container"], [class*="pagin"], .component-bottom');
+
+        if (tableContainer) {
+            tableContainer.classList.add('disabled-interaction');
+        }
+
+        try {
+            const html = await this.api.fetchHtml(url, { signal: this.abortController?.signal });
+            if (!html) return;
+
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newTable = doc.querySelector(`[data-ref="${tableContainerRef}"]`);
+
+            if (newTable && tableContainer) {
+                tableContainer.innerHTML = newTable.innerHTML;
+            }
+
+            const newPaginations = doc.querySelectorAll('[data-ref="pagination-container"], [class*="pagin"], .component-bottom');
+            if (newPaginations.length > 0 && currentPaginations.length > 0) {
+                currentPaginations.forEach((container, index) => {
+                    if (newPaginations[index]) {
+                        container.innerHTML = newPaginations[index].innerHTML;
+                        if (newPaginations[index].hasAttribute('data-tooltip')) {
+                            container.setAttribute('data-tooltip', newPaginations[index].getAttribute('data-tooltip'));
+                        }
+                    }
+                });
+            }
+
+            window.history.pushState({ path: url, fromDynamicPagination: true }, '', url);
+
+            if (typeof this.resetViewState === 'function') {
+                this.resetViewState();
+            } else if (typeof this.deselectAll === 'function') {
+                this.deselectAll();
+            }
+
+            this.updateFilterButtonsState();
+            if (typeof this.onPaginationUpdated === 'function') {
+                this.onPaginationUpdated(doc);
+            }
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
+                window.spaRouter.navigate(url);
+            } else {
+                window.location.href = url;
+            }
+        } finally {
+            if (tableContainer) {
+                tableContainer.classList.remove('disabled-interaction');
+            }
+        }
+    }
 }
 
 export { BaseListController };

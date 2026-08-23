@@ -1,4 +1,4 @@
-﻿import { ApiService } from '../../../core/api/ApiService.js';
+import { ApiService } from '../../../core/api/ApiService.js';
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { showMessage, renderSkeleton } from '../../../core/utils/uiUtils.js';
 
@@ -13,7 +13,7 @@ export class DesignChat {
         this.chatInput = document.querySelector('[data-ref="chat-input-message"]');
         this.btnSend = document.querySelector('[data-ref="chat-btn-send"]');
         this.loader = document.querySelector('[data-ref="chat-loader"]');
-        this.fileInput = document.getElementById('chat-file-input');
+        this.fileInput = document.querySelector('[data-ref="chat-file-input"]');
         this.previewContainer = null;
 
         this.offset = 0;

@@ -89,7 +89,7 @@ $maxMB = $maxUploadMB ?? 10;
                                 </div>
                             </div>
                         </div>
-                        <input type="file" id="chat-file-input" class="disabled" multiple accept="image/jpeg, image/png, image/webp, image/gif">
+                        <input type="file" data-ref="chat-file-input" class="disabled" multiple accept="image/jpeg, image/png, image/webp, image/gif">
                     </div>
 
                     <div class="component-chat-box__input-wrapper">

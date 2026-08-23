@@ -126,7 +126,7 @@ export const DesignNetwork = {
         }
 
         try {
-            const route = ApiRoutes.Canvases?.GetWsTicket || 'canvases.get_ws_ticket';
+            const route = ApiRoutes.Canvases.GetWsTicket;
             const payload = { canvas_id: this.canvasIntId };
             if (turnstileToken) {
                 payload['cf-turnstile-response'] = turnstileToken;
@@ -354,7 +354,7 @@ export const DesignNetwork = {
                     if (typeof this.updatePerkBadges === 'function') this.updatePerkBadges();
                 }
                 else if (data.type === 'pixel_protection_success') {
-                    if (typeof showMessage === 'function') showMessage('Zona protegida con éxito por 24 horas', 'success');
+                    if (typeof showMessage === 'function') showMessage(window.__('msg_zone_protected_24h'), 'success');
                     if (!this.myProtectedPixels) this.myProtectedPixels = new Set();
                     if (!this.myProtectedExpiries) this.myProtectedExpiries = {};
                     if (Array.isArray(data.offsets) && Array.isArray(data.expiries)) {
@@ -372,7 +372,7 @@ export const DesignNetwork = {
                     if (typeof this.syncMinesToWorker === 'function') this.syncMinesToWorker();
                 }
                 else if (data.type === 'mines_placed_success') {
-                    if (typeof showMessage === 'function') showMessage('¡Minas colocadas con éxito!', 'success');
+                    if (typeof showMessage === 'function') showMessage(window.__('msg_mines_placed_success'), 'success');
                     if (!this.myMines) this.myMines = new Set();
                     if (Array.isArray(data.offsets)) {
                         data.offsets.forEach(off => this.myMines.add(off));
@@ -382,18 +382,17 @@ export const DesignNetwork = {
                     if (typeof this.syncMinesToWorker === 'function') this.syncMinesToWorker();
                 }
                 else if (data.type === 'mines_placed_error') {
-                    if (typeof showMessage === 'function') showMessage(data.message || 'Error al colocar minas', 'error');
+                    if (typeof showMessage === 'function') showMessage(data.message || window.__('err_server'), 'error');
                 }
                 else if (data.type === 'mine_detonated') {
                     if (this.myMines) {
                         this.myMines.delete(data.offset);
                     }
                     if (typeof this.syncMinesToWorker === 'function') this.syncMinesToWorker();
-                    if (typeof showMessage === 'function') showMessage('¡Una de tus minas terrestres ha detonado!', 'info');
+                    if (typeof showMessage === 'function') showMessage(window.__('msg_mine_detonated'), 'info');
                 }
                 else if (data.type === 'pixel_protected_error' || data.type === 'perk_error') {
-                    const rawMsg = data.message || 'Este píxel está protegido';
-                    const msg = (typeof window.__ === 'function' ? window.__(rawMsg) : null) || rawMsg;
+                    const msg = data.message ? (typeof window.__ === 'function' ? window.__(data.message) : data.message) : (typeof window.__ === 'function' ? window.__('err_pixel_protected') : 'err_pixel_protected');
 
                     if (!this.lastProtectedToastTime || (Date.now() - this.lastProtectedToastTime > 2000)) {
                         if (typeof showMessage === 'function') showMessage(msg, 'warning');
@@ -1005,12 +1004,12 @@ export const DesignNetwork = {
         this.updateLockBadges();
         this.requestRender();
 
-        showMessage('Zona vaciada con éxito', 'success');
+        showMessage(window.__('msg_zone_cleared_success'), 'success');
     },
 
     async startLiveShare() {
         try {
-            const route = ApiRoutes.Canvases?.CreateLiveShare || 'canvas/live-share/create';
+            const route = ApiRoutes.Canvases.CreateLiveShare;
             const tpl = this.activeTemplateId ? this.templates.find(t => t.id === this.activeTemplateId) : null;
             
             const response = await this.api.post(route, { 
@@ -1033,7 +1032,6 @@ export const DesignNetwork = {
                 this.liveShareCountVal = 1;
                 
                 if (tpl) {
-                    // Force standard opacity
                     tpl.opacity = 0.5;
                 }
                 
@@ -1041,11 +1039,11 @@ export const DesignNetwork = {
                     this.wsManager.send({ type: 'join_live_share', code: this.liveShareCode });
                 }
 
-                let badge = document.getElementById('live-share-badge');
+                let badge = document.querySelector('[data-badge-id="live-share-badge"]');
                 if (!badge) {
                     badge = document.createElement('div');
                     badge.className = 'component-badge';
-                    badge.id = 'live-share-badge';
+                    badge.setAttribute('data-badge-id', 'live-share-badge');
                     badge.innerHTML = '<span class="material-symbols-rounded">sensors</span><span>Transmisión en curso (1 en línea)</span>';
                     const badgesContainer = document.querySelector('[data-ref="badges-left"]');
                     if (badgesContainer) badgesContainer.appendChild(badge);
@@ -1070,7 +1068,7 @@ export const DesignNetwork = {
         if (this.liveShareStatus !== 'owner') return false;
         
         try {
-            const route = ApiRoutes.Canvases?.StopLiveShare || 'canvases.stop_live_share';
+            const route = ApiRoutes.Canvases.StopLiveShare;
             await this.api.post(route, { canvas_id: this.canvasIntId }, this.abortController.signal);
         } catch (e) {
             console.error('[DesignNetwork] Error calling stopLiveShare API:', e);
@@ -1085,10 +1083,10 @@ export const DesignNetwork = {
         this.liveTemplateId = null;
         this.liveShareCountVal = null;
 
-        const badge = document.getElementById('live-share-badge');
+        const badge = document.querySelector('[data-badge-id="live-share-badge"]');
         if (badge) badge.remove();
 
-        const codeBadge = document.getElementById('live-share-code-badge');
+        const codeBadge = document.querySelector('[data-badge-id="live-share-code-badge"]');
         if (codeBadge) codeBadge.remove();
 
         const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
@@ -1114,7 +1112,7 @@ export const DesignNetwork = {
         if (btn) setButtonLoading(btn);
 
         try {
-            const route = ApiRoutes.Canvases?.JoinLiveShare || 'canvases.join_live_share';
+            const route = ApiRoutes.Canvases.JoinLiveShare;
             
             const response = await this.api.post(route, { 
                 code: code,
@@ -1135,12 +1133,12 @@ export const DesignNetwork = {
                 if (!tpl) {
                     if (response.data.empty || !response.data.img_url) {
                         this.activeTemplateId = liveId;
-                        let badge = document.getElementById('live-share-badge');
+                        let badge = document.querySelector('[data-badge-id="live-share-badge"]');
                         const countText = this.liveShareCountVal ? ` (${this.liveShareCountVal} en línea)` : '';
                         if (!badge) {
                             badge = document.createElement('div');
                             badge.className = 'component-badge';
-                            badge.id = 'live-share-badge';
+                            badge.setAttribute('data-badge-id', 'live-share-badge');
                             badge.innerHTML = `<span class="material-symbols-rounded">sensors</span><span>Transmisión en curso${countText}</span>`;
                             const badgesContainer = document.querySelector('[data-ref="badges-left"]');
                             if (badgesContainer) badgesContainer.appendChild(badge);
@@ -1167,12 +1165,12 @@ export const DesignNetwork = {
                                 });
                                 this.activeTemplateId = liveId;
                                 
-                                let badge = document.getElementById('live-share-badge');
+                                let badge = document.querySelector('[data-badge-id="live-share-badge"]');
                                 const countText = this.liveShareCountVal ? ` (${this.liveShareCountVal} en línea)` : '';
                                 if (!badge) {
                                     badge = document.createElement('div');
                                     badge.className = 'component-badge';
-                                    badge.id = 'live-share-badge';
+                                    badge.setAttribute('data-badge-id', 'live-share-badge');
                                     badge.innerHTML = `<span class="material-symbols-rounded">sensors</span><span>Transmisión en curso${countText}</span>`;
                                     const badgesContainer = document.querySelector('[data-ref="badges-left"]');
                                     if (badgesContainer) badgesContainer.appendChild(badge);
@@ -1195,11 +1193,11 @@ export const DesignNetwork = {
                         });
                     }
                 } else {
-                    let badge = document.getElementById('live-share-badge');
+                    let badge = document.querySelector('[data-badge-id="live-share-badge"]');
                     if (!badge) {
                         badge = document.createElement('div');
                         badge.className = 'component-badge';
-                        badge.id = 'live-share-badge';
+                        badge.setAttribute('data-badge-id', 'live-share-badge');
                         badge.innerHTML = '<span class="material-symbols-rounded">sensors</span><span>Transmisión en curso</span>';
                         const badgesContainer = document.querySelector('[data-ref="badges-left"]');
                         if (badgesContainer) badgesContainer.appendChild(badge);
@@ -1245,7 +1243,7 @@ export const DesignNetwork = {
         this.liveTemplateId = null;
         this.liveShareCountVal = null;
 
-        const badge = document.getElementById('live-share-badge');
+        const badge = document.querySelector('[data-badge-id="live-share-badge"]');
         if (badge) badge.remove();
 
         const btnOpenJoinLive = document.querySelector('[data-action="openJoinLiveModal"]');
@@ -1390,10 +1388,10 @@ export const DesignNetwork = {
             this.liveShareCode = null;
             this.liveShareCountVal = null;
             
-            const badge = document.getElementById('live-share-badge');
+            const badge = document.querySelector('[data-badge-id="live-share-badge"]');
             if (badge) badge.remove();
 
-            const codeBadge = document.getElementById('live-share-code-badge');
+            const codeBadge = document.querySelector('[data-badge-id="live-share-code-badge"]');
             if (codeBadge) codeBadge.remove();
 
             if (this.liveTemplateId) {
@@ -1423,7 +1421,7 @@ export const DesignNetwork = {
     handleLiveShareCount(data) {
         if (this.liveShareCode === data.code) {
             this.liveShareCountVal = data.count;
-            const badge = document.getElementById('live-share-badge');
+            const badge = document.querySelector('[data-badge-id="live-share-badge"]');
             if (badge) {
                 badge.innerHTML = `<span class="material-symbols-rounded">sensors</span><span>Transmisión en curso (${data.count} en línea)</span>`;
             }

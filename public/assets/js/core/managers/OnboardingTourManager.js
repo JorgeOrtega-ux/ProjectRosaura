@@ -1,4 +1,4 @@
-﻿import { ApiRoutes } from '../api/ApiRoutes.js';
+import { ApiRoutes } from '../api/ApiRoutes.js';
 import { ApiService } from '../api/ApiService.js';
 
 // =========================================================================
@@ -545,7 +545,7 @@ export class OnboardingTourManager {
         }
 
         try {
-            const apiRoute = ApiRoutes.Settings && ApiRoutes.Settings.SetFlag ? ApiRoutes.Settings.SetFlag : 'settings.set_flag';
+            const apiRoute = ApiRoutes.Settings.SetFlag;
             await this.api.post(apiRoute, { flag_key: flagKey });
         } catch (e) {
             console.warn('[OnboardingTourManager] Error persisting tour seen flag:', e);

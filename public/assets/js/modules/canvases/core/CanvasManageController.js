@@ -113,7 +113,7 @@ class CanvasManageController {
 
         setButtonLoading(btn);
 
-        const route = ApiRoutes.Canvases && ApiRoutes.Canvases.Create ? ApiRoutes.Canvases.Create : 'canvases.create';
+        const route = ApiRoutes.Canvases.Create;
         const result = await this.api.post(route, payload, this.abortController.signal);
         
         if (result.aborted) return;

@@ -85,7 +85,7 @@
                         <div class="component-card__actions component-card__actions--end">
                             <div data-action="preventAccordion">
                                 <label class="component-toggle-switch">
-                                    <input type="checkbox" name="cookie_func" checked>
+                                    <input type="checkbox" name="cookie_func" data-ref="cookie-func" checked>
                                     <span class="component-toggle-slider"></span>
                                 </label>
                             </div>
@@ -130,7 +130,7 @@
                         <div class="component-card__actions component-card__actions--end">
                             <div data-action="preventAccordion">
                                 <label class="component-toggle-switch">
-                                    <input type="checkbox" name="cookie_perf" checked>
+                                    <input type="checkbox" name="cookie_perf" data-ref="cookie-perf" checked>
                                     <span class="component-toggle-slider"></span>
                                 </label>
                             </div>

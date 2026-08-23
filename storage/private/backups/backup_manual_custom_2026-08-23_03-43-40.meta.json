@@ -1,0 +1,76 @@
+{
+    "type": "custom",
+    "modules": {
+        "db": true
+    },
+    "created_at": "2026-08-23 03:43:42",
+    "schema": {
+        "db_advertisements": [
+            "ad_metrics",
+            "ad_providers",
+            "ad_resources",
+            "advertisements"
+        ],
+        "db_canvases": [
+            "canvas_access_requests",
+            "canvas_chat_messages",
+            "canvas_chat_reports",
+            "canvas_favorites",
+            "canvas_invites",
+            "canvas_members",
+            "canvas_permissions",
+            "canvas_protections",
+            "canvas_reset_settings",
+            "canvas_resize_settings",
+            "canvas_role_permissions",
+            "canvas_roles",
+            "canvas_sanctions",
+            "canvas_snapshots",
+            "canvas_snapshots_history",
+            "canvas_snapshots_likes",
+            "canvas_user_roles",
+            "canvases",
+            "user_templates"
+        ],
+        "db_identity": [
+            "auth_tokens",
+            "custom_palettes",
+            "moderation_logs",
+            "payment_history",
+            "permissions",
+            "profile_changes_log",
+            "role_permissions",
+            "roles",
+            "server_config",
+            "subscription_tiers",
+            "subscriptions",
+            "user_flags",
+            "user_preferences",
+            "user_restrictions",
+            "user_roles",
+            "users"
+        ],
+        "db_telemetry": [
+            "api_latency",
+            "auth_events",
+            "pageviews"
+        ],
+        "db_telemetry_nosql": [
+            "api_latency",
+            "auth_events",
+            "client_events",
+            "pageviews",
+            "slow_queries",
+            "system_metrics",
+            "user_actions",
+            "websocket_events"
+        ],
+        "db_canvases_nosql": [
+            "canvas_chat_messages",
+            "canvas_pixel_history"
+        ],
+        "db_identity_nosql": [
+            "profile_changes_log"
+        ]
+    }
+}

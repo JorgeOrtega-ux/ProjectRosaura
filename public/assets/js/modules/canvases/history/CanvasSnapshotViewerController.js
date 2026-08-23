@@ -550,11 +550,10 @@ class CanvasSnapshotViewerController {
     }
 
     async exportTimelapseVideo(duration = 30, quality = '1080p', btn = null) {
-        const loadingMsg = window.__ ? window.__('msg_generating_timelapse_video') : 'Generando video MP4 en alta calidad...';
-        showMessage(loadingMsg, 'info');
+        showMessage(window.__('msg_generating_timelapse_video'), 'info');
 
         try {
-            const endpoint = ApiRoutes.Canvases?.ExportSnapshotTimelapseVideo || 'canvases.export_snapshot_timelapse_video';
+            const endpoint = ApiRoutes.Canvases.ExportSnapshotTimelapseVideo;
             const response = await this.api.post(endpoint, {
                 id: this.snapshotId,
                 duration: duration,
@@ -569,38 +568,42 @@ class CanvasSnapshotViewerController {
                 const filename = response.data.filename || `timelapse_${this.snapshotId}_${duration}s_${quality}.mp4`;
                 await this.triggerFileDownload(response.data.url, filename);
 
-                const successMsg = window.__ ? window.__('msg_timelapse_video_ready') : '¡Video generado correctamente!';
-                showMessage(successMsg, 'success');
+                showMessage(window.__('msg_timelapse_video_ready'), 'success');
             } else if (response && response.status === 'processing') {
                 await this.pollVideoReadiness(duration, quality, btn);
-                return; // Do not restore button yet, pollVideoReadiness will handle it
+                return;
             } else {
-                const errMsg = response?.message || (window.__ ? window.__('err_server') : 'Error al exportar video');
-                showMessage(errMsg, 'error');
+                showMessage(response?.message || window.__('err_server'), 'error');
             }
         } catch (e) {
-            showMessage(window.__ ? window.__('err_server') : 'Error de conexión al exportar video', 'error');
+            showMessage(window.__('err_server'), 'error');
         } finally {
             if (btn) restoreButton(btn);
         }
     }
 
     async pollVideoReadiness(duration, quality = '1080p', btn = null) {
-        const endpoint = ApiRoutes.Canvases?.ExportSnapshotTimelapseVideo || 'canvases.export_snapshot_timelapse_video';
+        const endpoint = ApiRoutes.Canvases.ExportSnapshotTimelapseVideo;
         let attempts = 0;
         const maxAttempts = 40;
+        if (this._timelapsePollTimeout) clearTimeout(this._timelapsePollTimeout);
+        this._isTimelapsePolling = true;
 
-        const interval = setInterval(async () => {
+        const checkReadiness = async () => {
+            if (!this._isTimelapsePolling) return;
             attempts++;
+
             try {
                 const response = await this.api.post(endpoint, {
                     id: this.snapshotId,
                     duration: duration,
                     quality: quality
-                });
+                }, this.abortController?.signal);
+
+                if (!this._isTimelapsePolling) return;
 
                 if (response && response.success && response.data && response.data.url) {
-                    clearInterval(interval);
+                    this._isTimelapsePolling = false;
                     if (window.modalSystem) {
                         window.modalSystem.closeCurrent();
                     }
@@ -609,19 +612,29 @@ class CanvasSnapshotViewerController {
                     const filename = response.data.filename || `timelapse_${this.snapshotId}_${duration}s_${quality}.mp4`;
                     await this.triggerFileDownload(response.data.url, filename);
 
-                    showMessage(window.__ ? window.__('msg_timelapse_video_ready') : '¡Video generado correctamente!', 'success');
+                    showMessage(window.__('msg_timelapse_video_ready'), 'success');
+                    return;
                 } else if (attempts >= maxAttempts) {
-                    clearInterval(interval);
+                    this._isTimelapsePolling = false;
                     if (btn) restoreButton(btn);
-                    showMessage(window.__ ? window.__('err_server') : 'El video tardó más de lo esperado. Intenta descargarlo en unos momentos.', 'warning');
+                    showMessage(window.__('err_server'), 'warning');
+                    return;
                 }
             } catch (err) {
+                if (err.name === 'AbortError') return;
                 if (attempts >= maxAttempts) {
-                    clearInterval(interval);
+                    this._isTimelapsePolling = false;
                     if (btn) restoreButton(btn);
+                    return;
                 }
             }
-        }, 2000);
+
+            if (this._isTimelapsePolling) {
+                this._timelapsePollTimeout = setTimeout(checkReadiness, 2000);
+            }
+        };
+
+        this._timelapsePollTimeout = setTimeout(checkReadiness, 2000);
     }
 
     async triggerFileDownload(url, filename) {
@@ -653,7 +666,7 @@ class CanvasSnapshotViewerController {
 
         this.timelapseLoadPromise = (async () => {
             try {
-                const endpoint = ApiRoutes.Canvases?.GetSnapshotTimelapse || 'canvases.get_snapshot_timelapse';
+                const endpoint = ApiRoutes.Canvases.GetSnapshotTimelapse;
                 const response = await this.api.post(endpoint, { id: this.snapshotId });
                 if (response && response.success && response.data && response.data.events && response.data.events.length > 0) {
                     this.timelapseEvents = response.data.events;
@@ -1232,7 +1245,7 @@ class CanvasSnapshotViewerController {
 
     async loadSnapshotData() {
         try {
-            const endpoint = ApiRoutes.Canvases?.GetSnapshotDetail || 'canvases.get_snapshot_detail';
+            const endpoint = ApiRoutes.Canvases.GetSnapshotDetail;
             const response = await this.api.post(endpoint, { id: this.snapshotId });
             
             if (response && response.success && response.data) {

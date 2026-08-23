@@ -2259,7 +2259,21 @@
     "msg_template_stamped": "Plantilla estampada con éxito.",
     "sub_plan_storage": "Almacenamiento del Plan",
     "sub_template_tokens_title": "Inyección de Plantillas (Tokens de 5 horas)",
-    "msg_select_target": "Selecciona un objetivo en el lienzo."
+    "msg_select_target": "Selecciona un objetivo en el lienzo.",
+    "msg_eraser_mode_corner": "Modo Borrador de Lienzo activado. Haz clic en la primera esquina para definir la zona.",
+    "msg_zone_cleared_success": "Zona vaciada con éxito",
+    "msg_freeze_cooldown": "Congelación de lienzo en cooldown. Espera :seconds segundos.",
+    "msg_protect_mode_off": "Modo Protector de Zonas desactivado",
+    "msg_protect_mode_corner": "Modo Protector de Zonas activado. Haz clic en la primera esquina para definir la zona.",
+    "msg_showing_protected_zones": "Mostrando tus zonas protegidas",
+    "msg_hiding_protected_zones": "Ocultando tus zonas protegidas",
+    "msg_zone_protected_24h": "Zona protegida con éxito por 24 horas",
+    "msg_mines_placed_success": "¡Minas colocadas con éxito!",
+    "msg_mine_detonated": "¡Una de tus minas terrestres ha detonado!",
+    "err_google_sdk_unavailable": "Google SDK no disponible",
+    "err_google_client_id_missing": "Google Client ID no configurado",
+    "msg_google_linked_success": "Cuenta de Google vinculada",
+    "msg_google_unlinked_success": "Cuenta de Google desvinculada"
 }
 
 

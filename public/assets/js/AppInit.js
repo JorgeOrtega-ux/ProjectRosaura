@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let _searchCooldown = false;
     document.body.addEventListener('keydown', (e) => {
-        if (e.target.matches('#globalSearchInput')) {
+        if (e.target.matches('[data-ref="global-search-input"]')) {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 const query = e.target.value.trim();

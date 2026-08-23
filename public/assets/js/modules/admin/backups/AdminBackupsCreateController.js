@@ -1,4 +1,4 @@
-﻿import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiService.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../../core/utils/uiUtils.js';
 class AdminBackupsCreateController {
@@ -6,7 +6,8 @@ class AdminBackupsCreateController {
         this.api = new ApiService();
         this.basePath = window.AppBasePath || '';
         this.isBackingUp = false;
-        this.pollInterval = null;
+        this.pollTimeout = null;
+        this._isPollingActive = false;
         this.abortController = null;
         this.schemaData = null; 
         this.selectedState = {}; 
@@ -25,7 +26,11 @@ class AdminBackupsCreateController {
     }
     destroy() {
         if (this.abortController) this.abortController.abort();
-        if (this.pollInterval) clearInterval(this.pollInterval);
+        this._isPollingActive = false;
+        if (this.pollTimeout) {
+            clearTimeout(this.pollTimeout);
+            this.pollTimeout = null;
+        }
         window.removeEventListener('viewLoaded', this.handleViewLoadedBound);
         document.removeEventListener('click', this.handleClickBound);
         document.removeEventListener('change', this.handleChangeBound);
@@ -251,35 +256,57 @@ class AdminBackupsCreateController {
         }
     }
     async pollBackupStatus(jobId, btn, originalText) {
-        if (this.pollInterval) clearInterval(this.pollInterval);
-        this.pollInterval = setInterval(async () => {
-            const res = await this.api.post(ApiRoutes.Admin.BackupStatus, { job_id: jobId }, this.abortController.signal);
-            if (res.aborted) return;
-            if (res.success) {
-                if (res.status === 'completed') {
-                    clearInterval(this.pollInterval);
-                    showMessage(res.job_message || __('success_backup_finished'), 'success');
+        if (this.pollTimeout) clearTimeout(this.pollTimeout);
+        this._isPollingActive = true;
+
+        const checkStatus = async () => {
+            if (!this._isPollingActive) return;
+
+            try {
+                const res = await this.api.post(ApiRoutes.Admin.BackupStatus, { job_id: jobId }, this.abortController?.signal);
+                if (res?.aborted || !this._isPollingActive) return;
+
+                if (res && res.success) {
+                    if (res.status === 'completed') {
+                        this._isPollingActive = false;
+                        this.resetBackupUI(btn, originalText);
+                        showMessage(res.job_message || __('success_backup_finished'), 'success');
+                        if (window.spaRouter) {
+                            window.spaRouter.navigate(this.basePath + '/admin/backups');
+                        } else {
+                            window.location.href = this.basePath + '/admin/backups';
+                        }
+                        return;
+                    } else if (res.status === 'failed' || res.status === 'not_found') {
+                        this._isPollingActive = false;
+                        showMessage(res.job_message || __('err_backup_failed'), 'error');
+                        this.resetBackupUI(btn, originalText);
+                        return;
+                    }
+                } else if (res && !res.success) {
+                    this._isPollingActive = false;
+                    showMessage(res.message || __('err_process_connection'), 'error');
                     this.resetBackupUI(btn, originalText);
-                    if (window.spaRouter) window.spaRouter.navigate(this.basePath + '/admin/backups');
-                } else if (res.status === 'failed' || res.status === 'not_found') {
-                    clearInterval(this.pollInterval);
-                    showMessage(res.job_message || __('err_backup_failed'), 'error');
-                    this.resetBackupUI(btn, originalText);
-                } else if (res.status === 'pending' || res.status === 'processing') {
-                } else {
-                    clearInterval(this.pollInterval);
-                    showMessage(window.__('err_unknown_server_state'), 'error');
-                    this.resetBackupUI(btn, originalText);
+                    return;
                 }
-            } else {
-                clearInterval(this.pollInterval);
-                showMessage(res.message || __('err_process_connection'), 'error');
-                this.resetBackupUI(btn, originalText);
+            } catch (err) {
+                if (err.name === 'AbortError') return;
             }
-        }, 2500); 
+
+            if (this._isPollingActive) {
+                this.pollTimeout = setTimeout(checkStatus, 2500);
+            }
+        };
+
+        this.pollTimeout = setTimeout(checkStatus, 2500);
     }
     resetBackupUI(btn, originalText) {
         this.isBackingUp = false;
+        this._isPollingActive = false;
+        if (this.pollTimeout) {
+            clearTimeout(this.pollTimeout);
+            this.pollTimeout = null;
+        }
         if (btn) {
             restoreButton(btn, originalText);
         }

@@ -517,7 +517,7 @@ export const ModalTemplates = {
                 let actionsHtml = '';
                 const backBtn = idx > 0 ? `
                     <button class="component-button component-button--h40 component-button--ghost" data-step-target="${modalId}-step-${idx}">
-                        ${window.__('btn_back') || 'Atrás'}
+                        ${window.__('btn_back')}
                     </button>
                 ` : '';
 
@@ -526,7 +526,7 @@ export const ModalTemplates = {
                         <div class="step-modal-actions">
                             ${backBtn}
                             <button class="component-button component-button--primary component-button--h40" data-step-target="${modalId}-step-${stepNum + 1}">
-                                ${window.__('onboarding_btn_next') || 'Siguiente'}
+                                ${window.__('onboarding_btn_next')}
                             </button>
                         </div>
                     `;
@@ -535,7 +535,7 @@ export const ModalTemplates = {
                         <div class="step-modal-actions">
                             ${backBtn}
                             <button class="component-button component-button--primary component-button--h40" data-modal-action="finish">
-                                ${window.__('onboarding_btn_finish') || 'Entendido'}
+                                ${window.__('onboarding_btn_finish')}
                             </button>
                         </div>
                     `;
@@ -1684,7 +1684,7 @@ export const ModalTemplates = {
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
-                    <h2 class="component-modal-title">${__('canvases_sanctions_title') || 'Gestionar Sanción'}: ${username}</h2>
+                    <h2 class="component-modal-title">${__('canvases_sanctions_title')}: ${username}</h2>
                     <p class="component-modal-desc" data-ref="sanction-step-desc">${__('desc_chat_restriction')}</p>
                 </div>
                 <div class="component-modal-body">
@@ -2140,22 +2140,22 @@ export const ModalTemplates = {
             const videoQuality = data.quality || '1080p';
 
             const formatLabels = {
-                png: __('lbl_image_format_png') || 'PNG (Sin compresión)',
-                jpg: __('lbl_image_format_jpg') || 'JPG (Estándar)',
-                webp: __('lbl_image_format_webp') || 'WEBP (Optimizado)',
-                pdf: __('lbl_image_format_pdf') || 'PDF (Documento)'
+                png: __('lbl_image_format_png'),
+                jpg: __('lbl_image_format_jpg'),
+                webp: __('lbl_image_format_webp'),
+                pdf: __('lbl_image_format_pdf')
             };
 
             const durationLabels = {
-                15: __('lbl_video_speed_15') || '15s (Rápido)',
-                30: __('lbl_video_speed_30') || '30s (Recomendado)',
-                60: __('lbl_video_speed_60') || '60s (Detallado)'
+                15: __('lbl_video_speed_15'),
+                30: __('lbl_video_speed_30'),
+                60: __('lbl_video_speed_60')
             };
 
             const qualityLabels = {
-                '720p': __('lbl_video_quality_720') || '720p (HD)',
-                '1080p': __('lbl_video_quality_1080') || '1080p (Full HD)',
-                '4k': __('lbl_video_quality_4k') || '4K (Ultra HD)'
+                '720p': __('lbl_video_quality_720'),
+                '1080p': __('lbl_video_quality_1080'),
+                '4k': __('lbl_video_quality_4k')
             };
 
             const qualityIcons = {

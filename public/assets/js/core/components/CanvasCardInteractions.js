@@ -140,7 +140,7 @@ export class CanvasCardInteractions {
         btn.appendChild(spinnerDiv);
 
         try {
-            const route = (ApiRoutes.Canvases && ApiRoutes.Canvases.CreateSnapshot) ? ApiRoutes.Canvases.CreateSnapshot : 'canvases.create_snapshot';
+            const route = ApiRoutes.Canvases.CreateSnapshot;
             const result = await this.api.post(route, { id: parseInt(canvasId, 10) }, this.abortController ? this.abortController.signal : null);
 
             if (result.aborted) return;
@@ -168,10 +168,10 @@ export class CanvasCardInteractions {
         
         setTimeout(async () => {
             if (signal && signal.aborted) return;
-            showMessage(window.__('msg_captura_processing') || 'Procesando captura del lienzo...', 'info');
+            showMessage(window.__('msg_captura_processing'), 'info');
         }, 1500);
 
-        const route = (ApiRoutes.Canvases && ApiRoutes.Canvases.SnapshotStatus) ? ApiRoutes.Canvases.SnapshotStatus : 'canvases.snapshot_status';
+        const route = ApiRoutes.Canvases.SnapshotStatus;
 
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             await new Promise(resolve => setTimeout(resolve, intervalMs));

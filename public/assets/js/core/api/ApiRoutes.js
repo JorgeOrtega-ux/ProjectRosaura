@@ -133,6 +133,7 @@ export const ApiRoutes = {
         TrackEvent: 'advertisements.track_event'
     },
     Canvases: {
+        GetWsTicket: 'canvases.get_ws_ticket',
         GetHomeFeed: 'canvases.get_home_feed',
         GetPublic: 'canvases.get_public',
         GetMine: 'canvases.get_mine',

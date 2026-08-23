@@ -691,11 +691,11 @@ function filterMenuList(searchInput, menuList = null, emptyClass = 'component-me
         const text = textEl ? textEl.textContent.toLowerCase() : '';
         if (!query || text.includes(query)) {
             link.classList.remove('disabled');
-            link.style.display = '';
+            link.hidden = false;
             hasVisible = true;
         } else {
             link.classList.add('disabled');
-            link.style.display = 'none';
+            link.hidden = true;
         }
     });
 
@@ -703,13 +703,13 @@ function filterMenuList(searchInput, menuList = null, emptyClass = 'component-me
     if (!emptyEl && !hasVisible) {
         emptyEl = document.createElement('div');
         emptyEl.className = emptyClass;
-        const notFoundText = window.__ ? window.__('no_results_found') : 'No results found';
+        const notFoundText = typeof window.__ === 'function' ? window.__('no_results_found') : 'No results found';
         emptyEl.innerHTML = `<div class="component-menu-link disabled-interaction"><div class="component-menu-link-icon"><span class="material-symbols-rounded">search_off</span></div><div class="component-menu-link-text"><span>${notFoundText}</span></div></div>`;
         list.appendChild(emptyEl);
     }
     if (emptyEl) {
         emptyEl.hidden = hasVisible;
-        emptyEl.style.display = hasVisible ? 'none' : '';
+        emptyEl.classList.toggle('disabled', hasVisible);
     }
 }
 

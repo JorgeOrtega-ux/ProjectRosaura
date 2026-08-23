@@ -14,8 +14,8 @@ $canvasSize = $viewerData['canvasSize'];
 <div class="view-content">
     
     <?php if (empty($snapshotId) || isset($phpError)): ?>
-        <div>
-            <h3>
+        <div class="component-notice-box component-notice-box--danger">
+            <h3 class="component-notice-title">
                 <span class="material-symbols-rounded">warning</span> <?php echo __('err_render_view'); ?>
             </h3>
             

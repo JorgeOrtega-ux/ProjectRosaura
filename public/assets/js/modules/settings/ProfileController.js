@@ -1,4 +1,4 @@
-﻿import { ApiRoutes } from '../../core/api/ApiRoutes.js';
+import { ApiRoutes } from '../../core/api/ApiRoutes.js';
 import { ApiService } from '../../core/api/ApiService.js';
 import { showMessage, setButtonLoading, restoreButton } from '../../core/utils/uiUtils.js';
 
@@ -422,13 +422,13 @@ class ProfileController {
 
     triggerGoogleLink(btn) {
         if (!window.google || !window.google.accounts) {
-            showMessage('Google SDK no disponible', 'error');
+            showMessage(window.__('err_google_sdk_unavailable'), 'error');
             return;
         }
 
         const clientId = window.GOOGLE_CLIENT_ID || '';
         if (!clientId) {
-            showMessage('Google Client ID no configurado', 'error');
+            showMessage(window.__('err_google_client_id_missing'), 'error');
             return;
         }
 
@@ -462,7 +462,7 @@ class ProfileController {
             if (result.aborted) return;
 
             if (result.success) {
-                showMessage(result.message || 'Cuenta de Google vinculada', 'success');
+                showMessage(result.message || window.__('msg_google_linked_success'), 'success');
                 setTimeout(() => window.location.reload(), 1000);
             } else {
                 showMessage(result.message || window.__('err_google_link_failed'), 'error');
@@ -499,7 +499,7 @@ class ProfileController {
             if (result.aborted) return;
 
             if (result.success) {
-                showMessage(result.message || 'Cuenta de Google desvinculada', 'success');
+                showMessage(result.message || window.__('msg_google_unlinked_success'), 'success');
                 setTimeout(() => window.location.reload(), 1000);
             } else {
                 showMessage(result.message || window.__('err_google_unlink_failed'), 'error');

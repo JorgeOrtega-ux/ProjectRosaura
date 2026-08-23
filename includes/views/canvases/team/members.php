@@ -134,7 +134,7 @@ extract($membersData);
                                             
                                             $primaryName = $primaryRole['is_system'] ? __('role_' . strtolower($primaryRole['name'])) : htmlspecialchars($primaryRole['name']);
                                         ?>
-                                        <div>
+                                        <div class="component-card__actions">
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded"><?php echo $icon; ?></span>
                                                 <span class="search-target" data-role-original-name="<?php echo htmlspecialchars($primaryRole['name']); ?>"><?php echo $primaryName; ?></span>

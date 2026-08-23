@@ -56,7 +56,7 @@ export class SearchController {
         const params = new URLSearchParams(window.location.search);
         this.query = params.get('q') || '';
         
-        const globalSearchInput = document.getElementById('globalSearchInput');
+        const globalSearchInput = document.querySelector('[data-ref="global-search-input"]');
         if (globalSearchInput) {
             globalSearchInput.value = this.query;
         }

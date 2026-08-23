@@ -17,10 +17,10 @@ $policyVars = [
             <h1 class="component-top-title"><?php echo __('policy_cookies_title', $policyVars); ?></h1>
         </div>
         <div class="component-top-right">
-            <div>
+            <div class="component-actions">
                 <a href="/site-policy/manage-cookies" class="component-button component-button--h40 component-button--outline" data-nav="/site-policy/manage-cookies">
                     <span class="material-symbols-rounded">tune</span>
-                    Configurar mis preferencias
+                    <?php echo __('cookies_manage_title'); ?>
                 </a>
             </div>
         </div>

@@ -1,4 +1,4 @@
-﻿import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiService.js';
 import { restoreButton, setButtonLoading, showMessage } from '../../../core/utils/uiUtils.js';
 
@@ -9,7 +9,8 @@ class AdminBackupsRestoreController {
         this.container = null;
         this.abortController = null;
         this.isRestoring = false;
-        this.pollInterval = null;
+        this.pollTimeout = null;
+        this._isPollingActive = false;
         this.schemaData = {};
         this.selectedState = {};
         this.expandedAccordions = {};
@@ -30,9 +31,10 @@ class AdminBackupsRestoreController {
         if (this.abortController) {
             this.abortController.abort();
         }
-        if (this.pollInterval) {
-            clearInterval(this.pollInterval);
-            this.pollInterval = null;
+        this._isPollingActive = false;
+        if (this.pollTimeout) {
+            clearTimeout(this.pollTimeout);
+            this.pollTimeout = null;
         }
         if (this.container) {
             this.container.removeEventListener('click', this._boundClick);
@@ -236,29 +238,49 @@ class AdminBackupsRestoreController {
     }
 
     async _pollRestoreStatus(jobId, btn, originalText) {
-        if (this.pollInterval) clearInterval(this.pollInterval);
+        if (this.pollTimeout) clearTimeout(this.pollTimeout);
+        this._isPollingActive = true;
 
-        this.pollInterval = setInterval(async () => {
-            const res = await this.api.post(ApiRoutes.Admin.CheckWorkerStatus, {}, this.abortController.signal);
-            if (res.aborted) return;
+        const checkStatus = async () => {
+            if (!this._isPollingActive) return;
 
-            if (res.success) {
-                if (res.status === 'finished') {
-                    clearInterval(this.pollInterval);
+            try {
+                const res = await this.api.post(ApiRoutes.Admin.CheckWorkerStatus, {}, this.abortController?.signal);
+                if (res?.aborted || !this._isPollingActive) return;
+
+                if (res && res.success) {
+                    if (res.status === 'finished') {
+                        this._isPollingActive = false;
+                        this._resetRestoreUI(btn, originalText);
+                        showMessage(window.__('success_db_restored'), 'success');
+                        window.location.href = this.basePath + '/login';
+                        return;
+                    }
+                } else if (res && !res.success) {
+                    this._isPollingActive = false;
                     this._resetRestoreUI(btn, originalText);
-                    showMessage(window.__('success_db_restored'), 'success');
-                    window.location.href = this.basePath + '/login';
+                    showMessage(res.message, 'error');
+                    return;
                 }
-            } else {
-                clearInterval(this.pollInterval);
-                this._resetRestoreUI(btn, originalText);
-                showMessage(res.message, 'error');
+            } catch (err) {
+                if (err.name === 'AbortError') return;
             }
-        }, 2500);
+
+            if (this._isPollingActive) {
+                this.pollTimeout = setTimeout(checkStatus, 2500);
+            }
+        };
+
+        this.pollTimeout = setTimeout(checkStatus, 2500);
     }
 
     _resetRestoreUI(btn, originalText) {
         this.isRestoring = false;
+        this._isPollingActive = false;
+        if (this.pollTimeout) {
+            clearTimeout(this.pollTimeout);
+            this.pollTimeout = null;
+        }
         if (btn) {
             restoreButton(btn, originalText);
         }
