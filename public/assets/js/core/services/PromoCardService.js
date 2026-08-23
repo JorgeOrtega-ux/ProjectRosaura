@@ -1,102 +1,10 @@
-﻿import { isAdFreeUser } from '../utils/uiUtils.js';
+import { isAdFreeUser } from '../utils/uiUtils.js';
 import { ApiRoutes } from '../api/ApiRoutes.js';
 import { ApiService } from '../api/ApiService.js';
 
 export const PromoType = {
     FEED: 'feed',
     MODULE: 'module'
-};
-
-const DEFAULT_FEED_PROMOS = [
-    {
-        id: 'b1000000-0000-0000-0000-000000000001',
-        uuid: 'b1000000-0000-0000-0000-000000000001',
-        type: PromoType.FEED,
-        sponsor: 'PixelCraft Pro',
-        title: 'Herramientas Creativas 2D',
-        description: 'Pinceles inteligentes, capas avanzadas y exportación de spritesheets en tiempo real.',
-        url: '/upgrade',
-        media: [
-            { type: 'image', url: '/assets/img/showcase/creative_tools.jpg', alt: 'PixelCraft Tools' },
-            { type: 'image', url: '/assets/img/showcase/drawing_pad.jpg', alt: 'ChromaPad Studio' },
-            { type: 'video', url: '/assets/media/sample_promo.mp4', alt: 'PixelCraft Demo' }
-        ]
-    },
-    {
-        id: 'b1000000-0000-0000-0000-000000000002',
-        uuid: 'b1000000-0000-0000-0000-000000000002',
-        type: PromoType.FEED,
-        sponsor: 'ChromaPad X',
-        title: 'Tabletas Digitales Profesionales',
-        description: 'Sensibilidad de presión de 8192 niveles con control RGB para artistas de pixel.',
-        url: '/upgrade',
-        media: [
-            { type: 'image', url: '/assets/img/showcase/drawing_pad.jpg', alt: 'ChromaPad X' },
-            { type: 'image', url: '/assets/img/showcase/palette_master.jpg', alt: 'Color Match' }
-        ]
-    },
-    {
-        id: 'b1000000-0000-0000-0000-000000000003',
-        uuid: 'b1000000-0000-0000-0000-000000000003',
-        type: PromoType.FEED,
-        sponsor: 'Palette Master AI',
-        title: 'Generador de Paletas Armónicas',
-        description: 'Extracción instantánea de degradados y paletas cromáticas para tu lienzo.',
-        url: '/upgrade',
-        media: [
-            { type: 'image', url: '/assets/img/showcase/palette_master.jpg', alt: 'Palette Master' },
-            { type: 'image', url: '/assets/img/showcase/templates_pro.jpg', alt: 'Templates Pro' },
-            { type: 'video', url: '/assets/media/sample_promo.mp4', alt: 'Palette Demo' }
-        ]
-    },
-    {
-        id: 'b1000000-0000-0000-0000-000000000004',
-        uuid: 'b1000000-0000-0000-0000-000000000004',
-        type: PromoType.FEED,
-        sponsor: 'NeoRetro Assets',
-        title: 'Librería de Plantillas 16-Bit',
-        description: 'Más de 5,000 mapas isométricos, tilesets y planos listos para colocar.',
-        url: '/upgrade',
-        media: [
-            { type: 'image', url: '/assets/img/showcase/templates_pro.jpg', alt: 'NeoRetro Assets' },
-            { type: 'image', url: '/assets/img/showcase/creative_tools.jpg', alt: 'Creative Studio' }
-        ]
-    }
-];
-
-const DEFAULT_MODULE_PROMOS = {
-    colors: [
-        {
-            id: 'b1000000-0000-0000-0000-000000000005',
-            uuid: 'b1000000-0000-0000-0000-000000000005',
-            type: PromoType.MODULE,
-            sponsor: 'Chroma Studio',
-            title: 'Paletas y Armonías Exclusivas',
-            description: 'Descubre combinaciones de colores únicas y degradados profesionales para tus obras.',
-            url: '/upgrade',
-            media: [
-                { type: 'image', url: '/assets/img/showcase/palette_master.jpg', alt: 'Chroma Studio' },
-                { type: 'image', url: '/assets/img/showcase/creative_tools.jpg', alt: 'Tools UI' },
-                { type: 'video', url: '/assets/media/sample_promo.mp4', alt: 'Color Demo' }
-            ]
-        }
-    ],
-    templates: [
-        {
-            id: 'b1000000-0000-0000-0000-000000000006',
-            uuid: 'b1000000-0000-0000-0000-000000000006',
-            type: PromoType.MODULE,
-            sponsor: 'RetroCraft Blueprints',
-            title: 'Pack de Plantillas Pixel Art',
-            description: 'Inyecta estructuras, mapas y esquemas de referencia directamente en tu lienzo.',
-            url: '/upgrade',
-            media: [
-                { type: 'image', url: '/assets/img/showcase/templates_pro.jpg', alt: 'RetroCraft Blueprints' },
-                { type: 'image', url: '/assets/img/showcase/drawing_pad.jpg', alt: 'Drawing Tablet' },
-                { type: 'video', url: '/assets/media/sample_promo.mp4', alt: 'Templates Demo' }
-            ]
-        }
-    ]
 };
 
 class PromoCardService {
@@ -108,6 +16,8 @@ class PromoCardService {
         this.loadPromise = null;
         this.trackedImpressions = new Set();
         this.trackedVideos = new Set();
+        this.visibleTimers = new Map();
+        this.impressionObserver = null;
         this.initGlobalListeners();
     }
 
@@ -144,16 +54,13 @@ class PromoCardService {
                     if (res.module_promos && typeof res.module_promos === 'object') {
                         this.modulePromos = res.module_promos;
                     }
-                } else if (!this.hasLoadedFromApi) {
-                    // Fallback to defaults only if API fails and no previous data exists
-                    this.feedPromos = DEFAULT_FEED_PROMOS;
-                    this.modulePromos = DEFAULT_MODULE_PROMOS;
+                } else {
+                    this.feedPromos = [];
+                    this.modulePromos = {};
                 }
             } catch (_) {
-                if (!this.hasLoadedFromApi) {
-                    this.feedPromos = DEFAULT_FEED_PROMOS;
-                    this.modulePromos = DEFAULT_MODULE_PROMOS;
-                }
+                this.feedPromos = [];
+                this.modulePromos = {};
             }
         })();
 
@@ -362,10 +269,46 @@ class PromoCardService {
     initCardInteractions(container = document) {
         if (!container) return;
         const promoCards = container.querySelectorAll('.component-gallery-card[data-card-role="promo"]');
+        if (!promoCards.length) return;
+
+        if (!this.impressionObserver && typeof IntersectionObserver !== 'undefined') {
+            this.impressionObserver = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    const card = entry.target;
+                    const promoId = card.getAttribute('data-promo-id');
+                    if (!promoId) return;
+
+                    if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+                        if (!this.visibleTimers.has(card)) {
+                            const timer = setTimeout(() => {
+                                this.trackImpression(promoId);
+                                if (this.impressionObserver) {
+                                    this.impressionObserver.unobserve(card);
+                                }
+                                this.visibleTimers.delete(card);
+                            }, 1000);
+                            this.visibleTimers.set(card, timer);
+                        }
+                    } else {
+                        if (this.visibleTimers.has(card)) {
+                            clearTimeout(this.visibleTimers.get(card));
+                            this.visibleTimers.delete(card);
+                        }
+                    }
+                });
+            }, {
+                threshold: 0.5
+            });
+        }
+
         promoCards.forEach((card) => {
             const promoId = card.getAttribute('data-promo-id');
-            if (promoId) {
-                this.trackImpression(promoId);
+            if (promoId && !this.trackedImpressions.has(promoId)) {
+                if (this.impressionObserver) {
+                    this.impressionObserver.observe(card);
+                } else {
+                    this.trackImpression(promoId);
+                }
             }
         });
     }

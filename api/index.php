@@ -274,7 +274,7 @@ $isReceiptDownload = ($requestRoute === 'stripe.download_receipt');
 $isInternalApi = false;
 $internalApiKey = $_SERVER['HTTP_X_INTERNAL_API_KEY'] ?? '';
 $configuredSecret = $_ENV['INTERNAL_API_SECRET'] ?? '';
-if (!empty($configuredSecret) && $internalApiKey === $configuredSecret) {
+if (!empty($configuredSecret) && !empty($internalApiKey) && hash_equals($configuredSecret, $internalApiKey)) {
     $isInternalApi = true;
 }
 

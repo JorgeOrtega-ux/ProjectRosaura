@@ -1774,14 +1774,10 @@ export const DesignNetwork = {
         const cy = parseInt(data.y || 0, 10);
         const perkId = data.perk || 'atomic_bomb_1';
         
-        const perkConfig = typeof PerksRegistry !== 'undefined' ? PerksRegistry.get(perkId) : null;
-        let durationSecs = parseInt(data.duration || perkConfig?.warning_seconds || 3, 10);
+        let durationSecs = parseInt(data.duration || 3, 10);
         if (isNaN(durationSecs) || durationSecs <= 0) durationSecs = 3;
 
         let r = data.radius || data.r;
-        if (!r && typeof PerksRegistry !== 'undefined') {
-            r = PerksRegistry.getExplosionRadius(perkId, this.boardWidth, this.boardHeight);
-        }
         r = parseInt(r || 10, 10);
         if (isNaN(r) || r <= 0) r = 10;
 
@@ -1919,9 +1915,7 @@ export const DesignNetwork = {
             badge.style.border = '1px solid var(--color-error, #ef4444)';
             badge.style.animation = 'pulse 1s infinite';
 
-            const details = typeof PerksRegistry !== 'undefined' && typeof PerksRegistry.getWarningDetails === 'function' 
-                ? PerksRegistry.getWarningDetails(perkId) 
-                : { icon: 'crisis_alert', text: 'Ataque de Perk' };
+            const details = { icon: 'crisis_alert', text: 'Ataque de Perk' };
 
             let remaining = durationSecs;
             badge.style.display = 'flex';
@@ -1953,8 +1947,8 @@ export const DesignNetwork = {
         const existing = container.querySelector(`[data-preparing-key="${badgeKey}"]`);
         if (existing) existing.remove();
 
-        const icon = typeof PerksRegistry !== 'undefined' ? PerksRegistry.getIcon(perkId) : 'auto_mode';
-        const label = typeof PerksRegistry !== 'undefined' ? PerksRegistry.getLabel(perkId) : perkId;
+        const icon = 'auto_mode';
+        const label = perkId;
 
         const badge = document.createElement('div');
         badge.className = 'component-badge';

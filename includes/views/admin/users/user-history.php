@@ -199,14 +199,14 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity/' . $user['
                                     <td>
                                         <div class="td-details-content">
                                             <?php if ($logCategory === 'finance' && isset($log['amount'])): ?>
-                                                <div>
+                                                <div class="td-details-row">
                                                     <strong><?php echo __('lbl_amount'); ?>:</strong> $<?php echo number_format((float)$log['amount'], 2); ?> <?php echo strtoupper($log['currency'] ?? 'USD'); ?>
                                                     <?php if (!empty($log['status'])): ?>
                                                         | <strong><?php echo __('lbl_payment_status'); ?>:</strong> <?php echo htmlspecialchars($log['status']); ?>
                                                     <?php endif; ?>
                                                 </div>
                                                 <?php if (!empty($log['reason'])): ?>
-                                                    <div><strong><?php echo __('lbl_description'); ?>:</strong> <?php echo htmlspecialchars($log['reason']); ?></div>
+                                                    <div class="td-details-row"><strong><?php echo __('lbl_description'); ?>:</strong> <?php echo htmlspecialchars($log['reason']); ?></div>
                                                 <?php endif; ?>
                                             <?php elseif (!empty($log['reason'])): ?>
                                                 <?php 
@@ -214,9 +214,9 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity/' . $user['
                                                 if (is_array($reasonObj) && isset($reasonObj['field'])) {
                                                     $oldVal = ($reasonObj['old'] !== 'null' && $reasonObj['old'] !== '' && $reasonObj['old'] !== null) ? $reasonObj['old'] : __('lbl_na');
                                                     $newVal = ($reasonObj['new'] !== 'null' && $reasonObj['new'] !== '' && $reasonObj['new'] !== null) ? $reasonObj['new'] : __('lbl_na');
-                                                    echo '<div><strong>' . __('lbl_data') . ':</strong> ' . htmlspecialchars($reasonObj['field']) . ' | <strong>' . __('lbl_prev_value') . ':</strong> ' . htmlspecialchars($oldVal) . ' | <strong>' . __('lbl_new_value') . ':</strong> ' . htmlspecialchars($newVal) . '</div>';
+                                                    echo '<div class="td-details-row"><strong>' . __('lbl_data') . ':</strong> ' . htmlspecialchars($reasonObj['field']) . ' | <strong>' . __('lbl_prev_value') . ':</strong> ' . htmlspecialchars($oldVal) . ' | <strong>' . __('lbl_new_value') . ':</strong> ' . htmlspecialchars($newVal) . '</div>';
                                                 } else {
-                                                    echo '<div><strong>' . __('lbl_reason') . ':</strong> ' . htmlspecialchars($log['reason']) . '</div>';
+                                                    echo '<div class="td-details-row"><strong>' . __('lbl_reason') . ':</strong> ' . htmlspecialchars($log['reason']) . '</div>';
                                                 }
                                                 ?>
                                             <?php endif; ?>
@@ -225,11 +225,11 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity/' . $user['
                                                 $expStr = strtotime($log['end_date']);
                                                 $formatExp = $expStr ? date('d/m/Y H:i', $expStr) : $log['end_date'];
                                             ?>
-                                                <div><strong><?php echo __('lbl_expires'); ?>:</strong> <?php echo $formatExp; ?></div>
+                                                <div class="td-details-row"><strong><?php echo __('lbl_expires'); ?>:</strong> <?php echo $formatExp; ?></div>
                                             <?php endif; ?>
                                             
                                             <?php if (!empty($log['admin_notes'])): ?>
-                                                <div><strong><?php echo __('lbl_notes'); ?>:</strong> <?php echo htmlspecialchars($log['admin_notes']); ?></div>
+                                                <div class="td-details-row"><strong><?php echo __('lbl_notes'); ?>:</strong> <?php echo htmlspecialchars($log['admin_notes']); ?></div>
                                             <?php endif; ?>
 
                                             <?php if (empty($log['reason']) && empty($log['end_date']) && !isset($log['amount'])): ?>

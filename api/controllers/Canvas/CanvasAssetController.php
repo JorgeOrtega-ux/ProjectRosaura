@@ -327,7 +327,7 @@ class CanvasAssetController extends BaseController {
                     'success' => true,
                     'is_offline' => true,
                     'tokens_consumed' => $tokensCost,
-                    'message' => __('msg_template_stamped') ?: 'Plantilla estampada con éxito.'
+                    'message' => __('msg_template_stamped')
                 ]);
             }
 

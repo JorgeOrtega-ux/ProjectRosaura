@@ -81,6 +81,18 @@ class SessionManager implements SessionManagerInterface {
             $_SESSION = [];
             session_unset();
             session_destroy();
+            if (ini_get("session.use_cookies")) {
+                $params = session_get_cookie_params();
+                setcookie(
+                    session_name(),
+                    '',
+                    time() - 42000,
+                    $params["path"],
+                    $params["domain"],
+                    $params["secure"],
+                    $params["httponly"]
+                );
+            }
         } catch (Exception $e) {
             Logger::error("Failed to destroy session completely", ['exception' => $e]);
         }

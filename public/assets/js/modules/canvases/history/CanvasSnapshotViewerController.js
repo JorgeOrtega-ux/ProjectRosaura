@@ -74,9 +74,11 @@ class CanvasSnapshotViewerController {
 
         this.handleGlobalClickBound = this.handleGlobalClick.bind(this);
         this.handleKeyDownBound = this.handleKeyDown.bind(this);
+        this.abortController = null;
     }
 
     async init() {
+        this.abortController = new AbortController();
         if (this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId);
             this.animationFrameId = null;
@@ -149,6 +151,9 @@ class CanvasSnapshotViewerController {
     }
 
     destroy() {
+        if (this.abortController) {
+            this.abortController.abort();
+        }
         document.removeEventListener('wheel', this.handleWheelBound, { passive: false });
         document.removeEventListener('mousedown', this.handleMouseDownBound);
         document.removeEventListener('mousemove', this.handleMouseMoveBound);
@@ -622,7 +627,7 @@ class CanvasSnapshotViewerController {
     async triggerFileDownload(url, filename) {
         try {
             const fetchUrl = url.includes('?') ? `${url}&_t=${Date.now()}` : `${url}?_t=${Date.now()}`;
-            const res = await fetch(fetchUrl, { cache: 'no-store' });
+            const res = await fetch(fetchUrl, { cache: 'no-store', signal: this.abortController?.signal });
             if (!res.ok) throw new Error('Fetch failed');
             const blob = await res.blob();
             const blobUrl = URL.createObjectURL(blob);

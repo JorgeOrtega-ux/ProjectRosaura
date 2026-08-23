@@ -5,7 +5,6 @@ use App\Core\System\PermissionsConstants as PC;
 return [
     '/' => ['view' => 'app/home.php'],
     '/explore' => ['view' => 'app/explore.php'],
-    '/build-audio-sprite' => ['view' => 'system/build_sprite.php'],
 
     '/search' => ['view' => 'app/search.php'], 
     '/upgrade' => ['view' => 'app/upgrade.php'], 
@@ -20,13 +19,13 @@ return [
     '/account-suspended' => ['view' => 'system/message.php'],
     '/account-deleted' => ['view' => 'system/message.php'],
     '/site-policy/manage-cookies' => ['view' => 'site-policy/manage-cookies.php'],
-    '/site-policy' => ['view' => 'site-policy/site-policy.php'],
+    '/site-policy' => ['view' => 'site-policy/terms-conditions.php'],
     '/site-policy/terms-conditions' => ['view' => 'site-policy/terms-conditions.php'],
     '/site-policy/privacy-policy' => ['view' => 'site-policy/privacy-policy.php'],
     '/site-policy/cookies-policy' => ['view' => 'site-policy/cookies-policy.php'],
     '/site-policy/legal-notice' => ['view' => 'site-policy/legal-notice.php'],
     '/site-policy/refund-policy' => ['view' => 'site-policy/refund-policy.php'],
-    '/settings' => ['view' => 'settings/index.php'],
+    '/settings' => ['view' => 'settings/profile/your-account.php', 'auth' => true],
     '/settings/guest' => ['view' => 'settings/preferences/guest.php', 'guest_only' => true],
     '/settings/your-account' => ['view' => 'settings/profile/your-account.php', 'auth' => true],
     '/settings/security' => ['view' => 'settings/security/security.php', 'auth' => true],
@@ -67,7 +66,6 @@ return [
     '/admin/advertisement-items/:uuid' => ['view' => 'admin/advertisements/manage-ads.php', 'auth' => true, 'permissions' => [PC::MANAGE_ADVERTISEMENTS], 'requires_2fa' => false],
 
     '/admin/messages' => ['view' => 'admin/messages/manage-messages.php', 'auth' => true, 'permissions' => [PC::MANAGE_CONTENT], 'requires_2fa' => false],
-    '/admin/messages/visibility/:uuid' => ['view' => 'admin/messages/edit-visibility.php', 'auth' => true, 'permissions' => [PC::MANAGE_CONTENT], 'requires_2fa' => false],
     '/admin/messages/reports/:uuid' => ['view' => 'admin/messages/reports.php', 'auth' => true, 'permissions' => [PC::MANAGE_CONTENT], 'requires_2fa' => false],
     '/admin/users' => ['view' => 'admin/users/manage-users.php', 'auth' => true, 'permissions' => [PC::VIEW_USERS], 'requires_2fa' => false],
     '/admin/user-profile/:uuid' => ['view' => 'admin/users/edit-user.php', 'auth' => true, 'permissions' => [PC::EDIT_USERS], 'requires_2fa' => false],

@@ -7,7 +7,6 @@ import { DesignInteractions } from './DesignInteractions.js?v=34';
 import { DesignNetwork } from './DesignNetwork.js?v=34';
 import { DesignRender } from './DesignRender.js?v=34';
 import { DesignSetup } from './DesignSetup.js?v=34';
-import { PerksRegistry } from './PerksRegistry.js';
 import { soundManager } from './SoundManager.js';
 import { DesignTemplates } from './templates/DesignTemplates.js?v=34';
 
@@ -188,11 +187,6 @@ class DesignController {
     }
 
     async init() {
-        try {
-            await PerksRegistry.load();
-        } catch (e) {
-            console.warn('[DesignController] PerksRegistry.load error:', e);
-        }
         this.abortController = new AbortController();
         
         this.initSelectedPixelsProxy();
@@ -371,22 +365,7 @@ class DesignController {
 
                 if (this.uiCooldownBadge) {
                     let newHtml = '';
-                    if (this.interactionMode === 'bombing' && this.activeBomb) {
-                        const icon = PerksRegistry.getIcon(this.activeBomb);
-                        const targetMax = PerksRegistry.getTargetCount(this.activeBomb);
-                        const currentSel = this.selectedPixels ? this.selectedPixels.size : 0;
-                        newHtml = `
-                            <span class="material-symbols-rounded">${icon}</span>
-                            <span>${currentSel}/${targetMax}</span>
-                        `;
-                    } else if (this.interactionMode === 'placing_mines') {
-                        const icon = PerksRegistry.getIcon('mines_1') || 'radar';
-                        const currentSel = this.selectedPixels ? this.selectedPixels.size : 0;
-                        newHtml = `
-                            <span class="material-symbols-rounded">${icon}</span>
-                            <span>${currentSel}/10</span>
-                        `;
-                    } else if (this.isCooldownSynced || this.cooldownBalance !== undefined) {
+                    if (this.isCooldownSynced || this.cooldownBalance !== undefined) {
                         const rText = remaining > 0 ? `${Math.ceil(remaining)}s` : '0s';
                         const curBal = typeof this.cooldownBalance === 'number' ? Math.floor(this.cooldownBalance) : (this.cooldownMax || 5);
                         const maxBal = this.cooldownMax || 5;

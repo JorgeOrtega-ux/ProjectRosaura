@@ -83,12 +83,10 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
                             <!-- Almacenamiento del Plan -->
                             <div class="component-group-item component-group-item--stacked">
-                                <div>
-                                    <div class="component-card__content">
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title">Almacenamiento del Plan</h2>
-                                            <p class="component-card__description" data-ref="sub-storage-subtitle">Tu capacidad de almacenamiento · -- MB de -- MB utilizados (Quedan -- MB)</p>
-                                        </div>
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('sub_plan_storage'); ?></h2>
+                                        <p class="component-card__description" data-ref="sub-storage-subtitle">Tu capacidad de almacenamiento · -- MB de -- MB utilizados (Quedan -- MB)</p>
                                     </div>
                                 </div>
 
@@ -101,12 +99,10 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
                             <!-- Uso de Tokens de Inyección de Plantillas -->
                             <div class="component-group-item component-group-item--stacked disabled" data-ref="sub-tokens-container">
-                                <div>
-                                    <div class="component-card__content">
-                                        <div class="component-card__text">
-                                            <h2 class="component-card__title">Inyección de Plantillas (Tokens de 5 horas)</h2>
-                                            <p class="component-card__description" data-ref="sub-tokens-subtitle">Uso de tokens · -- / -- Tokens consumidos</p>
-                                        </div>
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title"><?php echo __('sub_template_tokens_title'); ?></h2>
+                                        <p class="component-card__description" data-ref="sub-tokens-subtitle">Uso de tokens · -- / -- Tokens consumidos</p>
                                     </div>
                                 </div>
 

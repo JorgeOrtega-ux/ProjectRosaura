@@ -473,7 +473,7 @@ class StripeService {
                     'user_id' => $userId,
                     'subscription_id' => $subscription->id
                 ]);
-                return ['success' => true, 'updated' => true, 'message' => 'Suscripción cancelada. Terminará al final del periodo actual.'];
+                return ['success' => true, 'updated' => true, 'message' => __('msg_subscription_canceled_period_end')];
             } catch (\Exception $e) {
                 Logger::error("Stripe API Error canceling subscription", ['error' => $e->getMessage()]);
                 return ['success' => false, 'message' => __('err_stripe_api')];
@@ -738,24 +738,6 @@ class StripeService {
                                 return $inv->invoice_pdf;
                             }
                         }
-                    }
-                }
-
-                // 4. Scrape receipt_url HTML for pay.stripe.com/invoice/.../pdf link
-                if (!empty($charge->receipt_url)) {
-                    $ch = curl_init();
-                    curl_setopt($ch, CURLOPT_URL, $charge->receipt_url);
-                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-                    curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
-                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-                    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-                    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-                    $html = curl_exec($ch);
-                    curl_close($ch);
-
-                    if ($html && preg_match('/(https:\/\/pay\.stripe\.com\/invoice\/[^\s"\'\>]+(?:\/pdf|\?pdf=1))/i', $html, $matches)) {
-                        return $matches[1];
                     }
                 }
             } catch (\Exception $e) {
@@ -1137,7 +1119,7 @@ class StripeService {
             if ($pms['success'] && empty($pms['data'])) {
                 return [
                     'success' => false,
-                    'message' => __('err_reactivate_missing_card') ?? 'Debes agregar una tarjeta de pago antes de reactivar tu suscripción.'
+                    'message' => __('err_reactivate_missing_card')
                 ];
             }
         }
@@ -1199,7 +1181,7 @@ class StripeService {
             if ($hasActivePaidTier && $isAutoRenewActive) {
                 return [
                     'success' => false,
-                    'message' => 'No puedes eliminar tu tarjeta mientras tengas una suscripción activa con renovación automática. Desactiva la renovación automática primero.'
+                    'message' => __('err_cannot_delete_active_card_autorenew')
                 ];
             }
         }
@@ -1209,7 +1191,7 @@ class StripeService {
             $pm = \Stripe\PaymentMethod::retrieve($pmId);
             $pm->detach();
 
-            return ['success' => true, 'message' => 'Tarjeta de pago eliminada correctamente.'];
+            return ['success' => true, 'message' => __('msg_card_deleted_success')];
         } catch (\Exception $e) {
             Logger::error("Stripe API Error deleting payment method", ['user_id' => $userId, 'pm_id' => $pmId, 'error' => $e->getMessage()]);
             return ['success' => false, 'message' => $e->getMessage()];

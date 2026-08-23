@@ -2240,7 +2240,26 @@
     "explore_empty_title": "No hay murales disponibles",
     "explore_empty_desc": "No se encontraron lienzos en esta categoría por el momento.",
     "btn_create_canvas": "Crear lienzo",
-    "btn_go_home": "Ir al inicio"
+    "btn_go_home": "Ir al inicio",
+    "btn_prev": "Anterior",
+    "btn_select": "Seleccionar",
+    "coins": "Monedas",
+    "dt_zero_records": "No se encontraron registros coincidentes.",
+    "err_canvas_is_online_mode": "El lienzo se encuentra actualmente en modo online.",
+    "err_email_delivery_failed": "Error al enviar el correo electrónico.",
+    "err_occurred": "Ha ocurrido un error inesperado.",
+    "err_server": "Error interno del servidor.",
+    "lbl_grid_off": "Cuadrícula Desactivada",
+    "lbl_text_scale": "Escala de Texto",
+    "msg_max_palette_colors": "Has alcanzado el límite máximo de colores permitidos en la paleta.",
+    "tooltip_drag": "Arrastrar para reordenar",
+    "msg_subscription_canceled_period_end": "Suscripción cancelada. Terminará al final del periodo actual.",
+    "err_cannot_delete_active_card_autorenew": "No puedes eliminar tu tarjeta mientras tengas una suscripción activa con renovación automática. Desactiva la renovación automática primero.",
+    "msg_card_deleted_success": "Tarjeta de pago eliminada correctamente.",
+    "msg_template_stamped": "Plantilla estampada con éxito.",
+    "sub_plan_storage": "Almacenamiento del Plan",
+    "sub_template_tokens_title": "Inyección de Plantillas (Tokens de 5 horas)",
+    "msg_select_target": "Selecciona un objetivo en el lienzo."
 }
 
 

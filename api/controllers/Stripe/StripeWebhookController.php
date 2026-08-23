@@ -178,9 +178,42 @@ class StripeWebhookController {
         }
     }
 
+    private function resolveTierFromPriceId(string $priceId): ?int {
+        $priceMap = [
+            ($_ENV['STRIPE_PRICE_PLUS_MONTHLY'] ?? '') => 1,
+            ($_ENV['STRIPE_PRICE_PLUS_YEARLY'] ?? '')  => 1,
+            ($_ENV['STRIPE_PRICE_PRO_MONTHLY'] ?? '')  => 2,
+            ($_ENV['STRIPE_PRICE_PRO_YEARLY'] ?? '')   => 2,
+            ($_ENV['STRIPE_PRICE_ULTRA_MONTHLY'] ?? '') => 3,
+            ($_ENV['STRIPE_PRICE_ULTRA_YEARLY'] ?? '')  => 3,
+        ];
+
+        unset($priceMap['']);
+
+        if (isset($priceMap[$priceId])) {
+            return $priceMap[$priceId];
+        }
+
+        try {
+            $db = new \App\Config\Database\DatabaseManager();
+            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
+            $stmt = $pdo->prepare("SELECT tier_level FROM subscription_tiers WHERE (stripe_price_id_monthly = ? OR stripe_price_id_yearly = ?) AND is_active = 1 LIMIT 1");
+            $stmt->execute([$priceId, $priceId]);
+            $tier = $stmt->fetchColumn();
+            if ($tier !== false && $tier !== null) {
+                return (int) $tier;
+            }
+        } catch (\Throwable $e) {
+            Logger::error("Error resolving tier from price ID in webhook", ['price_id' => $priceId, 'error' => $e->getMessage()]);
+        }
+
+        return null;
+    }
+
     private function handleSubscriptionUpdated($subscription): void {
         $stripeSubId = $subscription->id;
         $newStatus = $subscription->status;
+        $localSub = $this->subRepo->findByStripeSubscriptionId($stripeSubId);
 
         $updateData = [
             'status' => $newStatus === 'active' ? 'active' : ($newStatus === 'past_due' ? 'past_due' : $newStatus)
@@ -196,18 +229,30 @@ class StripeWebhookController {
             $updateData['canceled_at'] = date('Y-m-d H:i:s', $subscription->canceled_at);
         }
 
+        $priceId = $subscription->items->data[0]->price->id ?? null;
+        $newTier = null;
+        if ($priceId) {
+            $newTier = $this->resolveTierFromPriceId($priceId);
+            if ($newTier !== null && $newTier > 0) {
+                $updateData['tier'] = $newTier;
+            }
+        }
+
         $this->subRepo->updateByStripeSubscriptionId($stripeSubId, $updateData);
 
-        if (in_array($newStatus, ['past_due', 'unpaid', 'canceled', 'incomplete_expired'])) {
-            $localSub = $this->subRepo->findByStripeSubscriptionId($stripeSubId);
-            if ($localSub) {
-                $this->setUserTierAndEvaluateCanvases((int) $localSub['user_id'], 0);
+        if ($localSub) {
+            $userId = (int) $localSub['user_id'];
+            if (in_array($newStatus, ['past_due', 'unpaid', 'canceled', 'incomplete_expired'])) {
+                $this->setUserTierAndEvaluateCanvases($userId, 0);
+            } elseif ($newStatus === 'active' && $newTier !== null && $newTier > 0) {
+                $this->setUserTierAndEvaluateCanvases($userId, $newTier);
             }
         }
 
         Logger::info("Stripe webhook: subscription updated", [
             'stripe_subscription_id' => $stripeSubId,
-            'status' => $newStatus
+            'status' => $newStatus,
+            'tier' => $newTier
         ]);
     }
 

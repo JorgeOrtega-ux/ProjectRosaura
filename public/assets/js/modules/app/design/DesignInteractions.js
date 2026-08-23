@@ -5,7 +5,6 @@ import { SHAPE_SVG_PATHS } from './data/ShapeSvgPathsData.js?v=34';
 import { renderPixelText } from './utils/PixelTextUtils.js';
 import { getPixelFont } from './data/PixelFontsData.js';
 import { getPaletteById } from './utils/DesignPaletteUtils.js';
-import { PerksRegistry } from './PerksRegistry.js';
 import { showMessage, hexToHsv, hsvToHex, getEventCoords } from '../../../core/utils/uiUtils.js';
 import { soundManager } from './SoundManager.js';
 import { OfflineToolsConfig, getCanvasTier, getToolSizes, getSprayRadii, getTileGridLevels } from './data/OfflineToolsData.js';
@@ -114,9 +113,7 @@ export const DesignInteractions = {
         if (this.interactionMode === 'owner_erasing') return Infinity;
         if (this.perkNoCooldown) return Infinity;
         if (this.interactionMode === 'placing_mines') return 10;
-        if (this.interactionMode === 'bombing') {
-            return typeof PerksRegistry !== 'undefined' ? PerksRegistry.getTargetCount(this.activeBomb) : 1;
-        }
+        if (this.interactionMode === 'bombing') return 1;
         return Math.floor(this.cooldownBalance);
     },
 
@@ -2680,11 +2677,7 @@ export const DesignInteractions = {
 
         if (this.selectedPixels.size > 0 && this.selectedPixels.size <= maxBalance) {
             this.btnPlacePixels.classList.remove('disabled-interaction');
-            if (this.interactionMode === 'bombing') {
-                this.txtPlacePixels.textContent = PerksRegistry.getBombButtonLabel(this.activeBomb);
-            } else {
-                this.txtPlacePixels.textContent = window.__('btn_place_pixels');
-            }
+            this.txtPlacePixels.textContent = window.__('btn_place_pixels');
         } else {
             this.btnPlacePixels.classList.add('disabled-interaction');
             if (this.selectedPixels.size > maxBalance) {
@@ -2743,10 +2736,9 @@ export const DesignInteractions = {
         }
 
         if (this.interactionMode === 'bombing') {
-            const requiredTargets = typeof PerksRegistry !== 'undefined' ? PerksRegistry.getTargetCount(this.activeBomb) : 1;
+            const requiredTargets = 1;
             if (this.selectedPixels.size < requiredTargets) {
-                const msgKey = requiredTargets > 1 ? 'msg_select_targets_count' : 'msg_select_target';
-                const msgText = (typeof window.__ === 'function' ? window.__(msgKey) : null)?.replace(':count', requiredTargets) || `Selecciona ${requiredTargets} objetivo(s)`;
+                const msgText = (typeof window.__ === 'function' ? window.__('msg_select_target') : null) || 'Selecciona un objetivo';
                 if (typeof showMessage === 'function') showMessage(msgText, 'warning');
                 return;
             }
@@ -2755,11 +2747,8 @@ export const DesignInteractions = {
                 y: key >> 16
             }));
             const usedPerk = this.activeBomb;
-            const perkConfig = typeof PerksRegistry !== 'undefined' ? PerksRegistry.get(usedPerk) : null;
-            const durationSecs = parseInt(perkConfig?.warning_seconds || 3, 10);
-            const perkRadius = typeof PerksRegistry !== 'undefined' 
-                ? PerksRegistry.getExplosionRadius(usedPerk, this.boardWidth, this.boardHeight) 
-                : 10;
+            const durationSecs = 3;
+            const perkRadius = 10;
 
 
             if (typeof this.showPreparingPerkBadge === 'function' && usedPerk) {
@@ -3615,7 +3604,7 @@ export const DesignInteractions = {
             maxRadius: r,
             perkId: perkId,
             startTime: Date.now(),
-            duration: PerksRegistry.getExplosionDuration(perkId)
+            duration: 800
         });
         
         this.ensureExplosionStyles();
@@ -3625,33 +3614,11 @@ export const DesignInteractions = {
             if (ball) ball.remove();
         }
 
-        if (PerksRegistry.hasScreenShake(perkId)) {
-            if (this.canvas) {
-                this.canvas.classList.add('nuclear-shake');
-                setTimeout(() => {
-                    this.canvas.classList.remove('nuclear-shake');
-                }, PerksRegistry.getShakeDuration(perkId));
-            }
-        }
-        
-        if (PerksRegistry.hasScreenFlash(perkId)) {
-            const flashMs = PerksRegistry.getFlashDuration(perkId);
-            const flash = document.createElement('div');
-            flash.style.position = 'fixed';
-            flash.style.top = '0';
-            flash.style.left = '0';
-            flash.style.width = '100vw';
-            flash.style.height = '100vh';
-            flash.style.backgroundColor = perkId === 'supernova_blast' ? '#fef08a' : 'white';
-            flash.style.zIndex = '999999';
-            flash.style.pointerEvents = 'none';
-            flash.style.transition = `opacity ${flashMs / 1000}s ease-out`;
-            document.body.appendChild(flash);
-            void flash.offsetHeight;
-            flash.style.opacity = '0';
+        if (this.canvas) {
+            this.canvas.classList.add('nuclear-shake');
             setTimeout(() => {
-                if (flash.parentNode) flash.parentNode.removeChild(flash);
-            }, flashMs + 100);
+                this.canvas.classList.remove('nuclear-shake');
+            }, 600);
         }
         
         if (!this.renderWorker && !this.isExplosionLoopRunning) {
@@ -3669,84 +3636,14 @@ export const DesignInteractions = {
         }
     },
 
-    // handleNuclearWarning gestionado por DesignNetwork.js
-
-
     updatePerkBadges() {
         const badgesRight = document.querySelector('[data-ref="badges-right"]');
         if (!badgesRight) return;
 
-        // Clear only non-timer badges to prevent layout shifting/disappearing of scheduled events
         Array.from(badgesRight.children).forEach(badge => {
             const badgeId = badge.getAttribute('data-badge-id');
             if (badgeId !== 'reset-timer' && badgeId !== 'resize-timer') {
                 badge.remove();
-            }
-        });
-        const isGlobalCooldown = !!(this.perkGlobalCooldownUntil && Date.now() < this.perkGlobalCooldownUntil);
-
-        const PERK_ORDER = PerksRegistry.getDisplayOrder();
-        let renderedInventoryCount = 0;
-
-        PERK_ORDER.forEach(perkId => {
-            let isActive = false;
-            let activeHtml = '';
-            let isToggledOn = false;
-            let icon = PerksRegistry.getIcon(perkId);
-            let clickHandler = null;
-
-            if (PerksRegistry.isBomb(perkId) && perkId !== 'mines_1') {
-                isActive = (this.activeBomb === perkId && this.interactionMode === 'bombing');
-                
-                if (isActive) {
-                    isToggledOn = true;
-                    const titleText = PerksRegistry.getLabel(perkId);
-                    activeHtml = `<span class="material-symbols-rounded component-text-danger">${icon}</span><span>${titleText}</span>`;
-                    clickHandler = () => {
-                        this.interactionMode = 'normal';
-                        this.activeBomb = null;
-                        this.perkBombReady = null;
-                        this.updateSelectionUI();
-                        this.updatePerkBadges();
-                    };
-                }
-            } else if (perkId === 'mines_1') {
-                isActive = (this.interactionMode === 'placing_mines');
-                
-                if (isActive) {
-                    isToggledOn = true;
-                    const titleText = PerksRegistry.getLabel(perkId);
-                    activeHtml = `<span class="material-symbols-rounded component-text-success">${icon}</span><span>${titleText}</span>`;
-                    clickHandler = () => {
-                        this.interactionMode = 'normal';
-                        this.selectedPixels.clear();
-                        this.updateSelectionUI();
-                        this.updatePerkBadges();
-                        this.syncMinesToWorker();
-                        this.requestRender();
-                    };
-                }
-            }
-
-            if (isActive) {
-                const badge = document.createElement('div');
-                badge.className = 'component-badge';
-                badge.style.cursor = 'pointer';
-                badge.innerHTML = activeHtml;
-                if (isGlobalCooldown) {
-                    badge.classList.add('disable-interaction');
-                }
-                if (isToggledOn) {
-                    if (PerksRegistry.isBomb(perkId)) {
-                        badge.style.border = '1px solid var(--color-error)';
-                        badge.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
-                    } else {
-                        badge.style.border = '1px solid var(--color-success)';
-                        badge.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
-                    }
-                }
-                if (clickHandler) badge.addEventListener('click', clickHandler);
-                badgesRight.appendChild(badge);
             }
         });
 

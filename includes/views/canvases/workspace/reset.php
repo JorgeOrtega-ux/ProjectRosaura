@@ -19,9 +19,7 @@ $isResetActive = $resetSettings['is_active'];
     
     <div class="component-top">
         <div class="component-top-left">
-            <div>
-                <h1 class="component-top-title"><?php echo __('canvas_resets_title'); ?></h1>
-            </div>
+            <h1 class="component-top-title"><?php echo __('canvas_resets_title'); ?></h1>
         </div>
         <div class="component-top-right">
             <button type="button" class="component-button component-button--h40" data-action="saveSettings">

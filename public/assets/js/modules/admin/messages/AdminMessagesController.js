@@ -1,4 +1,4 @@
-﻿import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
+import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiService.js';
 import { 
     showMessage, 
@@ -55,14 +55,12 @@ class AdminMessagesController {
 
     handlePaginationClick(e) {
         if (!window.location.pathname.includes('/admin/messages') || 
-            window.location.pathname.includes('/admin/messages/visibility') || 
             window.location.pathname.includes('/admin/messages/reports')) return;
         catchPaginationClick(e, url => this.handlePagination(url));
     }
 
     handleGlobalClick(e) {
         if (!window.location.pathname.includes('/admin/messages') || 
-            window.location.pathname.includes('/admin/messages/visibility') || 
             window.location.pathname.includes('/admin/messages/reports')) return;
 
         const searchBtn = e.target.closest('[data-action="searchMessages"]');
@@ -103,7 +101,7 @@ class AdminMessagesController {
     }
 
     handleViewLoaded(e) {
-        if (e.detail.url.includes('/admin/messages') && !e.detail.url.includes('/admin/messages/visibility') && !e.detail.url.includes('/admin/messages/reports')) {
+        if (e.detail.url.includes('/admin/messages') && !e.detail.url.includes('/admin/messages/reports')) {
             this.initializeFiltersFromURL();
         }
     }

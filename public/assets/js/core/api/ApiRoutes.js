@@ -102,6 +102,12 @@ export const ApiRoutes = {
         SaveTier: 'admin.subscriptions.save',
         SaveSubscriptionColor: 'admin.subscriptions.save_color',
 
+        GetBackupSchema: 'admin.get_backup_schema',
+        CreateCustomBackup: 'admin.create_custom_backup',
+        BackupStatus: 'admin.backup_status',
+        CheckWorkerStatus: 'admin.check_worker_status',
+        ReadLogs: 'admin.read_logs',
+
         GetAdProviders: 'admin.advertisements.list',
         CreateAdProvider: 'admin.advertisements.create_provider',
         UpdateAdProvider: 'admin.advertisements.update_provider',
@@ -225,5 +231,8 @@ export const ApiRoutes = {
     },
     Telemetry: {
         Collect: 'telemetry.collect'
+    },
+    Store: {
+        GetTransactionHistory: 'stripe.get_payment_history'
     }
 };

@@ -193,7 +193,7 @@ export const ModalTemplates = {
                 <div class="component-modal-body">
                     <div class="component-form-box component-form-box--full">
                         <div class="component-input-group">
-                            <input type="text" id="canvas-join-code-modal" data-ref="canvas-join-code-modal" class="component-input-field" placeholder="${__('ph_invite_code')}" maxlength="9" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/(.{4})(.+)/, '$1-$2').slice(0, 9);" required autocomplete="off">
+                            <input class="component-input-field" data-ref="canvas-join-code-modal" type="text" placeholder="${__('ph_invite_code')}" maxlength="9" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/(.{4})(.+)/, '$1-$2').slice(0, 9);" required autocomplete="off">
                             <label class="component-input-label">${__('lbl_invite_code')}</label>
                         </div>
                     </div>
@@ -348,7 +348,7 @@ export const ModalTemplates = {
                 }
 
                 stepsHtml += `
-                    <div class="step-modal-step onboarding-tour-step ${isActive}" id="${step.id}">
+                    <div class="step-modal-step onboarding-tour-step ${isActive}" data-ref="${step.id}">
                         <div class="onboarding-tour-banner">
                             ${tilesHtml}
                         </div>
@@ -561,7 +561,7 @@ export const ModalTemplates = {
                 }
 
                 stepsHtml += `
-                    <div class="step-modal-step onboarding-tour-step ${isActive}" id="${modalId}-step-${stepNum}">
+                    <div class="step-modal-step onboarding-tour-step ${isActive}" data-ref="${modalId}-step-${stepNum}">
                         <div class="onboarding-tour-banner">
                             ${tilesHtml}
                         </div>
@@ -1769,7 +1769,7 @@ export const ModalTemplates = {
                             </div>
 
                             <div class="calendar-modal-controls">
-                                <div>
+                                <div class="calendar-control-column">
                                     <div class="calendar-control-label">${__('lbl_hours')}</div>
                                     <div class="component-inline-control component-inline-control--full">
                                         <div class="component-inline-control__group">
@@ -1791,7 +1791,7 @@ export const ModalTemplates = {
                                         </div>
                                     </div>
                                 </div>
-                                <div>
+                                <div class="calendar-control-column">
                                     <div class="calendar-control-label">${__('lbl_minutes')}</div>
                                     <div class="component-inline-control component-inline-control--full">
                                         <div class="component-inline-control__group">
@@ -2523,7 +2523,7 @@ export const ModalTemplates = {
                         </div>
                         <div class="component-input-group component-input-group--h34 component-input-group--color">
                             <div class="component-color-swatch component-color-swatch--sm" data-ref="hexInputPreview" style="background-color: ${hex};"></div>
-                            <input type="text" class="component-input-field component-input-field--mono" data-ref="selected_hex" value="${hex}" maxlength="7" placeholder="#000000">
+                            <input class="component-input-field component-input-field--mono" data-ref="selected_hex" type="text" value="${hex}" maxlength="7" placeholder="#000000">
                         </div>
                     </div>
                 </div>

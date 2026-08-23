@@ -23,7 +23,6 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 
 # Copiar el código real
 COPY scripts/ws_server/src src/
-COPY public/assets/data/perks.json /usr/src/app/public/assets/data/perks.json
 
 # Compilar el binario real (solo recompila lo que cambió)
 RUN --mount=type=cache,target=/usr/local/cargo/registry \

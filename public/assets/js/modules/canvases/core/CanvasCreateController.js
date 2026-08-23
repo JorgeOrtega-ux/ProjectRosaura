@@ -37,7 +37,7 @@ class CanvasCreateController {
         this.updatePaletteTriggerDisplay();
         this.updateSizesAvailability();
 
-        fetch(`${this.basePath}/assets/config/canvas_templates.json`)
+        fetch(`${this.basePath}/assets/config/canvas_templates.json`, { signal: this.abortController.signal })
             .then(res => res.ok ? res.json() : [])
             .then(data => {
                 this.templates = data;

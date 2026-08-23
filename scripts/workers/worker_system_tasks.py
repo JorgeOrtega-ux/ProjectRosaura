@@ -163,6 +163,7 @@ s3 = boto3.client('s3',
 APP_ROOT_PATH = os.getenv('APP_ROOT_PATH')
 QUEUE_ACCOUNT_DELETION = 'queue:account_deletion'
 QUEUE_EMAILS = 'queue:emails'
+QUEUE_AD_METRICS = 'queue:ad_metrics'
 
 SMTP_HOST = os.getenv('SMTP_HOST')
 SMTP_PORT = int(os.getenv('SMTP_PORT') or 465)
@@ -189,6 +190,17 @@ def get_canvases_db_connection():
         user=DB_USER,
         password=DB_PASS,
         database=DB_CANVASES_NAME
+    )
+
+DB_ADS_NAME = os.getenv('DB_ADVERTISEMENTS_NAME', 'db_advertisements')
+
+def get_advertisements_db_connection():
+    return mysql.connector.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        user=DB_USER,
+        password=DB_PASS,
+        database=DB_ADS_NAME
     )
 
 def get_telemetry_db_connection():
@@ -792,6 +804,64 @@ def future_maintenance_tasks():
     purge_trash_canvases()
     purge_trash_templates()
 
+def process_ad_metrics_batch(r, max_batch=100):
+    try:
+        pipe = r.pipeline()
+        for _ in range(max_batch):
+            pipe.lpop(QUEUE_AD_METRICS)
+        raw_items = pipe.execute()
+        
+        items = []
+        for raw in raw_items:
+            if raw:
+                try:
+                    items.append(json.loads(raw))
+                except Exception:
+                    continue
+        
+        if not items:
+            return
+
+        conn = get_advertisements_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        ad_uuids = list(set([item['ad_uuid'] for item in items if 'ad_uuid' in item]))
+        ad_map = {}
+        if ad_uuids:
+            format_strings = ','.join(['%s'] * len(ad_uuids))
+            cursor.execute(f"SELECT id, uuid, provider_id FROM advertisements WHERE uuid IN ({format_strings})", tuple(ad_uuids))
+            for row in cursor.fetchall():
+                ad_map[row['uuid']] = row
+
+        insert_values = []
+        for item in items:
+            ad_uuid = item.get('ad_uuid')
+            ad = ad_map.get(ad_uuid)
+            if not ad:
+                continue
+            insert_values.append((
+                ad['id'],
+                ad['provider_id'],
+                item.get('event_type', 'impression'),
+                item.get('user_uuid'),
+                item.get('ip_address'),
+                item.get('user_agent')[:255] if item.get('user_agent') else None,
+                item.get('created_at', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            ))
+
+        if insert_values:
+            cursor.executemany("""
+                INSERT INTO ad_metrics (ad_id, provider_id, event_type, user_uuid, ip_address, user_agent, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, insert_values)
+            conn.commit()
+            Logger.info(f"Recorded {len(insert_values)} ad metrics in batch.")
+
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        Logger.error(f"Error processing ad metrics batch: {e}")
+
 def worker_loop():
     queues_to_listen = [QUEUE_ACCOUNT_DELETION, QUEUE_EMAILS]
     Logger.info(f"Primary worker daemon operating. Subscribing to queues: {', '.join(queues_to_listen)}")
@@ -806,7 +876,9 @@ def worker_loop():
                     time.sleep(5)
                     continue
 
-            result = r.blpop(queues_to_listen, timeout=15)
+            process_ad_metrics_batch(r, 100)
+
+            result = r.blpop(queues_to_listen, timeout=5)
             if result:
                 queue_name, payload_str = result
                 payload = json.loads(payload_str)

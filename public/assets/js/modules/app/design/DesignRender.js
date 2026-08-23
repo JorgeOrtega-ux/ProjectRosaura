@@ -1,5 +1,4 @@
 import { getPaletteById } from './utils/DesignPaletteUtils.js';
-import { PerksRegistry } from './PerksRegistry.js';
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 
 export const DesignRender = {

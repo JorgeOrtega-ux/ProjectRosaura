@@ -38,7 +38,7 @@ extract($chatViewerData);
     
     <div class="component-bottom">
         <?php if ($errorMsg): ?>
-            <div><?php echo htmlspecialchars($errorMsg); ?></div>
+            <div class="component-empty-state-text"><?php echo htmlspecialchars($errorMsg); ?></div>
         <?php elseif ($totalImages > 0 || $isPending): ?>
             <div class="component-image-viewer-container">
                 <img data-ref="cv-main-image" class="component-image-viewer-image image-lazy-fade" src="<?php echo $totalImages > 0 ? htmlspecialchars($attachments[$idx]) : ''; ?>"
@@ -46,7 +46,7 @@ extract($chatViewerData);
                      onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/canvas-default.png'; this.classList.add('image-loaded');">
             </div>
         <?php else: ?>
-            <div><?php echo __('lbl_no_images'); ?></div>
+            <div class="component-empty-state-text"><?php echo __('lbl_no_images'); ?></div>
         <?php endif; ?>
     </div>
 </div>

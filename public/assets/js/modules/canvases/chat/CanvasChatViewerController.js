@@ -8,6 +8,7 @@ class CanvasChatViewerController {
         this.images = [];
         this.currentIndex = 0;
         this.isInitialized = false;
+        this.abortController = null;
 
         this.handleClickBound = this.handleClick.bind(this);
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
@@ -16,12 +17,16 @@ class CanvasChatViewerController {
     init() {
         if (this.isInitialized) return;
         this.isInitialized = true;
+        this.abortController = new AbortController();
         this.bindEvents();
         this.loadState();
         this.updateView();
     }
 
     destroy() {
+        if (this.abortController) {
+            this.abortController.abort();
+        }
         document.removeEventListener('click', this.handleClickBound);
         window.removeEventListener('viewLoaded', this.handleViewLoadedBound);
         this.isInitialized = false;
@@ -132,7 +137,7 @@ class CanvasChatViewerController {
         setButtonLoading(btn);
 
         try {
-            const response = await fetch(currentUrl);
+            const response = await fetch(currentUrl, { signal: this.abortController?.signal });
             const blob = await response.blob();
             
             let fileName = 'template.png';
@@ -149,7 +154,7 @@ class CanvasChatViewerController {
             const formData = new FormData();
             formData.append('file', file);
             
-            const uploadRes = await this.api.postForm(ApiRoutes.Canvases.UploadTemplate, formData);
+            const uploadRes = await this.api.postForm(ApiRoutes.Canvases.UploadTemplate, formData, this.abortController?.signal);
             
             if (uploadRes.success || uploadRes.status === 'success') {
                 showMessage(__('msg_template_saved'), 'success');

@@ -45,10 +45,10 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                                 <div class="component-color-picker" data-ref="customColorPicker" data-h="0" data-s="100" data-v="100">
                                     <div class="component-color-picker__sv-area" data-action="dragCustomSV" style="background-color: hsl(0, 100%, 50%);">
                                         <div class="component-color-picker__sv-bg"></div>
-                                        <div class="component-color-picker__sv-thumb" data-ref="customSvThumb" style="left: 100%; top: 0%;"></div>
+                                        <div class="component-color-picker__sv-thumb" data-ref="customSvThumb"></div>
                                     </div>
                                     <div class="component-color-picker__hue-area" data-action="dragCustomHue">
-                                        <div class="component-color-picker__hue-thumb" data-ref="customHueThumb" style="left: 0%;"></div>
+                                        <div class="component-color-picker__hue-thumb" data-ref="customHueThumb"></div>
                                     </div>
                                     <div class="component-input-group component-input-group--h34 component-input-group--color">
                                         <div class="component-color-swatch component-color-swatch--sm" data-ref="customHexInputPreview" style="background-color: #FF0000;"></div>
@@ -56,7 +56,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                                     </div>
                                     <button type="button" class="component-button component-button--primary component-button--full component-button--h34" data-action="applyCustomColor">
                                         <span class="material-symbols-rounded">check</span>
-                                        <?php echo __('btn_select') ?: 'Seleccionar'; ?>
+                                        <?php echo __('btn_select'); ?>
                                     </button>
                                 </div>
                             </div>

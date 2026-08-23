@@ -876,6 +876,29 @@ class AdminAdvertisementsService {
     }
 
     public function recordAdMetric(string $adUuid, string $eventType, ?string $userUuid = null, ?string $ipAddress = null, ?string $userAgent = null): array {
+        if (!in_array($eventType, AdvertisementConstants::VALID_EVENTS, true)) {
+            Logger::warning("AdminAdvertisementsService::recordAdMetric invalid event type '{$eventType}' for ad uuid: {$adUuid}");
+            return ['success' => false, 'message_key' => 'err_invalid_metric_event'];
+        }
+
+        $eventData = [
+            'ad_uuid' => $adUuid,
+            'event_type' => $eventType,
+            'user_uuid' => $userUuid,
+            'ip_address' => $ipAddress,
+            'user_agent' => $userAgent ? substr($userAgent, 0, 255) : null,
+            'created_at' => date('Y-m-d H:i:s')
+        ];
+
+        if ($this->redis) {
+            try {
+                $this->redis->rpush('queue:ad_metrics', json_encode($eventData));
+                return ['success' => true];
+            } catch (\Throwable $e) {
+                Logger::error("AdminAdvertisementsService::recordAdMetric redis error: " . $e->getMessage());
+            }
+        }
+
         $pdo = $this->getPdo();
         try {
             $stmtFind = $pdo->prepare("SELECT id, provider_id FROM advertisements WHERE uuid = ?");
@@ -886,11 +909,6 @@ class AdminAdvertisementsService {
                 return ['success' => false, 'message_key' => 'err_ad_not_found'];
             }
 
-            if (!in_array($eventType, AdvertisementConstants::VALID_EVENTS, true)) {
-                Logger::warning("AdminAdvertisementsService::recordAdMetric invalid event type '{$eventType}' for ad uuid: {$adUuid}");
-                return ['success' => false, 'message_key' => 'err_invalid_metric_event'];
-            }
-
             $stmt = $pdo->prepare("INSERT INTO ad_metrics (ad_id, provider_id, event_type, user_uuid, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->execute([
                 $ad['id'],
@@ -898,7 +916,7 @@ class AdminAdvertisementsService {
                 $eventType,
                 $userUuid,
                 $ipAddress,
-                $userAgent
+                $userAgent ? substr($userAgent, 0, 255) : null
             ]);
 
             return ['success' => true];

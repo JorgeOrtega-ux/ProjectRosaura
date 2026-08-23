@@ -249,7 +249,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
                                         </div>
                                     </td>
                                     <td>
-                                        <div>
+                                        <div class="manage-users-roles-cell">
                                             <?php 
                                                 $primaryRoleName = trim($roleNamesArray[0]);
                                                 $pKey = 'role.' . preg_replace('/[\s\W_]+/', '_', strtolower($primaryRoleName));
