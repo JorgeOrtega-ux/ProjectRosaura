@@ -100,6 +100,9 @@ class SessionManager implements SessionManagerInterface {
 
     public function regenerate(bool $deleteOldSession = true): bool {
         try {
+            if (session_status() === PHP_SESSION_NONE) {
+                $this->start();
+            }
             return session_regenerate_id($deleteOldSession);
         } catch (Exception $e) {
             Logger::error("Failed to regenerate session ID", ['exception' => $e]);

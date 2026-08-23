@@ -113,5 +113,8 @@ INSERT INTO ad_resources (id, uuid, ad_id, resource_type, content_url, alt_text,
 (16, 'c1000000-0000-0000-0000-000000000016', 6, 'video', '/assets/media/sample_promo.mp4', 'Templates Demo', 2)
 ON DUPLICATE KEY UPDATE alt_text=VALUES(alt_text);
 
+-- Segmentación de usuario para db_advertisements (Mínimo Privilegio)
+CREATE USER IF NOT EXISTS 'executor_ads'@'%' IDENTIFIED BY 'secret_ads_pass';
+GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON db_advertisements.* TO 'executor_ads'@'%';
 GRANT ALL PRIVILEGES ON db_advertisements.* TO 'system_web_executor'@'%';
 FLUSH PRIVILEGES;

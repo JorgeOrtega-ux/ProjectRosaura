@@ -10,6 +10,7 @@ use App\Core\System\DatabaseConstants as DB;
 use App\Core\System\SecurityConstants;
 use App\Core\System\CacheConstants;
 use App\Core\System\CacheInvalidator;
+use App\Core\Security\DataCipher;
 use App\Config\Database\RedisCache;
 use PDO;
 use PDOException;
@@ -67,8 +68,12 @@ class UserRepository implements UserRepositoryInterface {
             ");
             $stmtUser->execute([$value]);
             $user = $stmtUser->fetch(PDO::FETCH_ASSOC);
-
             if (!$user) return null;
+
+            if (!empty($user['two_factor_secret'])) {
+                $user['two_factor_secret'] = DataCipher::decrypt($user['two_factor_secret']);
+            }
+
             $roles = $this->roleRepository->getUserRoles($user['id']);
 
             if (!empty($roles)) {
@@ -321,8 +326,9 @@ class UserRepository implements UserRepositoryInterface {
     public function update2FA(int $id, ?string $secret, int $enabled, ?string $recoveryCodes): bool {
         $tblUsers = DB::TBL_USERS;
         try {
+            $encryptedSecret = !empty($secret) ? DataCipher::encrypt($secret) : null;
             $stmt = $this->pdo->prepare("UPDATE {$tblUsers} SET two_factor_secret = ?, two_factor_enabled = ?, two_factor_recovery_codes = ? WHERE id = ?");
-            $res = $stmt->execute([$secret, $enabled, $recoveryCodes, $id]);
+            $res = $stmt->execute([$encryptedSecret, $enabled, $recoveryCodes, $id]);
             if ($res) {
                 $this->invalidateProfileCache($id);
             }

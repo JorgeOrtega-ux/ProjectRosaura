@@ -6,6 +6,7 @@ use App\Core\Helpers\Utils;
 use App\Core\Helpers\GeoIpHelper;
 use App\Core\Mail\Mailer; 
 use App\Core\Security\GoogleAuthenticator;
+use App\Core\Security\AnomalyDetector;
 use App\Core\System\Logger;
 use App\Core\Interfaces\RateLimiterInterface;
 use App\Core\Interfaces\UserPrefsManagerInterface;
@@ -401,7 +402,7 @@ class AuthService {
         $regToken = bin2hex(random_bytes(16));
         $regFlows = $this->sessionManager->get(SessionConstants::KEY_REG_FLOWS, []);
         
-        $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+        $hashedPassword = password_hash($password, PASSWORD_ARGON2ID);
         $regFlows[$regToken] = ['email' => $email, 'password' => $hashedPassword];
         
         $this->sessionManager->set(SessionConstants::KEY_REG_FLOWS, $regFlows);
@@ -590,14 +591,35 @@ class AuthService {
         $user = $this->userRepository->findByEmail($email);
 
         if ($user && password_verify($password, $user['password'])) {
+            if (password_needs_rehash($user['password'], PASSWORD_ARGON2ID)) {
+                $newHash = password_hash($password, PASSWORD_ARGON2ID);
+                $this->userRepository->updatePassword($user['id'], $newHash);
+                $user['password'] = $newHash;
+            }
+
             $this->rateLimiter->clear(RateLimitConstants::KEY_AUTH_LOGIN . "_{$email}");
             
             $ipAddress = Utils::getIpAddress();
-            $asn = GeoIpHelper::getASN($ipAddress);
+            $redisCache = new RedisCache();
+            $redisClient = $redisCache->getClient();
             
-            if (in_array($asn, SecurityConstants::RISKY_ASNS)) {
-                $payload = json_encode(['event' => 'risky_asn_login_attempt', 'user_id' => $user['id'], 'asn' => $asn, 'ip' => $ipAddress]);
-                Logger::warning("security_alert", ['details' => $payload]);
+            $anomaly = AnomalyDetector::evaluateLoginAnomaly((int)$user['id'], $ipAddress, $redisClient);
+            if ($anomaly['has_anomaly']) {
+                $this->telemetryServices->logAuthEvent([
+                    'event_type' => $anomaly['is_impossible_travel'] ? 'impossible_travel_detected' : 'risky_login_anomaly',
+                    'user_uuid' => $user['uuid'],
+                    'ip_address' => $ipAddress
+                ]);
+
+                if ($anomaly['is_impossible_travel']) {
+                    try {
+                        $mailer = new Mailer();
+                        $locationStr = GeoIpHelper::getLocation($ipAddress);
+                        $mailer->sendSecurityAlertSuspiciousLogin($user['email'], $user['username'], $locationStr, $ipAddress, time());
+                    } catch (\Throwable $e) {
+                        Logger::error("Failed to send impossible travel security email", ['user_id' => $user['id'], 'exception' => $e->getMessage()]);
+                    }
+                }
             }
 
 
@@ -706,7 +728,7 @@ class AuthService {
 
                 $profilePic = Utils::generateProfilePicture($username, $email);
                 $defaultRoleId = (int)($this->config['default_user_role_id'] ?? SecurityConstants::DEFAULT_USER_ROLE_ID);
-                $randomPassword = password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT);
+                $randomPassword = password_hash(bin2hex(random_bytes(16)), PASSWORD_ARGON2ID);
 
                 $newUserId = $this->userRepository->createUser([
                     'uuid' => $uuid,
@@ -740,7 +762,27 @@ class AuthService {
         }
 
         $ipAddress = Utils::getIpAddress();
+        $redisCache = new RedisCache();
+        $redisClient = $redisCache->getClient();
         
+        $anomaly = AnomalyDetector::evaluateLoginAnomaly((int)$user['id'], $ipAddress, $redisClient);
+        if ($anomaly['has_anomaly']) {
+            $this->telemetryServices->logAuthEvent([
+                'event_type' => $anomaly['is_impossible_travel'] ? 'impossible_travel_detected' : 'risky_login_anomaly',
+                'user_uuid' => $user['uuid'],
+                'ip_address' => $ipAddress
+            ]);
+
+            if ($anomaly['is_impossible_travel']) {
+                try {
+                    $mailer = new Mailer();
+                    $locationStr = GeoIpHelper::getLocation($ipAddress);
+                    $mailer->sendSecurityAlertSuspiciousLogin($user['email'], $user['username'], $locationStr, $ipAddress, time());
+                } catch (\Throwable $e) {
+                    Logger::error("Failed to send impossible travel security email", ['user_id' => $user['id'], 'exception' => $e->getMessage()]);
+                }
+            }
+        }
 
 
         if (isset($user['is_suspended']) && $user['is_suspended'] == 1) {
@@ -927,12 +969,31 @@ class AuthService {
                 
                 unset($pending2fa[$tempToken]);
                 $this->sessionManager->set(SessionConstants::KEY_PENDING_2FA, $pending2fa);
-                $this->createRememberToken($user['id']);
+                $ipAddress = Utils::getIpAddress();
+                $redisClient = (new RedisCache())->getClient();
+                $anomaly = AnomalyDetector::evaluateLoginAnomaly((int)$user['id'], $ipAddress, $redisClient);
+                if ($anomaly['has_anomaly']) {
+                    $this->telemetryServices->logAuthEvent([
+                        'event_type' => $anomaly['is_impossible_travel'] ? 'impossible_travel_detected' : 'risky_login_anomaly',
+                        'user_uuid' => $user['uuid'],
+                        'ip_address' => $ipAddress
+                    ]);
+
+                    if ($anomaly['is_impossible_travel']) {
+                        try {
+                            $mailer = new Mailer();
+                            $locationStr = GeoIpHelper::getLocation($ipAddress);
+                            $mailer->sendSecurityAlertSuspiciousLogin($user['email'], $user['username'], $locationStr, $ipAddress, time());
+                        } catch (\Throwable $e) {
+                            Logger::error("Failed to send impossible travel security email", ['user_id' => $user['id'], 'exception' => $e->getMessage()]);
+                        }
+                    }
+                }
                 
                 $this->telemetryServices->logAuthEvent([
                     'event_type' => '2fa_success',
                     'user_uuid' => $user['uuid'],
-                    'ip_address' => Utils::getIpAddress()
+                    'ip_address' => $ipAddress
                 ]);
                 
                 return [
@@ -1066,7 +1127,7 @@ class AuthService {
         $email = $verification['identifier'];
         $user = $this->userRepository->findByEmail($email);
         
-        if ($user && $this->userRepository->updatePassword($user['id'], password_hash($password, PASSWORD_BCRYPT))) {
+        if ($user && $this->userRepository->updatePassword($user['id'], password_hash($password, PASSWORD_ARGON2ID))) {
             $this->rateLimiter->clear(RateLimitConstants::KEY_AUTH_RESET_PASSWORD . "_{$ip}");
             $this->tokenRepository->deleteAllByUserId($user['id']);
             $this->verificationCodeRepository->deleteByIdentifierAndType($email, DatabaseConstants::VERIFY_TYPE_PASSWORD);

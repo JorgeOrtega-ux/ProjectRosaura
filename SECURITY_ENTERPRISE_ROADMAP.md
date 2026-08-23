@@ -12,6 +12,15 @@ Este documento consolida la auditoría de seguridad realizada sobre **ProjectRos
 | **SEC-02** | **Media** | Red / Anti-Spoofing | `Utils::isTrustedProxy` | Eliminada la regla que confiaba ciegamente en cualquier IP privada. Se implementó validación estricta contra `127.0.0.1`, `::1` y subredes CIDR en `TRUSTED_PROXIES`. |
 | **SEC-03** | **Baja** | CORS | `api/index.php` | Eliminado `Access-Control-Allow-Origin: *` en preflights `OPTIONS`, validando el origen contra `APP_URL`. |
 | **SEC-05** | **Informativa** | CSRF | `api/index.php` | Restringida la extracción del token CSRF en peticiones mutantes (`POST`, `PUT`, `DELETE`, `PATCH`) a cabeceras HTTP y cuerpo `POST`. |
+| **SEC-06** | **Alta** | Criptografía / Auth | `AuthService.php` / `SettingsService.php` | Hashing con `PASSWORD_ARGON2ID` y migración transparente al vuelo en login con `password_needs_rehash()`. |
+| **SEC-07** | **Alta** | Sesiones / Auth | `SessionManager.php` / `AuthService.php` | Regeneración estricta de Session ID (`session_regenerate_id(true)`) y destrucción en Redis al autenticar o elevar privilegios. |
+| **SEC-08** | **Media** | Rate Limiting | `RedisRateLimiter.php` / `Utils.php` | Implementado algoritmo de Ventana Deslizante (*Sliding Window Log*) con script atómico en Lua sobre Sorted Sets (`ZSET`) de Redis. |
+| **SEC-09** | **Alta** | Base de Datos | `DatabaseManager.php` / MySQL Init | Segmentación de credenciales por base de datos con mínimo privilegio (`executor_identity`, `executor_canvases`, `executor_ads`, `executor_telemetry`). |
+| **SEC-10** | **Media** | Criptografía / PII | `DataCipher.php` / `UserRepository.php` | Cifrado Envelope Authenticated Encryption (`AES-256-GCM`) para secretos 2FA y datos PII en reposo. |
+| **SEC-11** | **Media** | Cadena de Suministro | `AdminDashboardController.js` | Subresource Integrity (SRI `sha384-...`) y `crossOrigin="anonymous"` en recursos cargados desde CDNs externos. |
+| **SEC-12** | **Baja** | Archivos / Malware | `FileSecurityScanner.php` / `Utils.php` | Pipeline de análisis de amenazas con soporte de daemon ClamAV TCP, CLI y motor heurístico profundo anti-webshells. |
+| **SEC-13** | **Media** | Detección de Amenazas | `AnomalyDetector.php` / `GeoIpHelper.php` | Detección de anomalías de acceso, cálculo geodésico Haversine, Viaje Imposible ($V > 800\text{ km/h}$), saltos de ASN y alertas por email. |
+| **SEC-14** | **Media** | Auditoría y Logs | `Logger.php` | Criptocadena de integridad con firma HMAC (NIST SP 800-92 / RFC 6587) y streaming no bloqueante a SIEM (Wazuh/ELK). |
 
 ---
 

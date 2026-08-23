@@ -308,3 +308,9 @@ CREATE TABLE IF NOT EXISTS `canvas_chat_reports` (
   INDEX `idx_reports_status_date` (`status`, `created_at` DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Segmentación de usuario para db_canvases (Mínimo Privilegio)
+CREATE USER IF NOT EXISTS 'executor_canvases'@'%' IDENTIFIED BY 'secret_canvases_pass';
+GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON db_canvases.* TO 'executor_canvases'@'%';
+GRANT ALL PRIVILEGES ON db_canvases.* TO 'system_web_executor'@'%';
+FLUSH PRIVILEGES;
+

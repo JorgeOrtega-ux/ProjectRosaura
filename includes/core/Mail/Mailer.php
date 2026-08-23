@@ -185,6 +185,33 @@ class Mailer {
         }
     }
 
+    public function sendSecurityAlertSuspiciousLogin($toEmail, $username, $location, $ip, $time = null) {
+        try {
+            $lang = $this->getTargetLanguage($toEmail);
+            $this->mail->clearAddresses();
+            $this->mail->addAddress($toEmail, $username);
+
+            $this->mail->isHTML(true);
+            $this->mail->Subject = Translator::getForLang($lang, 'email_security_suspicious_login_subject', [], 'Aviso de seguridad: Inicio de sesión inusual detectado - Project Rosaura');
+            
+            $formattedTime = $time ? date('d/m/Y H:i:s T', is_numeric($time) ? (int)$time : strtotime($time)) : date('d/m/Y H:i:s T');
+
+            $this->mail->Body = EmailTemplates::get('security_alert_suspicious_login', [
+                'username' => $username,
+                'location' => $location ?: 'Ubicación desconocida',
+                'ip' => $ip,
+                'time' => $formattedTime
+            ], $lang);
+            
+            $this->mail->AltBody = "Hola {$username}, detectamos un inicio de sesión inusual en tu cuenta desde {$location} (IP: {$ip}) el {$formattedTime}. Si no fuiste tú, cambia tu contraseña de inmediato.";
+
+            return $this->mail->send();
+        } catch (PHPMailerException $e) {
+            Logger::error("Failed to send suspicious login security alert", ['to_email' => $toEmail, 'smtp_error' => $this->mail->ErrorInfo, 'exception' => $e]);
+            return false;
+        }
+    }
+
     public function sendAccountStatusNotification($toEmail, $username, $action, $reason, $endDate = null) {
         try {
             $lang = $this->getTargetLanguage($toEmail);

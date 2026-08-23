@@ -132,7 +132,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `password` varchar(255) NOT NULL,
   `subscription_tier` tinyint(1) DEFAULT 0, -- NOTA DE IMPLEMENTACIÓN: Nuevo campo para el nivel de suscripción (0=Básico, 1=Pro, 2=Advanced)
   `stripe_customer_id` varchar(255) DEFAULT NULL,
-  `two_factor_secret` varchar(64) DEFAULT NULL,
+  `two_factor_secret` varchar(255) DEFAULT NULL,
   `two_factor_enabled` tinyint(1) DEFAULT 0,
   `two_factor_recovery_codes` text DEFAULT NULL,
   `deletion_scheduled_at` datetime DEFAULT NULL,
@@ -372,6 +372,12 @@ CREATE TABLE IF NOT EXISTS server_config (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 INSERT INTO server_config (id) SELECT 1 WHERE NOT EXISTS (SELECT * FROM server_config);
+
+-- Segmentación de usuario para db_identity (Mínimo Privilegio)
+CREATE USER IF NOT EXISTS 'executor_identity'@'%' IDENTIFIED BY 'secret_identity_pass';
+GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON db_identity.* TO 'executor_identity'@'%';
+GRANT ALL PRIVILEGES ON db_identity.* TO 'system_web_executor'@'%';
+FLUSH PRIVILEGES;
 
 
 

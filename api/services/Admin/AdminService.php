@@ -152,6 +152,7 @@ class AdminService {
             $isGoogle = !empty($payload['credential']) || !empty($payload['google_token']);
             return ['success' => false, 'message' => $isGoogle ? __('auth.google_verification_failed') : __('auth.incorrect_password')];
         }
+        $this->sessionManager->regenerate(true);
         $this->rateLimiter->clear(RateLimitConstants::KEY_ADM_PASSWORD_VERIFY . "_admin_{$currentUserId}");
         return ['success' => true, 'admin_id' => $currentUserId];
     }

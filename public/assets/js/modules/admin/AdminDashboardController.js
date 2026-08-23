@@ -42,6 +42,8 @@ export class AdminDashboardController {
 
             const script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+            script.integrity = 'sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4';
+            script.crossOrigin = 'anonymous';
             script.onload = () => resolve();
             script.onerror = (err) => reject(err);
             document.head.appendChild(script);

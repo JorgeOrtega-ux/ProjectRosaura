@@ -1,6 +1,7 @@
 <?php
 namespace App\Core\Helpers;
 use App\Core\Interfaces\SessionManagerInterface;
+use App\Core\Security\FileSecurityScanner;
 
 class Utils {
     private static $s3Client = null;
@@ -123,14 +124,34 @@ class Utils {
                 if ($redis) {
                     $ip = self::getIpAddress();
                     $safeIp = md5($ip);
-                    $rlKey = "rate_limit:{$actionKey}:{$safeIp}";
+                    $luaScript = "
+                        local key = KEYS[1]
+                        local max_attempts = tonumber(ARGV[1])
+                        local window_ms = tonumber(ARGV[2])
+                        local now_ms = tonumber(ARGV[3])
+                        local member = ARGV[4]
+
+                        local clear_before = now_ms - window_ms
+                        redis.call('ZREMRANGEBYSCORE', key, '-inf', clear_before)
+                        local current_count = redis.call('ZCARD', key)
+
+                        if current_count >= max_attempts then
+                            return 0
+                        end
+
+                        redis.call('ZADD', key, now_ms, member)
+                        local ttl_seconds = math.max(math.ceil(window_ms / 1000), 1)
+                        redis.call('EXPIRE', key, ttl_seconds)
+                        return 1
+                    ";
+
+                    $nowMs = (int)round(microtime(true) * 1000);
+                    $windowMs = (int)($windowSeconds * 1000);
+                    $uniqueMember = $nowMs . ':' . bin2hex(random_bytes(6));
+
+                    $result = $redis->eval($luaScript, 1, $rlKey, $maxRequests, $windowMs, $nowMs, $uniqueMember);
                     
-                    $currentCount = $redis->incr($rlKey);
-                    if ($currentCount == 1) {
-                        $redis->expire($rlKey, $windowSeconds);
-                    }
-                    
-                    if ($currentCount > $maxRequests) {
+                    if ($result === 0) {
                         http_response_code(429);
                         if ($isJsonError || !empty($_SERVER['HTTP_X_SPA_REQUEST']) || strpos($_SERVER['REQUEST_URI'] ?? '', '/api/') !== false) {
                             header('Content-Type: application/json');
@@ -550,6 +571,15 @@ class Utils {
 
         if (!isset($allowedMimes[$mime])) {
             return ['success' => false, 'message_key' => 'upload.invalid_format'];
+        }
+
+        $scanResult = FileSecurityScanner::scanFile($file['tmp_name']);
+        if (!$scanResult['clean']) {
+            \App\Core\System\Logger::security("Malicious upload blocked by FileSecurityScanner", 'critical', [
+                'threat' => $scanResult['threat'],
+                'engine' => $scanResult['engine']
+            ]);
+            return ['success' => false, 'message_key' => 'upload.threat_detected'];
         }
 
         $extension = $allowedMimes[$mime];

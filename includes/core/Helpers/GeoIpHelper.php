@@ -244,10 +244,65 @@ class GeoIpHelper {
         return true;
     }
 
+    public static function getCoordinates(?string $ip = null): ?array {
+        $validIp = self::resolveIp($ip);
+        if (!$validIp) {
+            return null;
+        }
+
+        $databaseFile = dirname(__DIR__, 3) . '/storage/private/geolocation/GeoLite2-City.mmdb';
+        if (!file_exists($databaseFile)) {
+            return null;
+        }
+
+        try {
+            if (self::$cityReader === null) {
+                self::$cityReader = new Reader($databaseFile);
+            }
+            $record = self::$cityReader->city($validIp);
+            $lat = $record->location->latitude;
+            $lon = $record->location->longitude;
+
+            if ($lat !== null && $lon !== null) {
+                return ['lat' => (float)$lat, 'lon' => (float)$lon];
+            }
+            return null;
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Calculate great-circle distance between two points using the Haversine formula.
+     *
+     * @param float $lat1
+     * @param float $lon1
+     * @param float $lat2
+     * @param float $lon2
+     * @return float Distance in Kilometers
+     */
+    public static function calculateDistanceKm(float $lat1, float $lon1, float $lat2, float $lon2): float {
+        $earthRadiusKm = 6371.0;
+
+        $latFrom = deg2rad($lat1);
+        $lonFrom = deg2rad($lon1);
+        $latTo = deg2rad($lat2);
+        $lonTo = deg2rad($lon2);
+
+        $latDelta = $latTo - $latFrom;
+        $lonDelta = $lonTo - $lonFrom;
+
+        $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) +
+            cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
+
+        return $angle * $earthRadiusKm;
+    }
+
     public static function getVisitorGeoInfo(?string $ip = null): array {
         $resolvedIp = $ip ?: Utils::getIpAddress();
         $code = self::getCountryCode($resolvedIp);
         $asn = self::getASN($resolvedIp);
+        $coords = self::getCoordinates($resolvedIp);
 
         return [
             'ip' => $resolvedIp,
@@ -255,6 +310,8 @@ class GeoIpHelper {
             'country_name' => $code ? (CountryConstants::getCountryName($code) ?: self::getCountryName($resolvedIp)) : null,
             'city' => self::getCityName($resolvedIp),
             'location' => self::getLocation($resolvedIp),
+            'latitude' => $coords['lat'] ?? null,
+            'longitude' => $coords['lon'] ?? null,
             'asn' => $asn,
             'is_datacenter' => self::isDatacenterOrBotAsn($asn, $resolvedIp)
         ];

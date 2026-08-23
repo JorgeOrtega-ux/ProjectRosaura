@@ -434,6 +434,7 @@ class SettingsService
         if (!$user) return ['success' => false, 'message' => __('error.user_not_found')];
 
         if (Utils::verifyUserIdentity($user, $data)) {
+            $this->sessionManager->regenerate(true);
             $this->rateLimiter->clear(RateLimitConstants::KEY_SET_VERIFY_PASSWORD . "_{$userId}");
             $codeMinutes = $this->config['verification_code_minutes'];
             $this->sessionManager->set('can_change_password_expires', time() + ($codeMinutes * 60));
@@ -471,7 +472,7 @@ class SettingsService
         $pVal = Utils::validatePasswordFormat($newPassword, $this->config['min_password_length'], $this->config['max_password_length']);
         if (!$pVal['valid']) return ['success' => false, 'message' => __('validation.invalid_password_format')];
 
-        if ($this->userRepository->updatePassword($userId, password_hash($newPassword, PASSWORD_BCRYPT))) {
+        if ($this->userRepository->updatePassword($userId, password_hash($newPassword, PASSWORD_ARGON2ID))) {
             $this->logProfileChange($userId, DB::LOG_CHANGE_PASSWORD, json_encode(['security' => 'redacted']), json_encode(['security' => 'updated']));
             $this->sessionManager->remove('can_change_password_expires');
             $this->rateLimiter->clear(RateLimitConstants::KEY_SET_UPDATE_PASSWORD . "_{$userId}");
@@ -611,7 +612,7 @@ class SettingsService
             $codes = Utils::generateRecoveryCodes(10, 8);
             
             $hashedCodes = array_map(function($c) {
-                return password_hash($c, PASSWORD_BCRYPT);
+                return password_hash($c, PASSWORD_ARGON2ID);
             }, $codes);
 
             if ($this->userRepository->update2FA($userId, $secret, 1, json_encode($hashedCodes))) {
@@ -795,7 +796,7 @@ class SettingsService
                 $codes = Utils::generateRecoveryCodes(10, 8);
                 
                 $hashedCodes = array_map(function($c) {
-                    return password_hash($c, PASSWORD_BCRYPT);
+                    return password_hash($c, PASSWORD_ARGON2ID);
                 }, $codes);
                 
                 if ($this->userRepository->updateRecoveryCodes($userId, json_encode($hashedCodes))) {
@@ -868,7 +869,7 @@ class SettingsService
             if (!$pVal['valid']) {
                 return ['success' => false, 'message' => __('validation.invalid_password_format')];
             }
-            $this->userRepository->updatePassword($userId, password_hash($newPassword, PASSWORD_BCRYPT));
+            $this->userRepository->updatePassword($userId, password_hash($newPassword, PASSWORD_ARGON2ID));
         }
 
         if ($this->userRepository->updateGoogleId($userId, null)) {

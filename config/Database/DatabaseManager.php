@@ -19,23 +19,25 @@ class DatabaseManager {
     }
 
     public function getConnection(string $connectionName = DB::CONN_IDENTITY): PDO {
-        if (!isset($_ENV['DB_HOST']) || !isset($_ENV['DB_USER'])) {
+        $upperConn = strtoupper($connectionName);
+
+        $host = $_ENV['DB_' . $upperConn . '_HOST'] ?? ($_ENV['DB_HOST'] ?? null);
+        $port = $_ENV['DB_' . $upperConn . '_PORT'] ?? ($_ENV['DB_PORT'] ?? 3306);
+        $user = $_ENV['DB_' . $upperConn . '_USER'] ?? ($_ENV['DB_USER'] ?? null);
+        $pass = $_ENV['DB_' . $upperConn . '_PASS'] ?? ($_ENV['DB_' . $upperConn . '_PASSWORD'] ?? ($_ENV['DB_PASS'] ?? '')); 
+        
+        $envVarName = 'DB_' . $upperConn . '_NAME';
+        $dbname = $_ENV[$envVarName] ?? null;
+
+        if (!$host || !$user) {
             throw new Exception('err_db_env_missing');
         }
-
-        $host = $_ENV['DB_HOST'];
-        $port = $_ENV['DB_PORT'] ?? 3306;
-        $user = $_ENV['DB_USER'];
-        $pass = $_ENV['DB_PASS']; 
-        
-        $envVarName = 'DB_' . strtoupper($connectionName) . '_NAME';
-        $dbname = $_ENV[$envVarName] ?? null;
 
         if (!$dbname) {
             throw new Exception('err_db_name_missing');
         }
 
-        $connectionKey = $host . ':' . $port . '_' . $dbname;
+        $connectionKey = $host . ':' . $port . '_' . $dbname . '_' . $user;
 
         if (isset(self::$connections[$connectionKey])) {
             return self::$connections[$connectionKey];
@@ -57,6 +59,7 @@ class DatabaseManager {
             Logger::database('Critical database connection failure.', 'critical', [
                 'dbname' => $dbname, 
                 'context' => $connectionName, 
+                'user' => $user,
                 'exception' => $e
             ]);
             

@@ -47,5 +47,8 @@ CREATE TABLE IF NOT EXISTS auth_events (
     INDEX idx_event (event_type)
 ) ENGINE=InnoDB;
 
+-- Segmentación de usuario para db_telemetry (Mínimo Privilegio)
+CREATE USER IF NOT EXISTS 'executor_telemetry'@'%' IDENTIFIED BY 'secret_telemetry_pass';
+GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON db_telemetry.* TO 'executor_telemetry'@'%';
 GRANT ALL PRIVILEGES ON db_telemetry.* TO 'system_web_executor'@'%';
 FLUSH PRIVILEGES;
