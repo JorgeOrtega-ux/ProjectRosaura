@@ -125,7 +125,7 @@ class AuthService {
         $validator = bin2hex(random_bytes(32));
         $hashedValidator = hash('sha256', $validator);
         
-        $days = (int)($this->config['remember_me_days'] ?? 30);
+        $days = (int)($this->config['remember_me_days'] ?? 180);
         $expiresAt = date('Y-m-d H:i:s', time() + (CacheConstants::TTL_ONE_DAY * $days));
         
         $userAgent = substr($_SERVER['HTTP_USER_AGENT'] ?? 'Unknown', 0, 255);
@@ -185,7 +185,7 @@ class AuthService {
                         setcookie('remember_tokens', '', ['expires' => time() - 3600, 'path' => $cookiePath, 'secure' => $isSecure, 'httponly' => true, 'samesite' => 'Lax']);
                         unset($_COOKIE['remember_tokens']);
                     } else {
-                        $days = (int)($this->config['remember_me_days'] ?? 30);
+                        $days = (int)($this->config['remember_me_days'] ?? 180);
                         $encodedTokens = json_encode($cleanTokens);
                         
                         setcookie('remember_tokens', $encodedTokens, [
@@ -195,6 +195,57 @@ class AuthService {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Enterprise Rolling Sessions (Sliding Window Expiration).
+     * Renueva silenciosamente la vigencia de la sesión y el token de dispositivo si han pasado más de 24h.
+     */
+    public function rollSessionExpiration(int $userId): void {
+        if ($userId <= 0) return;
+
+        $accounts = $this->sessionManager->get(SessionConstants::KEY_LINKED_ACCOUNTS, []);
+        $lastTouch = $accounts[$userId][SessionConstants::KEY_LAST_ACCESSED] ?? 0;
+        $now = time();
+
+        // Renovar solo si han transcurrido más de 24 horas para optimizar el rendimiento
+        if ($lastTouch > 0 && ($now - $lastTouch) < CacheConstants::TTL_ONE_DAY) {
+            return;
+        }
+
+        $selector = Utils::getCurrentDeviceSelector($userId);
+        $days = (int)($this->config['remember_me_days'] ?? 180);
+        $newExpiresAt = date('Y-m-d H:i:s', $now + (CacheConstants::TTL_ONE_DAY * $days));
+
+        if (!empty($selector)) {
+            $this->tokenRepository->extendTokenExpiration($selector, $newExpiresAt);
+        }
+
+        $tokens = $this->readRememberTokens();
+        if (!empty($tokens)) {
+            $this->saveRememberTokens($tokens, $days);
+        }
+
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            $cookieParams = session_get_cookie_params();
+            setcookie(
+                session_name(),
+                session_id(),
+                [
+                    'expires'  => $now + (CacheConstants::TTL_ONE_DAY * $days),
+                    'path'     => '/',
+                    'domain'   => $cookieParams['domain'],
+                    'secure'   => Utils::isSecureConnection(),
+                    'httponly' => true,
+                    'samesite' => 'Lax'
+                ]
+            );
+        }
+
+        if (isset($accounts[$userId])) {
+            $accounts[$userId][SessionConstants::KEY_LAST_ACCESSED] = $now;
+            $this->sessionManager->set(SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
         }
     }
 

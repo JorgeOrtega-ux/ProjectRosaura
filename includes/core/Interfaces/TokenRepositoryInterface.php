@@ -24,4 +24,6 @@ interface TokenRepositoryInterface {
     public function revokeDevice(int $tokenId, int $userId): bool;
     
     public function revokeOtherDevices(int $userId, string $currentSelector): bool;
+
+    public function extendTokenExpiration(string $selector, string $newExpiresAt): bool;
 }

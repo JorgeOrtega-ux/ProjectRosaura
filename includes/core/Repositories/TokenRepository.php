@@ -281,5 +281,27 @@ class TokenRepository implements TokenRepositoryInterface {
             return false;
         }
     }
+
+    public function extendTokenExpiration(string $selector, string $newExpiresAt): bool {
+        $tblAuthTokens = DB::TBL_AUTH_TOKENS;
+
+        try {
+            if ($this->redisClient) {
+                $hash = md5($selector);
+                $this->redisClient->del(CacheConstants::PREFIX_AUTH_TOKEN . "sel_" . $hash);
+                $stmtU = $this->pdo->prepare("SELECT user_id FROM {$tblAuthTokens} WHERE selector = ?");
+                $stmtU->execute([$selector]);
+                $uId = $stmtU->fetchColumn();
+                if ($uId) {
+                    $this->redisClient->del(CacheConstants::PREFIX_AUTH_TOKEN . "uid_{$uId}_" . $hash);
+                }
+            }
+            $stmt = $this->pdo->prepare("UPDATE {$tblAuthTokens} SET expires_at = ? WHERE selector = ?");
+            return $stmt->execute([$newExpiresAt, $selector]);
+        } catch (PDOException $e) {
+            Logger::error("Database error in " . __METHOD__, ['selector' => $selector, 'exception' => $e]);
+            return false;
+        }
+    }
 }
 ?>

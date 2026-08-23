@@ -209,9 +209,14 @@ try {
 
     $isLoggedIn = $sessionManager->isLoggedIn();
 
-    if ($isLoggedIn && !$sessionManager->has('user_prefs')) {
+    if ($isLoggedIn) {
         $activeId = $sessionManager->getActiveAccountId();
-        $sessionManager->set('user_prefs', $prefsManager->ensureDefaultPreferences($activeId));
+        if ($activeId) {
+            $authService->rollSessionExpiration((int)$activeId);
+        }
+        if (!$sessionManager->has('user_prefs')) {
+            $sessionManager->set('user_prefs', $prefsManager->ensureDefaultPreferences($activeId));
+        }
     }
 
 } catch (\Throwable $e) {

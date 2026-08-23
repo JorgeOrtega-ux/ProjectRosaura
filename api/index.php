@@ -225,8 +225,15 @@ try {
             $sessionManager->set('user_permissions', $permissions);
             $sessionManager->set('user_role_weight', (int)($liveUser['role_weight'] ?? 1));
         }
+        $authService->rollSessionExpiration((int)$activeId);
     } elseif (isset($_COOKIE['remember_tokens']) || isset($_COOKIE['remember_token'])) {
         $authService->autoLogin(); 
+        if ($sessionManager->isLoggedIn()) {
+            $newActiveId = $sessionManager->getActiveAccountId();
+            if ($newActiveId) {
+                $authService->rollSessionExpiration((int)$newActiveId);
+            }
+        }
     }
 
     $serverConfigRepo = $container->get(ServerConfigRepositoryInterface::class);
