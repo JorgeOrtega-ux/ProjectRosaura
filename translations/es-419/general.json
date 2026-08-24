@@ -2244,5 +2244,7 @@
     "empty_purchase_history_title": "Sin compras registradas",
     "empty_purchase_history_desc": "Aún no tienes facturas o compras realizadas en tu cuenta.",
     "empty_role_perms_title": "Sin permisos configurados",
-    "empty_role_perms_desc": "No hay permisos asignados para este rol."
+    "empty_role_perms_desc": "No hay permisos asignados para este rol.",
+    "lbl_offline_not_available": "No disponible en offline",
+    "lbl_scheduled_datetime": "Fecha y hora programada"
 }

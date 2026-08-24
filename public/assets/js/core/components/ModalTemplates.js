@@ -1017,6 +1017,456 @@ export const ModalTemplates = {
         })
     },
 
+    offlineResizeModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const currentSize = data.currentSize || '64x64';
+            const userTier = parseInt(data.userTier ?? (window.APP_USER?.subscription_tier ?? 0), 10);
+            const isOffline = data.isOfflineMode !== false;
+            const resizeActive = !!data.resizeActive;
+            const scheduledSize = data.resizeTargetSize || currentSize;
+
+            const formatLocalDatetime = (dateInput, addMs = 3600000) => {
+                let d = null;
+                if (dateInput) {
+                    d = new Date(dateInput);
+                }
+                if (!d || isNaN(d.getTime())) {
+                    d = new Date(Date.now() + addMs);
+                }
+                const pad = n => String(n).padStart(2, '0');
+                const y = d.getFullYear();
+                const m = pad(d.getMonth() + 1);
+                const day = pad(d.getDate());
+                const hh = pad(d.getHours());
+                const mm = pad(d.getMinutes());
+                return `${y}-${m}-${day}T${hh}:${mm}`;
+            };
+
+            const minDateTime = formatLocalDatetime(null, 5 * 60 * 1000);
+            const scheduledDateTimeVal = formatLocalDatetime(data.nextResizeAt, 3600000);
+
+            const sizesList = {
+                "16x16": { label: "16x16", icon: "crop_square", tier: 0 },
+                "32x32": { label: "32x32", icon: "crop_square", tier: 0 },
+                "64x64": { label: "64x64", icon: "crop_square", tier: 0 },
+                "128x64": { label: "128x64", icon: "aspect_ratio", tier: 0 },
+                "128x128": { label: "128x128", icon: "aspect_ratio", tier: 1 },
+                "256x128": { label: "256x128", icon: "aspect_ratio", tier: 1 },
+                "256x256": { label: "256x256", icon: "grid_4x4", tier: 1 },
+                "512x256": { label: "512x256", icon: "aspect_ratio", tier: 1 },
+                "512x512": { label: "512x512", icon: "grid_on", tier: 1 },
+                "1024x512": { label: "1024x512", icon: "aspect_ratio", tier: 2 },
+                "1024x1024": { label: "1024x1024", icon: "grid_on", tier: 2 },
+                "2048x1024": { label: "2048x1024", icon: "aspect_ratio", tier: 2 },
+                "2048x2048": { label: "2048x2048", icon: "grid_on", tier: 2 },
+                "4096x2048": { label: "4096x2048", icon: "aspect_ratio", tier: 3 },
+                "4096x4096": { label: "4096x4096", icon: "grid_on", tier: 3 }
+            };
+
+            const currentMeta = sizesList[currentSize] || { label: currentSize, icon: "aspect_ratio", tier: 0 };
+            const scheduledMeta = sizesList[scheduledSize] || { label: scheduledSize, icon: "aspect_ratio", tier: 0 };
+
+            let instantSizesHtml = '';
+            let scheduledSizesHtml = '';
+
+            for (const [val, meta] of Object.entries(sizesList)) {
+                const reqTier = meta.tier ?? 0;
+                const isAllowed = userTier >= reqTier;
+                const disabledClass = isAllowed ? '' : 'disabled-interaction';
+                const tierName = getDynamicTierName(reqTier);
+                const lockBadge = !isAllowed
+                    ? `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ${escapeHTML(tierName)}</span>`
+                    : '';
+
+                const isInstantActive = (val === currentSize && isAllowed);
+                instantSizesHtml += `
+                    <div class="component-menu-link ${isInstantActive ? 'active' : ''} ${disabledClass}"
+                         data-action="${isAllowed ? 'selectOfflineResizeSize' : ''}"
+                         data-type="offline_resize_size"
+                         data-value="${escapeHTML(val)}"
+                         data-label="${escapeHTML(meta.label)}"
+                         data-icon="${escapeHTML(meta.icon)}">
+                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">${escapeHTML(meta.icon)}</span></div>
+                        <div class="component-menu-link-text">
+                            <span>${escapeHTML(meta.label)}</span>
+                        </div>
+                        ${lockBadge}
+                    </div>
+                `;
+
+                const isSchedActive = (val === scheduledSize && isAllowed);
+                scheduledSizesHtml += `
+                    <div class="component-menu-link ${isSchedActive ? 'active' : ''} ${disabledClass}"
+                         data-action="${isAllowed ? 'selectScheduledResizeSize' : ''}"
+                         data-type="scheduled_resize_size"
+                         data-value="${escapeHTML(val)}"
+                         data-label="${escapeHTML(meta.label)}"
+                         data-icon="${escapeHTML(meta.icon)}">
+                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">${escapeHTML(meta.icon)}</span></div>
+                        <div class="component-menu-link-text">
+                            <span>${escapeHTML(meta.label)}</span>
+                        </div>
+                        ${lockBadge}
+                    </div>
+                `;
+            }
+
+            const scheduledOptionClass = isOffline ? 'disabled-interaction' : '';
+            const scheduledBadge = isOffline
+                ? `<span class="component-badge component-badge--warning component-badge--sm"><span class="material-symbols-rounded">block</span><span>${__('lbl_offline_not_available')}</span></span>`
+                : '';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+
+                <!-- STEP 1: Tipo de Expansión -->
+                <div class="component-card--grouped component-card--flush active component-modal-step" data-ref="offline-resize-step-1" data-selected-type="instant">
+                    <div class="component-modal-header component-modal-header--with-icon">
+                        <div class="component-card__icon-container component-card__icon-container--bordered">
+                            <span class="material-symbols-rounded">aspect_ratio</span>
+                        </div>
+                        <div class="component-modal-header-text">
+                            <h2 class="component-modal-title">${__('canvas_resize_title')}</h2>
+                            <p class="component-modal-desc">${__('canvas_resize_desc')}</p>
+                        </div>
+                    </div>
+
+                    <div class="component-modal-body">
+                        <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--static">
+                            <div class="component-menu-list">
+                                <div class="component-menu-link active" data-action="selectResizeType" data-type="instant">
+                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">flash_on</span></div>
+                                    <div class="component-menu-link-text">
+                                        <span>${__('canvas_resize_now_title')}</span>
+                                    </div>
+                                    <span class="material-symbols-rounded component-text-success" data-ref="resize-instant-check">check_circle</span>
+                                </div>
+                                <div class="component-menu-link ${scheduledOptionClass}" data-action="${isOffline ? '' : 'selectResizeType'}" data-type="scheduled">
+                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">schedule</span></div>
+                                    <div class="component-menu-link-text">
+                                        <span>${__('canvas_resize_active_title')}</span>
+                                    </div>
+                                    ${scheduledBadge}
+                                    <span class="material-symbols-rounded component-text-success disabled" data-ref="resize-scheduled-check">check_circle</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                        <button class="component-button component-button--primary component-button--h40" data-action="offlineResizeNextStep">
+                            <span>${__('btn_continue')}</span>
+                            <span class="material-symbols-rounded">chevron_right</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 2A: Selección de Tamaño Inmediato -->
+                <div class="component-card--grouped component-card--flush disabled component-modal-step" data-ref="offline-resize-step-2-instant">
+                    <div class="component-modal-header component-modal-header--with-icon">
+                        <div class="component-card__icon-container component-card__icon-container--bordered">
+                            <span class="material-symbols-rounded">photo_size_select_large</span>
+                        </div>
+                        <div class="component-modal-header-text">
+                            <h2 class="component-modal-title">${__('canvas_resize_instant_size_title')}</h2>
+                            <p class="component-modal-desc">${__('canvas_resize_instant_size_desc')}</p>
+                        </div>
+                    </div>
+
+                    <div class="component-modal-body">
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="dropdownOfflineResizeSizes" data-ref="offline-resize-trigger" data-value="${escapeHTML(currentSize)}">
+                                <span class="material-symbols-rounded" data-ref="offline-resize-icon">${escapeHTML(currentMeta.icon)}</span>
+                                <span class="component-dropdown-text" data-ref="offline-resize-label">${escapeHTML(currentMeta.label)}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
+                            </div>
+
+                            <div class="component-module component-module--dropdown disabled" data-module="dropdownOfflineResizeSizes">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list">
+                                        ${instantSizesHtml}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="component-alert-error" data-ref="offline-resize-shrink-warning">
+                            ${__('canvas_resize_warning_desc')}
+                        </div>
+                    </div>
+
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--h40" data-action="offlineResizePrevStep">
+                            <span class="material-symbols-rounded">chevron_left</span>
+                            <span>${__('btn_back')}</span>
+                        </button>
+                        <button class="component-button component-button--primary component-button--h40" data-action="submitOfflineResize">
+                            <span class="material-symbols-rounded">flash_on</span>
+                            <span>${__('btn_apply_now')}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 2B: Configuración de Expansión Programada (Online) -->
+                <div class="component-card--grouped component-card--flush disabled component-modal-step" data-ref="offline-resize-step-2-scheduled">
+                    <div class="component-modal-header component-modal-header--with-icon">
+                        <div class="component-card__icon-container component-card__icon-container--bordered">
+                            <span class="material-symbols-rounded">schedule</span>
+                        </div>
+                        <div class="component-modal-header-text">
+                            <h2 class="component-modal-title">${__('canvas_resize_active_title')}</h2>
+                            <p class="component-modal-desc">${__('canvas_resize_active_desc')}</p>
+                        </div>
+                    </div>
+
+                    <div class="component-modal-body">
+                        <div class="component-group-item">
+                            <div class="component-card__content">
+                                <div class="component-card__text">
+                                    <h2 class="component-card__title">${__('canvas_resize_active_title')}</h2>
+                                    <p class="component-card__description">${__('canvas_resize_active_desc')}</p>
+                                </div>
+                            </div>
+                            <div class="component-card__actions component-card__actions--end">
+                                <label class="component-toggle-switch">
+                                    <input type="checkbox" data-ref="scheduled_resize_active" data-action="toggleScheduledResizeSection" ${resizeActive ? 'checked' : ''}>
+                                    <span class="component-toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="component-form-body ${resizeActive ? '' : 'disabled-interaction'}" data-ref="scheduled_resize_fields" style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;">
+                            <div class="component-input-group">
+                                <input class="component-input-field" data-ref="scheduled_resize_datetime" type="datetime-local" placeholder=" " value="${scheduledDateTimeVal}" min="${minDateTime}">
+                                <label class="component-input-label">${__('lbl_scheduled_datetime')}</label>
+                            </div>
+
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                                <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="dropdownScheduledResizeSizes" data-ref="scheduled-resize-trigger" data-value="${escapeHTML(scheduledSize)}">
+                                    <span class="material-symbols-rounded" data-ref="scheduled-resize-icon">${escapeHTML(scheduledMeta.icon)}</span>
+                                    <span class="component-dropdown-text" data-ref="scheduled-resize-label">${escapeHTML(scheduledMeta.label)}</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+
+                                <div class="component-module component-module--dropdown disabled" data-module="dropdownScheduledResizeSizes">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list">
+                                            ${scheduledSizesHtml}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="component-alert-error" data-ref="scheduled-resize-shrink-warning">
+                                ${__('canvas_resize_warning_desc')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--h40" data-action="offlineResizePrevStep">
+                            <span class="material-symbols-rounded">chevron_left</span>
+                            <span>${__('btn_back')}</span>
+                        </button>
+                        <button class="component-button component-button--primary component-button--h40" data-action="submitScheduledResize">
+                            <span class="material-symbols-rounded">save</span>
+                            <span>${__('btn_save_changes')}</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    },
+
+    offlineResetModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const isOffline = data.isOfflineMode !== false;
+            const resetActive = !!data.resetActive;
+            const canTakeSnapshot = data.canTakeSnapshot !== false;
+
+            const formatLocalDatetime = (dateInput, addMs = 3600000) => {
+                let d = null;
+                if (dateInput) {
+                    d = new Date(dateInput);
+                }
+                if (!d || isNaN(d.getTime())) {
+                    d = new Date(Date.now() + addMs);
+                }
+                const pad = n => String(n).padStart(2, '0');
+                const y = d.getFullYear();
+                const m = pad(d.getMonth() + 1);
+                const day = pad(d.getDate());
+                const hh = pad(d.getHours());
+                const mm = pad(d.getMinutes());
+                return `${y}-${m}-${day}T${hh}:${mm}`;
+            };
+
+            const minDateTime = formatLocalDatetime(null, 5 * 60 * 1000);
+            const scheduledResetDateTimeVal = formatLocalDatetime(data.nextResetAt, 3600000);
+
+            const scheduledOptionClass = isOffline ? 'disabled-interaction' : '';
+            const scheduledBadge = isOffline
+                ? `<span class="component-badge component-badge--warning component-badge--sm"><span class="material-symbols-rounded">block</span><span>${__('lbl_offline_not_available')}</span></span>`
+                : '';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+
+                <!-- STEP 1: Tipo de Reinicio -->
+                <div class="component-card--grouped component-card--flush active component-modal-step" data-ref="offline-reset-step-1" data-selected-type="instant">
+                    <div class="component-modal-header component-modal-header--with-icon">
+                        <div class="component-card__icon-container component-card__icon-container--bordered">
+                            <span class="material-symbols-rounded">restart_alt</span>
+                        </div>
+                        <div class="component-modal-header-text">
+                            <h2 class="component-modal-title">${__('canvas_resets_title')}</h2>
+                            <p class="component-modal-desc">${__('canvas_resets_desc')}</p>
+                        </div>
+                    </div>
+
+                    <div class="component-modal-body">
+                        <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--static">
+                            <div class="component-menu-list">
+                                <div class="component-menu-link active" data-action="selectResetType" data-type="instant">
+                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">flash_on</span></div>
+                                    <div class="component-menu-link-text">
+                                        <span>${__('canvas_reset_now_title')}</span>
+                                    </div>
+                                    <span class="material-symbols-rounded component-text-success" data-ref="reset-instant-check">check_circle</span>
+                                </div>
+                                <div class="component-menu-link ${scheduledOptionClass}" data-action="${isOffline ? '' : 'selectResetType'}" data-type="scheduled">
+                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">schedule</span></div>
+                                    <div class="component-menu-link-text">
+                                        <span>${__('canvas_reset_active_title')}</span>
+                                    </div>
+                                    ${scheduledBadge}
+                                    <span class="material-symbols-rounded component-text-success disabled" data-ref="reset-scheduled-check">check_circle</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                        <button class="component-button component-button--primary component-button--h40" data-action="offlineResetNextStep">
+                            <span>${__('btn_continue')}</span>
+                            <span class="material-symbols-rounded">chevron_right</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 2A: Reinicio Inmediato -->
+                <div class="component-card--grouped component-card--flush disabled component-modal-step" data-ref="offline-reset-step-2-instant">
+                    <div class="component-modal-header component-modal-header--with-icon">
+                        <div class="component-card__icon-container component-card__icon-container--bordered">
+                            <span class="material-symbols-rounded">delete_forever</span>
+                        </div>
+                        <div class="component-modal-header-text">
+                            <h2 class="component-modal-title">${__('title_confirm_reset_now')}</h2>
+                            <p class="component-modal-desc">${__('desc_confirm_reset_now')}</p>
+                        </div>
+                    </div>
+
+                    <div class="component-modal-body">
+                        <div class="component-group-item">
+                            <div class="component-card__content">
+                                <div class="component-card__text">
+                                    <h2 class="component-card__title">${__('canvas_reset_captura_title')}</h2>
+                                    <p class="component-card__description">${__('take_photo_before_reset')}</p>
+                                </div>
+                            </div>
+                            <div class="component-card__actions component-card__actions--end">
+                                <label class="component-toggle-switch">
+                                    <input type="checkbox" data-ref="offline_reset_snapshot" ${canTakeSnapshot ? 'checked' : 'disabled'}>
+                                    <span class="component-toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--h40" data-action="offlineResetPrevStep">
+                            <span class="material-symbols-rounded">chevron_left</span>
+                            <span>${__('btn_back')}</span>
+                        </button>
+                        <button class="component-button component-button--danger component-button--h40" data-action="submitOfflineReset">
+                            <span class="material-symbols-rounded">delete_forever</span>
+                            <span>${__('btn_reset_now')}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 2B: Configuración de Reinicio Programado (Online) -->
+                <div class="component-card--grouped component-card--flush disabled component-modal-step" data-ref="offline-reset-step-2-scheduled">
+                    <div class="component-modal-header component-modal-header--with-icon">
+                        <div class="component-card__icon-container component-card__icon-container--bordered">
+                            <span class="material-symbols-rounded">schedule</span>
+                        </div>
+                        <div class="component-modal-header-text">
+                            <h2 class="component-modal-title">${__('canvas_reset_active_title')}</h2>
+                            <p class="component-modal-desc">${__('canvas_reset_active_desc')}</p>
+                        </div>
+                    </div>
+
+                    <div class="component-modal-body">
+                        <div class="component-group-item">
+                            <div class="component-card__content">
+                                <div class="component-card__text">
+                                    <h2 class="component-card__title">${__('canvas_reset_active_title')}</h2>
+                                    <p class="component-card__description">${__('canvas_reset_active_desc')}</p>
+                                </div>
+                            </div>
+                            <div class="component-card__actions component-card__actions--end">
+                                <label class="component-toggle-switch">
+                                    <input type="checkbox" data-ref="scheduled_reset_active" data-action="toggleScheduledResetSection" ${resetActive ? 'checked' : ''}>
+                                    <span class="component-toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="component-form-body ${resetActive ? '' : 'disabled-interaction'}" data-ref="scheduled_reset_fields" style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;">
+                            <div class="component-input-group">
+                                <input class="component-input-field" data-ref="scheduled_reset_datetime" type="datetime-local" placeholder=" " value="${scheduledResetDateTimeVal}" min="${minDateTime}">
+                                <label class="component-input-label">${__('lbl_scheduled_datetime')}</label>
+                            </div>
+
+                            <div class="component-group-item">
+                                <div class="component-card__content">
+                                    <div class="component-card__text">
+                                        <h2 class="component-card__title">${__('canvas_reset_captura_title')}</h2>
+                                        <p class="component-card__description">${__('take_photo_before_reset')}</p>
+                                    </div>
+                                </div>
+                                <div class="component-card__actions component-card__actions--end">
+                                    <label class="component-toggle-switch">
+                                        <input type="checkbox" data-ref="scheduled_reset_snapshot" checked>
+                                        <span class="component-toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--h40" data-action="offlineResetPrevStep">
+                            <span class="material-symbols-rounded">chevron_left</span>
+                            <span>${__('btn_back')}</span>
+                        </button>
+                        <button class="component-button component-button--primary component-button--h40" data-action="submitScheduledReset">
+                            <span class="material-symbols-rounded">save</span>
+                            <span>${__('btn_save_changes')}</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    },
+
     dynamicFormDialog: {
         build: (data) => {
             let fieldsHtml = '';

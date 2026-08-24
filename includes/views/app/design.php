@@ -36,6 +36,7 @@ extract($designData);
          data-size="<?php echo htmlspecialchars($canvasSize); ?>" 
          data-mode="<?php echo htmlspecialchars($canvasMode ?? 'offline'); ?>"
          data-online-active="<?php echo !empty($isOnlineActive) ? '1' : '0'; ?>"
+         data-user-tier="<?php echo (int)($userTier ?? 0); ?>"
          data-initial-zoom="<?php echo htmlspecialchars($canvasInitialZoom ?? '0.5'); ?>"
          data-palette="<?php echo htmlspecialchars($canvasPalette); ?>"
          data-privacy="<?php echo htmlspecialchars($canvasPrivacy); ?>"
@@ -258,6 +259,20 @@ extract($designData);
                 <?php endforeach; ?>
             </div>
             <?php endif; ?>
+            <?php endif; ?>
+
+            <?php if (isset($isOwner) && $isOwner): ?>
+            <div class="canvas-design-toolbar-vertical-right <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="workspace-tools-vertical-right">
+                <button class="component-button component-button--icon component-button--h32" data-action="openOfflineResizeModal" data-tooltip="<?php echo __('tooltip_resize_canvas'); ?>" data-position="left">
+                    <span class="material-symbols-rounded">aspect_ratio</span>
+                </button>
+                <button class="component-button component-button--icon component-button--h32" data-action="generateOfflineSnapshot" data-tooltip="<?php echo __('btn_create_captura'); ?>" data-position="left">
+                    <span class="material-symbols-rounded">photo_camera</span>
+                </button>
+                <button class="component-button component-button--icon component-button--h32" data-action="openOfflineResetModal" data-tooltip="<?php echo __('tooltip_manage_resets'); ?>" data-position="left">
+                    <span class="material-symbols-rounded">restart_alt</span>
+                </button>
+            </div>
             <?php endif; ?>
 
             <div class="component-badge component-badge--dark component-badge--toolbar" data-ref="template-floating-toolbar">

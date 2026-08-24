@@ -307,6 +307,67 @@
     }
 }
 
+/* ── Canvas Design Toolbar Vertical Right (Right-center floating pill for offline workspace tools: resize & reset) ── */
+.canvas-design-toolbar-vertical-right {
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    transform: translateY(-50%);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    background: #0d0d10;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 9999px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    pointer-events: auto;
+    color: #ffffff;
+    z-index: 50;
+}
+
+.canvas-design-toolbar-vertical-right.active {
+    display: flex;
+}
+
+.canvas-design-toolbar-vertical-right.disabled {
+    display: none !important;
+}
+
+.canvas-design-toolbar-vertical-right .component-button--icon {
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+    border-radius: 9999px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.canvas-design-toolbar-vertical-right .component-button--icon:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.45);
+}
+
+.canvas-design-toolbar-vertical-right .component-button--icon.active {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.6);
+    color: #ffffff;
+}
+
+.canvas-design-toolbar-vertical-right .material-symbols-rounded {
+    font-size: 1.1rem;
+    color: inherit;
+}
+
+@media (max-width: 768px) {
+    .canvas-design-toolbar-vertical-right {
+        right: 8px;
+    }
+}
+
 /* ── Canvas Design Subtoolbar Vertical (Appears to the right of main vertical toolbar) ── */
 .canvas-design-subtoolbar-vertical {
     position: absolute;

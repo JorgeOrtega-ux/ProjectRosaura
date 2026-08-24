@@ -118,6 +118,155 @@ export const InteractionEvents = {
             }
         }
 
+        const btnOpenOfflineResize = e.target.closest('[data-action="openOfflineResizeModal"]');
+        if (btnOpenOfflineResize) {
+            e.preventDefault();
+            if (typeof this.openOfflineResizeModal === 'function') {
+                this.openOfflineResizeModal();
+            }
+            return;
+        }
+
+        const btnOpenOfflineReset = e.target.closest('[data-action="openOfflineResetModal"]');
+        if (btnOpenOfflineReset) {
+            e.preventDefault();
+            if (typeof this.openOfflineResetModal === 'function') {
+                this.openOfflineResetModal();
+            }
+            return;
+        }
+
+        const btnGenerateOfflineSnapshot = e.target.closest('[data-action="generateOfflineSnapshot"]');
+        if (btnGenerateOfflineSnapshot) {
+            e.preventDefault();
+            if (typeof this.generateOfflineSnapshot === 'function') {
+                this.generateOfflineSnapshot(btnGenerateOfflineSnapshot);
+            }
+            return;
+        }
+
+        const btnSelectResizeType = e.target.closest('[data-action="selectResizeType"]');
+        if (btnSelectResizeType) {
+            e.preventDefault();
+            if (typeof this.handleSelectResizeType === 'function') {
+                this.handleSelectResizeType(btnSelectResizeType);
+            }
+            return;
+        }
+
+        const btnSelectResetType = e.target.closest('[data-action="selectResetType"]');
+        if (btnSelectResetType) {
+            e.preventDefault();
+            if (typeof this.handleSelectResetType === 'function') {
+                this.handleSelectResetType(btnSelectResetType);
+            }
+            return;
+        }
+
+        const btnOfflineResizeNext = e.target.closest('[data-action="offlineResizeNextStep"]');
+        if (btnOfflineResizeNext) {
+            e.preventDefault();
+            if (typeof this.handleOfflineResizeStep === 'function') {
+                this.handleOfflineResizeStep('next');
+            }
+            return;
+        }
+
+        const btnOfflineResizePrev = e.target.closest('[data-action="offlineResizePrevStep"]');
+        if (btnOfflineResizePrev) {
+            e.preventDefault();
+            if (typeof this.handleOfflineResizeStep === 'function') {
+                this.handleOfflineResizeStep('prev');
+            }
+            return;
+        }
+
+        const btnSelectOfflineResizeSize = e.target.closest('[data-action="selectOfflineResizeSize"]');
+        if (btnSelectOfflineResizeSize) {
+            e.preventDefault();
+            if (typeof this.handleOfflineResizeSizeSelect === 'function') {
+                this.handleOfflineResizeSizeSelect(btnSelectOfflineResizeSize);
+            }
+            return;
+        }
+
+        const btnSelectScheduledResizeSize = e.target.closest('[data-action="selectScheduledResizeSize"]');
+        if (btnSelectScheduledResizeSize) {
+            e.preventDefault();
+            if (typeof this.handleScheduledResizeSizeSelect === 'function') {
+                this.handleScheduledResizeSizeSelect(btnSelectScheduledResizeSize);
+            }
+            return;
+        }
+
+        const toggleSchedResize = e.target.closest('[data-action="toggleScheduledResizeSection"]');
+        if (toggleSchedResize) {
+            if (typeof this.toggleScheduledResizeSection === 'function') {
+                this.toggleScheduledResizeSection(toggleSchedResize);
+            }
+        }
+
+        const toggleSchedReset = e.target.closest('[data-action="toggleScheduledResetSection"]');
+        if (toggleSchedReset) {
+            if (typeof this.toggleScheduledResetSection === 'function') {
+                this.toggleScheduledResetSection(toggleSchedReset);
+            }
+        }
+
+        const btnSubmitOfflineResize = e.target.closest('[data-action="submitOfflineResize"]');
+        if (btnSubmitOfflineResize) {
+            e.preventDefault();
+            if (typeof this.executeOfflineResize === 'function') {
+                this.executeOfflineResize(btnSubmitOfflineResize);
+            }
+            return;
+        }
+
+        const btnSubmitScheduledResize = e.target.closest('[data-action="submitScheduledResize"]');
+        if (btnSubmitScheduledResize) {
+            e.preventDefault();
+            if (typeof this.executeScheduledResize === 'function') {
+                this.executeScheduledResize(btnSubmitScheduledResize);
+            }
+            return;
+        }
+
+        const btnOfflineResetNext = e.target.closest('[data-action="offlineResetNextStep"]');
+        if (btnOfflineResetNext) {
+            e.preventDefault();
+            if (typeof this.handleOfflineResetStep === 'function') {
+                this.handleOfflineResetStep('next');
+            }
+            return;
+        }
+
+        const btnOfflineResetPrev = e.target.closest('[data-action="offlineResetPrevStep"]');
+        if (btnOfflineResetPrev) {
+            e.preventDefault();
+            if (typeof this.handleOfflineResetStep === 'function') {
+                this.handleOfflineResetStep('prev');
+            }
+            return;
+        }
+
+        const btnSubmitOfflineReset = e.target.closest('[data-action="submitOfflineReset"]');
+        if (btnSubmitOfflineReset) {
+            e.preventDefault();
+            if (typeof this.executeOfflineReset === 'function') {
+                this.executeOfflineReset(btnSubmitOfflineReset);
+            }
+            return;
+        }
+
+        const btnSubmitScheduledReset = e.target.closest('[data-action="submitScheduledReset"]');
+        if (btnSubmitScheduledReset) {
+            e.preventDefault();
+            if (typeof this.executeScheduledReset === 'function') {
+                this.executeScheduledReset(btnSubmitScheduledReset);
+            }
+            return;
+        }
+
         const btnOwnerTools = e.target.closest('[data-action="toggleOwnerTools"]');
         if (btnOwnerTools) {
             e.preventDefault();
