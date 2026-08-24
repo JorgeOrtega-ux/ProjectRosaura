@@ -138,6 +138,8 @@ try {
 }
 
 if (session_status() === PHP_SESSION_NONE) {
+    // Sincronizar gc_maxlifetime con el lifetime real de la sesión (180 días).
+    ini_set('session.gc_maxlifetime', \App\Core\System\SessionConstants::SESSION_COOKIE_LIFETIME);
     $cookieParams = session_get_cookie_params();
     session_set_cookie_params([
         'lifetime' => \App\Core\System\SessionConstants::SESSION_COOKIE_LIFETIME,

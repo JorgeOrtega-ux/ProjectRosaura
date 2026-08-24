@@ -21,6 +21,7 @@ class SessionManager implements SessionManagerInterface {
     public function start(): void {
         try {
             if (session_status() === PHP_SESSION_NONE) {
+                ini_set('session.gc_maxlifetime', SessionConstants::SESSION_COOKIE_LIFETIME);
                 $cookieParams = session_get_cookie_params();
                 session_set_cookie_params([
                     'lifetime' => SessionConstants::SESSION_COOKIE_LIFETIME,

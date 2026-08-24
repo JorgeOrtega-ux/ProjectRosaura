@@ -11,6 +11,79 @@ import { SpaRouter } from './core/router/SpaRouter.js';
 import { TelemetryTracker } from './core/telemetry/TelemetryTracker.js';
 import { TooltipSystem } from './core/components/TooltipSystem.js';
 
+// --- DEBUG: session diagnostics (remove after fix is confirmed) ---
+(function _sessionDebug() {
+    const d = window.APP_SESSION_DEBUG;
+    if (!d) return;
+
+    const isAnomaly =
+        d.autologin_triggered ||          // autoLogin corrió → sesión estaba expirada en Redis
+        (d.had_remember_cookie && !d.had_session_on_load) || // había cookie pero no sesión
+        d.ttl_mismatch;                   // gc_maxlifetime < cookie lifetime
+
+    if (!isAnomaly) return; // sesión normal, no loggear
+
+    const style = {
+        header:  'color:#fff;background:#c0392b;font-weight:bold;padding:2px 6px;border-radius:3px',
+        label:   'color:#888;font-size:11px',
+        ok:      'color:#27ae60;font-weight:bold',
+        warn:    'color:#e67e22;font-weight:bold',
+        bad:     'color:#c0392b;font-weight:bold',
+    };
+
+    console.group('%c[SESSION DEBUG] Anomalía detectada en la carga', style.header);
+
+    console.log('%c¿Había sesión PHP activa al cargar?',              style.label,
+        d.had_session_on_load   ? '%c✔ Sí' : '%c✘ No (sesión Redis expirada o perdida)',
+        d.had_session_on_load   ? style.ok  : style.bad);
+
+    console.log('%c¿Había cookie remember_token/remember_tokens?',   style.label,
+        d.had_remember_cookie   ? '%c✔ Sí' : '%c✘ No',
+        d.had_remember_cookie   ? style.ok  : style.label);
+
+    console.log('%c¿Se disparó autoLogin()?',                         style.label,
+        d.autologin_triggered   ? '%c✔ Sí' : '%c– No',
+        d.autologin_triggered   ? style.warn : style.label);
+
+    if (d.autologin_triggered) {
+        console.log('%c¿autoLogin tuvo éxito?',                       style.label,
+            d.autologin_success ? '%c✔ Sí (el usuario se recuperó pero el HTML ya fue enviado sin sesión)' : '%c✘ No (cookie huérfana o token inválido)',
+            d.autologin_success ? style.warn : style.bad);
+    }
+
+    console.log('%c¿Está logueado al final del bootstrap?',           style.label,
+        d.is_logged_in_final    ? '%c✔ Sí' : '%c✘ No',
+        d.is_logged_in_final    ? style.ok  : style.bad);
+
+    console.log('%c-- TTLs --',                                        style.label);
+    console.log('%cgc_maxlifetime (PHP/Redis):',                       style.label,
+        `%c${d.gc_maxlifetime_secs}s (${Math.round(d.gc_maxlifetime_secs/60)} min)`,
+        d.ttl_mismatch ? style.bad : style.ok);
+    console.log('%cSession cookie lifetime:',                          style.label,
+        `%c${d.cookie_lifetime_secs}s (${Math.round(d.cookie_lifetime_secs/86400)} días)`,
+        style.ok);
+
+    if (d.ttl_mismatch) {
+        console.warn(
+            '⚠️  CAUSA PROBABLE: gc_maxlifetime (' + d.gc_maxlifetime_secs + 's) es MENOR que el ' +
+            'lifetime de la cookie (' + d.cookie_lifetime_secs + 's). ' +
+            'La sesión en Redis expira mucho antes de que la cookie caduque, ' +
+            'así que cuando el usuario vuelve, la cookie existe pero la sesión en Redis ya no.'
+        );
+    }
+
+    if (d.autologin_triggered && d.autologin_success && !d.had_session_on_load) {
+        console.warn(
+            '⚠️  CAUSA PROBABLE: autoLogin() recuperó la sesión DESPUÉS de que PHP ' +
+            'ya construyó el HTML con estado "sin sesión". ' +
+            'La primera carga muestra estado guest; el SPA corrige en la siguiente petición.'
+        );
+    }
+
+    console.groupEnd();
+})();
+// ------------------------------------------------------------------
+
 document.addEventListener('DOMContentLoaded', () => {
     window.formatNumber = formatNumber;
     window.appUserTier = window.APP_USER ? window.APP_USER.subscription_tier : 0;

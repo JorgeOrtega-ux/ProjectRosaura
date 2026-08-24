@@ -54,6 +54,11 @@ try {
 
 try {
     if (session_status() === PHP_SESSION_NONE) {
+        // Sincronizar gc_maxlifetime con el lifetime real de la sesión (180 días).
+        // Sin esto, PHP usa el default de 1440s (24 min) y la sesión en Redis
+        // expira mucho antes de que la cookie caduque, causando el bug de
+        // "sin sesión al reabrir el navegador".
+        ini_set('session.gc_maxlifetime', \App\Core\System\SessionConstants::SESSION_COOKIE_LIFETIME);
         $cookieParams = session_get_cookie_params();
         session_set_cookie_params([
             'lifetime' => \App\Core\System\SessionConstants::SESSION_COOKIE_LIFETIME,
@@ -159,6 +164,15 @@ $serverConfig = [];
 $isSystemDegraded = false;
 $sessionManager = $container->get(SessionManagerInterface::class);
 
+// --- DEBUG: session diagnostics (remove after fix is confirmed) ---
+$_sessionDebugHadSession    = $sessionManager->isLoggedIn();
+$_sessionDebugHasCookie     = isset($_COOKIE['remember_token']) || isset($_COOKIE['remember_tokens']);
+$_sessionDebugAutoTriggered = false;
+$_sessionDebugAutoSuccess   = false;
+$_sessionDebugGcTtl         = (int)ini_get('session.gc_maxlifetime');
+$_sessionDebugCookieTtl     = \App\Core\System\SessionConstants::SESSION_COOKIE_LIFETIME;
+// ------------------------------------------------------------------
+
 try {
     $configRepo = $container->get(ServerConfigRepositoryInterface::class);
     $serverConfig = $configRepo->getConfig();
@@ -208,7 +222,9 @@ try {
             $sessionManager->syncRootState();
         }
     } elseif (isset($_COOKIE['remember_token']) || isset($_COOKIE['remember_tokens'])) {
-        $authService->autoLogin(); 
+        $_sessionDebugAutoTriggered = true;
+        $authService->autoLogin();
+        $_sessionDebugAutoSuccess = $sessionManager->isLoggedIn();
     }
 
     $isLoggedIn = $sessionManager->isLoggedIn();

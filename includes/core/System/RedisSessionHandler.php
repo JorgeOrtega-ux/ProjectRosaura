@@ -13,9 +13,13 @@ class RedisSessionHandler implements SessionHandlerInterface {
     private $ttl;
 
     public function __construct(Client $redis, string $prefix = CacheConstants::PREFIX_PHPSESSID, int $ttl = CacheConstants::TTL_ONE_DAY) {
-        $this->redis = $redis;
+        $this->redis  = $redis;
         $this->prefix = $prefix;
-        $this->ttl = (int)ini_get('session.gc_maxlifetime') ?: $ttl;
+        // Usar SESSION_COOKIE_LIFETIME como TTL de Redis para que la sesión en Redis
+        // dure exactamente lo mismo que la cookie del navegador (180 días).
+        // Antes se usaba ini_get('session.gc_maxlifetime') que por defecto es 1440s
+        // (24 min), causando que la sesión expirara en Redis mucho antes que la cookie.
+        $this->ttl = \App\Core\System\SessionConstants::SESSION_COOKIE_LIFETIME;
     }
 
     #[\ReturnTypeWillChange]

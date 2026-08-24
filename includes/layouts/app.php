@@ -318,6 +318,20 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
             permissions: <?php echo json_encode($userPermissions ?? []); ?>
         };
 
+        // --- DEBUG: session diagnostics (remove after fix is confirmed) ---
+        window.APP_SESSION_DEBUG = {
+            had_session_on_load:   <?php echo json_encode($_sessionDebugHadSession ?? false); ?>,
+            had_remember_cookie:   <?php echo json_encode($_sessionDebugHasCookie ?? false); ?>,
+            autologin_triggered:   <?php echo json_encode($_sessionDebugAutoTriggered ?? false); ?>,
+            autologin_success:     <?php echo json_encode($_sessionDebugAutoSuccess ?? false); ?>,
+            is_logged_in_final:    <?php echo json_encode($isLoggedIn ?? false); ?>,
+            gc_maxlifetime_secs:   <?php echo json_encode($_sessionDebugGcTtl ?? 0); ?>,
+            cookie_lifetime_secs:  <?php echo json_encode($_sessionDebugCookieTtl ?? 0); ?>,
+            ttl_mismatch:          <?php echo json_encode(($_sessionDebugGcTtl ?? 0) < ($_sessionDebugCookieTtl ?? 0)); ?>,
+            request_type:          "full_page_load"
+        };
+        // ------------------------------------------------------------------
+
         window.AI_CONFIG = {
             enabled: <?php echo (\App\Core\Helpers\EnvLoader::get('AI_ENABLED', 'true') === 'false' || \App\Core\Helpers\EnvLoader::get('AI_ENABLED', 'true') === false || \App\Core\Helpers\EnvLoader::get('AI_ENABLED', 'true') === '0') ? 'false' : 'true'; ?>,
             provider: "<?php echo (\App\Core\Helpers\EnvLoader::get('AI_ENABLED', 'true') === 'false' || \App\Core\Helpers\EnvLoader::get('AI_ENABLED', 'true') === false || \App\Core\Helpers\EnvLoader::get('AI_ENABLED', 'true') === '0') ? 'null' : 'api'; ?>"
