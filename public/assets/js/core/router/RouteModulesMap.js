@@ -76,13 +76,9 @@ export const RouteModulesMap = {
 
     '/trash': { path: './modules/canvases/core/CanvasTrashController.js', className: 'CanvasTrashController', skeletonType: 'layout-grid' },
     '/canvases/create': { path: './modules/canvases/core/CanvasCreateController.js', className: 'CanvasCreateController', skeletonType: 'layout-table' },
-    '/canvases/manage': { path: './modules/canvases/core/CanvasManageController.js', className: 'CanvasManageController', skeletonType: 'layout-table' },
     '/canvases/trash': { path: './modules/canvases/core/CanvasTrashController.js', className: 'CanvasTrashController', skeletonType: 'layout-grid' },
 
-
-    
     '/canvases/manage/requests/:uuid': { path: './modules/canvases/team/CanvasRequestsController.js', className: 'CanvasRequestsController', skeletonType: 'layout-basic' },
-    '/canvases/manage/resets/:uuid': { path: './modules/canvases/workspace/CanvasResetController.js', className: 'CanvasResetController', skeletonType: 'layout-basic' },
     '/canvases/edit/:uuid': { path: './modules/canvases/workspace/CanvasEditController.js', className: 'CanvasEditController', skeletonType: 'layout-basic' },
     
     '/canvases/manage/roles/:uuid': { path: './modules/canvases/team/CanvasRolesController.js', className: 'CanvasRolesController', skeletonType: 'layout-basic' },
@@ -96,7 +92,6 @@ export const RouteModulesMap = {
     
     '/canvases/manage/invites/:uuid': { path: './modules/canvases/team/CanvasInvitesController.js', className: 'CanvasInvitesController', skeletonType: 'layout-table' },
     
-    '/canvases/manage/resize/:uuid': { path: './modules/canvases/workspace/CanvasResizeController.js', className: 'CanvasResizeController', skeletonType: 'layout-basic' },
     '/canvases/palettes/create': { path: './modules/canvases/palettes/CanvasPaletteCreateController.js', className: 'CanvasPaletteCreateController', skeletonType: 'layout-basic' },
 
     '/design/s/:uuid': { path: './modules/canvases/history/CanvasSnapshotsGalleryController.js', className: 'CanvasSnapshotsGalleryController', skeletonType: 'layout-grid' },

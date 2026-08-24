@@ -37,11 +37,6 @@ class Router {
             exit;
         }
 
-        if (preg_match('#^/canvases/resize/([a-zA-Z0-9\-]+)$#', $relativePath, $matches)) {
-            header('Location: ' . $this->basePath . '/canvases/manage/resize/' . $matches[1]);
-            exit;
-        }
-
         // 1. Check exact match first (static routes)
         if (array_key_exists($relativePath, $this->routes)) {
             return $this->routes[$relativePath];

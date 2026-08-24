@@ -64,11 +64,6 @@ export class SpaRouter {
             cleanUrl = '/';
         }
 
-        // Shortcut compatibility mapping for resize redirection
-        if (cleanUrl.startsWith('/canvases/resize/')) {
-            cleanUrl = '/canvases/manage/resize/' + cleanUrl.substring('/canvases/resize/'.length);
-        }
-
         // Try exact match and dynamic matches in precompiled list
         for (const route of this.compiledRoutes) {
             if (route.type === 'exact' && route.pattern === cleanUrl) {

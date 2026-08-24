@@ -39,7 +39,7 @@ class CanvasViewService {
                 'isOwner' => false,
                 'canvas' => null,
                 'error' => __('err_unauthorized'),
-                'redirect' => $appUrl . '/canvases/manage'
+                'redirect' => $appUrl . '/'
             ];
         }
 
@@ -66,7 +66,7 @@ class CanvasViewService {
                 'isOwner' => false,
                 'canvas' => null,
                 'error' => __('err_canvas_not_found'),
-                'redirect' => $appUrl . '/canvases/manage'
+                'redirect' => $appUrl . '/'
             ];
         }
 
@@ -86,7 +86,7 @@ class CanvasViewService {
                 'isOwner' => false,
                 'canvas' => null,
                 'error' => __('err_canvas_not_found'),
-                'redirect' => $appUrl . '/canvases/manage'
+                'redirect' => $appUrl . '/'
             ];
         }
 
@@ -103,7 +103,7 @@ class CanvasViewService {
                 'isOwner' => $isOwner,
                 'canvas' => $canvas,
                 'error' => __('err_canvas_locked'),
-                'redirect' => $appUrl . '/canvases/manage'
+                'redirect' => $appUrl . '/'
             ];
         }
 
@@ -120,7 +120,7 @@ class CanvasViewService {
                     'isOwner' => $isOwner,
                     'canvas' => $canvas,
                     'error' => __('err_unauthorized'),
-                    'redirect' => $appUrl . '/canvases/manage'
+                    'redirect' => $appUrl . '/'
                 ];
             }
         }
@@ -1666,7 +1666,7 @@ class CanvasViewService {
             return [
                 'unauthorized' => true,
                 'is_locked' => $ctx['is_locked'] ?? false,
-                'redirect' => $ctx['redirect'] ?? ((defined('APP_URL') ? APP_URL : '') . '/canvases/manage')
+                'redirect' => $ctx['redirect'] ?? ((defined('APP_URL') ? APP_URL : '') . '/')
             ];
         }
 

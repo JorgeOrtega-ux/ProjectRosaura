@@ -110,7 +110,7 @@ if ($isLoggedIn) {
 
             <?php if ($isLoggedIn && $hasCanvasAccess): ?>
                 <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="moduleCanvases" data-tooltip="<?php echo __('tooltip_canvases'); ?>" data-position="bottom">
-                    <span class="material-symbols-rounded">palette</span>
+                    <span class="material-symbols-rounded">add</span>
                 </button>
             <?php endif; ?>
 

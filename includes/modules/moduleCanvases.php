@@ -23,7 +23,7 @@ $canJoinCanvas = in_array('join_canvas', $userPermissions);
             <?php endif; ?>
 
             <?php if ($canJoinCanvas): ?>
-            <div class="component-menu-link nav-item" data-action="openJoinCanvasModal">
+            <div class="component-menu-link component-menu-link--bordered nav-item" data-action="openJoinCanvasModal">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">group_add</span>
                 </div>
@@ -32,18 +32,6 @@ $canJoinCanvas = in_array('join_canvas', $userPermissions);
                 </div>
             </div>
             <?php endif; ?>
-
-            <?php if ($canManageCanvases): ?>
-            <div class="component-menu-link component-menu-link--bordered nav-item" data-nav="<?php echo APP_URL; ?>/canvases/manage">
-                <div class="component-menu-link-icon">
-                    <span class="material-symbols-rounded">dashboard</span>
-                </div>
-                <div class="component-menu-link-text">
-                    <span><?php echo __('lbl_manage_canvases'); ?></span>
-                </div>
-            </div>
-            <?php endif; ?>
-            
         </div>
     </div>
 </div>

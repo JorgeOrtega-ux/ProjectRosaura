@@ -1,5 +1,5 @@
 import { ApiRoutes } from '../api/ApiRoutes.js';
-import { showMessage, renderSkeleton, getLockDetails, closeAllDropdowns, toggleDropdown } from '../utils/uiUtils.js';
+import { showMessage, renderSkeleton, getLockDetails, closeAllDropdowns, toggleDropdown, setButtonLoading, restoreButton } from '../utils/uiUtils.js';
 import { CanvasApiService } from '../api/CanvasApiService.js';
 import { CardTemplates } from './CardTemplates.js';
 import { PromoService } from '../services/PromoCardService.js';
@@ -55,6 +55,12 @@ export class CanvasCardInteractions {
             return true;
         } else if (action === 'toggleCardOnlineMode') {
             this.toggleCardOnlineMode(btn);
+            return true;
+        } else if (action === 'openCardResizeModal') {
+            this.openCardResizeModal(btn);
+            return true;
+        } else if (action === 'openCardResetModal') {
+            this.openCardResetModal(btn);
             return true;
         }
         return false;
@@ -479,11 +485,11 @@ export class CanvasCardInteractions {
                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">edit</span></div>
                             <div class="component-menu-link-text"><span>${window.__('tooltip_edit_canvas')}</span></div>
                         </button>
-                        <button type="button" class="component-menu-link" data-nav="${this.basePath}/canvases/manage/resize/${uuid}">
+                        <button type="button" class="component-menu-link" data-action="openCardResizeModal" data-id="${id}" data-uuid="${uuid}">
                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">expand</span></div>
                             <div class="component-menu-link-text"><span>${window.__('tooltip_resize_canvas')}</span></div>
                         </button>
-                        <button type="button" class="component-menu-link" data-nav="${this.basePath}/canvases/manage/resets/${uuid}">
+                        <button type="button" class="component-menu-link" data-action="openCardResetModal" data-id="${id}" data-uuid="${uuid}">
                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">update</span></div>
                             <div class="component-menu-link-text"><span>${window.__('tooltip_manage_resets')}</span></div>
                         </button>
@@ -860,5 +866,131 @@ export class CanvasCardInteractions {
                 contentEl.classList.add('active');
             }
         }
+    }
+
+    async openCardResizeModal(btn) {
+        const id = btn.getAttribute('data-id');
+        const uuid = btn.getAttribute('data-uuid');
+        if (!id) return;
+        this.closeDropdowns();
+
+        const card = document.querySelector(`[data-card-id="${id}"]`) || btn.closest('.component-card');
+        const isOffline = card ? card.getAttribute('data-mode') === 'offline' : false;
+        const currentSize = card ? card.getAttribute('data-size') || '64x64' : '64x64';
+        const userTier = window.APP_USER?.subscription_tier ?? 0;
+
+        let resizeActive = false;
+        let nextResizeAt = '';
+        let targetSize = currentSize;
+
+        try {
+            const res = await this.api.post(ApiRoutes.Canvases.GetResizeSettings, { id: parseInt(id, 10) });
+            if (res && res.success && res.data) {
+                resizeActive = !!res.data.is_active;
+                nextResizeAt = res.data.next_resize_at || '';
+                targetSize = res.data.target_size || currentSize;
+            }
+        } catch (e) {
+            // fallback
+        }
+
+        await window.modalSystem.show('offlineResizeModal', {
+            canvasId: id,
+            currentSize,
+            userTier,
+            isOfflineMode: isOffline,
+            resizeActive,
+            nextResizeAt,
+            resizeTargetSize: targetSize,
+            onConfirm: async (payload, submitBtn) => {
+                if (submitBtn) setButtonLoading(submitBtn);
+                try {
+                    let result;
+                    if (payload.mode === 'instant') {
+                        result = await this.api.post(ApiRoutes.Canvases.Resize, { id: parseInt(id, 10), size: payload.size });
+                        if (result && result.success && card) {
+                            card.setAttribute('data-size', payload.size);
+                        }
+                    } else {
+                        result = await this.api.post(ApiRoutes.Canvases.UpdateResizeSettings, {
+                            id: parseInt(id, 10),
+                            is_active: payload.isActive,
+                            next_resize_at: payload.nextResizeAt,
+                            target_size: payload.targetSize
+                        });
+                    }
+                    if (result && result.success) {
+                        window.modalSystem.closeCurrent(true);
+                        showMessage(result.message || window.__('msg_resize_settings_updated'), 'success');
+                    } else {
+                        showMessage(result?.message || window.__('err_occurred'), 'error');
+                    }
+                } catch (err) {
+                    showMessage(window.__('general_save_network_error') || window.__('err_occurred'), 'error');
+                } finally {
+                    if (submitBtn) restoreButton(submitBtn);
+                }
+            }
+        });
+    }
+
+    async openCardResetModal(btn) {
+        const id = btn.getAttribute('data-id');
+        const uuid = btn.getAttribute('data-uuid');
+        if (!id) return;
+        this.closeDropdowns();
+
+        const card = document.querySelector(`[data-card-id="${id}"]`) || btn.closest('.component-card');
+        const isOffline = card ? card.getAttribute('data-mode') === 'offline' : false;
+
+        let resetActive = false;
+        let nextResetAt = '';
+
+        try {
+            const res = await this.api.post(ApiRoutes.Canvases.GetResetSettings, { id: parseInt(id, 10) });
+            if (res && res.success && res.data) {
+                resetActive = !!res.data.is_active;
+                nextResetAt = res.data.next_reset_at || '';
+            }
+        } catch (e) {
+            // fallback
+        }
+
+        await window.modalSystem.show('offlineResetModal', {
+            canvasId: id,
+            canTakeSnapshot: true,
+            isOfflineMode: isOffline,
+            resetActive,
+            nextResetAt,
+            onConfirm: async (payload, submitBtn) => {
+                if (submitBtn) setButtonLoading(submitBtn);
+                try {
+                    let result;
+                    if (payload.mode === 'instant') {
+                        result = await this.api.post(ApiRoutes.Canvases.ResetNow, {
+                            id: parseInt(id, 10),
+                            take_snapshot: payload.takeSnapshot
+                        });
+                    } else {
+                        result = await this.api.post(ApiRoutes.Canvases.UpdateResetSettings, {
+                            id: parseInt(id, 10),
+                            is_active: payload.isActive,
+                            next_reset_at: payload.nextResetAt,
+                            take_snapshot: payload.takeSnapshot
+                        });
+                    }
+                    if (result && result.success) {
+                        window.modalSystem.closeCurrent(true);
+                        showMessage(result.message || window.__('msg_reset_settings_updated'), 'success');
+                    } else {
+                        showMessage(result?.message || window.__('err_occurred'), 'error');
+                    }
+                } catch (err) {
+                    showMessage(window.__('general_save_network_error') || window.__('err_occurred'), 'error');
+                } finally {
+                    if (submitBtn) restoreButton(submitBtn);
+                }
+            }
+        });
     }
 }

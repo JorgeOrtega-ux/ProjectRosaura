@@ -16,26 +16,6 @@ export class OnboardingTourManager {
         this.pendingTourTimeout = null;
         
         this.tours = {
-            '/canvases/manage': {
-                modalId: 'onboarding-canvas-manage',
-                flagKey: 'onboarding_canvas_manage_seen',
-                steps: [
-                    {
-                        titleKey: 'onboarding_canvas_manage_step1_title',
-                        defaultTitle: 'Consola de Lienzos',
-                        descKey: 'onboarding_canvas_manage_step1_desc',
-                        defaultDesc: 'Crea nuevos lienzos, duplícalos, configúralos o elimínalos.',
-                        icons: ['dashboard']
-                    },
-                    {
-                        titleKey: 'onboarding_canvas_manage_step2_title',
-                        defaultTitle: 'Búsqueda y Filtros',
-                        descKey: 'onboarding_canvas_manage_step2_desc',
-                        defaultDesc: 'Usa la barra de búsqueda y los filtros para localizar lienzos específicos.',
-                        icons: ['search', 'tune']
-                    }
-                ]
-            },
             '/canvases/members/:uuid': {
                 modalId: 'onboarding-canvas-members',
                 flagKey: 'onboarding_canvas_members_seen',
@@ -53,46 +33,6 @@ export class OnboardingTourManager {
                         descKey: 'onboarding_canvas_members_step2_desc',
                         defaultDesc: 'Restringe el acceso o suspende miembros que infrinjan las normas.',
                         icons: ['gavel']
-                    }
-                ]
-            },
-            '/canvases/manage/resets/:uuid': {
-                modalId: 'onboarding-canvas-resets',
-                flagKey: 'onboarding_canvas_resets_seen',
-                steps: [
-                    {
-                        titleKey: 'onboarding_canvas_resets_step1_title',
-                        defaultTitle: 'Mantenimiento del Lienzo',
-                        descKey: 'onboarding_canvas_resets_step1_desc',
-                        defaultDesc: 'Útil para iniciar nuevas temporadas de dibujo o limpiar trazos inapropiados.',
-                        icons: ['restart_alt']
-                    },
-                    {
-                        titleKey: 'onboarding_canvas_resets_step2_title',
-                        defaultTitle: 'Opciones de Limpieza',
-                        descKey: 'onboarding_canvas_resets_step2_desc',
-                        defaultDesc: 'Elige si deseas limpiar todo, o solo píxeles de usuarios específicos.',
-                        icons: ['delete']
-                    }
-                ]
-            },
-            '/canvases/manage/resize/:uuid': {
-                modalId: 'onboarding-canvas-resize',
-                flagKey: 'onboarding_canvas_resize_seen',
-                steps: [
-                    {
-                        titleKey: 'onboarding_canvas_resize_step1_title',
-                        defaultTitle: 'Redimensionar Lienzo',
-                        descKey: 'onboarding_canvas_resize_step1_desc',
-                        defaultDesc: 'Aumenta la cuadrícula del lienzo para permitir construcciones más grandes.',
-                        icons: ['aspect_ratio']
-                    },
-                    {
-                        titleKey: 'onboarding_canvas_resize_step2_title',
-                        defaultTitle: 'Límites del Servidor',
-                        descKey: 'onboarding_canvas_resize_step2_desc',
-                        defaultDesc: 'Ten en cuenta que redimensionar un lienzo puede afectar el rendimiento.',
-                        icons: ['grid_view']
                     }
                 ]
             },

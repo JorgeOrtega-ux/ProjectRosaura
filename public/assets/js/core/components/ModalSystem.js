@@ -1,6 +1,6 @@
 import { ModalTemplates } from './ModalTemplates.js';
 import { CalendarSystem } from './CalendarSystem.js';
-import { getEventCoords, hexToHsv, hsvToHex, restoreButton, setButtonLoading, showMessage, initCarouselScroll } from '../utils/uiUtils.js';
+import { getEventCoords, hexToHsv, hsvToHex, restoreButton, setButtonLoading, showMessage, initCarouselScroll, closeDropdown, localInputFormatToUtcString } from '../utils/uiUtils.js';
 import { ApiService } from '../api/ApiService.js';
 import { ApiRoutes } from '../api/ApiRoutes.js';
 
@@ -502,6 +502,241 @@ export class ModalSystem {
             return;
         }
         // ── /calendarModal step navigation ──────────────────────────────────────
+
+        // ── Workspace Resize & Reset Modal interactions ────────────────────────
+        const btnSelectResizeType = e.target.closest('[data-action="selectResizeType"]');
+        if (btnSelectResizeType && this.activeBox) {
+            e.preventDefault();
+            const type = btnSelectResizeType.getAttribute('data-type') || 'instant';
+            const step1 = this.activeBox.querySelector('[data-ref="offline-resize-step-1"]');
+            if (step1) {
+                step1.setAttribute('data-selected-type', type);
+                step1.querySelectorAll('.component-menu-link').forEach(l => {
+                    if (l === btnSelectResizeType) l.classList.add('active');
+                    else l.classList.remove('active');
+                });
+            }
+            const checkInstant = this.activeBox.querySelector('[data-ref="resize-instant-check"]');
+            const checkSched = this.activeBox.querySelector('[data-ref="resize-scheduled-check"]');
+            if (checkInstant) checkInstant.classList.toggle('disabled', type !== 'instant');
+            if (checkSched) checkSched.classList.toggle('disabled', type !== 'scheduled');
+            return;
+        }
+
+        const btnSelectResetType = e.target.closest('[data-action="selectResetType"]');
+        if (btnSelectResetType && this.activeBox) {
+            e.preventDefault();
+            const type = btnSelectResetType.getAttribute('data-type') || 'instant';
+            const step1 = this.activeBox.querySelector('[data-ref="offline-reset-step-1"]');
+            if (step1) {
+                step1.setAttribute('data-selected-type', type);
+                step1.querySelectorAll('.component-menu-link').forEach(l => {
+                    if (l === btnSelectResetType) l.classList.add('active');
+                    else l.classList.remove('active');
+                });
+            }
+            const checkInstant = this.activeBox.querySelector('[data-ref="reset-instant-check"]');
+            const checkSched = this.activeBox.querySelector('[data-ref="reset-scheduled-check"]');
+            if (checkInstant) checkInstant.classList.toggle('disabled', type !== 'instant');
+            if (checkSched) checkSched.classList.toggle('disabled', type !== 'scheduled');
+            return;
+        }
+
+        const btnOfflineResizeNext = e.target.closest('[data-action="offlineResizeNextStep"]');
+        if (btnOfflineResizeNext && this.activeBox) {
+            e.preventDefault();
+            const step1 = this.activeBox.querySelector('[data-ref="offline-resize-step-1"]');
+            const step2Instant = this.activeBox.querySelector('[data-ref="offline-resize-step-2-instant"]');
+            const step2Sched = this.activeBox.querySelector('[data-ref="offline-resize-step-2-scheduled"]');
+            if (step1) {
+                const selectedType = step1.getAttribute('data-selected-type') || 'instant';
+                const targetStep2 = (selectedType === 'scheduled' && step2Sched) ? step2Sched : step2Instant;
+                step1.classList.replace('active', 'disabled');
+                if (targetStep2) targetStep2.classList.replace('disabled', 'active');
+            }
+            return;
+        }
+
+        const btnOfflineResizePrev = e.target.closest('[data-action="offlineResizePrevStep"]');
+        if (btnOfflineResizePrev && this.activeBox) {
+            e.preventDefault();
+            const step1 = this.activeBox.querySelector('[data-ref="offline-resize-step-1"]');
+            const step2Instant = this.activeBox.querySelector('[data-ref="offline-resize-step-2-instant"]');
+            const step2Sched = this.activeBox.querySelector('[data-ref="offline-resize-step-2-scheduled"]');
+            if (step2Instant) step2Instant.classList.replace('active', 'disabled');
+            if (step2Sched) step2Sched.classList.replace('active', 'disabled');
+            if (step1) step1.classList.replace('disabled', 'active');
+            return;
+        }
+
+        const btnOfflineResetNext = e.target.closest('[data-action="offlineResetNextStep"]');
+        if (btnOfflineResetNext && this.activeBox) {
+            e.preventDefault();
+            const step1 = this.activeBox.querySelector('[data-ref="offline-reset-step-1"]');
+            const step2Instant = this.activeBox.querySelector('[data-ref="offline-reset-step-2-instant"]');
+            const step2Sched = this.activeBox.querySelector('[data-ref="offline-reset-step-2-scheduled"]');
+            if (step1) {
+                const selectedType = step1.getAttribute('data-selected-type') || 'instant';
+                const targetStep2 = (selectedType === 'scheduled' && step2Sched) ? step2Sched : step2Instant;
+                step1.classList.replace('active', 'disabled');
+                if (targetStep2) targetStep2.classList.replace('disabled', 'active');
+            }
+            return;
+        }
+
+        const btnOfflineResetPrev = e.target.closest('[data-action="offlineResetPrevStep"]');
+        if (btnOfflineResetPrev && this.activeBox) {
+            e.preventDefault();
+            const step1 = this.activeBox.querySelector('[data-ref="offline-reset-step-1"]');
+            const step2Instant = this.activeBox.querySelector('[data-ref="offline-reset-step-2-instant"]');
+            const step2Sched = this.activeBox.querySelector('[data-ref="offline-reset-step-2-scheduled"]');
+            if (step2Instant) step2Instant.classList.replace('active', 'disabled');
+            if (step2Sched) step2Sched.classList.replace('active', 'disabled');
+            if (step1) step1.classList.replace('disabled', 'active');
+            return;
+        }
+
+        const btnSelectOfflineResizeSize = e.target.closest('[data-action="selectOfflineResizeSize"]');
+        if (btnSelectOfflineResizeSize && this.activeBox) {
+            e.preventDefault();
+            const val = btnSelectOfflineResizeSize.getAttribute('data-value');
+            const label = btnSelectOfflineResizeSize.getAttribute('data-label');
+            const icon = btnSelectOfflineResizeSize.getAttribute('data-icon');
+            const trigger = this.activeBox.querySelector('[data-ref="offline-resize-trigger"]');
+            const labelRef = this.activeBox.querySelector('[data-ref="offline-resize-label"]');
+            const iconRef = this.activeBox.querySelector('[data-ref="offline-resize-icon"]');
+            if (trigger) trigger.setAttribute('data-value', val);
+            if (labelRef) labelRef.textContent = label;
+            if (iconRef) iconRef.textContent = icon;
+            const dropdown = btnSelectOfflineResizeSize.closest('.component-module--dropdown');
+            if (dropdown && typeof closeDropdown === 'function') closeDropdown(dropdown);
+            this.activeBox.querySelectorAll('.component-menu-link[data-type="offline_resize_size"]').forEach(l => l.classList.remove('active'));
+            btnSelectOfflineResizeSize.classList.add('active');
+
+            const warning = this.activeBox.querySelector('[data-ref="offline-resize-shrink-warning"]');
+            if (warning && trigger) {
+                const currentSize = this.activeBox.getAttribute('data-current-size') || trigger.getAttribute('data-value') || '64x64';
+                const currWidth = parseInt(currentSize.split('x')[0], 10);
+                const nextWidth = parseInt(val.split('x')[0], 10);
+                warning.classList.toggle('active', nextWidth < currWidth);
+            }
+            return;
+        }
+
+        const btnSelectSchedResizeSize = e.target.closest('[data-action="selectScheduledResizeSize"]');
+        if (btnSelectSchedResizeSize && this.activeBox) {
+            e.preventDefault();
+            const val = btnSelectSchedResizeSize.getAttribute('data-value');
+            const label = btnSelectSchedResizeSize.getAttribute('data-label');
+            const icon = btnSelectSchedResizeSize.getAttribute('data-icon');
+            const trigger = this.activeBox.querySelector('[data-ref="scheduled-resize-trigger"]');
+            const labelRef = this.activeBox.querySelector('[data-ref="scheduled-resize-label"]');
+            const iconRef = this.activeBox.querySelector('[data-ref="scheduled-resize-icon"]');
+            if (trigger) trigger.setAttribute('data-value', val);
+            if (labelRef) labelRef.textContent = label;
+            if (iconRef) iconRef.textContent = icon;
+            const dropdown = btnSelectSchedResizeSize.closest('.component-module--dropdown');
+            if (dropdown && typeof closeDropdown === 'function') closeDropdown(dropdown);
+            this.activeBox.querySelectorAll('.component-menu-link[data-type="scheduled_resize_size"]').forEach(l => l.classList.remove('active'));
+            btnSelectSchedResizeSize.classList.add('active');
+
+            const warning = this.activeBox.querySelector('[data-ref="scheduled-resize-shrink-warning"]');
+            if (warning && trigger) {
+                const currentSize = this.activeBox.getAttribute('data-current-size') || trigger.getAttribute('data-value') || '64x64';
+                const currWidth = parseInt(currentSize.split('x')[0], 10);
+                const nextWidth = parseInt(val.split('x')[0], 10);
+                warning.classList.toggle('active', nextWidth < currWidth);
+            }
+            return;
+        }
+
+        const toggleSchedResize = e.target.closest('[data-action="toggleScheduledResizeSection"]');
+        if (toggleSchedResize && this.activeBox) {
+            const fields = this.activeBox.querySelector('[data-ref="scheduled_resize_fields"]');
+            if (fields) fields.classList.toggle('disabled-interaction', !toggleSchedResize.checked);
+        }
+
+        const toggleSchedReset = e.target.closest('[data-action="toggleScheduledResetSection"]');
+        if (toggleSchedReset && this.activeBox) {
+            const fields = this.activeBox.querySelector('[data-ref="scheduled_reset_fields"]');
+            if (fields) fields.classList.toggle('disabled-interaction', !toggleSchedReset.checked);
+        }
+
+        // Submits when onConfirm callback is provided (e.g. from cards)
+        if (this.activeOnConfirm) {
+            const btnSubmitResize = e.target.closest('[data-action="submitOfflineResize"]');
+            if (btnSubmitResize && this.activeBox) {
+                e.preventDefault();
+                const trigger = this.activeBox.querySelector('[data-ref="offline-resize-trigger"]');
+                const size = trigger ? trigger.getAttribute('data-value') : '64x64';
+                this.activeOnConfirm({ mode: 'instant', size }, btnSubmitResize);
+                return;
+            }
+
+            const btnSubmitSchedResize = e.target.closest('[data-action="submitScheduledResize"]');
+            if (btnSubmitSchedResize && this.activeBox) {
+                e.preventDefault();
+                const toggle = this.activeBox.querySelector('[data-ref="scheduled_resize_active"]');
+                const isActive = toggle ? toggle.checked : false;
+                const trigger = this.activeBox.querySelector('[data-ref="scheduled-resize-trigger"]');
+                const targetSize = trigger ? trigger.getAttribute('data-value') : '64x64';
+                let nextResizeAt = null;
+                if (isActive) {
+                    const inputDateTime = this.activeBox.querySelector('[data-ref="scheduled_resize_datetime"]');
+                    const localTimeStr = inputDateTime ? inputDateTime.value : '';
+                    if (!localTimeStr) {
+                        if (window.showMessage) showMessage(window.__('err_resize_date_required') || 'Debe seleccionar una fecha y hora.', 'warning');
+                        return;
+                    }
+                    const date = new Date(localTimeStr);
+                    const minFuture = new Date(Date.now() + 5 * 60 * 1000);
+                    if (isNaN(date.getTime()) || date < minFuture) {
+                        if (window.showMessage) showMessage(window.__('err_date_minimum_5_minutes') || 'La fecha debe ser al menos 5 minutos en el futuro.', 'error');
+                        return;
+                    }
+                    nextResizeAt = typeof localInputFormatToUtcString === 'function' ? localInputFormatToUtcString(localTimeStr) : localTimeStr;
+                }
+                this.activeOnConfirm({ mode: 'scheduled', isActive, nextResizeAt, targetSize }, btnSubmitSchedResize);
+                return;
+            }
+
+            const btnSubmitReset = e.target.closest('[data-action="submitOfflineReset"]');
+            if (btnSubmitReset && this.activeBox) {
+                e.preventDefault();
+                const snapshotCheckbox = this.activeBox.querySelector('[data-ref="offline_reset_snapshot"]');
+                const takeSnapshot = snapshotCheckbox ? snapshotCheckbox.checked : false;
+                this.activeOnConfirm({ mode: 'instant', takeSnapshot }, btnSubmitReset);
+                return;
+            }
+
+            const btnSubmitSchedReset = e.target.closest('[data-action="submitScheduledReset"]');
+            if (btnSubmitSchedReset && this.activeBox) {
+                e.preventDefault();
+                const toggle = this.activeBox.querySelector('[data-ref="scheduled_reset_active"]');
+                const isActive = toggle ? toggle.checked : false;
+                const snapshotCheckbox = this.activeBox.querySelector('[data-ref="scheduled_reset_snapshot"]');
+                const takeSnapshot = snapshotCheckbox ? snapshotCheckbox.checked : false;
+                let nextResetAt = null;
+                if (isActive) {
+                    const inputDateTime = this.activeBox.querySelector('[data-ref="scheduled_reset_datetime"]');
+                    const localTimeStr = inputDateTime ? inputDateTime.value : '';
+                    if (!localTimeStr) {
+                        if (window.showMessage) showMessage(window.__('err_reset_date_required') || 'Debe seleccionar una fecha y hora.', 'warning');
+                        return;
+                    }
+                    const date = new Date(localTimeStr);
+                    const minFuture = new Date(Date.now() + 5 * 60 * 1000);
+                    if (isNaN(date.getTime()) || date < minFuture) {
+                        if (window.showMessage) showMessage(window.__('err_date_minimum_5_minutes') || 'La fecha debe ser al menos 5 minutos en el futuro.', 'error');
+                        return;
+                    }
+                    nextResetAt = typeof localInputFormatToUtcString === 'function' ? localInputFormatToUtcString(localTimeStr) : localTimeStr;
+                }
+                this.activeOnConfirm({ mode: 'scheduled', isActive, nextResetAt, takeSnapshot }, btnSubmitSchedReset);
+                return;
+            }
+        }
+        // ── /Workspace Resize & Reset Modal interactions ───────────────────────
 
         // ── Invite modal step navigation ─────────────────────────────────────────
         const inviteNextBtn = e.target.closest('[data-action="inviteNextStep"]');
