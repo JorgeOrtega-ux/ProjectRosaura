@@ -3132,7 +3132,7 @@ export const ModalTemplates = {
             });
 
             const customBtnHtml = canUseCustomPalettes ? `
-                <button type="button" class="component-modal-palette-custom-btn" data-action="navigateCustomPaletteModal">
+                <button type="button" class="component-modal-palette-custom-btn" data-action="openCreateCustomPaletteModal">
                     <span class="material-symbols-rounded">add_circle</span>
                     <span>${__('btn_create_custom_palette')}</span>
                 </button>
@@ -3154,6 +3154,87 @@ export const ModalTemplates = {
                 <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
                     <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${__('btn_select_palette')}</button>
+                </div>
+            `;
+        }
+    },
+    createCustomPaletteModal: {
+        medium: true,
+        build: (data = {}) => {
+            const initialName = data.name || '';
+            const initialColors = Array.isArray(data.colors) && data.colors.length >= 4 
+                ? data.colors 
+                : ['#D32029', '#206BD3', '#3EB352', '#FF8C00'];
+
+            let swatchesHtml = '';
+            initialColors.forEach((hex, idx) => {
+                swatchesHtml += `
+                    <div class="component-palette-swatch-card" data-action="editPaletteColorItem" data-index="${idx}" data-hex="${hex}">
+                        <button type="button" class="component-palette-swatch-card__delete" data-action="removePaletteColorItem" data-index="${idx}" title="${__('delete')}">
+                            <span class="material-symbols-rounded">close</span>
+                        </button>
+                        <div class="component-palette-swatch-card__preview" style="background-color: ${hex};"></div>
+                        <span class="component-palette-swatch-card__hex">${hex}</span>
+                    </div>
+                `;
+            });
+
+            const addBtnDisabled = initialColors.length >= 36 ? ' disabled-interaction' : '';
+            const addBtnHtml = `
+                <div class="component-palette-swatch-card--add${addBtnDisabled}" data-action="openAddPaletteColor" data-ref="btnAddPaletteColor">
+                    <span class="material-symbols-rounded">add</span>
+                    <span class="component-palette-swatch-card--add__text">${__('btn_add_to_palette') || 'Añadir Color'}</span>
+                </div>
+            `;
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                
+                <!-- STEP 1: Palette Name -->
+                <div class="active" data-ref="custom-palette-step-1">
+                    <div class="component-modal-header">
+                        <h3 class="component-modal-title">${__('canvas_create_custom_palette')}</h3>
+                        <p class="component-modal-desc">${__('canvas_palette_name_accordion_desc') || 'Define el nombre de tu paleta personalizada.'}</p>
+                    </div>
+                    <div class="component-modal-body">
+                        <div class="component-form-group">
+                            <div class="component-input-group component-input-group--h40">
+                                <span class="material-symbols-rounded">palette</span>
+                                <input class="component-input-field" type="text" data-ref="custom_palette_name" placeholder="${__('canvas_palette_new') || 'Nueva Paleta'}" value="${escapeHTML(initialName)}" maxlength="40" autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="component-modal-actions">
+                        <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                        <button type="button" class="component-button component-button--primary component-button--h40" data-action="customPaletteNextStep">${__('btn_next') || 'Siguiente'}</button>
+                    </div>
+                </div>
+
+                <!-- STEP 2: Colors List / Builder -->
+                <div class="disabled" data-ref="custom-palette-step-2" data-colors='${JSON.stringify(initialColors)}'>
+                    <div class="component-modal-header">
+                        <div class="component-modal-header-nav">
+                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="customPalettePrevStep" data-tooltip="${__('btn_back') || 'Atrás'}" data-position="right">
+                                <span class="material-symbols-rounded msr-arrow_back">arrow_back</span>
+                            </button>
+                            <h3 class="component-modal-title" data-ref="custom_palette_title_display">${escapeHTML(initialName) || __('canvas_palette_new')}</h3>
+                        </div>
+                        <p class="component-modal-desc">${__('canvas_palette_color_add_desc') || 'Selecciona el nuevo tono para añadirlo a tu paleta personalizada.'}</p>
+                    </div>
+                    <div class="component-modal-body component-modal-body--scrollable">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span class="component-subtext" data-ref="customPaletteColorCount">${initialColors.length} / 36</span>
+                            <span class="component-subtext" style="font-size: 0.72rem;">${__('msg_palette_min_colors') || 'Mínimo 4 colores'}</span>
+                        </div>
+                        <div class="component-palette-swatches-grid" data-ref="customPaletteSwatchesGrid">
+                            ${swatchesHtml}
+                            ${addBtnHtml}
+                        </div>
+                    </div>
+                    <div class="component-modal-actions">
+                        <button type="button" class="component-button component-button--h40" data-action="customPalettePrevStep">${__('btn_back') || 'Atrás'}</button>
+                        <button type="button" class="component-button component-button--primary component-button--h40" data-action="submitCustomPalette">${__('btn_save') || 'Guardar'}</button>
+                    </div>
                 </div>
             `;
         }

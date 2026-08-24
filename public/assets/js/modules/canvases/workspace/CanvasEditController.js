@@ -43,10 +43,19 @@ class CanvasEditController {
     destroy() {
         if (this.abortController) this.abortController.abort();
         document.removeEventListener('click', this.handleClickBound);
+        if (this.handlePaletteCreatedBound) {
+            window.removeEventListener('customPaletteCreated', this.handlePaletteCreatedBound);
+        }
     }
 
     bindEvents() {
         document.addEventListener('click', this.handleClickBound);
+        this.handlePaletteCreatedBound = (e) => {
+            if (e.detail?.palette_key) {
+                this.setPalette(e.detail.palette_key);
+            }
+        };
+        window.addEventListener('customPaletteCreated', this.handlePaletteCreatedBound);
     }
 
     hydrateStateFromDOM() {
@@ -276,11 +285,13 @@ class CanvasEditController {
     }
 
     navigateCustomPalette() {
-        if (window.spaRouter) {
-            window.spaRouter.navigate(`${this.basePath}/canvases/palettes/create`);
-        } else {
-            window.location.href = `${this.basePath}/canvases/palettes/create`;
-        }
+        window.modalSystem.show('createCustomPaletteModal', {
+            onCreated: (newPalette) => {
+                if (newPalette?.palette_key) {
+                    this.setPalette(newPalette.palette_key);
+                }
+            }
+        });
     }
 
     async updateCanvas(btn) {

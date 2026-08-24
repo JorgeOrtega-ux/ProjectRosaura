@@ -50,11 +50,20 @@ class CanvasCreateController {
         if (this.abortController) this.abortController.abort();
         document.removeEventListener('click', this.handleClickBound);
         document.removeEventListener('input', this.handleInputBound);
+        if (this.handlePaletteCreatedBound) {
+            window.removeEventListener('customPaletteCreated', this.handlePaletteCreatedBound);
+        }
     }
 
     bindEvents() {
         document.addEventListener('click', this.handleClickBound);
         document.addEventListener('input', this.handleInputBound);
+        this.handlePaletteCreatedBound = (e) => {
+            if (e.detail?.palette_key) {
+                this.setPalette(e.detail.palette_key);
+            }
+        };
+        window.addEventListener('customPaletteCreated', this.handlePaletteCreatedBound);
     }
 
     setupDefaultValues() {
@@ -163,11 +172,13 @@ class CanvasCreateController {
             e.preventDefault();
             this.submitCanvas(actionBtn);
         } else if (action === 'navigateCustomPalette') {
-            if (window.spaRouter) {
-                window.spaRouter.navigate(`${this.basePath}/canvases/palettes/create`);
-            } else {
-                window.location.href = `${this.basePath}/canvases/palettes/create`;
-            }
+            window.modalSystem.show('createCustomPaletteModal', {
+                onCreated: (newPalette) => {
+                    if (newPalette?.palette_key) {
+                        this.setPalette(newPalette.palette_key);
+                    }
+                }
+            });
         }
     }
 

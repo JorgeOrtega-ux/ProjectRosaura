@@ -48,7 +48,6 @@ return [
     '/canvases/manage/role-permissions/:uuid/:role_uuid' => ['view' => 'canvases/team/role-permissions.php', 'auth' => true, 'permissions' => [PC::MANAGE_CANVASES], 'requires_2fa' => false],
     '/canvases/manage/sanctions/:uuid' => ['view' => 'canvases/team/sanctions.php', 'auth' => true, 'permissions' => [PC::MANAGE_CANVASES], 'requires_2fa' => false],
     '/canvases/c/v/:canvas/:msg/:idx' => ['view' => 'canvases/chat/chat-viewer.php', 'auth' => true, 'requires_2fa' => false],
-    '/canvases/palettes/create' => ['view' => 'canvases/palettes/custom-palette-create.php', 'auth' => true, 'requires_2fa' => false, 'subscription_feature' => 'custom_palettes'],
     '/design/:id' => ['view' => 'app/design.php'],
     '/design/s/:uuid' => ['view' => 'canvases/snapshots/snapshots-gallery.php'],
     '/snapshot/view/:id' => ['view' => 'canvases/snapshots/snapshot-viewer.php'],

@@ -1030,15 +1030,203 @@ export class ModalSystem {
             return;
         }
 
-        const navCustomPaletteBtn = e.target.closest('[data-action="navigateCustomPaletteModal"]');
-        if (navCustomPaletteBtn) {
-            this.closeCurrent(false);
-            const basePath = window.AppBasePath || '';
-            if (window.spaRouter) {
-                window.spaRouter.navigate(`${basePath}/canvases/palettes/create`);
-            } else {
-                window.location.href = `${basePath}/canvases/palettes/create`;
+        const openCreateCustomPaletteBtn = e.target.closest('[data-action="openCreateCustomPaletteModal"], [data-action="navigateCustomPaletteModal"]');
+        if (openCreateCustomPaletteBtn) {
+            e.preventDefault();
+            this.show('createCustomPaletteModal', {
+                onCreated: (newPalette) => {
+                    if (this.activeBox) {
+                        const grid = this.activeBox.querySelector('[data-ref="modal_palette_grid"]');
+                        if (grid) {
+                            const newCardHtml = `
+                                <div class="component-modal-palette-card active selected" data-action="selectModalPaletteCard" data-palette-id="${newPalette.palette_key}" data-palette-name="${newPalette.name}">
+                                    <div class="component-modal-palette-card-header">
+                                        <div class="component-modal-palette-title-group">
+                                            <span class="material-symbols-rounded">palette</span>
+                                            <span class="component-modal-palette-name">${newPalette.name}</span>
+                                        </div>
+                                        <div class="component-modal-palette-badges"></div>
+                                    </div>
+                                    <div class="component-modal-palette-swatches">
+                                        ${newPalette.colors.map(c => `<div class="component-modal-palette-swatch" style="background-color: ${c.hex || c};"></div>`).join('')}
+                                    </div>
+                                    <span class="component-modal-palette-check material-symbols-rounded">check_circle</span>
+                                </div>
+                            `;
+                            grid.querySelectorAll('.component-modal-palette-card').forEach(c => {
+                                c.classList.remove('active');
+                                c.classList.remove('selected');
+                            });
+                            grid.insertAdjacentHTML('afterbegin', newCardHtml);
+                            const selectedIdHolder = this.activeBox.querySelector('[data-ref="selected_palette_id"]');
+                            if (selectedIdHolder) selectedIdHolder.setAttribute('data-value', newPalette.palette_key);
+                        }
+                    }
+                }
+            });
+            return;
+        }
+
+        const btnPaletteNext = e.target.closest('[data-action="customPaletteNextStep"]');
+        if (btnPaletteNext && this.activeBox) {
+            e.preventDefault();
+            const nameInput = this.activeBox.querySelector('[data-ref="custom_palette_name"]');
+            const name = nameInput ? nameInput.value.trim() : '';
+            if (!name) {
+                showMessage(window.__('msg_palette_name_required') || 'El nombre de la paleta es requerido.', 'warning');
+                return;
             }
+            const titleDisplay = this.activeBox.querySelector('[data-ref="custom_palette_title_display"]');
+            if (titleDisplay) titleDisplay.textContent = name;
+
+            const step1 = this.activeBox.querySelector('[data-ref="custom-palette-step-1"]');
+            const step2 = this.activeBox.querySelector('[data-ref="custom-palette-step-2"]');
+            if (step1 && step2) {
+                step1.classList.replace('active', 'disabled');
+                step2.classList.replace('disabled', 'active');
+            }
+            return;
+        }
+
+        const btnPalettePrev = e.target.closest('[data-action="customPalettePrevStep"]');
+        if (btnPalettePrev && this.activeBox) {
+            e.preventDefault();
+            const step1 = this.activeBox.querySelector('[data-ref="custom-palette-step-1"]');
+            const step2 = this.activeBox.querySelector('[data-ref="custom-palette-step-2"]');
+            if (step1 && step2) {
+                step2.classList.replace('active', 'disabled');
+                step1.classList.replace('disabled', 'active');
+            }
+            return;
+        }
+
+        const btnAddColor = e.target.closest('[data-action="openAddPaletteColor"]');
+        if (btnAddColor && this.activeBox) {
+            e.preventDefault();
+            const step2 = this.activeBox.querySelector('[data-ref="custom-palette-step-2"]');
+            if (!step2) return;
+            const currentColors = JSON.parse(step2.getAttribute('data-colors') || '[]');
+            if (currentColors.length >= 36) {
+                showMessage(window.__('err_palette_incomplete') || 'Máximo 36 colores permitidos.', 'warning');
+                return;
+            }
+
+            this.show('editPaletteColorModal', {
+                hex: '#3B82F6',
+                title: window.__('canvas_palette_color_add_title') || 'Añadir Color',
+                desc: window.__('canvas_palette_color_add_desc') || 'Selecciona el nuevo tono para añadirlo a tu paleta personalizada.',
+                confirmText: window.__('btn_add_to_palette') || 'Añadir Color'
+            }).then(res => {
+                if (res && res.confirmed) {
+                    let hex = (res.data?.selected_hex || '#3B82F6').toUpperCase();
+                    if (!hex.startsWith('#')) hex = '#' + hex;
+                    currentColors.push(hex);
+                    this._renderCustomPaletteSwatches(this.activeBox, currentColors);
+                }
+            });
+            return;
+        }
+
+        const btnRemoveColor = e.target.closest('[data-action="removePaletteColorItem"]');
+        if (btnRemoveColor && this.activeBox) {
+            e.preventDefault();
+            e.stopPropagation();
+            const step2 = this.activeBox.querySelector('[data-ref="custom-palette-step-2"]');
+            if (!step2) return;
+            const currentColors = JSON.parse(step2.getAttribute('data-colors') || '[]');
+            if (currentColors.length <= 4) {
+                showMessage(window.__('err_palette_min_colors') || 'La paleta debe tener al menos 4 colores.', 'warning');
+                return;
+            }
+            const idx = parseInt(btnRemoveColor.getAttribute('data-index'), 10);
+            if (!isNaN(idx) && idx >= 0 && idx < currentColors.length) {
+                currentColors.splice(idx, 1);
+                this._renderCustomPaletteSwatches(this.activeBox, currentColors);
+            }
+            return;
+        }
+
+        const btnEditColor = e.target.closest('[data-action="editPaletteColorItem"]');
+        if (btnEditColor && this.activeBox && !e.target.closest('[data-action="removePaletteColorItem"]')) {
+            e.preventDefault();
+            const step2 = this.activeBox.querySelector('[data-ref="custom-palette-step-2"]');
+            if (!step2) return;
+            const currentColors = JSON.parse(step2.getAttribute('data-colors') || '[]');
+            const idx = parseInt(btnEditColor.getAttribute('data-index'), 10);
+            const currentHex = btnEditColor.getAttribute('data-hex') || currentColors[idx] || '#3B82F6';
+
+            this.show('editPaletteColorModal', {
+                hex: currentHex,
+                title: window.__('canvas_palette_color_modal_title') || 'Ajustar Color',
+                desc: window.__('canvas_palette_color_modal_desc') || 'Ajusta el tono de este color.',
+                confirmText: window.__('btn_save') || 'Guardar'
+            }).then(res => {
+                if (res && res.confirmed) {
+                    let hex = (res.data?.selected_hex || currentHex).toUpperCase();
+                    if (!hex.startsWith('#')) hex = '#' + hex;
+                    currentColors[idx] = hex;
+                    this._renderCustomPaletteSwatches(this.activeBox, currentColors);
+                }
+            });
+            return;
+        }
+
+        const btnSubmitCustomPalette = e.target.closest('[data-action="submitCustomPalette"]');
+        if (btnSubmitCustomPalette && this.activeBox) {
+            e.preventDefault();
+            const nameInput = this.activeBox.querySelector('[data-ref="custom_palette_name"]');
+            const name = nameInput ? nameInput.value.trim() : '';
+            if (!name) {
+                showMessage(window.__('msg_palette_name_required') || 'El nombre de la paleta es requerido.', 'warning');
+                return;
+            }
+
+            const step2 = this.activeBox.querySelector('[data-ref="custom-palette-step-2"]');
+            const colors = step2 ? JSON.parse(step2.getAttribute('data-colors') || '[]') : [];
+            if (colors.length < 4) {
+                showMessage(window.__('err_palette_min_colors') || 'La paleta debe tener al menos 4 colores.', 'warning');
+                return;
+            }
+
+            setButtonLoading(btnSubmitCustomPalette);
+            const api = new ApiService();
+            api.post(ApiRoutes.Canvases.CreateCustomPalette, { name, colors })
+                .then(res => {
+                    restoreButton(btnSubmitCustomPalette);
+                    if (res && res.success) {
+                        const paletteKey = res.data?.palette_key || ('custom_' + Date.now());
+                        const newPalette = {
+                            palette_key: paletteKey,
+                            id: paletteKey,
+                            name: name,
+                            name_key: name,
+                            colors: colors.map(c => ({ hex: c }))
+                        };
+
+                        window.APP_CUSTOM_PALETTES = window.APP_CUSTOM_PALETTES || [];
+                        window.APP_CUSTOM_PALETTES.push({
+                            palette_key: paletteKey,
+                            name: name,
+                            colors: colors
+                        });
+
+                        showMessage(res.message || window.__('msg_palette_created') || 'Paleta creada exitosamente.', 'success');
+                        
+                        window.dispatchEvent(new CustomEvent('customPaletteCreated', { detail: newPalette }));
+
+                        if (typeof this.activeCustomPaletteCallback === 'function') {
+                            this.activeCustomPaletteCallback(newPalette);
+                        }
+
+                        this.closeCurrent(true);
+                    } else {
+                        showMessage(res?.message || window.__('err_palette_create_failed') || 'Error al crear la paleta.', 'error');
+                    }
+                })
+                .catch(err => {
+                    restoreButton(btnSubmitCustomPalette);
+                    showMessage(window.__('err_palette_create_failed') || 'Error al crear la paleta.', 'error');
+                });
             return;
         }
 
@@ -1769,5 +1957,38 @@ export class ModalSystem {
         } finally {
             if (btn) restoreButton(btn);
         }
+    }
+
+    _renderCustomPaletteSwatches(box, colors) {
+        if (!box) return;
+        const grid = box.querySelector('[data-ref="customPaletteSwatchesGrid"]');
+        const countEl = box.querySelector('[data-ref="customPaletteColorCount"]');
+        const step2 = box.querySelector('[data-ref="custom-palette-step-2"]');
+        if (step2) step2.setAttribute('data-colors', JSON.stringify(colors));
+        if (countEl) countEl.textContent = `${colors.length} / 36`;
+
+        if (!grid) return;
+        const __ = typeof window.__ === 'function' ? window.__ : (k => k);
+        let swatchesHtml = '';
+        colors.forEach((hex, idx) => {
+            swatchesHtml += `
+                <div class="component-palette-swatch-card" data-action="editPaletteColorItem" data-index="${idx}" data-hex="${hex}">
+                    <button type="button" class="component-palette-swatch-card__delete" data-action="removePaletteColorItem" data-index="${idx}" title="${__('delete') || 'Eliminar'}">
+                        <span class="material-symbols-rounded">close</span>
+                    </button>
+                    <div class="component-palette-swatch-card__preview" style="background-color: ${hex};"></div>
+                    <span class="component-palette-swatch-card__hex">${hex}</span>
+                </div>
+            `;
+        });
+
+        const addBtnDisabled = colors.length >= 36 ? ' disabled-interaction' : '';
+        const addBtnHtml = `
+            <div class="component-palette-swatch-card--add${addBtnDisabled}" data-action="openAddPaletteColor" data-ref="btnAddPaletteColor">
+                <span class="material-symbols-rounded">add</span>
+                <span class="component-palette-swatch-card--add__text">${__('btn_add_to_palette') || 'Añadir Color'}</span>
+            </div>
+        `;
+        grid.innerHTML = swatchesHtml + addBtnHtml;
     }
 }

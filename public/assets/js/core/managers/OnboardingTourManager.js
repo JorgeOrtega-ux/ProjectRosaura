@@ -210,26 +210,6 @@ export class OnboardingTourManager {
                     }
                 ]
             },
-            '/canvases/palettes/create': {
-                modalId: 'onboarding-palette-builder',
-                flagKey: 'onboarding_palette_builder_seen',
-                steps: [
-                    {
-                        titleKey: 'onboarding_palette_builder_step1_title',
-                        defaultTitle: 'Composición de colores',
-                        descKey: 'onboarding_palette_builder_step1_desc',
-                        defaultDesc: 'Mezcle y añada tonos personalizados en formato HEX o RGB asignando nombres descriptivos para su biblioteca.',
-                        icons: ['colorize', 'format_color_fill']
-                    },
-                    {
-                        titleKey: 'onboarding_palette_builder_step2_title',
-                        defaultTitle: 'Disponibilidad en el taller',
-                        descKey: 'onboarding_palette_builder_step2_desc',
-                        defaultDesc: 'Guarde su paleta personalizada para usarla directamente en cualquier lienzo compatible durante sus sesiones de dibujo.',
-                        icons: ['bookmark', 'brush']
-                    }
-                ]
-            },
             '/canvases/trash': {
                 modalId: 'onboarding-canvas-trash',
                 flagKey: 'onboarding_canvas_trash_seen',
