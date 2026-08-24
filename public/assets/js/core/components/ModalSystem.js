@@ -157,6 +157,10 @@ export class ModalSystem {
                 this.activeBox.classList.add('component-modal-box--image-viewer');
             }
 
+            if (template.customBoxClass) {
+                this.activeBox.classList.add(template.customBoxClass);
+            }
+
             const buildFn = typeof template.build === 'function' ? template.build : (typeof template.template === 'function' ? template.template : null);
             if (!buildFn) {
                 throw new Error(`Modal template '${templateName}' does not provide a build or template function.`);
@@ -195,6 +199,49 @@ export class ModalSystem {
                     document.body.classList.add('modal-open');
                 }
             });
+
+            if (templateName === 'setup2faModal') {
+                const api = new ApiService();
+                api.post(ApiRoutes.Settings.Generate2FA).then(res => {
+                    if (res && res.success) {
+                        const qrTarget = this.activeBox?.querySelector('[data-ref="2fa-qr-target"]');
+                        const secretText = this.activeBox?.querySelector('[data-ref="2fa_secret_key_text"]');
+                        if (secretText && res.secret) {
+                            secretText.textContent = res.secret;
+                            secretText.setAttribute('data-secret', res.secret);
+                        }
+                        if (qrTarget) {
+                            if (res.qr_svg) {
+                                const trimmedSvg = res.qr_svg.trim();
+                                if (trimmedSvg.startsWith('<svg')) {
+                                    qrTarget.innerHTML = trimmedSvg;
+                                    const svgElem = qrTarget.querySelector('svg');
+                                    if (svgElem) {
+                                        svgElem.setAttribute('width', '220');
+                                        svgElem.setAttribute('height', '220');
+                                        svgElem.style.width = '220px';
+                                        svgElem.style.height = '220px';
+                                    }
+                                } else if (trimmedSvg.startsWith('data:image/') || trimmedSvg.startsWith('http')) {
+                                    qrTarget.innerHTML = `<img src="${trimmedSvg}" alt="QR Code" style="width: 220px; height: 220px;">`;
+                                } else {
+                                    qrTarget.innerHTML = `<img src="data:image/svg+xml;base64,${trimmedSvg}" alt="QR Code" style="width: 220px; height: 220px;">`;
+                                }
+                            } else if (res.qr_url) {
+                                qrTarget.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(res.qr_url)}" alt="QR Code" style="width: 220px; height: 220px;">`;
+                            }
+                        }
+                    } else if (this.activeBox) {
+                        const qrTarget = this.activeBox.querySelector('[data-ref="2fa-qr-target"]');
+                        if (qrTarget) qrTarget.innerHTML = `<span class="component-text-danger">${res?.message || 'Error'}</span>`;
+                    }
+                }).catch(() => {
+                    if (this.activeBox) {
+                        const qrTarget = this.activeBox.querySelector('[data-ref="2fa-qr-target"]');
+                        if (qrTarget) qrTarget.innerHTML = `<span class="component-text-danger">Error de conexión</span>`;
+                    }
+                });
+            }
 
             this.activeResolveFn = resolve;
         });
@@ -1227,6 +1274,180 @@ export class ModalSystem {
                     restoreButton(btnSubmitCustomPalette);
                     showMessage(window.__('err_palette_create_failed') || 'Error al crear la paleta.', 'error');
                 });
+            return;
+        }
+
+        const btnToggleSecret = e.target.closest('[data-action="toggle2FASecretKey"]');
+        if (btnToggleSecret && this.activeBox) {
+            e.preventDefault();
+            const container = this.activeBox.querySelector('[data-ref="2fa_secret_key_container"]');
+            if (container) {
+                const isHidden = container.classList.contains('disabled');
+                if (isHidden) {
+                    container.classList.replace('disabled', 'active');
+                    btnToggleSecret.textContent = window.__('btn_hide_secret_key') || 'Ocultar clave secreta';
+                } else {
+                    container.classList.replace('active', 'disabled');
+                    btnToggleSecret.textContent = window.__('btn_show_secret_key') || 'Mostrar clave secreta';
+                }
+            }
+            return;
+        }
+
+        const btnCopySecret = e.target.closest('[data-action="copy2FASecretKey"]');
+        if (btnCopySecret && this.activeBox) {
+            e.preventDefault();
+            const textEl = this.activeBox.querySelector('[data-ref="2fa_secret_key_text"]');
+            const secret = textEl ? (textEl.getAttribute('data-secret') || textEl.textContent.trim()) : '';
+            if (secret && secret !== '...') {
+                copyToClipboard(secret).then(() => {
+                    showMessage(window.__('btn_copied') || 'Copiado al portapapeles', 'info');
+                });
+            }
+            return;
+        }
+
+        const btnSubmitEnable2fa = e.target.closest('[data-action="submitSetupEnable2FA"]');
+        if (btnSubmitEnable2fa && this.activeBox) {
+            e.preventDefault();
+            const inputCode = this.activeBox.querySelector('[data-ref="2fa_setup_totp_code"]');
+            const code = inputCode ? inputCode.value.trim() : '';
+            if (code.length !== 6) {
+                showMessage(window.__('err_code_6_digits') || 'El código debe tener 6 dígitos', 'warning');
+                return;
+            }
+
+            setButtonLoading(btnSubmitEnable2fa);
+            const api = new ApiService();
+            api.post(ApiRoutes.Settings.Enable2FA, { code })
+                .then(res => {
+                    restoreButton(btnSubmitEnable2fa);
+                    if (res && res.success) {
+                        showMessage(res.message || window.__('msg_2fa_enabled_success') || '2FA habilitado correctamente', 'success');
+                        const step1 = this.activeBox.querySelector('[data-ref="2fa-setup-step-1"]');
+                        const step2 = this.activeBox.querySelector('[data-ref="2fa-setup-step-2-recovery"]');
+                        if (step1 && step2) {
+                            step1.classList.replace('active', 'disabled');
+                            step2.classList.replace('disabled', 'active');
+                        }
+                        const grid = this.activeBox.querySelector('[data-ref="2fa-recovery-codes-grid"]');
+                        if (grid && Array.isArray(res.recovery_codes)) {
+                            grid.innerHTML = res.recovery_codes.map(c => `
+                                <div class="component-recovery-code">
+                                    <span class="material-symbols-rounded component-recovery-code-icon">key</span>
+                                    <span class="component-recovery-code-text">${c}</span>
+                                </div>
+                            `).join('');
+                            this._currentSetupRecoveryCodes = res.recovery_codes.join('\n');
+                        }
+                        window.dispatchEvent(new CustomEvent('2faStatusChanged', { detail: { active: true } }));
+                    } else {
+                        showMessage(res?.message || window.__('err_invalid_2fa_code') || 'Código inválido', 'error');
+                    }
+                })
+                .catch(() => {
+                    restoreButton(btnSubmitEnable2fa);
+                    showMessage(window.__('err_connection') || 'Error de conexión', 'error');
+                });
+            return;
+        }
+
+        const btnCopySetupCodes = e.target.closest('[data-action="copySetupRecoveryCodes"]');
+        if (btnCopySetupCodes) {
+            e.preventDefault();
+            if (this._currentSetupRecoveryCodes) {
+                copyToClipboard(this._currentSetupRecoveryCodes).then(() => {
+                    showMessage(window.__('btn_copied') || 'Códigos copiados', 'info');
+                });
+            }
+            return;
+        }
+
+        const btnFinish2fa = e.target.closest('[data-action="finishSetup2FA"]');
+        if (btnFinish2fa) {
+            e.preventDefault();
+            this.closeCurrent(true);
+            window.dispatchEvent(new CustomEvent('2faStatusChanged', { detail: { active: true } }));
+            return;
+        }
+
+        const btnManageRegen = e.target.closest('[data-action="manageRegenerateRecoveryCodes"]');
+        if (btnManageRegen) {
+            e.preventDefault();
+            this.closeCurrent(false);
+            this.show('confirmPasswordModal', {
+                title: window.__('2fa_recovery_title') || 'Regenerar códigos',
+                desc: window.__('2fa_recovery_verify_desc') || 'Ingresa tu contraseña actual para generar nuevos códigos de recuperación.',
+                asyncConfirm: true
+            }).then(async (dialog) => {
+                if (dialog && dialog.confirmed) {
+                    const password = dialog.data?.confirmSecPasswordInput || dialog.data?.password || dialog.data?.current_password || '';
+                    if (!password) {
+                        dialog.failure(window.__('err_password_required') || 'Contraseña requerida');
+                        return;
+                    }
+                    const api = new ApiService();
+                    try {
+                        const res = await api.post(ApiRoutes.Settings.RegenerateRecoveryCodes, { password });
+                        if (res && res.success) {
+                            dialog.success();
+                            this.show('recoveryCodesDisplayModal', {
+                                recovery_codes: res.recovery_codes || []
+                            });
+                        } else {
+                            dialog.failure(res?.message || 'Error al regenerar códigos');
+                        }
+                    } catch (err) {
+                        dialog.failure(window.__('err_connection') || 'Error de conexión');
+                    }
+                }
+            });
+            return;
+        }
+
+        const btnManageDisable = e.target.closest('[data-action="manageDisable2FA"]');
+        if (btnManageDisable) {
+            e.preventDefault();
+            this.closeCurrent(false);
+            this.show('confirmPasswordModal', {
+                title: window.__('2fa_deactivate_title') || 'Desactivar 2FA',
+                desc: window.__('2fa_deactivate_warning') || 'Ingresa tu contraseña para confirmar la desactivación de la autenticación en dos pasos.',
+                confirmText: window.__('btn_deactivate') || 'Desactivar',
+                asyncConfirm: true
+            }).then(async (dialog) => {
+                if (dialog && dialog.confirmed) {
+                    const password = dialog.data?.confirmSecPasswordInput || dialog.data?.password || dialog.data?.current_password || '';
+                    if (!password) {
+                        dialog.failure(window.__('err_password_required') || 'Contraseña requerida');
+                        return;
+                    }
+                    const api = new ApiService();
+                    try {
+                        const res = await api.post(ApiRoutes.Settings.Disable2FA, { password });
+                        if (res && res.success) {
+                            dialog.success();
+                            showMessage(res.message || window.__('msg_2fa_disabled_success') || '2FA desactivado correctamente', 'success');
+                            window.dispatchEvent(new CustomEvent('2faStatusChanged', { detail: { active: false } }));
+                        } else {
+                            dialog.failure(res?.message || 'Error al desactivar 2FA');
+                        }
+                    } catch (err) {
+                        dialog.failure(window.__('err_connection') || 'Error de conexión');
+                    }
+                }
+            });
+            return;
+        }
+
+        const btnCopyDisplayCodes = e.target.closest('[data-action="copyDisplayRecoveryCodes"]');
+        if (btnCopyDisplayCodes) {
+            e.preventDefault();
+            const codes = btnCopyDisplayCodes.getAttribute('data-codes') || '';
+            if (codes) {
+                copyToClipboard(codes).then(() => {
+                    showMessage(window.__('btn_copied') || 'Códigos copiados', 'info');
+                });
+            }
             return;
         }
 

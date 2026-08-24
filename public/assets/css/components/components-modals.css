@@ -1273,3 +1273,112 @@
     letter-spacing: 0.5px;
     margin: 0;
 }
+
+/* ==========================================================================
+   2FA SPLIT 2-COLUMN MODAL
+   ========================================================================== */
+
+.component-modal-box--2fa-setup {
+    width: 900px !important;
+    max-width: 95vw !important;
+    min-height: 520px;
+    padding: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: row !important;
+    box-sizing: border-box;
+}
+
+.component-2fa-modal-left {
+    flex: 1.15;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 8px;
+    background-color: var(--bg-surface);
+    box-sizing: border-box;
+    position: relative;
+    overflow-y: auto;
+}
+
+.component-2fa-modal-right {
+    flex: 1;
+    min-width: 360px;
+    background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    box-sizing: border-box;
+    position: relative;
+}
+
+.dark-theme .component-2fa-modal-right,
+[data-theme="dark"] .component-2fa-modal-right {
+    background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+}
+
+.component-2fa-qr-frame {
+    background: #ffffff;
+    padding: 16px;
+    border-radius: 18px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 250px;
+    height: 250px;
+    box-sizing: border-box;
+}
+
+.component-2fa-qr-frame svg,
+.component-2fa-qr-frame img {
+    width: 218px !important;
+    height: 218px !important;
+    display: block;
+}
+
+.component-2fa-recovery-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    max-height: 210px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+    padding: 2px;
+}
+
+@media (max-width: 768px) {
+    .component-modal-box--2fa-setup {
+        flex-direction: column-reverse !important;
+        height: auto !important;
+        max-height: 90vh !important;
+        overflow-y: auto !important;
+        width: 95vw !important;
+    }
+
+    .component-2fa-modal-left {
+        padding: 20px;
+        flex: unset;
+    }
+
+    .component-2fa-modal-right {
+        min-width: 100%;
+        min-height: 220px;
+        padding: 20px;
+        flex: unset;
+    }
+
+    .component-2fa-qr-frame {
+        width: 180px;
+        height: 180px;
+        padding: 12px;
+    }
+
+    .component-2fa-qr-frame svg,
+    .component-2fa-qr-frame img {
+        width: 156px !important;
+        height: 156px !important;
+    }
+}

@@ -33,8 +33,6 @@ return [
     '/settings/subscription' => ['view' => 'settings/billing/billing.php', 'auth' => true],
     '/settings/billing' => ['view' => 'settings/billing/billing.php', 'auth' => true],
     '/settings/purchase-history' => ['view' => 'settings/billing/purchase-history.php', 'auth' => true],
-    '/settings/2fa' => ['view' => 'settings/security/2fa.php', 'auth' => true],
-    '/settings/2fa/recovery-codes' => ['view' => 'settings/security/2fa-recovery-codes.php', 'auth' => true],
     '/trash' => ['view' => 'canvases/core/trash.php', 'auth' => true, 'requires_2fa' => false],
     '/canvases/create' => ['view' => 'canvases/core/create.php', 'auth' => true, 'permissions' => [PC::CREATE_CANVAS], 'requires_2fa' => false],
     '/canvases/trash' => ['view' => 'canvases/core/trash.php', 'auth' => true, 'permissions' => [PC::MANAGE_CANVASES], 'requires_2fa' => false],

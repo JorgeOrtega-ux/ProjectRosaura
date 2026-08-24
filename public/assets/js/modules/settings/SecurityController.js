@@ -27,11 +27,34 @@ class SecurityController {
 
         document.removeEventListener('click', this.handleClickBound);
         document.removeEventListener('change', this.handleChangeBound);
+        if (this.handle2FAStatusChangedBound) {
+            window.removeEventListener('2faStatusChanged', this.handle2FAStatusChangedBound);
+        }
     }
 
     bindEvents() {
         document.addEventListener('click', this.handleClickBound);
         document.addEventListener('change', this.handleChangeBound);
+        this.handle2FAStatusChangedBound = (e) => {
+            if (e.detail && typeof e.detail.active === 'boolean') {
+                this.update2FAState(e.detail.active);
+            }
+        };
+        window.addEventListener('2faStatusChanged', this.handle2FAStatusChangedBound);
+    }
+
+    update2FAState(isActive) {
+        const descEl = document.querySelector('[data-ref="2fa_status_desc"]');
+        const btnEl = document.querySelector('[data-ref="2fa_action_btn"]');
+        const __ = typeof window.__ === 'function' ? window.__ : (k => k);
+
+        if (descEl) {
+            descEl.textContent = isActive ? (__('sec_2fa_active') || 'Activado') : (__('sec_2fa_inactive') || 'Desactivado');
+        }
+        if (btnEl) {
+            btnEl.textContent = isActive ? (__('btn_manage') || 'Gestionar') : (__('btn_configure') || 'Configurar');
+            btnEl.setAttribute('data-action', isActive ? 'openManage2FAModal' : 'openSetup2FAModal');
+        }
     }
 
     handleClick(e) {
@@ -49,6 +72,22 @@ class SecurityController {
 
         const btnLogoutAll = e.target.closest('[data-action="logoutAllDevices"]');
         if (btnLogoutAll) this.logoutAllDevices(btnLogoutAll);
+
+        const btnSetup2fa = e.target.closest('[data-action="openSetup2FAModal"]');
+        if (btnSetup2fa) this.openSetup2FA();
+
+        const btnManage2fa = e.target.closest('[data-action="openManage2FAModal"]');
+        if (btnManage2fa) this.openManage2FA();
+    }
+
+    async openSetup2FA() {
+        if (!window.modalSystem) return;
+        await window.modalSystem.show('setup2faModal');
+    }
+
+    async openManage2FA() {
+        if (!window.modalSystem) return;
+        await window.modalSystem.show('manage2faModal');
     }
 
     async promptChangePassword(btn) {

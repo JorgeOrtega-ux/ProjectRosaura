@@ -3374,6 +3374,153 @@ export const ModalTemplates = {
                 </div>
             `;
         }
+    },
+
+    setup2faModal: {
+        customBoxClass: 'component-modal-box--2fa-setup',
+        build: (data = {}) => {
+            const secret = data.secret || '';
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+
+                <!-- Left Column: Form & Steps -->
+                <div class="component-2fa-modal-left">
+                    <!-- Step 1: Scan & Enter Code -->
+                    <div class="active" data-ref="2fa-setup-step-1" style="display: flex; flex-direction: column; gap: 8px; justify-content: flex-start;">
+                        <div class="component-modal-header" style="padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px;">
+                            <h2 class="component-modal-title" style="margin: 0;">
+                                ${__('2fa_protect_account_title') || __('2fa_title')}
+                            </h2>
+                            <p class="component-modal-desc" style="margin: 0;">
+                                ${__('2fa_protect_account_desc') || __('2fa_desc')}
+                            </p>
+                        </div>
+
+                        <div class="component-modal-body" style="padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
+                            <div class="component-input-group" style="margin: 0;">
+                                <input type="text" data-ref="2fa_setup_totp_code" class="component-input-field" placeholder=" " maxlength="6" autocomplete="off" inputmode="numeric">
+                                <label class="component-input-label">${__('lbl_6_digit_code') || 'Código de 6 dígitos'}</label>
+                            </div>
+
+                            <button type="button" class="component-button component-button--primary component-button--h40" data-action="submitSetupEnable2FA" style="width: 100%; margin: 0;">
+                                ${__('btn_enable_authenticator_app') || __('btn_activate')}
+                            </button>
+
+                            <div class="component-link-container component-link-container--start" style="margin: 0;">
+                                <span class="component-link" data-action="toggle2FASecretKey">${__('btn_show_secret_key') || __('2fa_cant_scan') || 'Mostrar clave secreta'}</span>
+                            </div>
+
+                            <div class="disabled" data-ref="2fa_secret_key_container" style="margin: 0;">
+                                <div class="component-2fa-secret-box" data-ref="2fa_secret_key_text" data-action="copy2FASecretKey" title="${__('copy')}">
+                                    ${escapeHTML(secret) || '...'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Recovery Codes -->
+                    <div class="disabled" data-ref="2fa-setup-step-2-recovery" style="display: flex; flex-direction: column; gap: 8px; justify-content: flex-start;">
+                        <div class="component-modal-header" style="padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px;">
+                            <h2 class="component-modal-title" style="margin: 0;">
+                                ${__('2fa_activated_title')}
+                            </h2>
+                            <p class="component-modal-desc" style="margin: 0;">
+                                ${__('2fa_new_codes_desc')}
+                            </p>
+                        </div>
+
+                        <div class="component-modal-body" style="padding: 0; margin: 0;">
+                            <div class="component-2fa-recovery-list" data-ref="2fa-recovery-codes-grid" style="margin: 0;"></div>
+                        </div>
+
+                        <div class="component-modal-actions" style="padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
+                            <button type="button" class="component-button component-button--h40" data-action="copySetupRecoveryCodes" style="width: 100%; margin: 0;">
+                                <span class="material-symbols-rounded">content_copy</span>
+                                <span>${__('btn_copy_codes')}</span>
+                            </button>
+                            <button type="button" class="component-button component-button--primary component-button--h40" data-action="finishSetup2FA" style="width: 100%; margin: 0;">
+                                <span>${__('btn_finish')}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Banner Gradient & QR Code -->
+                <div class="component-2fa-modal-right">
+                    <div class="component-2fa-qr-frame">
+                        <div data-ref="2fa-qr-target" style="width: 218px; height: 218px; display: flex; align-items: center; justify-content: center;">
+                            <div class="component-spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    },
+
+    manage2faModal: {
+        build: () => `
+            <div class="pill-container"><div class="drag-handle"></div></div>
+            <div class="component-modal-header">
+                <h3 class="component-modal-title">${__('sec_2fa_title') || 'Autenticación en dos pasos'}</h3>
+                <p class="component-modal-desc">${__('2fa_manage_desc') || 'Gestiona la seguridad y los métodos de respaldo de tu cuenta.'}</p>
+            </div>
+            <div class="component-modal-body">
+                <div class="component-menu-list">
+                    <button type="button" class="component-menu-link" data-action="manageRegenerateRecoveryCodes">
+                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">key</span></div>
+                        <div class="component-menu-link-text">
+                            <span>${__('2fa_recovery_title_card') || 'Códigos de recuperación'}</span>
+                        </div>
+                        <div class="component-menu-link-arrow"><span class="material-symbols-rounded">chevron_right</span></div>
+                    </button>
+                    <button type="button" class="component-menu-link component-text-notice--danger" data-action="manageDisable2FA">
+                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">shield</span></div>
+                        <div class="component-menu-link-text">
+                            <span>${__('btn_deactivate') || 'Desactivar 2FA'}</span>
+                        </div>
+                        <div class="component-menu-link-arrow"><span class="material-symbols-rounded">chevron_right</span></div>
+                    </button>
+                </div>
+            </div>
+            <div class="component-modal-actions">
+                <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel') || 'Cancelar'}</button>
+            </div>
+        `
+    },
+
+    recoveryCodesDisplayModal: {
+        build: (data = {}) => {
+            const codes = Array.isArray(data.recovery_codes) ? data.recovery_codes : [];
+            let codesHtml = '';
+            codes.forEach(c => {
+                codesHtml += `
+                    <div class="component-recovery-code">
+                        <span class="material-symbols-rounded component-recovery-code-icon">key</span>
+                        <span class="component-recovery-code-text">${escapeHTML(c)}</span>
+                    </div>
+                `;
+            });
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header">
+                    <h3 class="component-modal-title">${__('2fa_new_codes_title') || 'Nuevos códigos de recuperación'}</h3>
+                    <p class="component-modal-desc">${__('2fa_new_codes_desc') || 'Guarda estos códigos en un lugar seguro. Los códigos anteriores han sido invalidados.'}</p>
+                </div>
+                <div class="component-modal-body">
+                    <div class="component-2fa-recovery-list" data-ref="2fa-display-recovery-codes-grid">
+                        ${codesHtml}
+                    </div>
+                </div>
+                <div class="component-modal-actions">
+                    <button type="button" class="component-button component-button--h40" data-action="copyDisplayRecoveryCodes" data-codes="${escapeHTML(codes.join('\n'))}">
+                        <span class="material-symbols-rounded">content_copy</span>
+                        <span>${__('btn_copy_codes') || 'Copiar códigos'}</span>
+                    </button>
+                    <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="cancel">${__('btn_finish') || 'Listo'}</button>
+                </div>
+            `;
+        }
     }
 };
 

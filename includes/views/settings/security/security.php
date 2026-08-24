@@ -34,18 +34,18 @@ $text2FA = $securityData['text2FA'];
 
                 <hr class="component-divider">
 
-                <div class="component-group-item">
+                <div class="component-group-item" data-ref="2fa_overview_item">
                     <div class="component-card__content">
                         <div class="component-card__icon-container component-card__icon-container--bordered">
                             <span class="material-symbols-rounded">shield</span>
                         </div>
                         <div class="component-card__text">
                             <h2 class="component-card__title"><?php echo __('sec_2fa_title'); ?></h2>
-                            <p class="component-card__description"><?php echo $text2FA; ?></p>
+                            <p class="component-card__description" data-ref="2fa_status_desc"><?php echo $text2FA; ?></p>
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
-                        <button type="button" class="component-button component-button--h36" data-nav="<?php echo APP_URL; ?>/settings/2fa">
+                        <button type="button" class="component-button component-button--h36" data-ref="2fa_action_btn" data-action="<?php echo $is2FAActive ? 'openManage2FAModal' : 'openSetup2FAModal'; ?>">
                             <?php echo $is2FAActive ? __('btn_manage') : __('btn_configure'); ?>
                         </button>
                     </div>
