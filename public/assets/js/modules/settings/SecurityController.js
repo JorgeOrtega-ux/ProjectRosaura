@@ -37,23 +37,51 @@ class SecurityController {
         document.addEventListener('change', this.handleChangeBound);
         this.handle2FAStatusChangedBound = (e) => {
             if (e.detail && typeof e.detail.active === 'boolean') {
-                this.update2FAState(e.detail.active);
+                this.update2FAState(e.detail.active, e.detail.remainingCodes);
             }
         };
         window.addEventListener('2faStatusChanged', this.handle2FAStatusChangedBound);
     }
 
-    update2FAState(isActive) {
+    update2FAState(isActive, remainingCodes = 10) {
         const descEl = document.querySelector('[data-ref="2fa_status_desc"]');
         const btnEl = document.querySelector('[data-ref="2fa_action_btn"]');
+        const recoveryDivider = document.querySelector('[data-ref="2fa_recovery_divider"]');
+        const recoveryItem = document.querySelector('[data-ref="2fa_recovery_item"]');
+        const countEl = document.querySelector('[data-ref="2fa_remaining_count"]');
         const __ = typeof window.__ === 'function' ? window.__ : (k => k);
 
         if (descEl) {
-            descEl.textContent = isActive ? (__('sec_2fa_active') || 'Activado') : (__('sec_2fa_inactive') || 'Desactivado');
+            descEl.textContent = isActive ? (__('2fa_status_active') || 'Activada') : (__('2fa_status_inactive') || 'Inactiva');
         }
         if (btnEl) {
-            btnEl.textContent = isActive ? (__('btn_manage') || 'Gestionar') : (__('btn_configure') || 'Configurar');
-            btnEl.setAttribute('data-action', isActive ? 'openManage2FAModal' : 'openSetup2FAModal');
+            if (isActive) {
+                btnEl.textContent = __('btn_deactivate') || 'Desactivar';
+                btnEl.setAttribute('data-action', 'openDisable2FAModal');
+                btnEl.className = 'component-button component-button--h36 component-button--danger';
+            } else {
+                btnEl.textContent = __('btn_configure') || 'Configurar';
+                btnEl.setAttribute('data-action', 'openSetup2FAModal');
+                btnEl.className = 'component-button component-button--h36';
+            }
+        }
+        if (recoveryDivider) {
+            if (isActive) recoveryDivider.classList.remove('disabled');
+            else recoveryDivider.classList.add('disabled');
+        }
+        if (recoveryItem) {
+            if (isActive) recoveryItem.classList.remove('disabled');
+            else recoveryItem.classList.add('disabled');
+        }
+        if (countEl && remainingCodes !== undefined) {
+            countEl.textContent = remainingCodes;
+        }
+    }
+
+    updateRecoveryCodesCount(count) {
+        const countEl = document.querySelector('[data-ref="2fa_remaining_count"]');
+        if (countEl) {
+            countEl.textContent = count;
         }
     }
 
@@ -76,8 +104,11 @@ class SecurityController {
         const btnSetup2fa = e.target.closest('[data-action="openSetup2FAModal"]');
         if (btnSetup2fa) this.openSetup2FA();
 
-        const btnManage2fa = e.target.closest('[data-action="openManage2FAModal"]');
-        if (btnManage2fa) this.openManage2FA();
+        const btnDisable2fa = e.target.closest('[data-action="openDisable2FAModal"]');
+        if (btnDisable2fa) this.openDisable2FA();
+
+        const btnRegenRecovery = e.target.closest('[data-action="openRegenerateRecoveryCodesModal"]');
+        if (btnRegenRecovery) this.openRegenerateRecoveryCodes();
     }
 
     async openSetup2FA() {
@@ -85,9 +116,80 @@ class SecurityController {
         await window.modalSystem.show('setup2faModal');
     }
 
-    async openManage2FA() {
+    async openDisable2FA() {
         if (!window.modalSystem) return;
-        await window.modalSystem.show('manage2faModal');
+        const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+        const dialog = await window.modalSystem.show('confirmPasswordModal', {
+            title: __('2fa_deactivate_title') || 'Desactivar 2FA',
+            desc: __('2fa_deactivate_warning') || 'Al desactivar esta capa, tu cuenta dependerá únicamente de tu contraseña.',
+            confirmText: __('btn_deactivate') || 'Desactivar',
+            confirmDanger: true,
+            asyncConfirm: true
+        });
+
+        if (dialog && dialog.confirmed) {
+            const password = dialog.data?.confirmSecPasswordInput || dialog.data?.password || dialog.data?.current_password || '';
+            const credential = dialog.data?.credential || dialog.data?.google_token || '';
+
+            if (!password && !credential) {
+                dialog.failure(__('err_identity_verification_required') || __('err_password_required') || 'Debes ingresar tu contraseña o verificar con tu sesión de Google.');
+                return;
+            }
+
+            const payload = credential ? { credential, google_token: credential } : { password };
+            try {
+                const res = await this.api.post(ApiRoutes.Settings.Disable2FA, payload, this.abortController?.signal);
+                if (res && res.success) {
+                    dialog.success();
+                    showMessage(res.message || __('msg_2fa_disabled_success') || '2FA desactivado correctamente', 'success');
+                    this.update2FAState(false, 0);
+                    window.dispatchEvent(new CustomEvent('2faStatusChanged', { detail: { active: false, remainingCodes: 0 } }));
+                } else {
+                    dialog.failure(res?.message || __('err_disable_2fa_failed') || 'Error al desactivar 2FA');
+                }
+            } catch (err) {
+                dialog.failure(__('err_connection') || 'Error de conexión');
+            }
+        }
+    }
+
+    async openRegenerateRecoveryCodes() {
+        if (!window.modalSystem) return;
+        const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+        const dialog = await window.modalSystem.show('confirmPasswordModal', {
+            title: __('2fa_recovery_title') || 'Regenerar códigos',
+            desc: __('2fa_recovery_verify_desc') || 'Ingresa tu contraseña actual para generar nuevos códigos de recuperación.',
+            confirmText: __('btn_confirm') || 'Confirmar',
+            asyncConfirm: true
+        });
+
+        if (dialog && dialog.confirmed) {
+            const password = dialog.data?.confirmSecPasswordInput || dialog.data?.password || dialog.data?.current_password || '';
+            const credential = dialog.data?.credential || dialog.data?.google_token || '';
+
+            if (!password && !credential) {
+                dialog.failure(__('err_identity_verification_required') || __('err_password_required') || 'Debes ingresar tu contraseña o verificar con tu sesión de Google.');
+                return;
+            }
+
+            const payload = credential ? { credential, google_token: credential } : { password };
+            try {
+                const res = await this.api.post(ApiRoutes.Settings.RegenerateRecoveryCodes, payload, this.abortController?.signal);
+                if (res && res.success) {
+                    dialog.success();
+                    const remaining = Array.isArray(res.recovery_codes) ? res.recovery_codes.length : 10;
+                    this.updateRecoveryCodesCount(remaining);
+                    window.dispatchEvent(new CustomEvent('2faStatusChanged', { detail: { active: true, remainingCodes: remaining } }));
+                    await window.modalSystem.show('recoveryCodesDisplayModal', {
+                        recovery_codes: res.recovery_codes || []
+                    });
+                } else {
+                    dialog.failure(res?.message || __('err_regenerate_codes_failed') || 'Error al regenerar códigos');
+                }
+            } catch (err) {
+                dialog.failure(__('err_connection') || 'Error de conexión');
+            }
+        }
     }
 
     async promptChangePassword(btn) {

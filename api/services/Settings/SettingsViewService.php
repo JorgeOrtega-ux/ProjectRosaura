@@ -137,8 +137,27 @@ class SettingsViewService {
         $lastUpdateText = __('sec_never_updated');
         $is2FAActive = !empty($_SESSION['user_2fa']);
         $text2FA = $is2FAActive ? __('2fa_status_active') : __('2fa_status_inactive');
+        $recoveryCodesRemaining = 0;
 
         if (isset($_SESSION['user_id'])) {
+            try {
+                $userRepo = new \App\Core\Repositories\UserRepository();
+                $user = $userRepo->findById((int)$_SESSION['user_id']);
+                if ($user) {
+                    $is2FAActive = !empty($user['two_factor_enabled']);
+                    $text2FA = $is2FAActive ? __('2fa_status_active') : __('2fa_status_inactive');
+                    if ($is2FAActive && !empty($user['two_factor_recovery_codes'])) {
+                        $codes = json_decode($user['two_factor_recovery_codes'], true) ?: [];
+                        $recoveryCodesRemaining = count($codes);
+                    }
+                }
+            } catch (\Throwable $e) {
+                Logger::error("Failed to fetch 2FA user data in SettingsViewService", [
+                    'user_id' => $_SESSION['user_id'] ?? null,
+                    'exception' => $e
+                ]);
+            }
+
             try {
                 $cassandra = new \App\Config\Database\CassandraManager();
                 $session = $cassandra->getSession();
@@ -174,7 +193,8 @@ class SettingsViewService {
         return [
             'lastUpdateText' => $lastUpdateText,
             'is2FAActive' => $is2FAActive,
-            'text2FA' => $text2FA
+            'text2FA' => $text2FA,
+            'recoveryCodesRemaining' => $recoveryCodesRemaining
         ];
     }
 

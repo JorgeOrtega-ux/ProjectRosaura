@@ -485,7 +485,7 @@ export const ModalTemplates = {
 
     onboardingTourModal: {
         noPadding: true,
-        build: (data) => {
+        build: (data = {}) => {
             const steps = data.steps || [];
             const modalId = data.modalId || 'onboarding-tour';
             
@@ -1945,6 +1945,8 @@ export const ModalTemplates = {
         build: (data = {}) => {
             const title = data.title || __('login_2fa_title');
             const desc = data.desc || __('2fa_verify_desc');
+            const confirmText = data.confirmText || __('btn_confirm');
+            const confirmClass = data.confirmDanger ? 'component-button--danger' : 'component-button--primary';
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">
@@ -1956,7 +1958,7 @@ export const ModalTemplates = {
                 </div>
                 <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${__('btn_confirm')}</button>
+                    <button type="button" class="component-button ${confirmClass} component-button--h40" data-modal-action="confirm">${confirmText}</button>
                 </div>
             `;
         }
@@ -3489,6 +3491,7 @@ export const ModalTemplates = {
     },
 
     recoveryCodesDisplayModal: {
+        customBoxClass: 'component-modal-box--2fa-setup',
         build: (data = {}) => {
             const codes = Array.isArray(data.recovery_codes) ? data.recovery_codes : [];
             let codesHtml = '';
@@ -3503,21 +3506,45 @@ export const ModalTemplates = {
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header">
-                    <h3 class="component-modal-title">${__('2fa_new_codes_title') || 'Nuevos códigos de recuperación'}</h3>
-                    <p class="component-modal-desc">${__('2fa_new_codes_desc') || 'Guarda estos códigos en un lugar seguro. Los códigos anteriores han sido invalidados.'}</p>
-                </div>
-                <div class="component-modal-body">
-                    <div class="component-2fa-recovery-list" data-ref="2fa-display-recovery-codes-grid">
-                        ${codesHtml}
+
+                <!-- Left Column: Codes & Actions -->
+                <div class="component-2fa-modal-left">
+                    <div class="component-modal-header" style="padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px;">
+                        <h2 class="component-modal-title" style="margin: 0;">
+                            ${__('2fa_new_codes_title') || 'Nuevos códigos de recuperación'}
+                        </h2>
+                        <p class="component-modal-desc" style="margin: 0;">
+                            ${__('2fa_new_codes_desc') || 'Guarda estos códigos en un lugar seguro. Los códigos anteriores han sido invalidados.'}
+                        </p>
+                    </div>
+
+                    <div class="component-modal-body" style="padding: 0; margin: 0;">
+                        <div class="component-2fa-recovery-list" data-ref="2fa-display-recovery-codes-grid" style="margin: 0;">
+                            ${codesHtml}
+                        </div>
+                    </div>
+
+                    <div class="component-modal-actions" style="padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
+                        <button type="button" class="component-button component-button--h40" data-action="copyDisplayRecoveryCodes" data-codes="${escapeHTML(codes.join('\n'))}" style="width: 100%; margin: 0;">
+                            <span class="material-symbols-rounded">content_copy</span>
+                            <span>${__('btn_copy_codes') || 'Copiar códigos'}</span>
+                        </button>
+                        <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="cancel" style="width: 100%; margin: 0;">
+                            <span>${__('btn_finish_configuration') || 'Terminar configuración'}</span>
+                        </button>
                     </div>
                 </div>
-                <div class="component-modal-actions">
-                    <button type="button" class="component-button component-button--h40" data-action="copyDisplayRecoveryCodes" data-codes="${escapeHTML(codes.join('\n'))}">
-                        <span class="material-symbols-rounded">content_copy</span>
-                        <span>${__('btn_copy_codes') || 'Copiar códigos'}</span>
-                    </button>
-                    <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="cancel">${__('btn_finish') || 'Listo'}</button>
+
+                <!-- Right Column: Banner Gradient & Illustration -->
+                <div class="component-2fa-modal-right">
+                    <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
+                        <svg width="180" height="180" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="100" cy="100" r="85" fill="rgba(255, 255, 255, 0.08)" stroke="rgba(255, 255, 255, 0.2)" stroke-width="2" stroke-dasharray="6 6"/>
+                            <circle cx="100" cy="100" r="65" fill="rgba(255, 255, 255, 0.12)"/>
+                            <path d="M100 45 L145 65 C145 105 125 138 100 155 C75 138 55 105 55 65 L100 45 Z" fill="rgba(255, 255, 255, 0.2)" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
+                            <path d="M100 78 C91.7157 78 85 84.7157 85 93 C85 99.4 89.04 104.85 94.75 106.88 L94.75 122 C94.75 124.9 97.1 127.25 100 127.25 C102.9 127.25 105.25 124.9 105.25 122 L105.25 116 L111 116 C112.65 116 114 114.65 114 113 C114 111.35 112.65 110 111 110 L105.25 110 L105.25 106.88 C110.96 104.85 115 99.4 115 93 C115 84.7157 108.284 78 100 78 Z M100 86 C103.866 86 107 89.134 107 93 C107 96.866 103.866 100 100 100 C96.134 100 93 96.866 93 93 C93 89.134 96.134 86 100 86 Z" fill="#ffffff"/>
+                        </svg>
+                    </div>
                 </div>
             `;
         }

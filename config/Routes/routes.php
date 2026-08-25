@@ -25,6 +25,7 @@ return [
     '/site-policy/cookies-policy' => ['view' => 'site-policy/cookies-policy.php'],
     '/site-policy/legal-notice' => ['view' => 'site-policy/legal-notice.php'],
     '/site-policy/refund-policy' => ['view' => 'site-policy/refund-policy.php'],
+    '/dev/modals' => ['view' => 'dev/modals.php'],
     '/settings' => ['view' => 'settings/profile/your-account.php', 'auth' => true],
     '/settings/guest' => ['view' => 'settings/preferences/guest.php', 'guest_only' => true],
     '/settings/your-account' => ['view' => 'settings/profile/your-account.php', 'auth' => true],

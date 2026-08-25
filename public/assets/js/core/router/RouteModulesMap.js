@@ -29,6 +29,7 @@ export const RouteModulesMap = {
     '/site-policy/cookies-policy': { path: './modules/site-policy/SitePolicyController.js', className: 'SitePolicyController', skeletonType: 'layout-policy' },
     '/site-policy/legal-notice': { path: './modules/site-policy/SitePolicyController.js', className: 'SitePolicyController', skeletonType: 'layout-policy' },
     '/site-policy/refund-policy': { path: './modules/site-policy/SitePolicyController.js', className: 'SitePolicyController', skeletonType: 'layout-policy' },
+    '/dev/modals': { path: './modules/dev/DevModalsController.js', className: 'DevModalsController', skeletonType: 'layout-basic' },
 
     '/settings': { path: './modules/settings/ProfileController.js', className: 'ProfileController', skeletonType: 'layout-basic' },
     '/settings/your-account': { path: './modules/settings/ProfileController.js', className: 'ProfileController', skeletonType: 'layout-basic' },

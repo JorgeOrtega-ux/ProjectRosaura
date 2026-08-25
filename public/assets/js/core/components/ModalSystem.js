@@ -1,6 +1,6 @@
 import { ModalTemplates } from './ModalTemplates.js';
 import { CalendarSystem } from './CalendarSystem.js';
-import { getEventCoords, hexToHsv, hsvToHex, restoreButton, setButtonLoading, showMessage, initCarouselScroll, closeDropdown, localInputFormatToUtcString } from '../utils/uiUtils.js';
+import { getEventCoords, hexToHsv, hsvToHex, restoreButton, setButtonLoading, showMessage, initCarouselScroll, closeDropdown, localInputFormatToUtcString, copyToClipboard } from '../utils/uiUtils.js';
 import { ApiService } from '../api/ApiService.js';
 import { ApiRoutes } from '../api/ApiRoutes.js';
 
@@ -267,6 +267,7 @@ export class ModalSystem {
                     'button[data-action="confirm"], ' +
                     'button[data-action="submitJoinLive"], ' +
                     'button[data-action="submitRoleModal"], ' +
+                    'button[data-action="submitSetupEnable2FA"], ' +
                     '#btn_confirm_custom_backup'
                 );
 
@@ -1367,7 +1368,7 @@ export class ModalSystem {
         if (btnFinish2fa) {
             e.preventDefault();
             this.closeCurrent(true);
-            window.dispatchEvent(new CustomEvent('2faStatusChanged', { detail: { active: true } }));
+            window.dispatchEvent(new CustomEvent('2faStatusChanged', { detail: { active: true, remainingCodes: 10 } }));
             return;
         }
 
@@ -1382,15 +1383,19 @@ export class ModalSystem {
             }).then(async (dialog) => {
                 if (dialog && dialog.confirmed) {
                     const password = dialog.data?.confirmSecPasswordInput || dialog.data?.password || dialog.data?.current_password || '';
-                    if (!password) {
-                        dialog.failure(window.__('err_password_required') || 'Contraseña requerida');
+                    const credential = dialog.data?.credential || dialog.data?.google_token || '';
+                    if (!password && !credential) {
+                        dialog.failure(window.__('err_identity_verification_required') || window.__('err_password_required') || 'Debes ingresar tu contraseña o verificar con Google');
                         return;
                     }
                     const api = new ApiService();
                     try {
-                        const res = await api.post(ApiRoutes.Settings.RegenerateRecoveryCodes, { password });
+                        const payload = credential ? { credential, google_token: credential } : { password };
+                        const res = await api.post(ApiRoutes.Settings.RegenerateRecoveryCodes, payload);
                         if (res && res.success) {
                             dialog.success();
+                            const remaining = Array.isArray(res.recovery_codes) ? res.recovery_codes.length : 10;
+                            window.dispatchEvent(new CustomEvent('2faStatusChanged', { detail: { active: true, remainingCodes: remaining } }));
                             this.show('recoveryCodesDisplayModal', {
                                 recovery_codes: res.recovery_codes || []
                             });
@@ -1413,21 +1418,24 @@ export class ModalSystem {
                 title: window.__('2fa_deactivate_title') || 'Desactivar 2FA',
                 desc: window.__('2fa_deactivate_warning') || 'Ingresa tu contraseña para confirmar la desactivación de la autenticación en dos pasos.',
                 confirmText: window.__('btn_deactivate') || 'Desactivar',
+                confirmDanger: true,
                 asyncConfirm: true
             }).then(async (dialog) => {
                 if (dialog && dialog.confirmed) {
                     const password = dialog.data?.confirmSecPasswordInput || dialog.data?.password || dialog.data?.current_password || '';
-                    if (!password) {
-                        dialog.failure(window.__('err_password_required') || 'Contraseña requerida');
+                    const credential = dialog.data?.credential || dialog.data?.google_token || '';
+                    if (!password && !credential) {
+                        dialog.failure(window.__('err_identity_verification_required') || window.__('err_password_required') || 'Debes ingresar tu contraseña o verificar con Google');
                         return;
                     }
                     const api = new ApiService();
                     try {
-                        const res = await api.post(ApiRoutes.Settings.Disable2FA, { password });
+                        const payload = credential ? { credential, google_token: credential } : { password };
+                        const res = await api.post(ApiRoutes.Settings.Disable2FA, payload);
                         if (res && res.success) {
                             dialog.success();
                             showMessage(res.message || window.__('msg_2fa_disabled_success') || '2FA desactivado correctamente', 'success');
-                            window.dispatchEvent(new CustomEvent('2faStatusChanged', { detail: { active: false } }));
+                            window.dispatchEvent(new CustomEvent('2faStatusChanged', { detail: { active: false, remainingCodes: 0 } }));
                         } else {
                             dialog.failure(res?.message || 'Error al desactivar 2FA');
                         }

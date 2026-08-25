@@ -7,6 +7,7 @@ $securityData = $settingsService->getSecurityOverviewData();
 $lastUpdateText = $securityData['lastUpdateText'];
 $is2FAActive = $securityData['is2FAActive'];
 $text2FA = $securityData['text2FA'];
+$recoveryCodesRemaining = $securityData['recoveryCodesRemaining'] ?? 0;
 ?>
 <div class="view-content">
     <div class="component-wrapper">
@@ -45,8 +46,29 @@ $text2FA = $securityData['text2FA'];
                         </div>
                     </div>
                     <div class="component-card__actions component-card__actions--end">
-                        <button type="button" class="component-button component-button--h36" data-ref="2fa_action_btn" data-action="<?php echo $is2FAActive ? 'openManage2FAModal' : 'openSetup2FAModal'; ?>">
-                            <?php echo $is2FAActive ? __('btn_manage') : __('btn_configure'); ?>
+                        <button type="button" class="component-button component-button--h36 <?php echo $is2FAActive ? 'component-button--danger' : ''; ?>" data-ref="2fa_action_btn" data-action="<?php echo $is2FAActive ? 'openDisable2FAModal' : 'openSetup2FAModal'; ?>">
+                            <?php echo $is2FAActive ? __('btn_deactivate') : __('btn_configure'); ?>
+                        </button>
+                    </div>
+                </div>
+
+                <hr class="component-divider <?php echo !$is2FAActive ? 'disabled' : ''; ?>" data-ref="2fa_recovery_divider">
+
+                <div class="component-group-item <?php echo !$is2FAActive ? 'disabled' : ''; ?>" data-ref="2fa_recovery_item">
+                    <div class="component-card__content">
+                        <div class="component-card__icon-container component-card__icon-container--bordered">
+                            <span class="material-symbols-rounded">key</span>
+                        </div>
+                        <div class="component-card__text">
+                            <h2 class="component-card__title"><?php echo __('sec_recovery_codes_title'); ?></h2>
+                            <p class="component-card__description" data-ref="2fa_recovery_codes_desc">
+                                <?php echo __('sec_recovery_codes_desc_p1'); ?> <strong data-ref="2fa_remaining_count"><?php echo (int)$recoveryCodesRemaining; ?></strong> <?php echo __('sec_recovery_codes_desc_p2'); ?>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="component-card__actions component-card__actions--end">
+                        <button type="button" class="component-button component-button--h36" data-action="openRegenerateRecoveryCodesModal">
+                            <?php echo __('btn_generate_other_key'); ?>
                         </button>
                     </div>
                 </div>

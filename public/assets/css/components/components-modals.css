@@ -1275,9 +1275,10 @@
 }
 
 /* ==========================================================================
-   2FA SPLIT 2-COLUMN MODAL
+   GENERIC SPLIT 2-COLUMN MODAL & 2FA
    ========================================================================== */
 
+.component-modal-box--split,
 .component-modal-box--2fa-setup {
     width: 900px !important;
     max-width: 95vw !important;
@@ -1289,6 +1290,7 @@
     box-sizing: border-box;
 }
 
+.component-modal-split-left,
 .component-2fa-modal-left {
     flex: 1.15;
     padding: 24px;
@@ -1302,6 +1304,7 @@
     overflow-y: auto;
 }
 
+.component-modal-split-right,
 .component-2fa-modal-right {
     flex: 1;
     min-width: 360px;
@@ -1314,6 +1317,8 @@
     position: relative;
 }
 
+.dark-theme .component-modal-split-right,
+[data-theme="dark"] .component-modal-split-right,
 .dark-theme .component-2fa-modal-right,
 [data-theme="dark"] .component-2fa-modal-right {
     background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
@@ -1339,6 +1344,7 @@
     display: block;
 }
 
+.component-modal-code-grid,
 .component-2fa-recovery-list {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -1350,6 +1356,7 @@
 }
 
 @media (max-width: 768px) {
+    .component-modal-box--split,
     .component-modal-box--2fa-setup {
         flex-direction: column-reverse !important;
         height: auto !important;
@@ -1358,11 +1365,13 @@
         width: 95vw !important;
     }
 
+    .component-modal-split-left,
     .component-2fa-modal-left {
         padding: 20px;
         flex: unset;
     }
 
+    .component-modal-split-right,
     .component-2fa-modal-right {
         min-width: 100%;
         min-height: 220px;
@@ -1380,5 +1389,155 @@
     .component-2fa-qr-frame img {
         width: 156px !important;
         height: 156px !important;
+    }
+}
+
+/* ==========================================================================
+   IMAGE VIEWER MODAL
+   ========================================================================== */
+
+.component-modal-box--image-viewer {
+    width: 880px !important;
+    max-width: 95vw !important;
+    max-height: 90vh !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background-color: var(--bg-surface);
+    box-sizing: border-box;
+}
+
+.component-image-viewer-canva {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+    min-height: 480px;
+    max-height: calc(90vh - 10px);
+    overflow: hidden;
+}
+
+.component-image-viewer-main-col {
+    flex: 1.6;
+    display: flex;
+    flex-direction: column;
+    background-color: #0b0c10;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 16px;
+    overflow: hidden;
+}
+
+.component-image-viewer-stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    max-height: 400px;
+}
+
+.component-image-viewer-img {
+    max-width: 100%;
+    max-height: 380px;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    image-rendering: pixelated;
+}
+
+.component-image-viewer-strip {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 8px;
+    max-width: 100%;
+}
+
+.component-image-viewer-thumb {
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    opacity: 0.7;
+    transition: opacity 0.2s, border-color 0.2s;
+    flex-shrink: 0;
+}
+
+.component-image-viewer-thumb.active {
+    border-color: var(--color-primary, #3b82f6);
+    opacity: 1;
+}
+
+.component-image-viewer-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.component-image-viewer-side-col {
+    flex: 1;
+    min-width: 280px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background-color: var(--bg-surface);
+    overflow-y: auto;
+}
+
+.component-image-viewer-info-header {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.component-image-viewer-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.component-image-viewer-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.component-image-viewer-sender {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+}
+
+.component-image-viewer-sender-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.component-image-viewer-actions {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+@media (max-width: 768px) {
+    .component-image-viewer-canva {
+        flex-direction: column;
+    }
+    .component-image-viewer-main-col {
+        min-height: 260px;
+    }
+    .component-image-viewer-side-col {
+        min-width: 100%;
+        padding: 16px;
     }
 }

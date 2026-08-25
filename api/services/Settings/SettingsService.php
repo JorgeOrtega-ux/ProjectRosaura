@@ -655,7 +655,11 @@ class SettingsService
 
         $user = $this->userRepository->findById($userId);
 
-        if ($user && Utils::verifyUserIdentity($user, $data)) {
+        if (!$user || empty($user['two_factor_enabled'])) {
+            return ['success' => false, 'message' => __('settings.2fa_disabled')];
+        }
+
+        if (Utils::verifyUserIdentity($user, $data)) {
             if ($this->userRepository->update2FA($userId, null, 0, null)) {
                 $this->sessionManager->set('user_2fa', 0);
                 $this->rateLimiter->clear(RateLimitConstants::KEY_2FA_DISABLE . "_{$userId}");
@@ -789,19 +793,21 @@ class SettingsService
 
         $user = $this->userRepository->findById($userId);
 
-        if ($user) {
-            if (Utils::verifyUserIdentity($user, $data)) {
-                $this->rateLimiter->clear(RateLimitConstants::KEY_2FA_REGEN_CODES . "_{$userId}");
+        if (!$user || empty($user['two_factor_enabled'])) {
+            return ['success' => false, 'message' => __('error.update_failed')];
+        }
 
-                $codes = Utils::generateRecoveryCodes(10, 8);
-                
-                $hashedCodes = array_map(function($c) {
-                    return password_hash($c, PASSWORD_ARGON2ID);
-                }, $codes);
-                
-                if ($this->userRepository->updateRecoveryCodes($userId, json_encode($hashedCodes))) {
-                    return ['success' => true, 'message' => __('settings.recovery_codes_regenerated'), 'recovery_codes' => $codes];
-                }
+        if (Utils::verifyUserIdentity($user, $data)) {
+            $this->rateLimiter->clear(RateLimitConstants::KEY_2FA_REGEN_CODES . "_{$userId}");
+
+            $codes = Utils::generateRecoveryCodes(10, 8);
+            
+            $hashedCodes = array_map(function($c) {
+                return password_hash($c, PASSWORD_ARGON2ID);
+            }, $codes);
+            
+            if ($this->userRepository->updateRecoveryCodes($userId, json_encode($hashedCodes))) {
+                return ['success' => true, 'message' => __('settings.recovery_codes_regenerated'), 'recovery_codes' => $codes];
             }
         }
         
