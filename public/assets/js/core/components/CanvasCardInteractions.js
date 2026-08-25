@@ -906,7 +906,19 @@ export class CanvasCardInteractions {
                 if (submitBtn) setButtonLoading(submitBtn);
                 try {
                     let result;
-                    if (payload.mode === 'instant') {
+                    if (payload.mode === 'cancel_schedule') {
+                        result = await this.api.post(ApiRoutes.Canvases.UpdateResizeSettings, {
+                            id: parseInt(id, 10),
+                            is_active: false,
+                            next_resize_at: null,
+                            target_size: targetSize
+                        });
+                        if (result && result.success) {
+                            window.modalSystem.closeCurrent(true);
+                            showMessage(result.message || window.__('msg_scheduled_resize_cancelled'), 'success');
+                            return;
+                        }
+                    } else if (payload.mode === 'instant') {
                         result = await this.api.post(ApiRoutes.Canvases.Resize, { id: parseInt(id, 10), size: payload.size });
                         if (result && result.success && card) {
                             card.setAttribute('data-size', payload.size);
@@ -966,7 +978,19 @@ export class CanvasCardInteractions {
                 if (submitBtn) setButtonLoading(submitBtn);
                 try {
                     let result;
-                    if (payload.mode === 'instant') {
+                    if (payload.mode === 'cancel_schedule') {
+                        result = await this.api.post(ApiRoutes.Canvases.UpdateResetSettings, {
+                            id: parseInt(id, 10),
+                            is_active: false,
+                            next_reset_at: null,
+                            take_snapshot: false
+                        });
+                        if (result && result.success) {
+                            window.modalSystem.closeCurrent(true);
+                            showMessage(result.message || window.__('msg_scheduled_reset_cancelled'), 'success');
+                            return;
+                        }
+                    } else if (payload.mode === 'instant') {
                         result = await this.api.post(ApiRoutes.Canvases.ResetNow, {
                             id: parseInt(id, 10),
                             take_snapshot: payload.takeSnapshot

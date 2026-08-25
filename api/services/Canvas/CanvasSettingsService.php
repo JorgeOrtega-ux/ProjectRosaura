@@ -233,6 +233,11 @@ class CanvasSettingsService {
                     return ['success' => false, 'message' => __('err_schedule_min_5_minutes')];
                 }
 
+                $maxFuture = (clone $now)->modify('+5 years');
+                if ($date > $maxFuture) {
+                    return ['success' => false, 'message' => __('err_date_exceeds_max_future')];
+                }
+
                 $nextResizeAt = $data['next_resize_at'];
             }
 

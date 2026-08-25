@@ -293,6 +293,8 @@ input:checked+.component-toggle-slider:before {
     padding: 16px;
     display: flex;
     flex-direction: column;
+    border: 1px solid var(--border-color);
+    border-radius: 24px;
 }
 
 .component-calendar-header {

@@ -257,7 +257,15 @@ function getAllPalettes() {
 
 function localInputFormatToUtcString(localString) {
     if (!localString) return null;
-    const dateObj = new Date(localString);
+    let dateObj;
+    if (typeof localString === 'string' && localString.includes('T')) {
+        const parts = localString.split('T');
+        const dParts = parts[0].split('-').map(Number);
+        const tParts = parts[1].split(':').map(Number);
+        dateObj = new Date(dParts[0], dParts[1] - 1, dParts[2], tParts[0] || 0, tParts[1] || 0, tParts[2] || 0);
+    } else {
+        dateObj = new Date(localString);
+    }
     if (isNaN(dateObj.getTime())) return null;
 
     const yyyy = dateObj.getUTCFullYear();
@@ -268,6 +276,142 @@ function localInputFormatToUtcString(localString) {
     const ss = '00';
 
     return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+}
+
+function parseUtcToLocalDate(utcString) {
+    if (!utcString) return null;
+    if (utcString instanceof Date) return isNaN(utcString.getTime()) ? null : utcString;
+
+    let str = String(utcString).trim();
+    if (!str) return null;
+
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(str)) {
+        str = str.replace(' ', 'T') + 'Z';
+    } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(str) && !str.endsWith('Z')) {
+        str = str + 'Z';
+    }
+
+    const d = new Date(str);
+    return isNaN(d.getTime()) ? null : d;
+}
+
+function formatLocalDateTimeToInput(dateObj) {
+    if (!dateObj || isNaN(dateObj.getTime())) return '';
+    const pad = n => String(n).padStart(2, '0');
+    const y = dateObj.getFullYear();
+    const m = pad(dateObj.getMonth() + 1);
+    const d = pad(dateObj.getDate());
+    const hh = pad(dateObj.getHours());
+    const mm = pad(dateObj.getMinutes());
+    return `${y}-${m}-${d}T${hh}:${mm}`;
+}
+
+function getUserTimezoneString() {
+    const offsetMinutes = new Date().getTimezoneOffset();
+    const sign = offsetMinutes <= 0 ? '+' : '-';
+    const absOffset = Math.abs(offsetMinutes);
+    const hours = Math.floor(absOffset / 60);
+    const mins = absOffset % 60;
+    return `GMT${sign}${hours}${mins > 0 ? `:${String(mins).padStart(2, '0')}` : ''}`;
+}
+
+function getScheduledTimeDetails(dateOrUtcStr) {
+    const __ = typeof window.__ === 'function' ? window.__ : k => k;
+    let dateObj = null;
+
+    if (!dateOrUtcStr) {
+        return { isValid: false, formattedDate: '', relativeTimeStr: '', timezoneString: getUserTimezoneString(), isAtLeast5Minutes: false };
+    }
+
+    if (typeof dateOrUtcStr === 'string') {
+        if (dateOrUtcStr.includes('T')) {
+            const parts = dateOrUtcStr.split('T');
+            const dParts = parts[0].split('-').map(Number);
+            const tParts = parts[1].split(':').map(Number);
+            dateObj = new Date(dParts[0], dParts[1] - 1, dParts[2], tParts[0] || 0, tParts[1] || 0);
+        } else if (dateOrUtcStr.includes(' ')) {
+            dateObj = parseUtcToLocalDate(dateOrUtcStr);
+        } else {
+            dateObj = new Date(dateOrUtcStr);
+        }
+    } else if (dateOrUtcStr instanceof Date) {
+        dateObj = dateOrUtcStr;
+    }
+
+    if (!dateObj || isNaN(dateObj.getTime())) {
+        return { isValid: false, formattedDate: '', relativeTimeStr: '', timezoneString: getUserTimezoneString(), isAtLeast5Minutes: false };
+    }
+
+    const pad = n => String(n).padStart(2, '0');
+    const day = pad(dateObj.getDate());
+    const month = pad(dateObj.getMonth() + 1);
+    const year = dateObj.getFullYear();
+    const hh = pad(dateObj.getHours());
+    const mm = pad(dateObj.getMinutes());
+    const tz = getUserTimezoneString();
+
+    const getTrans = (key, fallback) => {
+        if (typeof window.__ === 'function') {
+            const val = window.__(key);
+            if (val && val !== key) return val;
+        }
+        return fallback;
+    };
+
+    const monthsNames = [
+        getTrans('month_january', 'enero'), getTrans('month_february', 'febrero'), getTrans('month_march', 'marzo'),
+        getTrans('month_april', 'abril'), getTrans('month_may', 'mayo'), getTrans('month_june', 'junio'),
+        getTrans('month_july', 'julio'), getTrans('month_august', 'agosto'), getTrans('month_september', 'septiembre'),
+        getTrans('month_october', 'octubre'), getTrans('month_november', 'noviembre'), getTrans('month_december', 'diciembre')
+    ];
+
+    const weekDays = [
+        getTrans('cal_sunday', 'Domingo'), getTrans('cal_monday', 'Lunes'), getTrans('cal_tuesday', 'Martes'),
+        getTrans('cal_wednesday', 'Miércoles'), getTrans('cal_thursday', 'Jueves'), getTrans('cal_friday', 'Viernes'), getTrans('cal_saturday', 'Sábado')
+    ];
+
+    const dayOfWeek = weekDays[dateObj.getDay()];
+    const monthName = monthsNames[dateObj.getMonth()];
+    const formattedDate = `${dayOfWeek}, ${dateObj.getDate()} de ${monthName} de ${year} a las ${hh}:${mm}`;
+    const formattedDateShort = `${day}/${month}/${year} ${hh}:${mm}`;
+
+    const now = Date.now();
+    const diffMs = dateObj.getTime() - now;
+    const isFuture = diffMs > 0;
+    const isAtLeast5Minutes = diffMs >= (5 * 60 * 1000 - 5000); // 5 sec grace
+
+    let relativeTimeStr = '';
+    if (diffMs <= 0) {
+        relativeTimeStr = __('lbl_time_expired') || 'Tiempo expirado';
+    } else {
+        const totalSecs = Math.floor(diffMs / 1000);
+        const days = Math.floor(totalSecs / 86400);
+        const hours = Math.floor((totalSecs % 86400) / 3600);
+        const mins = Math.floor((totalSecs % 3600) / 60);
+
+        if (days > 0) {
+            relativeTimeStr = `En ${days} día${days > 1 ? 's' : ''}${hours > 0 ? `, ${hours} h` : ''}`;
+        } else if (hours > 0) {
+            relativeTimeStr = `En ${hours} hora${hours > 1 ? 's' : ''}${mins > 0 ? ` y ${mins} min` : ''}`;
+        } else if (mins > 0) {
+            relativeTimeStr = `En ${mins} minuto${mins > 1 ? 's' : ''}`;
+        } else {
+            relativeTimeStr = 'En menos de 1 minuto';
+        }
+    }
+
+    return {
+        isValid: true,
+        dateObj,
+        formattedDate,
+        formattedDateShort,
+        isoString: `${year}-${month}-${day}T${hh}:${mm}`,
+        timezoneString: tz,
+        diffMs,
+        isFuture,
+        isAtLeast5Minutes,
+        relativeTimeStr
+    };
 }
 
 function isDarkMode() {
@@ -774,6 +918,10 @@ export {
     catchPaginationClick,
     getAllPalettes,
     localInputFormatToUtcString,
+    parseUtcToLocalDate,
+    formatLocalDateTimeToInput,
+    getUserTimezoneString,
+    getScheduledTimeDetails,
     isDarkMode,
     initCarouselScroll,
     appendInfiniteScrollSkeletons,

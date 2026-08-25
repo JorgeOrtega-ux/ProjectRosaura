@@ -145,6 +145,60 @@ export const InteractionEvents = {
             return;
         }
 
+        const btnCancelSchedResize = e.target.closest('[data-action="cancelScheduledResize"]');
+        if (btnCancelSchedResize) {
+            e.preventDefault();
+            if (typeof this.cancelScheduledResize === 'function') {
+                this.cancelScheduledResize(btnCancelSchedResize);
+            }
+            return;
+        }
+
+        const btnRescheduleResize = e.target.closest('[data-action="rescheduleOfflineResize"]');
+        if (btnRescheduleResize) {
+            e.preventDefault();
+            if (typeof this.rescheduleOfflineResize === 'function') {
+                this.rescheduleOfflineResize();
+            }
+            return;
+        }
+
+        const btnBackToActiveResize = e.target.closest('[data-action="backToActiveResizeStep"]');
+        if (btnBackToActiveResize) {
+            e.preventDefault();
+            if (typeof this.backToActiveResizeStep === 'function') {
+                this.backToActiveResizeStep();
+            }
+            return;
+        }
+
+        const btnCancelSchedReset = e.target.closest('[data-action="cancelScheduledReset"]');
+        if (btnCancelSchedReset) {
+            e.preventDefault();
+            if (typeof this.cancelScheduledReset === 'function') {
+                this.cancelScheduledReset(btnCancelSchedReset);
+            }
+            return;
+        }
+
+        const btnRescheduleReset = e.target.closest('[data-action="rescheduleOfflineReset"]');
+        if (btnRescheduleReset) {
+            e.preventDefault();
+            if (typeof this.rescheduleOfflineReset === 'function') {
+                this.rescheduleOfflineReset();
+            }
+            return;
+        }
+
+        const btnBackToActiveReset = e.target.closest('[data-action="backToActiveResetStep"]');
+        if (btnBackToActiveReset) {
+            e.preventDefault();
+            if (typeof this.backToActiveResetStep === 'function') {
+                this.backToActiveResetStep();
+            }
+            return;
+        }
+
         const btnSelectResizeTypeOption = e.target.closest('[data-action="selectResizeTypeOption"]') || e.target.closest('[data-action="selectResizeType"]');
         if (btnSelectResizeTypeOption) {
             e.preventDefault();

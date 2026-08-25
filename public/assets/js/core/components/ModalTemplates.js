@@ -1,4 +1,4 @@
-import { escapeHTML, getDynamicTierName, getLockDetails, hexToHsv } from '../utils/uiUtils.js';
+import { escapeHTML, getDynamicTierName, getLockDetails, hexToHsv, parseUtcToLocalDate, formatLocalDateTimeToInput, getUserTimezoneString, getScheduledTimeDetails } from '../utils/uiUtils.js';
 
 const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
 
@@ -73,14 +73,9 @@ export const ModalTemplates = {
             if (!isOwner) {
                 return `
                     <div class="pill-container"><div class="drag-handle"></div></div>
-                    <div class="component-modal-header component-modal-header--with-icon">
-                        <div class="component-card__icon-container component-card__icon-container--bordered">
-                            <span class="material-symbols-rounded">chat_off</span>
-                        </div>
-                        <div class="component-modal-header-text">
-                            <h3 class="component-modal-title">${__('chat_deactivated_title')}</h3>
-                            <p class="component-modal-desc">${__('chat_non_owner_deactivated_desc')}</p>
-                        </div>
+                    <div class="component-modal-header">
+                        <h3 class="component-modal-title">${__('chat_deactivated_title')}</h3>
+                        <p class="component-modal-desc">${__('chat_non_owner_deactivated_desc')}</p>
                     </div>
                     <div class="component-modal-actions">
                         <button class="component-button component-button--primary component-button--h40" data-modal-action="cancel">${__('btn_accept')}</button>
@@ -91,14 +86,9 @@ export const ModalTemplates = {
             if (!hasLiveChat) {
                 return `
                     <div class="pill-container"><div class="drag-handle"></div></div>
-                    <div class="component-modal-header component-modal-header--with-icon">
-                        <div class="component-card__icon-container component-card__icon-container--bordered">
-                            <span class="material-symbols-rounded">stars</span>
-                        </div>
-                        <div class="component-modal-header-text">
-                            <h3 class="component-modal-title">${__('chat_activation_pro_required')}</h3>
-                            <p class="component-modal-desc">${__('chat_pro_required_desc')}</p>
-                        </div>
+                    <div class="component-modal-header">
+                        <h3 class="component-modal-title">${__('chat_activation_pro_required')}</h3>
+                        <p class="component-modal-desc">${__('chat_pro_required_desc')}</p>
                     </div>
                     <div class="component-modal-actions">
                         <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
@@ -882,14 +872,9 @@ export const ModalTemplates = {
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header component-modal-header--with-icon">
-                    <div class="component-card__icon-container component-card__icon-container--bordered">
-                        <span class="material-symbols-rounded">lock</span>
-                    </div>
-                    <div class="component-modal-header-text">
-                        <h2 class="component-modal-title">${title}</h2>
-                        <p class="component-modal-desc">${desc}</p>
-                    </div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">${title}</h2>
+                    <p class="component-modal-desc">${desc}</p>
                 </div>
                 <div class="component-modal-body">
                     ${renderVerificationInput({ inputRef: 'modal_verify_password', label: passwordLblText, autocomplete: 'current-password' })}
@@ -926,26 +911,7 @@ export const ModalTemplates = {
             const currentSize = data.currentSize || '64x64';
             const userTier = parseInt(data.userTier ?? (window.APP_USER?.subscription_tier ?? 0), 10);
             const isOffline = data.isOfflineMode !== false;
-
-            const formatLocalDatetime = (dateInput, addMs = 3600000) => {
-                let d = null;
-                if (dateInput) {
-                    d = new Date(dateInput);
-                }
-                if (!d || isNaN(d.getTime())) {
-                    d = new Date(Date.now() + addMs);
-                }
-                const pad = n => String(n).padStart(2, '0');
-                const y = d.getFullYear();
-                const m = pad(d.getMonth() + 1);
-                const day = pad(d.getDate());
-                const hh = pad(d.getHours());
-                const mm = pad(d.getMinutes());
-                return `${y}-${m}-${day}T${hh}:${mm}`;
-            };
-
-            const minDateTime = formatLocalDatetime(null, 5 * 60 * 1000);
-            const scheduledDateTimeVal = formatLocalDatetime(data.nextResizeAt, 3600000);
+            const hasActiveSchedule = !isOffline && !!data.resizeActive && !!data.nextResizeAt;
 
             const sizesList = {
                 "16x16": { label: "16x16", icon: "crop_square", tier: 0 },
@@ -966,6 +932,7 @@ export const ModalTemplates = {
             };
 
             const currentMeta = sizesList[currentSize] || { label: currentSize, icon: "aspect_ratio", tier: 0 };
+            const activeTargetSize = data.resizeTargetSize || currentSize;
 
             let instantSizesHtml = '';
             for (const [val, meta] of Object.entries(sizesList)) {
@@ -994,59 +961,94 @@ export const ModalTemplates = {
                 `;
             }
 
-            const defaultDate = (dateInput, addMs = 3600000) => {
-                let d = null;
-                if (dateInput) d = new Date(dateInput);
-                if (!d || isNaN(d.getTime())) d = new Date(Date.now() + addMs);
-                return d;
-            };
+            const initialDateObj = data.nextResizeAt ? (parseUtcToLocalDate(data.nextResizeAt) || new Date(Date.now() + 3600000)) : new Date(Date.now() + 3600000);
+            const defaultResizeIso = formatLocalDateTimeToInput(initialDateObj);
+            const initialSchedDetails = getScheduledTimeDetails(initialDateObj);
+            const defaultResizeDisplay = initialSchedDetails.formattedDateShort;
 
-            const dObj = defaultDate(data.nextResizeAt, 3600000);
             const pad = n => String(n).padStart(2, '0');
-            const y = dObj.getFullYear();
-            const mo = pad(dObj.getMonth() + 1);
-            const day = pad(dObj.getDate());
-            const hh = pad(dObj.getHours());
-            const mm = pad(dObj.getMinutes());
-            const defaultResizeIso = `${y}-${mo}-${day}T${hh}:${mm}`;
-            const defaultResizeDisplay = `${day}/${mo}/${y} ${hh}:${mm}`;
+            const hh = pad(initialDateObj.getHours());
+            const mm = pad(initialDateObj.getMinutes());
 
             const scheduledOptionClass = isOffline ? 'disabled-interaction' : '';
             const scheduledBadge = isOffline
                 ? `<span class="component-badge component-badge--warning component-badge--sm"><span class="material-symbols-rounded">block</span><span>${__('lbl_offline_not_available')}</span></span>`
                 : '';
 
+            const activeSchedDetails = hasActiveSchedule ? getScheduledTimeDetails(data.nextResizeAt) : null;
+
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
 
-                <!-- STEP 1: Tipo de Expansión & Fecha si es programada -->
-                <div class="component-card--grouped component-card--flush active component-modal-step" data-ref="offline-resize-step-1" data-selected-type="instant">
-                    <div class="component-modal-header component-modal-header--with-icon">
-                        <div class="component-card__icon-container component-card__icon-container--bordered">
-                            <span class="material-symbols-rounded">aspect_ratio</span>
-                        </div>
-                        <div class="component-modal-header-text">
-                            <h2 class="component-modal-title">${__('canvas_resize_title') || 'Ajustar Tamaño'}</h2>
-                            <p class="component-modal-desc">${__('canvas_resize_desc') || 'Modifica el tamaño de la cuadrícula del lienzo.'}</p>
-                        </div>
+                ${hasActiveSchedule ? `
+                <!-- STEP ACTIVE: Vista de Expansión Programada Activa -->
+                <div class="component-card--grouped component-card--flush active component-modal-step" data-ref="offline-resize-step-active">
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('canvas_resize_active_title') || 'Expansión programada activa'}</h2>
+                        <p class="component-modal-desc">${__('lbl_scheduled_expansion_active_desc') || 'Hay una expansión programada pendiente para este lienzo.'}</p>
                     </div>
 
                     <div class="component-modal-body">
                         <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleOfflineResizeType" data-ref="offline-resize-type-trigger" data-value="instant">
-                                <span class="material-symbols-rounded" data-ref="offline-resize-type-icon">flash_on</span>
-                                <span class="component-dropdown-text" data-ref="offline-resize-type-label">${__('canvas_resize_now_title') || 'Inmediata'}</span>
+                            <div class="component-dropdown-trigger component-dropdown-trigger--full disabled-interaction">
+                                <span class="material-symbols-rounded">aspect_ratio</span>
+                                <span class="component-dropdown-text">${escapeHTML(activeTargetSize)} px</span>
+                                <span class="component-badge component-badge--sm">${__('lbl_target_size') || 'Tamaño objetivo'}</span>
+                            </div>
+                        </div>
+
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--full disabled-interaction">
+                                <span class="material-symbols-rounded">calendar_month</span>
+                                <span class="component-dropdown-text">${escapeHTML(activeSchedDetails.formattedDate)}</span>
+                                <span class="component-badge component-badge--sm">${escapeHTML(activeSchedDetails.timezoneString)}</span>
+                            </div>
+                        </div>
+
+                        <div class="component-alert component-alert--info active">
+                            <div class="component-alert-icon">
+                                <span class="material-symbols-rounded">timer</span>
+                            </div>
+                            <div class="component-alert-text">
+                                <div style="font-weight: 600;" data-ref="active-schedule-countdown">${escapeHTML(activeSchedDetails.relativeTimeStr)}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--danger component-button--h40" data-action="cancelScheduledResize" data-id="${escapeHTML(data.canvasId || '')}">
+                            <span>${__('btn_cancel_schedule') || 'Cancelar programación'}</span>
+                        </button>
+                        <button class="component-button component-button--primary component-button--h40" data-action="rescheduleOfflineResize">
+                            <span>${__('btn_reschedule') || 'Reprogramar'}</span>
+                        </button>
+                    </div>
+                </div>
+                ` : ''}
+
+                <!-- STEP 1: Tipo de Expansión & Fecha si es programada -->
+                <div class="component-card--grouped component-card--flush ${hasActiveSchedule ? 'disabled' : 'active'} component-modal-step" data-ref="offline-resize-step-1" data-selected-type="${hasActiveSchedule ? 'scheduled' : 'instant'}">
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('canvas_resize_title') || 'Ajustar Tamaño'}</h2>
+                        <p class="component-modal-desc">${__('canvas_resize_desc') || 'Modifica el tamaño de la cuadrícula del lienzo.'}</p>
+                    </div>
+
+                    <div class="component-modal-body">
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleOfflineResizeType" data-ref="offline-resize-type-trigger" data-value="${hasActiveSchedule ? 'scheduled' : 'instant'}">
+                                <span class="material-symbols-rounded" data-ref="offline-resize-type-icon">${hasActiveSchedule ? 'schedule' : 'flash_on'}</span>
+                                <span class="component-dropdown-text" data-ref="offline-resize-type-label">${hasActiveSchedule ? (__('canvas_resize_active_title') || 'Programada') : (__('canvas_resize_now_title') || 'Inmediata')}</span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
                             <div class="component-module component-module--dropdown disabled" data-module="moduleOfflineResizeType">
                                 <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list">
-                                        <div class="component-menu-link active" data-action="selectResizeTypeOption" data-value="instant" data-label="${__('canvas_resize_now_title') || 'Inmediata'}" data-icon="flash_on">
+                                        <div class="component-menu-link ${hasActiveSchedule ? '' : 'active'}" data-action="selectResizeTypeOption" data-value="instant" data-label="${__('canvas_resize_now_title') || 'Inmediata'}" data-icon="flash_on">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">flash_on</span></div>
                                             <div class="component-menu-link-text"><span>${__('canvas_resize_now_title') || 'Inmediata'}</span></div>
                                         </div>
-                                        <div class="component-menu-link ${scheduledOptionClass}" data-action="${isOffline ? '' : 'selectResizeTypeOption'}" data-value="scheduled" data-label="${__('canvas_resize_active_title') || 'Programada'}" data-icon="schedule">
+                                        <div class="component-menu-link ${hasActiveSchedule ? 'active' : ''} ${scheduledOptionClass}" data-action="${isOffline ? '' : 'selectResizeTypeOption'}" data-value="scheduled" data-label="${__('canvas_resize_active_title') || 'Programada'}" data-icon="schedule">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">schedule</span></div>
                                             <div class="component-menu-link-text"><span>${__('canvas_resize_active_title') || 'Programada'}</span></div>
                                             ${scheduledBadge}
@@ -1056,80 +1058,23 @@ export const ModalTemplates = {
                             </div>
                         </div>
 
-                        <!-- Selector de fecha/hora tipo Dropdown Calendar si es programada (Etapa 1) -->
-                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full disabled" data-ref="offline-resize-scheduled-date-container">
-                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleOfflineResizeDate" data-ref="offline-resize-datetime-trigger" data-value="${defaultResizeIso}">
+                        <!-- Trigger para abrir la etapa del calendario -->
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full ${hasActiveSchedule ? '' : 'disabled'}" data-ref="offline-resize-scheduled-date-container">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="offlineResizeDateStep" data-ref="offline-resize-datetime-trigger" data-value="${defaultResizeIso}">
                                 <span class="material-symbols-rounded">calendar_month</span>
                                 <span class="component-dropdown-text" data-ref="offline-resize-datetime-text">${defaultResizeDisplay}</span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
-                            <div class="component-module component-module--dropdown disabled" data-module="moduleOfflineResizeDate" data-ref="moduleOfflineResizeDate">
-                                <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding">
-                                    <div class="pill-container"><div class="drag-handle"></div></div>
-                                    <div class="component-calendar">
-                                        <div class="component-calendar-header">
-                                            <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarPrevMonth">
-                                                <span class="material-symbols-rounded">chevron_left</span>
-                                            </button>
-                                            <div class="component-calendar-title" data-ref="calendar-title">${__('calendar_month_year') || 'Mes Año'}</div>
-                                            <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarNextMonth">
-                                                <span class="material-symbols-rounded">chevron_right</span>
-                                            </button>
-                                        </div>
-                                        <div class="component-calendar-weekdays">
-                                            <span>${__('cal_su') || 'Do'}</span><span>${__('cal_mo') || 'Lu'}</span><span>${__('cal_tu') || 'Ma'}</span><span>${__('cal_we') || 'Mi'}</span><span>${__('cal_th') || 'Ju'}</span><span>${__('cal_fr') || 'Vi'}</span><span>${__('cal_sa') || 'Sa'}</span>
-                                        </div>
-                                        <div class="component-calendar-days" data-ref="calendar-days"></div>
-                                        <div class="calendar-modal-controls">
-                                            <div class="calendar-control-column">
-                                                <div class="calendar-control-label">${__('lbl_hours') || 'Horas'}</div>
-                                                <div class="component-inline-control component-inline-control--full">
-                                                    <div class="component-inline-control__group">
-                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-5">
-                                                            <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
-                                                        </button>
-                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-1">
-                                                            <span class="material-symbols-rounded">chevron_left</span>
-                                                        </button>
-                                                    </div>
-                                                    <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-value="${hh}">${hh}</div>
-                                                    <div class="component-inline-control__group">
-                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="1">
-                                                            <span class="material-symbols-rounded">chevron_right</span>
-                                                        </button>
-                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="5">
-                                                            <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="calendar-control-column">
-                                                <div class="calendar-control-label">${__('lbl_minutes') || 'Minutos'}</div>
-                                                <div class="component-inline-control component-inline-control--full">
-                                                    <div class="component-inline-control__group">
-                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-5">
-                                                            <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
-                                                        </button>
-                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-1">
-                                                            <span class="material-symbols-rounded">chevron_left</span>
-                                                        </button>
-                                                    </div>
-                                                    <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-value="${mm}">${mm}</div>
-                                                    <div class="component-inline-control__group">
-                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="1">
-                                                            <span class="material-symbols-rounded">chevron_right</span>
-                                                        </button>
-                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="5">
-                                                            <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="component-calendar-actions">
-                                            <button type="button" class="component-button component-button--h30" data-action="calendarCancel">${__('btn_cancel') || 'Cancelar'}</button>
-                                            <button type="button" class="component-button component-button--primary component-button--h30" data-action="confirmOfflineResizeDate">${__('btn_accept') || 'Aceptar'}</button>
-                                        </div>
+
+                            <!-- Resumen informativo de fecha, zona horaria y tiempo restante -->
+                            <div class="component-alert component-alert--info active" data-ref="offline-resize-schedule-info" style="margin-top: 8px;">
+                                <div class="component-alert-icon">
+                                    <span class="material-symbols-rounded" data-ref="offline-resize-info-icon">schedule</span>
+                                </div>
+                                <div class="component-alert-text">
+                                    <div style="font-weight: 600;" data-ref="offline-resize-info-date">${initialSchedDetails.formattedDate}</div>
+                                    <div class="component-text-muted" style="font-size: 0.72rem; margin-top: 2px;" data-ref="offline-resize-info-time">
+                                        <span data-ref="offline-resize-info-relative">${initialSchedDetails.relativeTimeStr}</span> · <span data-ref="offline-resize-info-tz">${initialSchedDetails.timezoneString} (${__('lbl_timezone_local') || 'Hora local'})</span>
                                     </div>
                                 </div>
                             </div>
@@ -1137,23 +1082,106 @@ export const ModalTemplates = {
                     </div>
 
                     <div class="component-modal-actions">
+                        ${hasActiveSchedule ? `
+                        <button class="component-button component-button--h40" data-action="backToActiveResizeStep">
+                            <span>${__('btn_back')}</span>
+                        </button>
+                        ` : `
                         <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                        `}
                         <button class="component-button component-button--primary component-button--h40" data-action="offlineResizeNextStep">
                             <span>${__('btn_continue')}</span>
                         </button>
                     </div>
                 </div>
 
+                <!-- STEP CALENDAR: Etapa de Selección de Fecha y Hora -->
+                <div class="component-card--grouped component-card--flush disabled component-modal-step" data-ref="offline-resize-step-calendar">
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('calendar_modal_title') || 'Seleccionar fecha'}</h2>
+                        <p class="component-modal-desc">${__('lbl_scheduled_datetime') || 'Fecha y hora exacta en la que se aplicará el ajuste.'}</p>
+                    </div>
+
+                    <div class="component-modal-body">
+                        <div class="component-calendar">
+                            <div class="component-calendar-header">
+                                <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarPrevMonth">
+                                    <span class="material-symbols-rounded">chevron_left</span>
+                                </button>
+                                <div class="component-calendar-title" data-ref="calendar-title">${__('calendar_month_year') || 'Mes Año'}</div>
+                                <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarNextMonth">
+                                    <span class="material-symbols-rounded">chevron_right</span>
+                                </button>
+                            </div>
+                            <div class="component-calendar-weekdays">
+                                <span>${__('cal_su') || 'Do'}</span><span>${__('cal_mo') || 'Lu'}</span><span>${__('cal_tu') || 'Ma'}</span><span>${__('cal_we') || 'Mi'}</span><span>${__('cal_th') || 'Ju'}</span><span>${__('cal_fr') || 'Vi'}</span><span>${__('cal_sa') || 'Sa'}</span>
+                            </div>
+                            <div class="component-calendar-days" data-ref="calendar-days"></div>
+                        </div>
+
+                        <div class="calendar-modal-controls">
+                            <div class="calendar-control-column">
+                                <div class="calendar-control-label">${__('lbl_hours') || 'Horas'}</div>
+                                <div class="component-inline-control component-inline-control--full">
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-5">
+                                            <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                        </button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-1">
+                                            <span class="material-symbols-rounded">chevron_left</span>
+                                        </button>
+                                    </div>
+                                    <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-value="${hh}">${hh}</div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="1">
+                                            <span class="material-symbols-rounded">chevron_right</span>
+                                        </button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="5">
+                                            <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="calendar-control-column">
+                                <div class="calendar-control-label">${__('lbl_minutes') || 'Minutos'}</div>
+                                <div class="component-inline-control component-inline-control--full">
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-5">
+                                            <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                        </button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-1">
+                                            <span class="material-symbols-rounded">chevron_left</span>
+                                        </button>
+                                    </div>
+                                    <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-value="${mm}">${mm}</div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="1">
+                                            <span class="material-symbols-rounded">chevron_right</span>
+                                        </button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="5">
+                                            <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--h40" data-action="offlineResizePrevDateStep">
+                            <span>${__('btn_back')}</span>
+                        </button>
+                        <button class="component-button component-button--primary component-button--h40" data-action="offlineResizeConfirmDate">
+                            <span>${__('btn_accept')}</span>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- STEP 2: Selección del nuevo tamaño -->
                 <div class="component-card--grouped component-card--flush disabled component-modal-step" data-ref="offline-resize-step-2">
-                    <div class="component-modal-header component-modal-header--with-icon">
-                        <div class="component-card__icon-container component-card__icon-container--bordered">
-                            <span class="material-symbols-rounded">photo_size_select_large</span>
-                        </div>
-                        <div class="component-modal-header-text">
-                            <h2 class="component-modal-title">${__('canvas_resize_instant_size_title') || 'Nuevo tamaño'}</h2>
-                            <p class="component-modal-desc">${__('canvas_resize_instant_size_desc') || 'Selecciona el tamaño deseado para el lienzo.'}</p>
-                        </div>
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('canvas_resize_instant_size_title') || 'Nuevo tamaño'}</h2>
+                        <p class="component-modal-desc">${__('canvas_resize_instant_size_desc') || 'Selecciona el tamaño deseado para el lienzo.'}</p>
                     </div>
 
                     <div class="component-modal-body">
@@ -1197,60 +1225,96 @@ export const ModalTemplates = {
             const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
             const isOffline = data.isOfflineMode !== false;
             const canTakeSnapshot = data.canTakeSnapshot !== false;
+            const hasActiveSchedule = !isOffline && !!data.resetActive && !!data.nextResetAt;
 
-            const defaultDate = (dateInput, addMs = 3600000) => {
-                let d = null;
-                if (dateInput) d = new Date(dateInput);
-                if (!d || isNaN(d.getTime())) d = new Date(Date.now() + addMs);
-                return d;
-            };
+            const initialDateObj = data.nextResetAt ? (parseUtcToLocalDate(data.nextResetAt) || new Date(Date.now() + 3600000)) : new Date(Date.now() + 3600000);
+            const defaultResetIso = formatLocalDateTimeToInput(initialDateObj);
+            const initialSchedDetails = getScheduledTimeDetails(initialDateObj);
+            const defaultResetDisplay = initialSchedDetails.formattedDateShort;
 
-            const dObj = defaultDate(data.nextResetAt, 3600000);
             const pad = n => String(n).padStart(2, '0');
-            const y = dObj.getFullYear();
-            const mo = pad(dObj.getMonth() + 1);
-            const day = pad(dObj.getDate());
-            const hh = pad(dObj.getHours());
-            const mm = pad(dObj.getMinutes());
-            const defaultResetIso = `${y}-${mo}-${day}T${hh}:${mm}`;
-            const defaultResetDisplay = `${day}/${mo}/${y} ${hh}:${mm}`;
+            const hh = pad(initialDateObj.getHours());
+            const mm = pad(initialDateObj.getMinutes());
 
             const scheduledOptionClass = isOffline ? 'disabled-interaction' : '';
             const scheduledBadge = isOffline
                 ? `<span class="component-badge component-badge--warning component-badge--sm"><span class="material-symbols-rounded">block</span><span>${__('lbl_offline_not_available')}</span></span>`
                 : '';
 
+            const activeSchedDetails = hasActiveSchedule ? getScheduledTimeDetails(data.nextResetAt) : null;
+
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
 
-                <!-- STEP 1: Tipo de Reinicio & Fecha si es programada -->
-                <div class="component-card--grouped component-card--flush active component-modal-step" data-ref="offline-reset-step-1" data-selected-type="instant">
-                    <div class="component-modal-header component-modal-header--with-icon">
-                        <div class="component-card__icon-container component-card__icon-container--bordered">
-                            <span class="material-symbols-rounded">restart_alt</span>
-                        </div>
-                        <div class="component-modal-header-text">
-                            <h2 class="component-modal-title">${__('canvas_resets_title') || 'Reiniciar Lienzo'}</h2>
-                            <p class="component-modal-desc">${__('canvas_resets_desc') || 'Limpia los trazos del lienzo o programa un reinicio.'}</p>
-                        </div>
+                ${hasActiveSchedule ? `
+                <!-- STEP ACTIVE: Vista de Reinicio Programado Activo -->
+                <div class="component-card--grouped component-card--flush active component-modal-step" data-ref="offline-reset-step-active">
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('canvas_reset_active_title') || 'Reinicio programado activo'}</h2>
+                        <p class="component-modal-desc">${__('lbl_scheduled_reset_active_desc') || 'Hay un reinicio programado pendiente para este lienzo.'}</p>
                     </div>
 
                     <div class="component-modal-body">
                         <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleOfflineResetType" data-ref="offline-reset-type-trigger" data-value="instant">
-                                <span class="material-symbols-rounded" data-ref="offline-reset-type-icon">flash_on</span>
-                                <span class="component-dropdown-text" data-ref="offline-reset-type-label">${__('canvas_reset_now_title') || 'Inmediato'}</span>
+                            <div class="component-dropdown-trigger component-dropdown-trigger--full disabled-interaction">
+                                <span class="material-symbols-rounded">calendar_month</span>
+                                <span class="component-dropdown-text">${escapeHTML(activeSchedDetails.formattedDate)}</span>
+                                <span class="component-badge component-badge--sm">${escapeHTML(activeSchedDetails.timezoneString)}</span>
+                            </div>
+                        </div>
+
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--full disabled-interaction">
+                                <span class="material-symbols-rounded">photo_camera</span>
+                                <span class="component-dropdown-text">${__('canvas_reset_captura_title') || 'Captura previa'}</span>
+                                <span class="component-badge component-badge--sm">${data.takeSnapshot !== false ? (__('lbl_enabled') || 'Activada') : (__('lbl_disabled') || 'Desactivada')}</span>
+                            </div>
+                        </div>
+
+                        <div class="component-alert component-alert--info active">
+                            <div class="component-alert-icon">
+                                <span class="material-symbols-rounded">timer</span>
+                            </div>
+                            <div class="component-alert-text">
+                                <div style="font-weight: 600;" data-ref="active-schedule-countdown">${escapeHTML(activeSchedDetails.relativeTimeStr)}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--danger component-button--h40" data-action="cancelScheduledReset" data-id="${escapeHTML(data.canvasId || '')}">
+                            <span>${__('btn_cancel_schedule') || 'Cancelar programación'}</span>
+                        </button>
+                        <button class="component-button component-button--primary component-button--h40" data-action="rescheduleOfflineReset">
+                            <span>${__('btn_reschedule') || 'Reprogramar'}</span>
+                        </button>
+                    </div>
+                </div>
+                ` : ''}
+
+                <!-- STEP 1: Tipo de Reinicio & Fecha si es programada -->
+                <div class="component-card--grouped component-card--flush ${hasActiveSchedule ? 'disabled' : 'active'} component-modal-step" data-ref="offline-reset-step-1" data-selected-type="${hasActiveSchedule ? 'scheduled' : 'instant'}">
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('canvas_resets_title') || 'Reiniciar Lienzo'}</h2>
+                        <p class="component-modal-desc">${__('canvas_resets_desc') || 'Limpia los trazos del lienzo o programa un reinicio.'}</p>
+                    </div>
+
+                    <div class="component-modal-body">
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleOfflineResetType" data-ref="offline-reset-type-trigger" data-value="${hasActiveSchedule ? 'scheduled' : 'instant'}">
+                                <span class="material-symbols-rounded" data-ref="offline-reset-type-icon">${hasActiveSchedule ? 'schedule' : 'flash_on'}</span>
+                                <span class="component-dropdown-text" data-ref="offline-reset-type-label">${hasActiveSchedule ? (__('canvas_reset_active_title') || 'Programado') : (__('canvas_reset_now_title') || 'Inmediato')}</span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
                             <div class="component-module component-module--dropdown disabled" data-module="moduleOfflineResetType">
                                 <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
                                     <div class="pill-container"><div class="drag-handle"></div></div>
                                     <div class="component-menu-list">
-                                        <div class="component-menu-link active" data-action="selectResetTypeOption" data-value="instant" data-label="${__('canvas_reset_now_title') || 'Inmediato'}" data-icon="flash_on">
+                                        <div class="component-menu-link ${hasActiveSchedule ? '' : 'active'}" data-action="selectResetTypeOption" data-value="instant" data-label="${__('canvas_reset_now_title') || 'Inmediato'}" data-icon="flash_on">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">flash_on</span></div>
                                             <div class="component-menu-link-text"><span>${__('canvas_reset_now_title') || 'Inmediato'}</span></div>
                                         </div>
-                                        <div class="component-menu-link ${scheduledOptionClass}" data-action="${isOffline ? '' : 'selectResetTypeOption'}" data-value="scheduled" data-label="${__('canvas_reset_active_title') || 'Programado'}" data-icon="schedule">
+                                        <div class="component-menu-link ${hasActiveSchedule ? 'active' : ''} ${scheduledOptionClass}" data-action="${isOffline ? '' : 'selectResetTypeOption'}" data-value="scheduled" data-label="${__('canvas_reset_active_title') || 'Programado'}" data-icon="schedule">
                                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">schedule</span></div>
                                             <div class="component-menu-link-text"><span>${__('canvas_reset_active_title') || 'Programado'}</span></div>
                                             ${scheduledBadge}
@@ -1260,80 +1324,23 @@ export const ModalTemplates = {
                             </div>
                         </div>
 
-                        <!-- Selector de fecha tipo Dropdown Calendar si es programado (Etapa 1) -->
-                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full disabled" data-ref="offline-reset-scheduled-date-container">
-                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleOfflineResetDate" data-ref="offline-reset-datetime-trigger" data-value="${defaultResetIso}">
+                        <!-- Trigger para abrir la etapa del calendario -->
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full ${hasActiveSchedule ? '' : 'disabled'}" data-ref="offline-reset-scheduled-date-container">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="offlineResetDateStep" data-ref="offline-reset-datetime-trigger" data-value="${defaultResetIso}">
                                 <span class="material-symbols-rounded">calendar_month</span>
                                 <span class="component-dropdown-text" data-ref="offline-reset-datetime-text">${defaultResetDisplay}</span>
                                 <span class="material-symbols-rounded">expand_more</span>
                             </div>
-                            <div class="component-module component-module--dropdown disabled" data-module="moduleOfflineResetDate" data-ref="moduleOfflineResetDate">
-                                <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding">
-                                    <div class="pill-container"><div class="drag-handle"></div></div>
-                                    <div class="component-calendar">
-                                        <div class="component-calendar-header">
-                                            <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarPrevMonth">
-                                                <span class="material-symbols-rounded">chevron_left</span>
-                                            </button>
-                                            <div class="component-calendar-title" data-ref="calendar-title">${__('calendar_month_year') || 'Mes Año'}</div>
-                                            <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarNextMonth">
-                                                <span class="material-symbols-rounded">chevron_right</span>
-                                            </button>
-                                        </div>
-                                        <div class="component-calendar-weekdays">
-                                            <span>${__('cal_su') || 'Do'}</span><span>${__('cal_mo') || 'Lu'}</span><span>${__('cal_tu') || 'Ma'}</span><span>${__('cal_we') || 'Mi'}</span><span>${__('cal_th') || 'Ju'}</span><span>${__('cal_fr') || 'Vi'}</span><span>${__('cal_sa') || 'Sa'}</span>
-                                        </div>
-                                        <div class="component-calendar-days" data-ref="calendar-days"></div>
-                                        <div class="calendar-modal-controls">
-                                            <div class="calendar-control-column">
-                                                <div class="calendar-control-label">${__('lbl_hours') || 'Horas'}</div>
-                                                <div class="component-inline-control component-inline-control--full">
-                                                    <div class="component-inline-control__group">
-                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-5">
-                                                            <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
-                                                        </button>
-                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-1">
-                                                            <span class="material-symbols-rounded">chevron_left</span>
-                                                        </button>
-                                                    </div>
-                                                    <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-value="${hh}">${hh}</div>
-                                                    <div class="component-inline-control__group">
-                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="1">
-                                                            <span class="material-symbols-rounded">chevron_right</span>
-                                                        </button>
-                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="5">
-                                                            <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="calendar-control-column">
-                                                <div class="calendar-control-label">${__('lbl_minutes') || 'Minutos'}</div>
-                                                <div class="component-inline-control component-inline-control--full">
-                                                    <div class="component-inline-control__group">
-                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-5">
-                                                            <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
-                                                        </button>
-                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-1">
-                                                            <span class="material-symbols-rounded">chevron_left</span>
-                                                        </button>
-                                                    </div>
-                                                    <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-value="${mm}">${mm}</div>
-                                                    <div class="component-inline-control__group">
-                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="1">
-                                                            <span class="material-symbols-rounded">chevron_right</span>
-                                                        </button>
-                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="5">
-                                                            <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="component-calendar-actions">
-                                            <button type="button" class="component-button component-button--h30" data-action="calendarCancel">${__('btn_cancel') || 'Cancelar'}</button>
-                                            <button type="button" class="component-button component-button--primary component-button--h30" data-action="confirmOfflineResetDate">${__('btn_accept') || 'Aceptar'}</button>
-                                        </div>
+
+                            <!-- Resumen informativo de fecha, zona horaria y tiempo restante -->
+                            <div class="component-alert component-alert--info active" data-ref="offline-reset-schedule-info" style="margin-top: 8px;">
+                                <div class="component-alert-icon">
+                                    <span class="material-symbols-rounded" data-ref="offline-reset-info-icon">schedule</span>
+                                </div>
+                                <div class="component-alert-text">
+                                    <div style="font-weight: 600;" data-ref="offline-reset-info-date">${initialSchedDetails.formattedDate}</div>
+                                    <div class="component-text-muted" style="font-size: 0.72rem; margin-top: 2px;" data-ref="offline-reset-info-time">
+                                        <span data-ref="offline-reset-info-relative">${initialSchedDetails.relativeTimeStr}</span> · <span data-ref="offline-reset-info-tz">${initialSchedDetails.timezoneString} (${__('lbl_timezone_local') || 'Hora local'})</span>
                                     </div>
                                 </div>
                             </div>
@@ -1341,23 +1348,106 @@ export const ModalTemplates = {
                     </div>
 
                     <div class="component-modal-actions">
+                        ${hasActiveSchedule ? `
+                        <button class="component-button component-button--h40" data-action="backToActiveResetStep">
+                            <span>${__('btn_back')}</span>
+                        </button>
+                        ` : `
                         <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
+                        `}
                         <button class="component-button component-button--primary component-button--h40" data-action="offlineResetNextStep">
                             <span>${__('btn_continue')}</span>
                         </button>
                     </div>
                 </div>
 
+                <!-- STEP CALENDAR: Etapa de Selección de Fecha y Hora -->
+                <div class="component-card--grouped component-card--flush disabled component-modal-step" data-ref="offline-reset-step-calendar">
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('calendar_modal_title') || 'Seleccionar fecha'}</h2>
+                        <p class="component-modal-desc">${__('lbl_scheduled_datetime') || 'Fecha y hora exacta en la que se ejecutará el reinicio.'}</p>
+                    </div>
+
+                    <div class="component-modal-body">
+                        <div class="component-calendar">
+                            <div class="component-calendar-header">
+                                <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarPrevMonth">
+                                    <span class="material-symbols-rounded">chevron_left</span>
+                                </button>
+                                <div class="component-calendar-title" data-ref="calendar-title">${__('calendar_month_year') || 'Mes Año'}</div>
+                                <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarNextMonth">
+                                    <span class="material-symbols-rounded">chevron_right</span>
+                                </button>
+                            </div>
+                            <div class="component-calendar-weekdays">
+                                <span>${__('cal_su') || 'Do'}</span><span>${__('cal_mo') || 'Lu'}</span><span>${__('cal_tu') || 'Ma'}</span><span>${__('cal_we') || 'Mi'}</span><span>${__('cal_th') || 'Ju'}</span><span>${__('cal_fr') || 'Vi'}</span><span>${__('cal_sa') || 'Sa'}</span>
+                            </div>
+                            <div class="component-calendar-days" data-ref="calendar-days"></div>
+                        </div>
+
+                        <div class="calendar-modal-controls">
+                            <div class="calendar-control-column">
+                                <div class="calendar-control-label">${__('lbl_hours') || 'Horas'}</div>
+                                <div class="component-inline-control component-inline-control--full">
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-5">
+                                            <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                        </button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-1">
+                                            <span class="material-symbols-rounded">chevron_left</span>
+                                        </button>
+                                    </div>
+                                    <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-value="${hh}">${hh}</div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="1">
+                                            <span class="material-symbols-rounded">chevron_right</span>
+                                        </button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="5">
+                                            <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="calendar-control-column">
+                                <div class="calendar-control-label">${__('lbl_minutes') || 'Minutos'}</div>
+                                <div class="component-inline-control component-inline-control--full">
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-5">
+                                            <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                        </button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-1">
+                                            <span class="material-symbols-rounded">chevron_left</span>
+                                        </button>
+                                    </div>
+                                    <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-value="${mm}">${mm}</div>
+                                    <div class="component-inline-control__group">
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="1">
+                                            <span class="material-symbols-rounded">chevron_right</span>
+                                        </button>
+                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="5">
+                                            <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--h40" data-action="offlineResetPrevDateStep">
+                            <span>${__('btn_back')}</span>
+                        </button>
+                        <button class="component-button component-button--primary component-button--h40" data-action="offlineResetConfirmDate">
+                            <span>${__('btn_accept')}</span>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- STEP 2: Confirmación y opciones -->
                 <div class="component-card--grouped component-card--flush disabled component-modal-step" data-ref="offline-reset-step-2">
-                    <div class="component-modal-header component-modal-header--with-icon">
-                        <div class="component-card__icon-container component-card__icon-container--bordered">
-                            <span class="material-symbols-rounded">delete_forever</span>
-                        </div>
-                        <div class="component-modal-header-text">
-                            <h2 class="component-modal-title">${__('title_confirm_reset_now') || 'Confirmar reinicio'}</h2>
-                            <p class="component-modal-desc">${__('desc_confirm_reset_now') || 'Esta acción borrará todos los píxeles actuales del lienzo.'}</p>
-                        </div>
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('title_confirm_reset_now') || 'Confirmar reinicio'}</h2>
+                        <p class="component-modal-desc">${__('desc_confirm_reset_now') || 'Esta acción borrará todos los píxeles actuales del lienzo.'}</p>
                     </div>
 
                     <div class="component-modal-body">
@@ -2297,14 +2387,9 @@ export const ModalTemplates = {
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header component-modal-header--with-icon">
-                    <div class="component-card__icon-container component-card__icon-container--bordered">
-                        <span class="material-symbols-rounded">add_link</span>
-                    </div>
-                    <div class="component-modal-header-text">
-                        <h2 class="component-modal-title">${__('lbl_generate_new_invite')}</h2>
-                        <p class="component-modal-desc">${__('desc_invite_role')}</p>
-                    </div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">${__('lbl_generate_new_invite')}</h2>
+                    <p class="component-modal-desc">${__('desc_invite_role')}</p>
                 </div>
 
                 <div class="component-modal-body">
@@ -2515,14 +2600,9 @@ export const ModalTemplates = {
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header component-modal-header--with-icon">
-                    <div class="component-card__icon-container component-card__icon-container--bordered">
-                        <span class="material-symbols-rounded">manage_accounts</span>
-                    </div>
-                    <div class="component-modal-header-text">
-                        <h2 class="component-modal-title">${__('lbl_manage_role')}: ${targetUsername}</h2>
-                        <p class="component-modal-desc">${__('modal_change_canvas_role_desc')}</p>
-                    </div>
+                <div class="component-modal-header">
+                    <h2 class="component-modal-title">${__('lbl_manage_role')}: ${targetUsername}</h2>
+                    <p class="component-modal-desc">${__('modal_change_canvas_role_desc')}</p>
                 </div>
 
                 <div class="component-modal-body" data-ref="change-role-wrapper" 
@@ -2564,14 +2644,9 @@ export const ModalTemplates = {
             const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header component-modal-header--with-icon">
-                    <div class="component-card__icon-container component-card__icon-container--bordered">
-                        <span class="material-symbols-rounded">timelapse</span>
-                    </div>
-                    <div class="component-modal-header-text">
-                        <h3 class="component-modal-title">${__('lbl_timelapse_title')}</h3>
-                        <p class="component-modal-desc">${__('lbl_timelapse_desc')}</p>
-                    </div>
+                <div class="component-modal-header">
+                    <h3 class="component-modal-title">${__('lbl_timelapse_title')}</h3>
+                    <p class="component-modal-desc">${__('lbl_timelapse_desc')}</p>
                 </div>
 
                 <div class="component-modal-actions">
@@ -2623,14 +2698,9 @@ export const ModalTemplates = {
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header component-modal-header--with-icon">
-                    <div class="component-card__icon-container component-card__icon-container--bordered">
-                        <span class="material-symbols-rounded" data-ref="snapshot-download-header-icon">${exportType === 'video' ? 'movie' : 'download'}</span>
-                    </div>
-                    <div class="component-modal-header-text">
-                        <h3 class="component-modal-title">${__('lbl_snapshot_download_title')}</h3>
-                        <p class="component-modal-desc">${__('lbl_snapshot_download_desc')}</p>
-                    </div>
+                <div class="component-modal-header">
+                    <h3 class="component-modal-title">${__('lbl_snapshot_download_title')}</h3>
+                    <p class="component-modal-desc">${__('lbl_snapshot_download_desc')}</p>
                 </div>
 
                 <div class="component-modal-body">

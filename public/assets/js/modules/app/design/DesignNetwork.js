@@ -638,10 +638,17 @@ export const DesignNetwork = {
     },
 
     handleResizeSettingsUpdated(data) {
+        const wrapper = document.querySelector('[data-ref="design-wrapper"]');
         if (data.is_active) {
             this.resizeActive = true;
             this.nextResizeAt = data.next_resize_at;
             this.resizeTargetSize = data.target_size;
+
+            if (wrapper) {
+                wrapper.setAttribute('data-resize-active', '1');
+                wrapper.setAttribute('data-resize-at', data.next_resize_at || '');
+                if (data.target_size) wrapper.setAttribute('data-resize-target', data.target_size);
+            }
             
             if (typeof this.startResizeTimer === 'function') {
                 this.startResizeTimer();
@@ -649,6 +656,11 @@ export const DesignNetwork = {
         } else {
             this.resizeActive = false;
             this.nextResizeAt = null;
+
+            if (wrapper) {
+                wrapper.setAttribute('data-resize-active', '0');
+                wrapper.setAttribute('data-resize-at', '');
+            }
             
             if (this.resizeTimerInterval) {
                 clearInterval(this.resizeTimerInterval);
@@ -660,9 +672,15 @@ export const DesignNetwork = {
     },
 
     handleResetSettingsUpdated(data) {
+        const wrapper = document.querySelector('[data-ref="design-wrapper"]');
         if (data.is_active) {
             this.resetActive = true;
             this.nextResetAt = data.next_reset_at;
+
+            if (wrapper) {
+                wrapper.setAttribute('data-reset-active', '1');
+                wrapper.setAttribute('data-reset-at', data.next_reset_at || '');
+            }
             
             if (typeof this.startResetTimer === 'function') {
                 this.startResetTimer();
@@ -670,6 +688,11 @@ export const DesignNetwork = {
         } else {
             this.resetActive = false;
             this.nextResetAt = null;
+
+            if (wrapper) {
+                wrapper.setAttribute('data-reset-active', '0');
+                wrapper.setAttribute('data-reset-at', '');
+            }
             
             if (this.resetTimerInterval) {
                 clearInterval(this.resetTimerInterval);

@@ -1,5 +1,5 @@
 import { ApiRoutes } from '../../../../core/api/ApiRoutes.js';
-import { showMessage, setButtonLoading, restoreButton, closeDropdown, localInputFormatToUtcString } from '../../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, closeDropdown, localInputFormatToUtcString, parseUtcToLocalDate, formatLocalDateTimeToInput, getScheduledTimeDetails } from '../../../../core/utils/uiUtils.js';
 
 export const InteractionOfflineWorkspace = {
     async openOfflineResizeModal() {
@@ -10,6 +10,7 @@ export const InteractionOfflineWorkspace = {
         const currentSize = `${this.boardWidth || 64}x${this.boardHeight || 64}`;
 
         await window.modalSystem.show('offlineResizeModal', {
+            canvasId: this.canvasIntId,
             currentSize,
             userTier,
             boardWidth: this.boardWidth || 64,
@@ -25,6 +26,7 @@ export const InteractionOfflineWorkspace = {
         if (!this.isOwner || this.isSpectator) return;
 
         await window.modalSystem.show('offlineResetModal', {
+            canvasId: this.canvasIntId,
             canTakeSnapshot: true,
             isOfflineMode: !!this.isOfflineMode,
             resetActive: !!this.resetActive,
@@ -363,6 +365,150 @@ export const InteractionOfflineWorkspace = {
         }
     },
 
+    rescheduleOfflineResize() {
+        const activeStep = document.querySelector('[data-ref="offline-resize-step-active"]');
+        const step1 = document.querySelector('[data-ref="offline-resize-step-1"]');
+        if (activeStep && step1) {
+            activeStep.classList.replace('active', 'disabled');
+            step1.classList.replace('disabled', 'active');
+            step1.setAttribute('data-selected-type', 'scheduled');
+
+            const dateContainer = document.querySelector('[data-ref="offline-resize-scheduled-date-container"]');
+            if (dateContainer) dateContainer.classList.remove('disabled');
+
+            const trigger = document.querySelector('[data-ref="offline-resize-type-trigger"]');
+            const labelRef = document.querySelector('[data-ref="offline-resize-type-label"]');
+            const iconRef = document.querySelector('[data-ref="offline-resize-type-icon"]');
+            if (trigger) trigger.setAttribute('data-value', 'scheduled');
+            if (labelRef) labelRef.textContent = window.__('canvas_resize_active_title') || 'Programada';
+            if (iconRef) iconRef.textContent = 'schedule';
+        }
+    },
+
+    backToActiveResizeStep() {
+        const activeStep = document.querySelector('[data-ref="offline-resize-step-active"]');
+        const step1 = document.querySelector('[data-ref="offline-resize-step-1"]');
+        if (activeStep && step1) {
+            step1.classList.replace('active', 'disabled');
+            activeStep.classList.replace('disabled', 'active');
+        }
+    },
+
+    async cancelScheduledResize(btn) {
+        if (!this.isOwner || this.isSpectator || !this.canvasIntId) return;
+
+        if (btn) setButtonLoading(btn);
+
+        try {
+            const result = await this.api.post(ApiRoutes.Canvases.UpdateResizeSettings, {
+                id: this.canvasIntId,
+                is_active: false,
+                next_resize_at: null,
+                target_size: this.resizeTargetSize || '64x64'
+            });
+
+            if (result && result.success) {
+                this.resizeActive = false;
+                this.nextResizeAt = null;
+
+                if (this.resizeTimerInterval) {
+                    clearInterval(this.resizeTimerInterval);
+                    this.resizeTimerInterval = null;
+                }
+                if (typeof this.removeCanvasBadge === 'function') {
+                    this.removeCanvasBadge('resize-timer', 'right');
+                }
+
+                const wrapper = document.querySelector('[data-ref="design-wrapper"]');
+                if (wrapper) {
+                    wrapper.setAttribute('data-resize-active', '0');
+                    wrapper.setAttribute('data-resize-at', '');
+                }
+
+                window.modalSystem.closeCurrent(true);
+                showMessage(result.message || window.__('msg_scheduled_resize_cancelled') || 'Expansión programada cancelada.', 'success');
+            } else {
+                showMessage(result?.message || window.__('err_occurred'), 'error');
+            }
+        } catch (err) {
+            showMessage(window.__('general_save_network_error') || window.__('err_occurred'), 'error');
+        } finally {
+            if (btn) restoreButton(btn);
+        }
+    },
+
+    rescheduleOfflineReset() {
+        const activeStep = document.querySelector('[data-ref="offline-reset-step-active"]');
+        const step1 = document.querySelector('[data-ref="offline-reset-step-1"]');
+        if (activeStep && step1) {
+            activeStep.classList.replace('active', 'disabled');
+            step1.classList.replace('disabled', 'active');
+            step1.setAttribute('data-selected-type', 'scheduled');
+
+            const dateContainer = document.querySelector('[data-ref="offline-reset-scheduled-date-container"]');
+            if (dateContainer) dateContainer.classList.remove('disabled');
+
+            const trigger = document.querySelector('[data-ref="offline-reset-type-trigger"]');
+            const labelRef = document.querySelector('[data-ref="offline-reset-type-label"]');
+            const iconRef = document.querySelector('[data-ref="offline-reset-type-icon"]');
+            if (trigger) trigger.setAttribute('data-value', 'scheduled');
+            if (labelRef) labelRef.textContent = window.__('canvas_reset_active_title') || 'Programado';
+            if (iconRef) iconRef.textContent = 'schedule';
+        }
+    },
+
+    backToActiveResetStep() {
+        const activeStep = document.querySelector('[data-ref="offline-reset-step-active"]');
+        const step1 = document.querySelector('[data-ref="offline-reset-step-1"]');
+        if (activeStep && step1) {
+            step1.classList.replace('active', 'disabled');
+            activeStep.classList.replace('disabled', 'active');
+        }
+    },
+
+    async cancelScheduledReset(btn) {
+        if (!this.isOwner || this.isSpectator || !this.canvasIntId) return;
+
+        if (btn) setButtonLoading(btn);
+
+        try {
+            const result = await this.api.post(ApiRoutes.Canvases.UpdateResetSettings, {
+                id: this.canvasIntId,
+                is_active: false,
+                next_reset_at: null,
+                take_snapshot: false
+            });
+
+            if (result && result.success) {
+                this.resetActive = false;
+                this.nextResetAt = null;
+
+                if (this.resetTimerInterval) {
+                    clearInterval(this.resetTimerInterval);
+                    this.resetTimerInterval = null;
+                }
+                if (typeof this.removeCanvasBadge === 'function') {
+                    this.removeCanvasBadge('reset-timer', 'right');
+                }
+
+                const wrapper = document.querySelector('[data-ref="design-wrapper"]');
+                if (wrapper) {
+                    wrapper.setAttribute('data-reset-active', '0');
+                    wrapper.setAttribute('data-reset-at', '');
+                }
+
+                window.modalSystem.closeCurrent(true);
+                showMessage(result.message || window.__('msg_scheduled_reset_cancelled') || 'Reinicio programado cancelado.', 'success');
+            } else {
+                showMessage(result?.message || window.__('err_occurred'), 'error');
+            }
+        } catch (err) {
+            showMessage(window.__('general_save_network_error') || window.__('err_occurred'), 'error');
+        } finally {
+            if (btn) restoreButton(btn);
+        }
+    },
+
     async executeScheduledResize(btn) {
         const trigger = document.querySelector('[data-ref="offline-resize-trigger"]') || document.querySelector('[data-ref="scheduled-resize-trigger"]');
         const targetSize = trigger ? trigger.getAttribute('data-value') : '64x64';
@@ -402,6 +548,18 @@ export const InteractionOfflineWorkspace = {
             this.resizeActive = isActive;
             this.nextResizeAt = nextResizeAt;
             this.resizeTargetSize = targetSize;
+
+            const wrapper = document.querySelector('[data-ref="design-wrapper"]');
+            if (wrapper) {
+                wrapper.setAttribute('data-resize-active', '1');
+                wrapper.setAttribute('data-resize-at', nextResizeAt);
+                wrapper.setAttribute('data-resize-target', targetSize);
+            }
+
+            if (typeof this.startResizeTimer === 'function') {
+                this.startResizeTimer();
+            }
+
             window.modalSystem.closeCurrent(true);
             showMessage(result.message || window.__('msg_resize_settings_updated'), 'success');
         } else {
@@ -489,6 +647,17 @@ export const InteractionOfflineWorkspace = {
         if (result && result.success) {
             this.resetActive = isActive;
             this.nextResetAt = nextResetAt;
+
+            const wrapper = document.querySelector('[data-ref="design-wrapper"]');
+            if (wrapper) {
+                wrapper.setAttribute('data-reset-active', '1');
+                wrapper.setAttribute('data-reset-at', nextResetAt);
+            }
+
+            if (typeof this.startResetTimer === 'function') {
+                this.startResetTimer();
+            }
+
             window.modalSystem.closeCurrent(true);
             showMessage(result.message || window.__('msg_reset_settings_updated'), 'success');
         } else {
