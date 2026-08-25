@@ -59,96 +59,122 @@ export const InteractionOfflineWorkspace = {
         }
     },
 
-    handleSelectResizeType(linkEl) {
+    handleSelectResizeTypeOption(linkEl) {
         if (!linkEl || linkEl.classList.contains('disabled-interaction')) return;
-        const type = linkEl.getAttribute('data-type') || 'instant';
+        const val = linkEl.getAttribute('data-value') || 'instant';
+        const label = linkEl.getAttribute('data-label') || '';
+        const icon = linkEl.getAttribute('data-icon') || 'flash_on';
 
         const step1 = document.querySelector('[data-ref="offline-resize-step-1"]');
-        if (step1) step1.setAttribute('data-selected-type', type);
+        if (step1) step1.setAttribute('data-selected-type', val);
 
-        const links = step1 ? step1.querySelectorAll('.component-menu-link') : [];
-        links.forEach(l => {
-            if (l === linkEl) {
-                l.classList.add('active');
-            } else {
-                l.classList.remove('active');
-            }
-        });
+        const trigger = document.querySelector('[data-ref="offline-resize-type-trigger"]');
+        const labelRef = document.querySelector('[data-ref="offline-resize-type-label"]');
+        const iconRef = document.querySelector('[data-ref="offline-resize-type-icon"]');
 
-        const checkInstant = document.querySelector('[data-ref="resize-instant-check"]');
-        const checkScheduled = document.querySelector('[data-ref="resize-scheduled-check"]');
-        if (checkInstant) {
-            if (type === 'instant') checkInstant.classList.remove('disabled');
-            else checkInstant.classList.add('disabled');
+        if (trigger) trigger.setAttribute('data-value', val);
+        if (labelRef && label) labelRef.textContent = label;
+        if (iconRef && icon) iconRef.textContent = icon;
+
+        const dateContainer = document.querySelector('[data-ref="offline-resize-scheduled-date-container"]');
+        if (dateContainer) {
+            if (val === 'scheduled') dateContainer.classList.remove('disabled');
+            else dateContainer.classList.add('disabled');
         }
-        if (checkScheduled) {
-            if (type === 'scheduled') checkScheduled.classList.remove('disabled');
-            else checkScheduled.classList.add('disabled');
-        }
+
+        const dropdown = linkEl.closest('.component-module--dropdown');
+        if (dropdown && typeof closeDropdown === 'function') closeDropdown(dropdown);
+
+        const links = linkEl.closest('.component-menu-list')?.querySelectorAll('.component-menu-link') || [];
+        links.forEach(l => l.classList.toggle('active', l === linkEl));
     },
 
-    handleSelectResetType(linkEl) {
+    handleSelectResetTypeOption(linkEl) {
         if (!linkEl || linkEl.classList.contains('disabled-interaction')) return;
-        const type = linkEl.getAttribute('data-type') || 'instant';
+        const val = linkEl.getAttribute('data-value') || 'instant';
+        const label = linkEl.getAttribute('data-label') || '';
+        const icon = linkEl.getAttribute('data-icon') || 'flash_on';
 
         const step1 = document.querySelector('[data-ref="offline-reset-step-1"]');
-        if (step1) step1.setAttribute('data-selected-type', type);
+        if (step1) step1.setAttribute('data-selected-type', val);
 
-        const links = step1 ? step1.querySelectorAll('.component-menu-link') : [];
-        links.forEach(l => {
-            if (l === linkEl) {
-                l.classList.add('active');
-            } else {
-                l.classList.remove('active');
-            }
-        });
+        const trigger = document.querySelector('[data-ref="offline-reset-type-trigger"]');
+        const labelRef = document.querySelector('[data-ref="offline-reset-type-label"]');
+        const iconRef = document.querySelector('[data-ref="offline-reset-type-icon"]');
 
-        const checkInstant = document.querySelector('[data-ref="reset-instant-check"]');
-        const checkScheduled = document.querySelector('[data-ref="reset-scheduled-check"]');
-        if (checkInstant) {
-            if (type === 'instant') checkInstant.classList.remove('disabled');
-            else checkInstant.classList.add('disabled');
+        if (trigger) trigger.setAttribute('data-value', val);
+        if (labelRef && label) labelRef.textContent = label;
+        if (iconRef && icon) iconRef.textContent = icon;
+
+        const dateContainer = document.querySelector('[data-ref="offline-reset-scheduled-date-container"]');
+        if (dateContainer) {
+            if (val === 'scheduled') dateContainer.classList.remove('disabled');
+            else dateContainer.classList.add('disabled');
         }
-        if (checkScheduled) {
-            if (type === 'scheduled') checkScheduled.classList.remove('disabled');
-            else checkScheduled.classList.add('disabled');
-        }
+
+        const dropdown = linkEl.closest('.component-module--dropdown');
+        if (dropdown && typeof closeDropdown === 'function') closeDropdown(dropdown);
+
+        const links = linkEl.closest('.component-menu-list')?.querySelectorAll('.component-menu-link') || [];
+        links.forEach(l => l.classList.toggle('active', l === linkEl));
     },
 
     handleOfflineResizeStep(direction) {
         const step1 = document.querySelector('[data-ref="offline-resize-step-1"]');
-        const step2Instant = document.querySelector('[data-ref="offline-resize-step-2-instant"]');
-        const step2Scheduled = document.querySelector('[data-ref="offline-resize-step-2-scheduled"]');
-        if (!step1) return;
-
-        const selectedType = step1.getAttribute('data-selected-type') || 'instant';
-        const targetStep2 = (selectedType === 'scheduled' && step2Scheduled) ? step2Scheduled : step2Instant;
+        const step2 = document.querySelector('[data-ref="offline-resize-step-2"]');
+        if (!step1 || !step2) return;
 
         if (direction === 'next') {
+            const selectedType = step1.getAttribute('data-selected-type') || 'instant';
+            if (selectedType === 'scheduled') {
+                const triggerDateTime = document.querySelector('[data-ref="offline-resize-datetime-trigger"]');
+                const inputDateTime = document.querySelector('[data-ref="scheduled_resize_datetime"]');
+                const localTimeStr = triggerDateTime ? triggerDateTime.getAttribute('data-value') : (inputDateTime ? inputDateTime.value : '');
+                if (!localTimeStr) {
+                    showMessage(window.__('err_resize_date_required') || 'Debe seleccionar una fecha y hora.', 'warning');
+                    return;
+                }
+                const date = new Date(localTimeStr);
+                const minFuture = new Date(Date.now() + 5 * 60 * 1000);
+                if (isNaN(date.getTime()) || date < minFuture) {
+                    showMessage(window.__('err_date_minimum_5_minutes') || 'La fecha debe ser al menos 5 minutos en el futuro.', 'error');
+                    return;
+                }
+            }
             step1.classList.replace('active', 'disabled');
-            if (targetStep2) targetStep2.classList.replace('disabled', 'active');
+            step2.classList.replace('disabled', 'active');
         } else {
-            if (step2Instant) step2Instant.classList.replace('active', 'disabled');
-            if (step2Scheduled) step2Scheduled.classList.replace('active', 'disabled');
+            step2.classList.replace('active', 'disabled');
             step1.classList.replace('disabled', 'active');
         }
     },
 
     handleOfflineResetStep(direction) {
         const step1 = document.querySelector('[data-ref="offline-reset-step-1"]');
-        const step2Instant = document.querySelector('[data-ref="offline-reset-step-2-instant"]');
-        const step2Scheduled = document.querySelector('[data-ref="offline-reset-step-2-scheduled"]');
-        if (!step1) return;
-
-        const selectedType = step1.getAttribute('data-selected-type') || 'instant';
-        const targetStep2 = (selectedType === 'scheduled' && step2Scheduled) ? step2Scheduled : step2Instant;
+        const step2 = document.querySelector('[data-ref="offline-reset-step-2"]');
+        if (!step1 || !step2) return;
 
         if (direction === 'next') {
+            const selectedType = step1.getAttribute('data-selected-type') || 'instant';
+            if (selectedType === 'scheduled') {
+                const triggerDateTime = document.querySelector('[data-ref="offline-reset-datetime-trigger"]');
+                const inputDateTime = document.querySelector('[data-ref="scheduled_reset_datetime"]');
+                const localTimeStr = triggerDateTime ? triggerDateTime.getAttribute('data-value') : (inputDateTime ? inputDateTime.value : '');
+                if (!localTimeStr) {
+                    showMessage(window.__('err_reset_date_required') || 'Debe seleccionar una fecha y hora.', 'warning');
+                    return;
+                }
+                const date = new Date(localTimeStr);
+                const minFuture = new Date(Date.now() + 5 * 60 * 1000);
+                if (isNaN(date.getTime()) || date < minFuture) {
+                    showMessage(window.__('err_date_minimum_5_minutes') || 'La fecha debe ser al menos 5 minutos en el futuro.', 'error');
+                    return;
+                }
+            }
             step1.classList.replace('active', 'disabled');
-            if (targetStep2) targetStep2.classList.replace('disabled', 'active');
+            step2.classList.replace('disabled', 'active');
         } else {
-            if (step2Instant) step2Instant.classList.replace('active', 'disabled');
-            if (step2Scheduled) step2Scheduled.classList.replace('active', 'disabled');
+            step2.classList.replace('active', 'disabled');
             step1.classList.replace('disabled', 'active');
         }
     },
@@ -317,32 +343,49 @@ export const InteractionOfflineWorkspace = {
         }
     },
 
-    async executeScheduledResize(btn) {
-        const toggle = document.querySelector('[data-ref="scheduled_resize_active"]');
-        const isActive = toggle ? toggle.checked : false;
-        const trigger = document.querySelector('[data-ref="scheduled-resize-trigger"]');
-        const targetSize = trigger ? trigger.getAttribute('data-value') : '64x64';
-
-        let nextResizeAt = null;
-        if (isActive) {
-            const inputDateTime = document.querySelector('[data-ref="scheduled_resize_datetime"]');
-            const localTimeStr = inputDateTime ? inputDateTime.value : '';
-
-            if (!localTimeStr) {
-                showMessage(window.__('err_resize_date_required') || 'Debe seleccionar una fecha y hora.', 'warning');
-                return;
-            }
-
-            const date = new Date(localTimeStr);
-            const now = new Date();
-            const minFuture = new Date(now.getTime() + 5 * 60 * 1000);
-            if (isNaN(date.getTime()) || date < minFuture) {
-                showMessage(window.__('err_date_minimum_5_minutes') || 'La fecha debe ser al menos 5 minutos en el futuro.', 'error');
-                return;
-            }
-
-            nextResizeAt = localInputFormatToUtcString(localTimeStr);
+    async executeOfflineResizeUnified(btn) {
+        const step1 = document.querySelector('[data-ref="offline-resize-step-1"]');
+        const selectedType = step1 ? (step1.getAttribute('data-selected-type') || 'instant') : 'instant';
+        if (selectedType === 'scheduled') {
+            await this.executeScheduledResize(btn);
+        } else {
+            await this.executeOfflineResize(btn);
         }
+    },
+
+    async executeOfflineResetUnified(btn) {
+        const step1 = document.querySelector('[data-ref="offline-reset-step-1"]');
+        const selectedType = step1 ? (step1.getAttribute('data-selected-type') || 'instant') : 'instant';
+        if (selectedType === 'scheduled') {
+            await this.executeScheduledReset(btn);
+        } else {
+            await this.executeOfflineReset(btn);
+        }
+    },
+
+    async executeScheduledResize(btn) {
+        const trigger = document.querySelector('[data-ref="offline-resize-trigger"]') || document.querySelector('[data-ref="scheduled-resize-trigger"]');
+        const targetSize = trigger ? trigger.getAttribute('data-value') : '64x64';
+        const isActive = true;
+
+        const triggerDateTime = document.querySelector('[data-ref="offline-resize-datetime-trigger"]');
+        const inputDateTime = document.querySelector('[data-ref="scheduled_resize_datetime"]');
+        const localTimeStr = triggerDateTime ? triggerDateTime.getAttribute('data-value') : (inputDateTime ? inputDateTime.value : '');
+
+        if (!localTimeStr) {
+            showMessage(window.__('err_resize_date_required') || 'Debe seleccionar una fecha y hora.', 'warning');
+            return;
+        }
+
+        const date = new Date(localTimeStr);
+        const now = new Date();
+        const minFuture = new Date(now.getTime() + 5 * 60 * 1000);
+        if (isNaN(date.getTime()) || date < minFuture) {
+            showMessage(window.__('err_date_minimum_5_minutes') || 'La fecha debe ser al menos 5 minutos en el futuro.', 'error');
+            return;
+        }
+
+        const nextResizeAt = localInputFormatToUtcString(localTimeStr);
 
         if (btn) setButtonLoading(btn);
 
@@ -409,31 +452,28 @@ export const InteractionOfflineWorkspace = {
     },
 
     async executeScheduledReset(btn) {
-        const toggle = document.querySelector('[data-ref="scheduled_reset_active"]');
-        const isActive = toggle ? toggle.checked : false;
-        const snapshotCheckbox = document.querySelector('[data-ref="scheduled_reset_snapshot"]');
+        const snapshotCheckbox = document.querySelector('[data-ref="offline_reset_snapshot"]') || document.querySelector('[data-ref="scheduled_reset_snapshot"]');
         const takeSnapshot = snapshotCheckbox ? snapshotCheckbox.checked : false;
+        const isActive = true;
 
-        let nextResetAt = null;
-        if (isActive) {
-            const inputDateTime = document.querySelector('[data-ref="scheduled_reset_datetime"]');
-            const localTimeStr = inputDateTime ? inputDateTime.value : '';
+        const triggerDateTime = document.querySelector('[data-ref="offline-reset-datetime-trigger"]');
+        const inputDateTime = document.querySelector('[data-ref="scheduled_reset_datetime"]');
+        const localTimeStr = triggerDateTime ? triggerDateTime.getAttribute('data-value') : (inputDateTime ? inputDateTime.value : '');
 
-            if (!localTimeStr) {
-                showMessage(window.__('err_reset_date_required') || 'Debe seleccionar una fecha y hora.', 'warning');
-                return;
-            }
-
-            const date = new Date(localTimeStr);
-            const now = new Date();
-            const minFuture = new Date(now.getTime() + 5 * 60 * 1000);
-            if (isNaN(date.getTime()) || date < minFuture) {
-                showMessage(window.__('err_date_minimum_5_minutes') || 'La fecha debe ser al menos 5 minutos en el futuro.', 'error');
-                return;
-            }
-
-            nextResetAt = localInputFormatToUtcString(localTimeStr);
+        if (!localTimeStr) {
+            showMessage(window.__('err_reset_date_required') || 'Debe seleccionar una fecha y hora.', 'warning');
+            return;
         }
+
+        const date = new Date(localTimeStr);
+        const now = new Date();
+        const minFuture = new Date(now.getTime() + 5 * 60 * 1000);
+        if (isNaN(date.getTime()) || date < minFuture) {
+            showMessage(window.__('err_date_minimum_5_minutes') || 'La fecha debe ser al menos 5 minutos en el futuro.', 'error');
+            return;
+        }
+
+        const nextResetAt = localInputFormatToUtcString(localTimeStr);
 
         if (btn) setButtonLoading(btn);
 

@@ -145,20 +145,24 @@ export const InteractionEvents = {
             return;
         }
 
-        const btnSelectResizeType = e.target.closest('[data-action="selectResizeType"]');
-        if (btnSelectResizeType) {
+        const btnSelectResizeTypeOption = e.target.closest('[data-action="selectResizeTypeOption"]') || e.target.closest('[data-action="selectResizeType"]');
+        if (btnSelectResizeTypeOption) {
             e.preventDefault();
-            if (typeof this.handleSelectResizeType === 'function') {
-                this.handleSelectResizeType(btnSelectResizeType);
+            if (typeof this.handleSelectResizeTypeOption === 'function') {
+                this.handleSelectResizeTypeOption(btnSelectResizeTypeOption);
+            } else if (typeof this.handleSelectResizeType === 'function') {
+                this.handleSelectResizeType(btnSelectResizeTypeOption);
             }
             return;
         }
 
-        const btnSelectResetType = e.target.closest('[data-action="selectResetType"]');
-        if (btnSelectResetType) {
+        const btnSelectResetTypeOption = e.target.closest('[data-action="selectResetTypeOption"]') || e.target.closest('[data-action="selectResetType"]');
+        if (btnSelectResetTypeOption) {
             e.preventDefault();
-            if (typeof this.handleSelectResetType === 'function') {
-                this.handleSelectResetType(btnSelectResetType);
+            if (typeof this.handleSelectResetTypeOption === 'function') {
+                this.handleSelectResetTypeOption(btnSelectResetTypeOption);
+            } else if (typeof this.handleSelectResetType === 'function') {
+                this.handleSelectResetType(btnSelectResetTypeOption);
             }
             return;
         }
@@ -213,6 +217,15 @@ export const InteractionEvents = {
             }
         }
 
+        const btnSubmitOfflineResizeUnified = e.target.closest('[data-action="submitOfflineResizeUnified"]');
+        if (btnSubmitOfflineResizeUnified) {
+            e.preventDefault();
+            if (typeof this.executeOfflineResizeUnified === 'function') {
+                this.executeOfflineResizeUnified(btnSubmitOfflineResizeUnified);
+            }
+            return;
+        }
+
         const btnSubmitOfflineResize = e.target.closest('[data-action="submitOfflineResize"]');
         if (btnSubmitOfflineResize) {
             e.preventDefault();
@@ -245,6 +258,15 @@ export const InteractionEvents = {
             e.preventDefault();
             if (typeof this.handleOfflineResetStep === 'function') {
                 this.handleOfflineResetStep('prev');
+            }
+            return;
+        }
+
+        const btnSubmitOfflineResetUnified = e.target.closest('[data-action="submitOfflineResetUnified"]');
+        if (btnSubmitOfflineResetUnified) {
+            e.preventDefault();
+            if (typeof this.executeOfflineResetUnified === 'function') {
+                this.executeOfflineResetUnified(btnSubmitOfflineResetUnified);
             }
             return;
         }

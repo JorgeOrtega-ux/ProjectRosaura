@@ -446,6 +446,28 @@ export class ModalSystem {
                     }
                 );
             }
+
+            if ((target === 'moduleOfflineResizeDate' || target === 'moduleOfflineResetDate') && this.activeBox) {
+                if (!this.calendarSystem) {
+                    this.calendarSystem = new CalendarSystem(this.activeBox);
+                    this.calendarSystem.disablePastDates = true;
+                    this.calendarSystem.init();
+                }
+                const trigger = this.activeBox.querySelector(target === 'moduleOfflineResizeDate' ? '[data-ref="offline-resize-datetime-trigger"]' : '[data-ref="offline-reset-datetime-trigger"]');
+                const initialVal = trigger ? trigger.getAttribute('data-value') : '';
+                this.calendarSystem.setup(initialVal, null, null);
+                if (initialVal) {
+                    const datePart = initialVal.split('T')[0];
+                    const parts = datePart.split('-');
+                    if (parts.length === 3) {
+                        this.calendarSystem.selectedDate = new Date(
+                            parseInt(parts[0], 10),
+                            parseInt(parts[1], 10) - 1,
+                            parseInt(parts[2], 10)
+                        );
+                    }
+                }
+            }
         }
 
         const stepTargetBtn = e.target.closest('[data-step-target]');
@@ -552,41 +574,121 @@ export class ModalSystem {
         // ── /calendarModal step navigation ──────────────────────────────────────
 
         // ── Workspace Resize & Reset Modal interactions ────────────────────────
-        const btnSelectResizeType = e.target.closest('[data-action="selectResizeType"]');
-        if (btnSelectResizeType && this.activeBox) {
+        const btnSelectResizeTypeOption = e.target.closest('[data-action="selectResizeTypeOption"]') || e.target.closest('[data-action="selectResizeType"]');
+        if (btnSelectResizeTypeOption && this.activeBox) {
             e.preventDefault();
-            const type = btnSelectResizeType.getAttribute('data-type') || 'instant';
+            const val = btnSelectResizeTypeOption.getAttribute('data-value') || btnSelectResizeTypeOption.getAttribute('data-type') || 'instant';
+            const label = btnSelectResizeTypeOption.getAttribute('data-label') || '';
+            const icon = btnSelectResizeTypeOption.getAttribute('data-icon') || 'flash_on';
             const step1 = this.activeBox.querySelector('[data-ref="offline-resize-step-1"]');
             if (step1) {
-                step1.setAttribute('data-selected-type', type);
-                step1.querySelectorAll('.component-menu-link').forEach(l => {
-                    if (l === btnSelectResizeType) l.classList.add('active');
-                    else l.classList.remove('active');
+                step1.setAttribute('data-selected-type', val);
+                const trigger = this.activeBox.querySelector('[data-ref="offline-resize-type-trigger"]');
+                const labelRef = this.activeBox.querySelector('[data-ref="offline-resize-type-label"]');
+                const iconRef = this.activeBox.querySelector('[data-ref="offline-resize-type-icon"]');
+                if (trigger) trigger.setAttribute('data-value', val);
+                if (labelRef && label) labelRef.textContent = label;
+                if (iconRef && icon) iconRef.textContent = icon;
+                const dateContainer = this.activeBox.querySelector('[data-ref="offline-resize-scheduled-date-container"]');
+                if (dateContainer) {
+                    if (val === 'scheduled') dateContainer.classList.remove('disabled');
+                    else dateContainer.classList.add('disabled');
+                }
+                const dropdown = btnSelectResizeTypeOption.closest('.component-module--dropdown');
+                if (dropdown && typeof closeDropdown === 'function') closeDropdown(dropdown);
+                btnSelectResizeTypeOption.closest('.component-menu-list')?.querySelectorAll('.component-menu-link')?.forEach(l => {
+                    l.classList.toggle('active', l === btnSelectResizeTypeOption);
                 });
             }
-            const checkInstant = this.activeBox.querySelector('[data-ref="resize-instant-check"]');
-            const checkSched = this.activeBox.querySelector('[data-ref="resize-scheduled-check"]');
-            if (checkInstant) checkInstant.classList.toggle('disabled', type !== 'instant');
-            if (checkSched) checkSched.classList.toggle('disabled', type !== 'scheduled');
             return;
         }
 
-        const btnSelectResetType = e.target.closest('[data-action="selectResetType"]');
-        if (btnSelectResetType && this.activeBox) {
+        const btnSelectResetTypeOption = e.target.closest('[data-action="selectResetTypeOption"]') || e.target.closest('[data-action="selectResetType"]');
+        if (btnSelectResetTypeOption && this.activeBox) {
             e.preventDefault();
-            const type = btnSelectResetType.getAttribute('data-type') || 'instant';
+            const val = btnSelectResetTypeOption.getAttribute('data-value') || btnSelectResetTypeOption.getAttribute('data-type') || 'instant';
+            const label = btnSelectResetTypeOption.getAttribute('data-label') || '';
+            const icon = btnSelectResetTypeOption.getAttribute('data-icon') || 'flash_on';
             const step1 = this.activeBox.querySelector('[data-ref="offline-reset-step-1"]');
             if (step1) {
-                step1.setAttribute('data-selected-type', type);
-                step1.querySelectorAll('.component-menu-link').forEach(l => {
-                    if (l === btnSelectResetType) l.classList.add('active');
-                    else l.classList.remove('active');
+                step1.setAttribute('data-selected-type', val);
+                const trigger = this.activeBox.querySelector('[data-ref="offline-reset-type-trigger"]');
+                const labelRef = this.activeBox.querySelector('[data-ref="offline-reset-type-label"]');
+                const iconRef = this.activeBox.querySelector('[data-ref="offline-reset-type-icon"]');
+                if (trigger) trigger.setAttribute('data-value', val);
+                if (labelRef && label) labelRef.textContent = label;
+                if (iconRef && icon) iconRef.textContent = icon;
+                const dateContainer = this.activeBox.querySelector('[data-ref="offline-reset-scheduled-date-container"]');
+                if (dateContainer) {
+                    if (val === 'scheduled') dateContainer.classList.remove('disabled');
+                    else dateContainer.classList.add('disabled');
+                }
+                const dropdown = btnSelectResetTypeOption.closest('.component-module--dropdown');
+                if (dropdown && typeof closeDropdown === 'function') closeDropdown(dropdown);
+                btnSelectResetTypeOption.closest('.component-menu-list')?.querySelectorAll('.component-menu-link')?.forEach(l => {
+                    l.classList.toggle('active', l === btnSelectResetTypeOption);
                 });
             }
-            const checkInstant = this.activeBox.querySelector('[data-ref="reset-instant-check"]');
-            const checkSched = this.activeBox.querySelector('[data-ref="reset-scheduled-check"]');
-            if (checkInstant) checkInstant.classList.toggle('disabled', type !== 'instant');
-            if (checkSched) checkSched.classList.toggle('disabled', type !== 'scheduled');
+            return;
+        }
+
+        const btnConfirmOfflineResizeDate = e.target.closest('[data-action="confirmOfflineResizeDate"]');
+        if (btnConfirmOfflineResizeDate && this.activeBox) {
+            e.preventDefault();
+            if (!this.calendarSystem || !this.calendarSystem.selectedDate) {
+                const __ = typeof window.__ === 'function' ? window.__ : k => k;
+                if (window.showMessage) showMessage(__('err_select_day') || 'Selecciona un día', 'error');
+                return;
+            }
+            const moduleEl = this.activeBox.querySelector('[data-module="moduleOfflineResizeDate"]');
+            const hoursEl = moduleEl ? moduleEl.querySelector('[data-ref="calendar-modal-hours-val"]') : null;
+            const minutesEl = moduleEl ? moduleEl.querySelector('[data-ref="calendar-modal-minutes-val"]') : null;
+            const h = hoursEl ? String(parseInt(hoursEl.getAttribute('data-value') || '0', 10)).padStart(2, '0') : '00';
+            const m = minutesEl ? String(parseInt(minutesEl.getAttribute('data-value') || '0', 10)).padStart(2, '0') : '00';
+
+            const d = this.calendarSystem.selectedDate;
+            const y = d.getFullYear();
+            const mo = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const isoString = `${y}-${mo}-${day}T${h}:${m}`;
+            const displayString = `${day}/${mo}/${y} ${h}:${m}`;
+
+            const trigger = this.activeBox.querySelector('[data-ref="offline-resize-datetime-trigger"]');
+            if (trigger) trigger.setAttribute('data-value', isoString);
+            const textEl = this.activeBox.querySelector('[data-ref="offline-resize-datetime-text"]');
+            if (textEl) textEl.textContent = displayString;
+
+            if (moduleEl && typeof closeDropdown === 'function') closeDropdown(moduleEl);
+            return;
+        }
+
+        const btnConfirmOfflineResetDate = e.target.closest('[data-action="confirmOfflineResetDate"]');
+        if (btnConfirmOfflineResetDate && this.activeBox) {
+            e.preventDefault();
+            if (!this.calendarSystem || !this.calendarSystem.selectedDate) {
+                const __ = typeof window.__ === 'function' ? window.__ : k => k;
+                if (window.showMessage) showMessage(__('err_select_day') || 'Selecciona un día', 'error');
+                return;
+            }
+            const moduleEl = this.activeBox.querySelector('[data-module="moduleOfflineResetDate"]');
+            const hoursEl = moduleEl ? moduleEl.querySelector('[data-ref="calendar-modal-hours-val"]') : null;
+            const minutesEl = moduleEl ? moduleEl.querySelector('[data-ref="calendar-modal-minutes-val"]') : null;
+            const h = hoursEl ? String(parseInt(hoursEl.getAttribute('data-value') || '0', 10)).padStart(2, '0') : '00';
+            const m = minutesEl ? String(parseInt(minutesEl.getAttribute('data-value') || '0', 10)).padStart(2, '0') : '00';
+
+            const d = this.calendarSystem.selectedDate;
+            const y = d.getFullYear();
+            const mo = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const isoString = `${y}-${mo}-${day}T${h}:${m}`;
+            const displayString = `${day}/${mo}/${y} ${h}:${m}`;
+
+            const trigger = this.activeBox.querySelector('[data-ref="offline-reset-datetime-trigger"]');
+            if (trigger) trigger.setAttribute('data-value', isoString);
+            const textEl = this.activeBox.querySelector('[data-ref="offline-reset-datetime-text"]');
+            if (textEl) textEl.textContent = displayString;
+
+            if (moduleEl && typeof closeDropdown === 'function') closeDropdown(moduleEl);
             return;
         }
 
@@ -594,13 +696,26 @@ export class ModalSystem {
         if (btnOfflineResizeNext && this.activeBox) {
             e.preventDefault();
             const step1 = this.activeBox.querySelector('[data-ref="offline-resize-step-1"]');
-            const step2Instant = this.activeBox.querySelector('[data-ref="offline-resize-step-2-instant"]');
-            const step2Sched = this.activeBox.querySelector('[data-ref="offline-resize-step-2-scheduled"]');
-            if (step1) {
+            const step2 = this.activeBox.querySelector('[data-ref="offline-resize-step-2"]') || this.activeBox.querySelector('[data-ref="offline-resize-step-2-instant"]');
+            if (step1 && step2) {
                 const selectedType = step1.getAttribute('data-selected-type') || 'instant';
-                const targetStep2 = (selectedType === 'scheduled' && step2Sched) ? step2Sched : step2Instant;
+                if (selectedType === 'scheduled') {
+                    const triggerDateTime = this.activeBox.querySelector('[data-ref="offline-resize-datetime-trigger"]');
+                    const inputDateTime = this.activeBox.querySelector('[data-ref="scheduled_resize_datetime"]');
+                    const localTimeStr = triggerDateTime ? triggerDateTime.getAttribute('data-value') : (inputDateTime ? inputDateTime.value : '');
+                    if (!localTimeStr) {
+                        if (window.showMessage) showMessage(window.__('err_resize_date_required') || 'Debe seleccionar una fecha y hora.', 'warning');
+                        return;
+                    }
+                    const date = new Date(localTimeStr);
+                    const minFuture = new Date(Date.now() + 5 * 60 * 1000);
+                    if (isNaN(date.getTime()) || date < minFuture) {
+                        if (window.showMessage) showMessage(window.__('err_date_minimum_5_minutes') || 'La fecha debe ser al menos 5 minutos en el futuro.', 'error');
+                        return;
+                    }
+                }
                 step1.classList.replace('active', 'disabled');
-                if (targetStep2) targetStep2.classList.replace('disabled', 'active');
+                step2.classList.replace('disabled', 'active');
             }
             return;
         }
@@ -609,10 +724,8 @@ export class ModalSystem {
         if (btnOfflineResizePrev && this.activeBox) {
             e.preventDefault();
             const step1 = this.activeBox.querySelector('[data-ref="offline-resize-step-1"]');
-            const step2Instant = this.activeBox.querySelector('[data-ref="offline-resize-step-2-instant"]');
-            const step2Sched = this.activeBox.querySelector('[data-ref="offline-resize-step-2-scheduled"]');
-            if (step2Instant) step2Instant.classList.replace('active', 'disabled');
-            if (step2Sched) step2Sched.classList.replace('active', 'disabled');
+            const step2 = this.activeBox.querySelector('[data-ref="offline-resize-step-2"]') || this.activeBox.querySelector('[data-ref="offline-resize-step-2-instant"]');
+            if (step2) step2.classList.replace('active', 'disabled');
             if (step1) step1.classList.replace('disabled', 'active');
             return;
         }
@@ -621,13 +734,26 @@ export class ModalSystem {
         if (btnOfflineResetNext && this.activeBox) {
             e.preventDefault();
             const step1 = this.activeBox.querySelector('[data-ref="offline-reset-step-1"]');
-            const step2Instant = this.activeBox.querySelector('[data-ref="offline-reset-step-2-instant"]');
-            const step2Sched = this.activeBox.querySelector('[data-ref="offline-reset-step-2-scheduled"]');
-            if (step1) {
+            const step2 = this.activeBox.querySelector('[data-ref="offline-reset-step-2"]') || this.activeBox.querySelector('[data-ref="offline-reset-step-2-instant"]');
+            if (step1 && step2) {
                 const selectedType = step1.getAttribute('data-selected-type') || 'instant';
-                const targetStep2 = (selectedType === 'scheduled' && step2Sched) ? step2Sched : step2Instant;
+                if (selectedType === 'scheduled') {
+                    const triggerDateTime = this.activeBox.querySelector('[data-ref="offline-reset-datetime-trigger"]');
+                    const inputDateTime = this.activeBox.querySelector('[data-ref="scheduled_reset_datetime"]');
+                    const localTimeStr = triggerDateTime ? triggerDateTime.getAttribute('data-value') : (inputDateTime ? inputDateTime.value : '');
+                    if (!localTimeStr) {
+                        if (window.showMessage) showMessage(window.__('err_reset_date_required') || 'Debe seleccionar una fecha y hora.', 'warning');
+                        return;
+                    }
+                    const date = new Date(localTimeStr);
+                    const minFuture = new Date(Date.now() + 5 * 60 * 1000);
+                    if (isNaN(date.getTime()) || date < minFuture) {
+                        if (window.showMessage) showMessage(window.__('err_date_minimum_5_minutes') || 'La fecha debe ser al menos 5 minutos en el futuro.', 'error');
+                        return;
+                    }
+                }
                 step1.classList.replace('active', 'disabled');
-                if (targetStep2) targetStep2.classList.replace('disabled', 'active');
+                step2.classList.replace('disabled', 'active');
             }
             return;
         }
@@ -636,10 +762,8 @@ export class ModalSystem {
         if (btnOfflineResetPrev && this.activeBox) {
             e.preventDefault();
             const step1 = this.activeBox.querySelector('[data-ref="offline-reset-step-1"]');
-            const step2Instant = this.activeBox.querySelector('[data-ref="offline-reset-step-2-instant"]');
-            const step2Sched = this.activeBox.querySelector('[data-ref="offline-reset-step-2-scheduled"]');
-            if (step2Instant) step2Instant.classList.replace('active', 'disabled');
-            if (step2Sched) step2Sched.classList.replace('active', 'disabled');
+            const step2 = this.activeBox.querySelector('[data-ref="offline-reset-step-2"]') || this.activeBox.querySelector('[data-ref="offline-reset-step-2-instant"]');
+            if (step2) step2.classList.replace('active', 'disabled');
             if (step1) step1.classList.replace('disabled', 'active');
             return;
         }
@@ -654,16 +778,17 @@ export class ModalSystem {
             const labelRef = this.activeBox.querySelector('[data-ref="offline-resize-label"]');
             const iconRef = this.activeBox.querySelector('[data-ref="offline-resize-icon"]');
             if (trigger) trigger.setAttribute('data-value', val);
-            if (labelRef) labelRef.textContent = label;
-            if (iconRef) iconRef.textContent = icon;
+            if (labelRef && label) labelRef.textContent = label;
+            if (iconRef && icon) iconRef.textContent = icon;
             const dropdown = btnSelectOfflineResizeSize.closest('.component-module--dropdown');
             if (dropdown && typeof closeDropdown === 'function') closeDropdown(dropdown);
-            this.activeBox.querySelectorAll('.component-menu-link[data-type="offline_resize_size"]').forEach(l => l.classList.remove('active'));
-            btnSelectOfflineResizeSize.classList.add('active');
+            btnSelectOfflineResizeSize.closest('.component-menu-list')?.querySelectorAll('.component-menu-link')?.forEach(l => {
+                l.classList.toggle('active', l === btnSelectOfflineResizeSize);
+            });
 
             const warning = this.activeBox.querySelector('[data-ref="offline-resize-shrink-warning"]');
             if (warning && trigger) {
-                const currentSize = this.activeBox.getAttribute('data-current-size') || trigger.getAttribute('data-value') || '64x64';
+                const currentSize = this.activeBox.getAttribute('data-current-size') || '64x64';
                 const currWidth = parseInt(currentSize.split('x')[0], 10);
                 const nextWidth = parseInt(val.split('x')[0], 10);
                 warning.classList.toggle('active', nextWidth < currWidth);
@@ -674,23 +799,24 @@ export class ModalSystem {
         const btnSelectSchedResizeSize = e.target.closest('[data-action="selectScheduledResizeSize"]');
         if (btnSelectSchedResizeSize && this.activeBox) {
             e.preventDefault();
-            const val = btnSelectSchedResizeSize.getAttribute('data-value');
-            const label = btnSelectSchedResizeSize.getAttribute('data-label');
-            const icon = btnSelectSchedResizeSize.getAttribute('data-icon');
+            const val = btnSelectSchedResizeSize.getAttribute('data-value') || '64x64';
+            const label = btnSelectSchedResizeSize.getAttribute('data-label') || '';
+            const icon = btnSelectSchedResizeSize.getAttribute('data-icon') || 'aspect_ratio';
             const trigger = this.activeBox.querySelector('[data-ref="scheduled-resize-trigger"]');
             const labelRef = this.activeBox.querySelector('[data-ref="scheduled-resize-label"]');
             const iconRef = this.activeBox.querySelector('[data-ref="scheduled-resize-icon"]');
             if (trigger) trigger.setAttribute('data-value', val);
-            if (labelRef) labelRef.textContent = label;
-            if (iconRef) iconRef.textContent = icon;
+            if (labelRef && label) labelRef.textContent = label;
+            if (iconRef && icon) iconRef.textContent = icon;
             const dropdown = btnSelectSchedResizeSize.closest('.component-module--dropdown');
             if (dropdown && typeof closeDropdown === 'function') closeDropdown(dropdown);
-            this.activeBox.querySelectorAll('.component-menu-link[data-type="scheduled_resize_size"]').forEach(l => l.classList.remove('active'));
-            btnSelectSchedResizeSize.classList.add('active');
+            btnSelectSchedResizeSize.closest('.component-menu-list')?.querySelectorAll('.component-menu-link')?.forEach(l => {
+                l.classList.toggle('active', l === btnSelectSchedResizeSize);
+            });
 
             const warning = this.activeBox.querySelector('[data-ref="scheduled-resize-shrink-warning"]');
             if (warning && trigger) {
-                const currentSize = this.activeBox.getAttribute('data-current-size') || trigger.getAttribute('data-value') || '64x64';
+                const currentSize = this.activeBox.getAttribute('data-current-size') || '64x64';
                 const currWidth = parseInt(currentSize.split('x')[0], 10);
                 const nextWidth = parseInt(val.split('x')[0], 10);
                 warning.classList.toggle('active', nextWidth < currWidth);
@@ -712,12 +838,33 @@ export class ModalSystem {
 
         // Submits when onConfirm callback is provided (e.g. from cards)
         if (this.activeOnConfirm) {
-            const btnSubmitResize = e.target.closest('[data-action="submitOfflineResize"]');
-            if (btnSubmitResize && this.activeBox) {
+            const btnSubmitResizeUnified = e.target.closest('[data-action="submitOfflineResizeUnified"]') || e.target.closest('[data-action="submitOfflineResize"]');
+            if (btnSubmitResizeUnified && this.activeBox) {
                 e.preventDefault();
+                const step1 = this.activeBox.querySelector('[data-ref="offline-resize-step-1"]');
+                const mode = step1 ? (step1.getAttribute('data-selected-type') || 'instant') : 'instant';
                 const trigger = this.activeBox.querySelector('[data-ref="offline-resize-trigger"]');
                 const size = trigger ? trigger.getAttribute('data-value') : '64x64';
-                this.activeOnConfirm({ mode: 'instant', size }, btnSubmitResize);
+
+                let nextResizeAt = null;
+                if (mode === 'scheduled') {
+                    const triggerDateTime = this.activeBox.querySelector('[data-ref="offline-resize-datetime-trigger"]');
+                    const inputDateTime = this.activeBox.querySelector('[data-ref="scheduled_resize_datetime"]');
+                    const localTimeStr = triggerDateTime ? triggerDateTime.getAttribute('data-value') : (inputDateTime ? inputDateTime.value : '');
+                    if (!localTimeStr) {
+                        if (window.showMessage) showMessage(window.__('err_resize_date_required') || 'Debe seleccionar una fecha y hora.', 'warning');
+                        return;
+                    }
+                    const date = new Date(localTimeStr);
+                    const minFuture = new Date(Date.now() + 5 * 60 * 1000);
+                    if (isNaN(date.getTime()) || date < minFuture) {
+                        if (window.showMessage) showMessage(window.__('err_date_minimum_5_minutes') || 'La fecha debe ser al menos 5 minutos en el futuro.', 'error');
+                        return;
+                    }
+                    nextResizeAt = typeof localInputFormatToUtcString === 'function' ? localInputFormatToUtcString(localTimeStr) : localTimeStr;
+                }
+
+                this.activeOnConfirm({ mode, size, targetSize: size, isActive: (mode === 'scheduled'), nextResizeAt }, btnSubmitResizeUnified);
                 return;
             }
 
@@ -726,12 +873,13 @@ export class ModalSystem {
                 e.preventDefault();
                 const toggle = this.activeBox.querySelector('[data-ref="scheduled_resize_active"]');
                 const isActive = toggle ? toggle.checked : false;
-                const trigger = this.activeBox.querySelector('[data-ref="scheduled-resize-trigger"]');
+                const trigger = this.activeBox.querySelector('[data-ref="scheduled-resize-trigger"]') || this.activeBox.querySelector('[data-ref="offline-resize-trigger"]');
                 const targetSize = trigger ? trigger.getAttribute('data-value') : '64x64';
                 let nextResizeAt = null;
                 if (isActive) {
+                    const triggerDateTime = this.activeBox.querySelector('[data-ref="offline-resize-datetime-trigger"]');
                     const inputDateTime = this.activeBox.querySelector('[data-ref="scheduled_resize_datetime"]');
-                    const localTimeStr = inputDateTime ? inputDateTime.value : '';
+                    const localTimeStr = triggerDateTime ? triggerDateTime.getAttribute('data-value') : (inputDateTime ? inputDateTime.value : '');
                     if (!localTimeStr) {
                         if (window.showMessage) showMessage(window.__('err_resize_date_required') || 'Debe seleccionar una fecha y hora.', 'warning');
                         return;
@@ -748,12 +896,33 @@ export class ModalSystem {
                 return;
             }
 
-            const btnSubmitReset = e.target.closest('[data-action="submitOfflineReset"]');
-            if (btnSubmitReset && this.activeBox) {
+            const btnSubmitResetUnified = e.target.closest('[data-action="submitOfflineResetUnified"]') || e.target.closest('[data-action="submitOfflineReset"]');
+            if (btnSubmitResetUnified && this.activeBox) {
                 e.preventDefault();
+                const step1 = this.activeBox.querySelector('[data-ref="offline-reset-step-1"]');
+                const mode = step1 ? (step1.getAttribute('data-selected-type') || 'instant') : 'instant';
                 const snapshotCheckbox = this.activeBox.querySelector('[data-ref="offline_reset_snapshot"]');
                 const takeSnapshot = snapshotCheckbox ? snapshotCheckbox.checked : false;
-                this.activeOnConfirm({ mode: 'instant', takeSnapshot }, btnSubmitReset);
+
+                let nextResetAt = null;
+                if (mode === 'scheduled') {
+                    const triggerDateTime = this.activeBox.querySelector('[data-ref="offline-reset-datetime-trigger"]');
+                    const inputDateTime = this.activeBox.querySelector('[data-ref="scheduled_reset_datetime"]');
+                    const localTimeStr = triggerDateTime ? triggerDateTime.getAttribute('data-value') : (inputDateTime ? inputDateTime.value : '');
+                    if (!localTimeStr) {
+                        if (window.showMessage) showMessage(window.__('err_reset_date_required') || 'Debe seleccionar una fecha y hora.', 'warning');
+                        return;
+                    }
+                    const date = new Date(localTimeStr);
+                    const minFuture = new Date(Date.now() + 5 * 60 * 1000);
+                    if (isNaN(date.getTime()) || date < minFuture) {
+                        if (window.showMessage) showMessage(window.__('err_date_minimum_5_minutes') || 'La fecha debe ser al menos 5 minutos en el futuro.', 'error');
+                        return;
+                    }
+                    nextResetAt = typeof localInputFormatToUtcString === 'function' ? localInputFormatToUtcString(localTimeStr) : localTimeStr;
+                }
+
+                this.activeOnConfirm({ mode, takeSnapshot, isActive: (mode === 'scheduled'), nextResetAt }, btnSubmitResetUnified);
                 return;
             }
 
@@ -766,8 +935,9 @@ export class ModalSystem {
                 const takeSnapshot = snapshotCheckbox ? snapshotCheckbox.checked : false;
                 let nextResetAt = null;
                 if (isActive) {
+                    const triggerDateTime = this.activeBox.querySelector('[data-ref="offline-reset-datetime-trigger"]');
                     const inputDateTime = this.activeBox.querySelector('[data-ref="scheduled_reset_datetime"]');
-                    const localTimeStr = inputDateTime ? inputDateTime.value : '';
+                    const localTimeStr = triggerDateTime ? triggerDateTime.getAttribute('data-value') : (inputDateTime ? inputDateTime.value : '');
                     if (!localTimeStr) {
                         if (window.showMessage) showMessage(window.__('err_reset_date_required') || 'Debe seleccionar una fecha y hora.', 'warning');
                         return;

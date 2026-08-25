@@ -725,7 +725,7 @@ export const ModalTemplates = {
             </div>
             <div class="component-modal-actions">
                 <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--h40" data-modal-action="confirm">${__('btn_delete')}</button>
+                <button class="component-button component-button--h40 component-button--danger" data-modal-action="confirm">${__('btn_delete')}</button>
             </div>
         `
     },
@@ -744,11 +744,11 @@ export const ModalTemplates = {
     },
     
     verifyEmailCode: {
-        build: (data) => `
+        build: (data = {}) => `
             <div class="pill-container"><div class="drag-handle"></div></div>
             <div class="component-modal-header">
                 <h2 class="component-modal-title">${__('title_verify_email')}</h2>
-                <p class="component-modal-desc">${__('desc_verify_email').replace(':email', `<b>${data.email}</b>`)}</p>
+                <p class="component-modal-desc">${__('desc_verify_email').replace(':email', `<b>${data.email || ''}</b>`)}</p>
             </div>
             <div class="component-modal-body">
                 <div class="component-input-group">
@@ -782,79 +782,6 @@ export const ModalTemplates = {
         `
     },
 
-    roleForm: {
-        build: (data) => `
-            <div class="pill-container"><div class="drag-handle"></div></div>
-            <div class="component-modal-header">
-                <h2 class="component-modal-title">${data.titleKey ? __(data.titleKey) : __('title_role')}</h2>
-                <p class="component-modal-desc">${__('desc_role_form')}</p>
-            </div>
-            <div class="component-modal-body">
-                <div class="component-input-group">
-                    <input type="text" data-ref="roleNameInput" class="component-input-field" placeholder=" " value="${data.nameValue || ''}" maxlength="50" autocomplete="off">
-                    <label class="component-input-label">${__('lbl_role_name')}</label>
-                </div>
-            </div>
-            <div class="component-modal-actions">
-                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${data.confirmKey ? __(data.confirmKey) : __('btn_save')}</button>
-            </div>
-        `
-    },
-
-    editRolePermissions: {
-        build: (data) => `
-            <div class="pill-container"><div class="drag-handle"></div></div>
-            <div class="component-modal-header">
-                <h2 class="component-modal-title">${__('title_role_permissions').replace(':role', data.roleName)}</h2>
-                <p class="component-modal-desc">${__('desc_role_permissions')}</p>
-            </div>
-            <div class="component-modal-body component-modal-body--scrollable">
-                <div class="component-permissions-list">
-                    ${data.permissionsListHtml}
-                </div>
-            </div>
-            <div class="component-modal-actions">
-                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${__('btn_save_permissions')}</button>
-            </div>
-        `
-    },
-
-    verifyPasswordDialog: {
-        build: (data = {}) => {
-            const getTrans = (key, fallback) => {
-                if (typeof window.__ === 'function') {
-                    const val = window.__(key);
-                    if (val && val !== key) return val;
-                }
-                return fallback;
-            };
-
-            const title = data.title || (data.titleKey ? __(data.titleKey) : __('title_verify_identity'));
-            const desc = data.descHtml || data.message || (data.descKey ? __(data.descKey) : __('desc_verify_identity'));
-            const cancelBtnText = __('btn_cancel');
-            const confirmBtnText = data.confirmKey ? __(data.confirmKey) : __('btn_continue');
-            const passwordLblText = __('lbl_current_password');
-            const confirmClass = data.confirmClass || 'component-button--primary';
-
-            return `
-                <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header">
-                    <h2 class="component-modal-title">${title}</h2>
-                    <p class="component-modal-desc">${desc}</p>
-                </div>
-                <div class="component-modal-body">
-                    ${renderVerificationInput({ inputRef: 'modal_verify_password', label: passwordLblText })}
-                </div>
-                <div class="component-modal-actions">
-                    <button class="component-button component-button--h40" data-modal-action="cancel">${cancelBtnText}</button>
-                    <button class="component-button component-button--h40 ${confirmClass}" data-modal-action="confirm">${confirmBtnText}</button>
-                </div>
-            `;
-        }
-    },
-
     confirmDeleteAccountDialog: {
         build: () => `
             <div class="pill-container"><div class="drag-handle"></div></div>
@@ -873,7 +800,7 @@ export const ModalTemplates = {
     },
 
     warning: {
-        build: (data) => `
+        build: (data = {}) => `
             <div class="pill-container"><div class="drag-handle"></div></div>
             <div class="component-modal-header">
                 <h2 class="component-modal-title">${data.titleKey ? __(data.titleKey) : __('title_warning')}</h2>
@@ -900,7 +827,7 @@ export const ModalTemplates = {
     },
 
     confirmAction: {
-        build: (data) => `
+        build: (data = {}) => `
             <div class="pill-container"><div class="drag-handle"></div></div>
             <div class="component-modal-header">
                 <h2 class="component-modal-title">${data.titleKey ? __(data.titleKey) : __('title_confirm_action')}</h2>
@@ -914,7 +841,7 @@ export const ModalTemplates = {
     },
 
     confirmActionModal: {
-        build: (data) => `
+        build: (data = {}) => `
             <div class="pill-container"><div class="drag-handle"></div></div>
             <div class="component-modal-header">
                 <h2 class="component-modal-title">${data.title || __('title_confirm_action')}</h2>
@@ -935,55 +862,52 @@ export const ModalTemplates = {
         `
     },
 
-    promptChangeRole: {
-        build: () => `
-            <div class="pill-container"><div class="drag-handle"></div></div>
-            <div class="component-modal-header">
-                <h2 class="component-modal-title">${__('title_change_role')}</h2>
-                <p class="component-modal-desc">${__('desc_change_role')}</p>
-            </div>
-            <div class="component-modal-body">
-                <div class="component-input-group">
-                    <select data-ref="modal_change_role" class="component-input-field">
-                        <option value="viewer">${__('role_viewer')}</option>
-                        <option value="editor">${__('role_editor')}</option>
-                        <option value="admin">${__('role_admin')}</option>
-                    </select>
-                    <label class="component-input-label">${__('lbl_select_role')}</label>
+    verifyPasswordDialog: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const getTrans = (key, fallback) => {
+                if (typeof window.__ === 'function') {
+                    const val = window.__(key);
+                    if (val && val !== key) return val;
+                }
+                return fallback;
+            };
+
+            const title = data.title || (data.titleKey ? getTrans(data.titleKey, 'Verificar Identidad') : getTrans('title_verify_identity', 'Verificar Identidad'));
+            const desc = data.descHtml || data.message || (data.descKey ? getTrans(data.descKey, 'Confirma tu acción para continuar.') : getTrans('desc_verify_identity', 'Confirma tu contraseña para continuar.'));
+            const cancelBtnText = getTrans('btn_cancel', 'Cancelar');
+            const confirmBtnText = data.confirmKey ? getTrans(data.confirmKey, 'Continuar') : getTrans('btn_continue', 'Continuar');
+            const passwordLblText = getTrans('lbl_current_password', 'Contraseña actual');
+            const confirmClass = data.confirmClass || 'component-button--primary';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header component-modal-header--with-icon">
+                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                        <span class="material-symbols-rounded">lock</span>
+                    </div>
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${title}</h2>
+                        <p class="component-modal-desc">${desc}</p>
+                    </div>
                 </div>
-            </div>
-            <div class="component-modal-actions">
-                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                <button class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${__('btn_save')}</button>
-            </div>
-        `
+                <div class="component-modal-body">
+                    ${renderVerificationInput({ inputRef: 'modal_verify_password', label: passwordLblText, autocomplete: 'current-password' })}
+                </div>
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${cancelBtnText}</button>
+                    <button class="component-button component-button--h40 ${confirmClass}" data-modal-action="confirm">${confirmBtnText}</button>
+                </div>
+            `;
+        }
     },
 
     confirmRemoveMembers: {
-        build: (data) => ModalTemplates.confirmAction.build({
+        build: (data = {}) => ModalTemplates.confirmAction.build({
             titleKey: 'title_remove_member',
             descHtml: __('desc_remove_member').replace(':count', data.count || 1),
             confirmClass: 'component-button--danger',
             confirmKey: 'btn_remove'
-        })
-    },
-
-    confirmCreateCanvas: {
-        build: () => ModalTemplates.confirmAction.build({
-            titleKey: 'title_confirm_create_canvas',
-            descKey: 'desc_confirm_create_canvas',
-            confirmClass: '',
-            confirmClass: 'component-button--primary',
-            confirmKey: 'btn_create_canvas'
-        })
-    },
-
-    verifyPasswordDeleteCanvas: {
-        build: () => ModalTemplates.verifyPasswordDialog.build({
-            titleKey: 'title_confirm_delete_canvas',
-            descKey: 'desc_confirm_delete_canvas',
-            confirmClass: 'component-button--danger',
-            confirmKey: 'btn_delete_canvas'
         })
     },
 
@@ -996,35 +920,12 @@ export const ModalTemplates = {
         })
     },
 
-    confirmResetNow: {
-        build: () => ModalTemplates.confirmAction.build({
-            titleKey: 'title_confirm_reset_now',
-            descKey: 'desc_confirm_reset_now',
-            confirmClass: 'component-button--danger',
-            confirmKey: 'btn_reset_now'
-        })
-    },
-
-    confirmResizeNow: {
-        build: (data) => ModalTemplates.confirmAction.build({
-            titleKey: 'title_confirm_resize_now',
-            descKey: 'desc_confirm_resize_now',
-            descHtml: data?.sizeLabel
-                ? __('desc_confirm_resize_now').replace(':size', `<b>${data.sizeLabel}</b>`)
-                : __('desc_confirm_resize_now').replace(':size', ''),
-            confirmClass: 'component-button--danger',
-            confirmKey: 'btn_apply_now'
-        })
-    },
-
     offlineResizeModal: {
         build: (data = {}) => {
             const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
             const currentSize = data.currentSize || '64x64';
             const userTier = parseInt(data.userTier ?? (window.APP_USER?.subscription_tier ?? 0), 10);
             const isOffline = data.isOfflineMode !== false;
-            const resizeActive = !!data.resizeActive;
-            const scheduledSize = data.resizeTargetSize || currentSize;
 
             const formatLocalDatetime = (dateInput, addMs = 3600000) => {
                 let d = null;
@@ -1065,11 +966,8 @@ export const ModalTemplates = {
             };
 
             const currentMeta = sizesList[currentSize] || { label: currentSize, icon: "aspect_ratio", tier: 0 };
-            const scheduledMeta = sizesList[scheduledSize] || { label: scheduledSize, icon: "aspect_ratio", tier: 0 };
 
             let instantSizesHtml = '';
-            let scheduledSizesHtml = '';
-
             for (const [val, meta] of Object.entries(sizesList)) {
                 const reqTier = meta.tier ?? 0;
                 const isAllowed = userTier >= reqTier;
@@ -1094,23 +992,24 @@ export const ModalTemplates = {
                         ${lockBadge}
                     </div>
                 `;
-
-                const isSchedActive = (val === scheduledSize && isAllowed);
-                scheduledSizesHtml += `
-                    <div class="component-menu-link ${isSchedActive ? 'active' : ''} ${disabledClass}"
-                         data-action="${isAllowed ? 'selectScheduledResizeSize' : ''}"
-                         data-type="scheduled_resize_size"
-                         data-value="${escapeHTML(val)}"
-                         data-label="${escapeHTML(meta.label)}"
-                         data-icon="${escapeHTML(meta.icon)}">
-                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">${escapeHTML(meta.icon)}</span></div>
-                        <div class="component-menu-link-text">
-                            <span>${escapeHTML(meta.label)}</span>
-                        </div>
-                        ${lockBadge}
-                    </div>
-                `;
             }
+
+            const defaultDate = (dateInput, addMs = 3600000) => {
+                let d = null;
+                if (dateInput) d = new Date(dateInput);
+                if (!d || isNaN(d.getTime())) d = new Date(Date.now() + addMs);
+                return d;
+            };
+
+            const dObj = defaultDate(data.nextResizeAt, 3600000);
+            const pad = n => String(n).padStart(2, '0');
+            const y = dObj.getFullYear();
+            const mo = pad(dObj.getMonth() + 1);
+            const day = pad(dObj.getDate());
+            const hh = pad(dObj.getHours());
+            const mm = pad(dObj.getMinutes());
+            const defaultResizeIso = `${y}-${mo}-${day}T${hh}:${mm}`;
+            const defaultResizeDisplay = `${day}/${mo}/${y} ${hh}:${mm}`;
 
             const scheduledOptionClass = isOffline ? 'disabled-interaction' : '';
             const scheduledBadge = isOffline
@@ -1120,35 +1019,118 @@ export const ModalTemplates = {
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
 
-                <!-- STEP 1: Tipo de Expansión -->
+                <!-- STEP 1: Tipo de Expansión & Fecha si es programada -->
                 <div class="component-card--grouped component-card--flush active component-modal-step" data-ref="offline-resize-step-1" data-selected-type="instant">
                     <div class="component-modal-header component-modal-header--with-icon">
                         <div class="component-card__icon-container component-card__icon-container--bordered">
                             <span class="material-symbols-rounded">aspect_ratio</span>
                         </div>
                         <div class="component-modal-header-text">
-                            <h2 class="component-modal-title">${__('canvas_resize_title')}</h2>
-                            <p class="component-modal-desc">${__('canvas_resize_desc')}</p>
+                            <h2 class="component-modal-title">${__('canvas_resize_title') || 'Ajustar Tamaño'}</h2>
+                            <p class="component-modal-desc">${__('canvas_resize_desc') || 'Modifica el tamaño de la cuadrícula del lienzo.'}</p>
                         </div>
                     </div>
 
                     <div class="component-modal-body">
-                        <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--static">
-                            <div class="component-menu-list">
-                                <div class="component-menu-link active" data-action="selectResizeType" data-type="instant">
-                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">flash_on</span></div>
-                                    <div class="component-menu-link-text">
-                                        <span>${__('canvas_resize_now_title')}</span>
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleOfflineResizeType" data-ref="offline-resize-type-trigger" data-value="instant">
+                                <span class="material-symbols-rounded" data-ref="offline-resize-type-icon">flash_on</span>
+                                <span class="component-dropdown-text" data-ref="offline-resize-type-label">${__('canvas_resize_now_title') || 'Inmediata'}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
+                            </div>
+                            <div class="component-module component-module--dropdown disabled" data-module="moduleOfflineResizeType">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list">
+                                        <div class="component-menu-link active" data-action="selectResizeTypeOption" data-value="instant" data-label="${__('canvas_resize_now_title') || 'Inmediata'}" data-icon="flash_on">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">flash_on</span></div>
+                                            <div class="component-menu-link-text"><span>${__('canvas_resize_now_title') || 'Inmediata'}</span></div>
+                                        </div>
+                                        <div class="component-menu-link ${scheduledOptionClass}" data-action="${isOffline ? '' : 'selectResizeTypeOption'}" data-value="scheduled" data-label="${__('canvas_resize_active_title') || 'Programada'}" data-icon="schedule">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">schedule</span></div>
+                                            <div class="component-menu-link-text"><span>${__('canvas_resize_active_title') || 'Programada'}</span></div>
+                                            ${scheduledBadge}
+                                        </div>
                                     </div>
-                                    <span class="material-symbols-rounded component-text-success" data-ref="resize-instant-check">check_circle</span>
                                 </div>
-                                <div class="component-menu-link ${scheduledOptionClass}" data-action="${isOffline ? '' : 'selectResizeType'}" data-type="scheduled">
-                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">schedule</span></div>
-                                    <div class="component-menu-link-text">
-                                        <span>${__('canvas_resize_active_title')}</span>
+                            </div>
+                        </div>
+
+                        <!-- Selector de fecha/hora tipo Dropdown Calendar si es programada (Etapa 1) -->
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full disabled" data-ref="offline-resize-scheduled-date-container">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleOfflineResizeDate" data-ref="offline-resize-datetime-trigger" data-value="${defaultResizeIso}">
+                                <span class="material-symbols-rounded">calendar_month</span>
+                                <span class="component-dropdown-text" data-ref="offline-resize-datetime-text">${defaultResizeDisplay}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
+                            </div>
+                            <div class="component-module component-module--dropdown disabled" data-module="moduleOfflineResizeDate" data-ref="moduleOfflineResizeDate">
+                                <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-calendar">
+                                        <div class="component-calendar-header">
+                                            <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarPrevMonth">
+                                                <span class="material-symbols-rounded">chevron_left</span>
+                                            </button>
+                                            <div class="component-calendar-title" data-ref="calendar-title">${__('calendar_month_year') || 'Mes Año'}</div>
+                                            <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarNextMonth">
+                                                <span class="material-symbols-rounded">chevron_right</span>
+                                            </button>
+                                        </div>
+                                        <div class="component-calendar-weekdays">
+                                            <span>${__('cal_su') || 'Do'}</span><span>${__('cal_mo') || 'Lu'}</span><span>${__('cal_tu') || 'Ma'}</span><span>${__('cal_we') || 'Mi'}</span><span>${__('cal_th') || 'Ju'}</span><span>${__('cal_fr') || 'Vi'}</span><span>${__('cal_sa') || 'Sa'}</span>
+                                        </div>
+                                        <div class="component-calendar-days" data-ref="calendar-days"></div>
+                                        <div class="calendar-modal-controls">
+                                            <div class="calendar-control-column">
+                                                <div class="calendar-control-label">${__('lbl_hours') || 'Horas'}</div>
+                                                <div class="component-inline-control component-inline-control--full">
+                                                    <div class="component-inline-control__group">
+                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-5">
+                                                            <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                                        </button>
+                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-1">
+                                                            <span class="material-symbols-rounded">chevron_left</span>
+                                                        </button>
+                                                    </div>
+                                                    <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-value="${hh}">${hh}</div>
+                                                    <div class="component-inline-control__group">
+                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="1">
+                                                            <span class="material-symbols-rounded">chevron_right</span>
+                                                        </button>
+                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="5">
+                                                            <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="calendar-control-column">
+                                                <div class="calendar-control-label">${__('lbl_minutes') || 'Minutos'}</div>
+                                                <div class="component-inline-control component-inline-control--full">
+                                                    <div class="component-inline-control__group">
+                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-5">
+                                                            <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                                        </button>
+                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-1">
+                                                            <span class="material-symbols-rounded">chevron_left</span>
+                                                        </button>
+                                                    </div>
+                                                    <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-value="${mm}">${mm}</div>
+                                                    <div class="component-inline-control__group">
+                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="1">
+                                                            <span class="material-symbols-rounded">chevron_right</span>
+                                                        </button>
+                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="5">
+                                                            <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="component-calendar-actions">
+                                            <button type="button" class="component-button component-button--h30" data-action="calendarCancel">${__('btn_cancel') || 'Cancelar'}</button>
+                                            <button type="button" class="component-button component-button--primary component-button--h30" data-action="confirmOfflineResizeDate">${__('btn_accept') || 'Aceptar'}</button>
+                                        </div>
                                     </div>
-                                    ${scheduledBadge}
-                                    <span class="material-symbols-rounded component-text-success disabled" data-ref="resize-scheduled-check">check_circle</span>
                                 </div>
                             </div>
                         </div>
@@ -1158,20 +1140,19 @@ export const ModalTemplates = {
                         <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
                         <button class="component-button component-button--primary component-button--h40" data-action="offlineResizeNextStep">
                             <span>${__('btn_continue')}</span>
-                            <span class="material-symbols-rounded">chevron_right</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- STEP 2A: Selección de Tamaño Inmediato -->
-                <div class="component-card--grouped component-card--flush disabled component-modal-step" data-ref="offline-resize-step-2-instant">
+                <!-- STEP 2: Selección del nuevo tamaño -->
+                <div class="component-card--grouped component-card--flush disabled component-modal-step" data-ref="offline-resize-step-2">
                     <div class="component-modal-header component-modal-header--with-icon">
                         <div class="component-card__icon-container component-card__icon-container--bordered">
                             <span class="material-symbols-rounded">photo_size_select_large</span>
                         </div>
                         <div class="component-modal-header-text">
-                            <h2 class="component-modal-title">${__('canvas_resize_instant_size_title')}</h2>
-                            <p class="component-modal-desc">${__('canvas_resize_instant_size_desc')}</p>
+                            <h2 class="component-modal-title">${__('canvas_resize_instant_size_title') || 'Nuevo tamaño'}</h2>
+                            <p class="component-modal-desc">${__('canvas_resize_instant_size_desc') || 'Selecciona el tamaño deseado para el lienzo.'}</p>
                         </div>
                     </div>
 
@@ -1194,87 +1175,16 @@ export const ModalTemplates = {
                         </div>
 
                         <div class="component-alert-error" data-ref="offline-resize-shrink-warning">
-                            ${__('canvas_resize_warning_desc')}
+                            ${__('canvas_resize_warning_desc') || 'Al reducir el tamaño se podrían recortar trazos fuera del límite.'}
                         </div>
                     </div>
 
                     <div class="component-modal-actions">
                         <button class="component-button component-button--h40" data-action="offlineResizePrevStep">
-                            <span class="material-symbols-rounded">chevron_left</span>
                             <span>${__('btn_back')}</span>
                         </button>
-                        <button class="component-button component-button--primary component-button--h40" data-action="submitOfflineResize">
-                            <span class="material-symbols-rounded">flash_on</span>
-                            <span>${__('btn_apply_now')}</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- STEP 2B: Configuración de Expansión Programada (Online) -->
-                <div class="component-card--grouped component-card--flush disabled component-modal-step" data-ref="offline-resize-step-2-scheduled">
-                    <div class="component-modal-header component-modal-header--with-icon">
-                        <div class="component-card__icon-container component-card__icon-container--bordered">
-                            <span class="material-symbols-rounded">schedule</span>
-                        </div>
-                        <div class="component-modal-header-text">
-                            <h2 class="component-modal-title">${__('canvas_resize_active_title')}</h2>
-                            <p class="component-modal-desc">${__('canvas_resize_active_desc')}</p>
-                        </div>
-                    </div>
-
-                    <div class="component-modal-body">
-                        <div class="component-group-item">
-                            <div class="component-card__content">
-                                <div class="component-card__text">
-                                    <h2 class="component-card__title">${__('canvas_resize_active_title')}</h2>
-                                    <p class="component-card__description">${__('canvas_resize_active_desc')}</p>
-                                </div>
-                            </div>
-                            <div class="component-card__actions component-card__actions--end">
-                                <label class="component-toggle-switch">
-                                    <input type="checkbox" data-ref="scheduled_resize_active" data-action="toggleScheduledResizeSection" ${resizeActive ? 'checked' : ''}>
-                                    <span class="component-toggle-slider"></span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="component-form-body ${resizeActive ? '' : 'disabled-interaction'}" data-ref="scheduled_resize_fields" style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;">
-                            <div class="component-input-group">
-                                <input class="component-input-field" data-ref="scheduled_resize_datetime" type="datetime-local" placeholder=" " value="${scheduledDateTimeVal}" min="${minDateTime}">
-                                <label class="component-input-label">${__('lbl_scheduled_datetime')}</label>
-                            </div>
-
-                            <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
-                                <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="dropdownScheduledResizeSizes" data-ref="scheduled-resize-trigger" data-value="${escapeHTML(scheduledSize)}">
-                                    <span class="material-symbols-rounded" data-ref="scheduled-resize-icon">${escapeHTML(scheduledMeta.icon)}</span>
-                                    <span class="component-dropdown-text" data-ref="scheduled-resize-label">${escapeHTML(scheduledMeta.label)}</span>
-                                    <span class="material-symbols-rounded">expand_more</span>
-                                </div>
-
-                                <div class="component-module component-module--dropdown disabled" data-module="dropdownScheduledResizeSizes">
-                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
-                                        <div class="pill-container"><div class="drag-handle"></div></div>
-                                        <div class="component-menu-list">
-                                            ${scheduledSizesHtml}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="component-alert-error" data-ref="scheduled-resize-shrink-warning">
-                                ${__('canvas_resize_warning_desc')}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="component-modal-actions">
-                        <button class="component-button component-button--h40" data-action="offlineResizePrevStep">
-                            <span class="material-symbols-rounded">chevron_left</span>
-                            <span>${__('btn_back')}</span>
-                        </button>
-                        <button class="component-button component-button--primary component-button--h40" data-action="submitScheduledResize">
-                            <span class="material-symbols-rounded">save</span>
-                            <span>${__('btn_save_changes')}</span>
+                        <button class="component-button component-button--primary component-button--h40" data-action="submitOfflineResizeUnified">
+                            <span>${__('btn_confirm')}</span>
                         </button>
                     </div>
                 </div>
@@ -1286,28 +1196,24 @@ export const ModalTemplates = {
         build: (data = {}) => {
             const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
             const isOffline = data.isOfflineMode !== false;
-            const resetActive = !!data.resetActive;
             const canTakeSnapshot = data.canTakeSnapshot !== false;
 
-            const formatLocalDatetime = (dateInput, addMs = 3600000) => {
+            const defaultDate = (dateInput, addMs = 3600000) => {
                 let d = null;
-                if (dateInput) {
-                    d = new Date(dateInput);
-                }
-                if (!d || isNaN(d.getTime())) {
-                    d = new Date(Date.now() + addMs);
-                }
-                const pad = n => String(n).padStart(2, '0');
-                const y = d.getFullYear();
-                const m = pad(d.getMonth() + 1);
-                const day = pad(d.getDate());
-                const hh = pad(d.getHours());
-                const mm = pad(d.getMinutes());
-                return `${y}-${m}-${day}T${hh}:${mm}`;
+                if (dateInput) d = new Date(dateInput);
+                if (!d || isNaN(d.getTime())) d = new Date(Date.now() + addMs);
+                return d;
             };
 
-            const minDateTime = formatLocalDatetime(null, 5 * 60 * 1000);
-            const scheduledResetDateTimeVal = formatLocalDatetime(data.nextResetAt, 3600000);
+            const dObj = defaultDate(data.nextResetAt, 3600000);
+            const pad = n => String(n).padStart(2, '0');
+            const y = dObj.getFullYear();
+            const mo = pad(dObj.getMonth() + 1);
+            const day = pad(dObj.getDate());
+            const hh = pad(dObj.getHours());
+            const mm = pad(dObj.getMinutes());
+            const defaultResetIso = `${y}-${mo}-${day}T${hh}:${mm}`;
+            const defaultResetDisplay = `${day}/${mo}/${y} ${hh}:${mm}`;
 
             const scheduledOptionClass = isOffline ? 'disabled-interaction' : '';
             const scheduledBadge = isOffline
@@ -1317,35 +1223,118 @@ export const ModalTemplates = {
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
 
-                <!-- STEP 1: Tipo de Reinicio -->
+                <!-- STEP 1: Tipo de Reinicio & Fecha si es programada -->
                 <div class="component-card--grouped component-card--flush active component-modal-step" data-ref="offline-reset-step-1" data-selected-type="instant">
                     <div class="component-modal-header component-modal-header--with-icon">
                         <div class="component-card__icon-container component-card__icon-container--bordered">
                             <span class="material-symbols-rounded">restart_alt</span>
                         </div>
                         <div class="component-modal-header-text">
-                            <h2 class="component-modal-title">${__('canvas_resets_title')}</h2>
-                            <p class="component-modal-desc">${__('canvas_resets_desc')}</p>
+                            <h2 class="component-modal-title">${__('canvas_resets_title') || 'Reiniciar Lienzo'}</h2>
+                            <p class="component-modal-desc">${__('canvas_resets_desc') || 'Limpia los trazos del lienzo o programa un reinicio.'}</p>
                         </div>
                     </div>
 
                     <div class="component-modal-body">
-                        <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--static">
-                            <div class="component-menu-list">
-                                <div class="component-menu-link active" data-action="selectResetType" data-type="instant">
-                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">flash_on</span></div>
-                                    <div class="component-menu-link-text">
-                                        <span>${__('canvas_reset_now_title')}</span>
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleOfflineResetType" data-ref="offline-reset-type-trigger" data-value="instant">
+                                <span class="material-symbols-rounded" data-ref="offline-reset-type-icon">flash_on</span>
+                                <span class="component-dropdown-text" data-ref="offline-reset-type-label">${__('canvas_reset_now_title') || 'Inmediato'}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
+                            </div>
+                            <div class="component-module component-module--dropdown disabled" data-module="moduleOfflineResetType">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list">
+                                        <div class="component-menu-link active" data-action="selectResetTypeOption" data-value="instant" data-label="${__('canvas_reset_now_title') || 'Inmediato'}" data-icon="flash_on">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">flash_on</span></div>
+                                            <div class="component-menu-link-text"><span>${__('canvas_reset_now_title') || 'Inmediato'}</span></div>
+                                        </div>
+                                        <div class="component-menu-link ${scheduledOptionClass}" data-action="${isOffline ? '' : 'selectResetTypeOption'}" data-value="scheduled" data-label="${__('canvas_reset_active_title') || 'Programado'}" data-icon="schedule">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">schedule</span></div>
+                                            <div class="component-menu-link-text"><span>${__('canvas_reset_active_title') || 'Programado'}</span></div>
+                                            ${scheduledBadge}
+                                        </div>
                                     </div>
-                                    <span class="material-symbols-rounded component-text-success" data-ref="reset-instant-check">check_circle</span>
                                 </div>
-                                <div class="component-menu-link ${scheduledOptionClass}" data-action="${isOffline ? '' : 'selectResetType'}" data-type="scheduled">
-                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">schedule</span></div>
-                                    <div class="component-menu-link-text">
-                                        <span>${__('canvas_reset_active_title')}</span>
+                            </div>
+                        </div>
+
+                        <!-- Selector de fecha tipo Dropdown Calendar si es programado (Etapa 1) -->
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full disabled" data-ref="offline-reset-scheduled-date-container">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleOfflineResetDate" data-ref="offline-reset-datetime-trigger" data-value="${defaultResetIso}">
+                                <span class="material-symbols-rounded">calendar_month</span>
+                                <span class="component-dropdown-text" data-ref="offline-reset-datetime-text">${defaultResetDisplay}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
+                            </div>
+                            <div class="component-module component-module--dropdown disabled" data-module="moduleOfflineResetDate" data-ref="moduleOfflineResetDate">
+                                <div class="component-menu component-menu--w265 component-menu--h-auto component-menu--no-padding">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-calendar">
+                                        <div class="component-calendar-header">
+                                            <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarPrevMonth">
+                                                <span class="material-symbols-rounded">chevron_left</span>
+                                            </button>
+                                            <div class="component-calendar-title" data-ref="calendar-title">${__('calendar_month_year') || 'Mes Año'}</div>
+                                            <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarNextMonth">
+                                                <span class="material-symbols-rounded">chevron_right</span>
+                                            </button>
+                                        </div>
+                                        <div class="component-calendar-weekdays">
+                                            <span>${__('cal_su') || 'Do'}</span><span>${__('cal_mo') || 'Lu'}</span><span>${__('cal_tu') || 'Ma'}</span><span>${__('cal_we') || 'Mi'}</span><span>${__('cal_th') || 'Ju'}</span><span>${__('cal_fr') || 'Vi'}</span><span>${__('cal_sa') || 'Sa'}</span>
+                                        </div>
+                                        <div class="component-calendar-days" data-ref="calendar-days"></div>
+                                        <div class="calendar-modal-controls">
+                                            <div class="calendar-control-column">
+                                                <div class="calendar-control-label">${__('lbl_hours') || 'Horas'}</div>
+                                                <div class="component-inline-control component-inline-control--full">
+                                                    <div class="component-inline-control__group">
+                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-5">
+                                                            <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                                        </button>
+                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-1">
+                                                            <span class="material-symbols-rounded">chevron_left</span>
+                                                        </button>
+                                                    </div>
+                                                    <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-value="${hh}">${hh}</div>
+                                                    <div class="component-inline-control__group">
+                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="1">
+                                                            <span class="material-symbols-rounded">chevron_right</span>
+                                                        </button>
+                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="5">
+                                                            <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="calendar-control-column">
+                                                <div class="calendar-control-label">${__('lbl_minutes') || 'Minutos'}</div>
+                                                <div class="component-inline-control component-inline-control--full">
+                                                    <div class="component-inline-control__group">
+                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-5">
+                                                            <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                                        </button>
+                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-1">
+                                                            <span class="material-symbols-rounded">chevron_left</span>
+                                                        </button>
+                                                    </div>
+                                                    <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-value="${mm}">${mm}</div>
+                                                    <div class="component-inline-control__group">
+                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="1">
+                                                            <span class="material-symbols-rounded">chevron_right</span>
+                                                        </button>
+                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="5">
+                                                            <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="component-calendar-actions">
+                                            <button type="button" class="component-button component-button--h30" data-action="calendarCancel">${__('btn_cancel') || 'Cancelar'}</button>
+                                            <button type="button" class="component-button component-button--primary component-button--h30" data-action="confirmOfflineResetDate">${__('btn_accept') || 'Aceptar'}</button>
+                                        </div>
                                     </div>
-                                    ${scheduledBadge}
-                                    <span class="material-symbols-rounded component-text-success disabled" data-ref="reset-scheduled-check">check_circle</span>
                                 </div>
                             </div>
                         </div>
@@ -1355,20 +1344,19 @@ export const ModalTemplates = {
                         <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
                         <button class="component-button component-button--primary component-button--h40" data-action="offlineResetNextStep">
                             <span>${__('btn_continue')}</span>
-                            <span class="material-symbols-rounded">chevron_right</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- STEP 2A: Reinicio Inmediato -->
-                <div class="component-card--grouped component-card--flush disabled component-modal-step" data-ref="offline-reset-step-2-instant">
+                <!-- STEP 2: Confirmación y opciones -->
+                <div class="component-card--grouped component-card--flush disabled component-modal-step" data-ref="offline-reset-step-2">
                     <div class="component-modal-header component-modal-header--with-icon">
                         <div class="component-card__icon-container component-card__icon-container--bordered">
                             <span class="material-symbols-rounded">delete_forever</span>
                         </div>
                         <div class="component-modal-header-text">
-                            <h2 class="component-modal-title">${__('title_confirm_reset_now')}</h2>
-                            <p class="component-modal-desc">${__('desc_confirm_reset_now')}</p>
+                            <h2 class="component-modal-title">${__('title_confirm_reset_now') || 'Confirmar reinicio'}</h2>
+                            <p class="component-modal-desc">${__('desc_confirm_reset_now') || 'Esta acción borrará todos los píxeles actuales del lienzo.'}</p>
                         </div>
                     </div>
 
@@ -1376,8 +1364,8 @@ export const ModalTemplates = {
                         <div class="component-group-item">
                             <div class="component-card__content">
                                 <div class="component-card__text">
-                                    <h2 class="component-card__title">${__('canvas_reset_captura_title')}</h2>
-                                    <p class="component-card__description">${__('take_photo_before_reset')}</p>
+                                    <h2 class="component-card__title">${__('canvas_reset_captura_title') || 'Crear captura previa'}</h2>
+                                    <p class="component-card__description">${__('take_photo_before_reset') || 'Guarda una copia del estado actual antes de reiniciar.'}</p>
                                 </div>
                             </div>
                             <div class="component-card__actions component-card__actions--end">
@@ -1391,137 +1379,12 @@ export const ModalTemplates = {
 
                     <div class="component-modal-actions">
                         <button class="component-button component-button--h40" data-action="offlineResetPrevStep">
-                            <span class="material-symbols-rounded">chevron_left</span>
                             <span>${__('btn_back')}</span>
                         </button>
-                        <button class="component-button component-button--danger component-button--h40" data-action="submitOfflineReset">
-                            <span class="material-symbols-rounded">delete_forever</span>
-                            <span>${__('btn_reset_now')}</span>
+                        <button class="component-button component-button--danger component-button--h40" data-action="submitOfflineResetUnified">
+                            <span>${__('btn_reset_now') || 'Reiniciar ahora'}</span>
                         </button>
                     </div>
-                </div>
-
-                <!-- STEP 2B: Configuración de Reinicio Programado (Online) -->
-                <div class="component-card--grouped component-card--flush disabled component-modal-step" data-ref="offline-reset-step-2-scheduled">
-                    <div class="component-modal-header component-modal-header--with-icon">
-                        <div class="component-card__icon-container component-card__icon-container--bordered">
-                            <span class="material-symbols-rounded">schedule</span>
-                        </div>
-                        <div class="component-modal-header-text">
-                            <h2 class="component-modal-title">${__('canvas_reset_active_title')}</h2>
-                            <p class="component-modal-desc">${__('canvas_reset_active_desc')}</p>
-                        </div>
-                    </div>
-
-                    <div class="component-modal-body">
-                        <div class="component-group-item">
-                            <div class="component-card__content">
-                                <div class="component-card__text">
-                                    <h2 class="component-card__title">${__('canvas_reset_active_title')}</h2>
-                                    <p class="component-card__description">${__('canvas_reset_active_desc')}</p>
-                                </div>
-                            </div>
-                            <div class="component-card__actions component-card__actions--end">
-                                <label class="component-toggle-switch">
-                                    <input type="checkbox" data-ref="scheduled_reset_active" data-action="toggleScheduledResetSection" ${resetActive ? 'checked' : ''}>
-                                    <span class="component-toggle-slider"></span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="component-form-body ${resetActive ? '' : 'disabled-interaction'}" data-ref="scheduled_reset_fields" style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;">
-                            <div class="component-input-group">
-                                <input class="component-input-field" data-ref="scheduled_reset_datetime" type="datetime-local" placeholder=" " value="${scheduledResetDateTimeVal}" min="${minDateTime}">
-                                <label class="component-input-label">${__('lbl_scheduled_datetime')}</label>
-                            </div>
-
-                            <div class="component-group-item">
-                                <div class="component-card__content">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title">${__('canvas_reset_captura_title')}</h2>
-                                        <p class="component-card__description">${__('take_photo_before_reset')}</p>
-                                    </div>
-                                </div>
-                                <div class="component-card__actions component-card__actions--end">
-                                    <label class="component-toggle-switch">
-                                        <input type="checkbox" data-ref="scheduled_reset_snapshot" checked>
-                                        <span class="component-toggle-slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="component-modal-actions">
-                        <button class="component-button component-button--h40" data-action="offlineResetPrevStep">
-                            <span class="material-symbols-rounded">chevron_left</span>
-                            <span>${__('btn_back')}</span>
-                        </button>
-                        <button class="component-button component-button--primary component-button--h40" data-action="submitScheduledReset">
-                            <span class="material-symbols-rounded">save</span>
-                            <span>${__('btn_save_changes')}</span>
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-    },
-
-    dynamicFormDialog: {
-        build: (data) => {
-            let fieldsHtml = '';
-            
-            if (data.fields && data.fields.length > 0) {
-                fieldsHtml = '<div class="component-card--grouped component-card--flush">';
-                
-                data.fields.forEach((field, index) => {
-                    if (field.type === 'switch') {
-                        fieldsHtml += `
-                            <div class="component-group-item component-group-item--wrap">
-                                <div class="component-card__content">
-                                    <div class="component-card__text">
-                                        <h2 class="component-card__title">${__(field.labelKey)}</h2>
-                                    </div>
-                                </div>
-                                <div class="component-card__actions component-card__actions--end">
-                                    <label class="component-toggle-switch">
-                                        <input type="checkbox" data-ref="modal_input_${field.name}" ${field.default ? 'checked' : ''}>
-                                        <span class="component-toggle-slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-                        `;
-                    } else {
-                        fieldsHtml += `
-                            <div class="component-group-item component-group-item--wrap">
-                                <div class="component-input-group">
-                                    <input type="${field.type || 'text'}" data-ref="modal_input_${field.name}" class="component-input-field" placeholder=" " value="${field.default || ''}">
-                                    <label class="component-input-label">${__(field.labelKey)}</label>
-                                </div>
-                            </div>
-                        `;
-                    }
-                    
-                    if (index < data.fields.length - 1) {
-                        fieldsHtml += '<hr class="component-divider">';
-                    }
-                });
-                
-                fieldsHtml += '</div>';
-            }
-
-            return `
-                <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header">
-                    <h2 class="component-modal-title">${data.titleKey ? __(data.titleKey) : __('title_form')}</h2>
-                    <p class="component-modal-desc">${data.descKey ? __(data.descKey) : ''}</p>
-                </div>
-                <div class="component-modal-body">
-                    ${fieldsHtml}
-                </div>
-                <div class="component-modal-actions">
-                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button class="component-button component-button--primary component-button--h40" data-modal-action="confirm_dynamic_form">${data.confirmKey ? __(data.confirmKey) : __('btn_accept')}</button>
                 </div>
             `;
         }
@@ -1662,13 +1525,6 @@ export const ModalTemplates = {
         })
     },
 
-    dynamicHtmlModal: {
-        build: (data) => `
-            <div class="pill-container"><div class="drag-handle"></div></div>
-            ${data.html}
-        `
-    },
-
     joinLiveShare: {
         build: () => `
             <div class="pill-container"><div class="drag-handle"></div></div>
@@ -1687,76 +1543,6 @@ export const ModalTemplates = {
             <div class="component-modal-actions">
                 <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
                 <button class="component-button component-button--primary component-button--h40" data-action="submitJoinLive">${__('btn_join')}</button>
-            </div>
-        `
-    },
-
-    startLiveShare: {
-        build: (data) => `
-            <div class="pill-container"><div class="drag-handle"></div></div>
-            <div class="component-modal-header">
-                <h3 class="component-modal-title">${__('title_start_live_share')}</h3>
-                <p class="component-modal-desc">${__('desc_start_live_share')}</p>
-            </div>
-            <div class="component-modal-body" data-ref="live-share-modal-body">
-                <div class="live-share-owner-content">
-                    <div class="component-alert-success ${data.isActive ? 'active' : 'disabled'}" data-ref="live-share-active-alert">
-                        ${__('txt_live_active')}
-                    </div>
-                    
-                    <div class="live-share-code-display" data-ref="live-share-code">${data.code || '...'}</div>
-                    
-                    <div class="live-share-inputs-grid">
-                        <div class="live-share-input-group">
-                            <label class="live-share-label">${__('lbl_position_x')}</label>
-                            <div class="component-inline-control component-inline-control--fixed">
-                                <div class="component-inline-control__group">
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="x" data-step="-10"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="x" data-step="-1"><span class="material-symbols-rounded">chevron_left</span></button>
-                                </div>
-                                <div class="component-inline-control__center" data-ref="live-input-x" data-value="${data.x || 0}">${data.x || 0}</div>
-                                <div class="component-inline-control__group">
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="x" data-step="1"><span class="material-symbols-rounded">chevron_right</span></button>
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="x" data-step="10"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="live-share-input-group">
-                            <label class="live-share-label">${__('lbl_position_y')}</label>
-                            <div class="component-inline-control component-inline-control--fixed">
-                                <div class="component-inline-control__group">
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="y" data-step="-10"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="y" data-step="-1"><span class="material-symbols-rounded">chevron_left</span></button>
-                                </div>
-                                <div class="component-inline-control__center" data-ref="live-input-y" data-value="${data.y || 0}">${data.y || 0}</div>
-                                <div class="component-inline-control__group">
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="y" data-step="1"><span class="material-symbols-rounded">chevron_right</span></button>
-                                    <button type="button" class="component-inline-control__btn" data-action="adjustLivePosition" data-axis="y" data-step="10"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="live-share-input-group">
-                        <label class="live-share-label live-share-label--flex">${__('lbl_opacity')}</label>
-                        <div class="component-inline-control component-inline-control--fixed">
-                            <div class="component-inline-control__group">
-                                <button type="button" class="component-inline-control__btn" data-action="adjustLiveOpacity" data-step="-0.10" data-min="0"><span class="material-symbols-rounded">keyboard_double_arrow_left</span></button>
-                                <button type="button" class="component-inline-control__btn" data-action="adjustLiveOpacity" data-step="-0.05" data-min="0"><span class="material-symbols-rounded">chevron_left</span></button>
-                            </div>
-                            <div class="component-inline-control__center" data-ref="live-input-opacity" data-value="${data.opacity !== undefined ? data.opacity : 1}">${Math.round((data.opacity !== undefined ? data.opacity : 1) * 100)}%</div>
-                            <div class="component-inline-control__group">
-                                <button type="button" class="component-inline-control__btn" data-action="adjustLiveOpacity" data-step="0.05" data-max="1"><span class="material-symbols-rounded">chevron_right</span></button>
-                                <button type="button" class="component-inline-control__btn" data-action="adjustLiveOpacity" data-step="0.10" data-max="1"><span class="material-symbols-rounded">keyboard_double_arrow_right</span></button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="component-modal-actions">
-                <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_close')}</button>
-                <button class="component-button component-button--danger component-button--h40 ${data.isActive ? 'active' : 'disabled'}" data-action="stopLive">${__('btn_stop_live')}</button>
-                <button class="component-button component-button--primary component-button--h40 ${data.isActive ? 'disabled' : 'active'}" data-action="startLive">${__('btn_start_live')}</button>
             </div>
         `
     },
@@ -2971,57 +2757,6 @@ export const ModalTemplates = {
             `;
         }
     },
-    timelapseExportVideoModal: {
-        build: (data = {}) => {
-            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
-            const selectedDuration = data.duration || 30;
-
-            const durations = [
-                { val: 15, label: __('lbl_timelapse_video_duration_15') || '15s (Rápido)' },
-                { val: 30, label: __('lbl_timelapse_video_duration_30') || '30s (Recomendado)' },
-                { val: 60, label: __('lbl_timelapse_video_duration_60') || '60s (Detallado)' }
-            ];
-
-            const durationsHtml = durations.map(d => {
-                const isActive = (d.val === selectedDuration) ? 'active' : '';
-                return `
-                    <button class="component-button component-button--h35 component-timelapse-speed-btn ${isActive}" 
-                            data-action="selectTimelapseVideoDuration" 
-                            data-duration="${d.val}" 
-                            type="button">
-                        ${d.label}
-                    </button>
-                `;
-            }).join('');
-
-            return `
-                <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header component-modal-header--with-icon">
-                    <div class="component-card__icon-container component-card__icon-container--bordered">
-                        <span class="material-symbols-rounded">movie</span>
-                    </div>
-                    <div class="component-modal-header-text">
-                        <h3 class="component-modal-title">${__('lbl_export_timelapse_video_title')}</h3>
-                        <p class="component-modal-desc">${__('lbl_export_timelapse_video_desc')}</p>
-                    </div>
-                </div>
-
-                <div class="component-modal-content">
-                    <div class="component-form-group">
-                        <label class="component-label">${__('lbl_timelapse_video_duration')}</label>
-                        <div class="component-timelapse-speeds-grid" data-ref="timelapse-video-durations-container">
-                            ${durationsHtml}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="component-modal-actions">
-                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                    <button class="component-button component-button--primary component-button--h40" data-action="confirmExportTimelapseVideo" data-ref="btn-confirm-export-video">${__('btn_generate_mp4')}</button>
-                </div>
-            `;
-        }
-    },
     selectCanvasTemplateModal: {
         medium: true,
         build: (data = {}) => {
@@ -3224,9 +2959,9 @@ export const ModalTemplates = {
                         <p class="component-modal-desc">${__('canvas_palette_color_add_desc') || 'Selecciona el nuevo tono para añadirlo a tu paleta personalizada.'}</p>
                     </div>
                     <div class="component-modal-body component-modal-body--scrollable">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div class="component-palette-meta-row">
                             <span class="component-subtext" data-ref="customPaletteColorCount">${initialColors.length} / 36</span>
-                            <span class="component-subtext" style="font-size: 0.72rem;">${__('msg_palette_min_colors') || 'Mínimo 4 colores'}</span>
+                            <span class="component-subtext component-subtext--sm">${__('msg_palette_min_colors') || 'Mínimo 4 colores'}</span>
                         </div>
                         <div class="component-palette-swatches-grid" data-ref="customPaletteSwatchesGrid">
                             ${swatchesHtml}
@@ -3281,13 +3016,12 @@ export const ModalTemplates = {
     },
 
     imageViewer: {
-        fullScreen: false,
-        noPadding: true,
-        hideCloseBtn: false,
+        customBoxClass: 'component-modal-box--image-viewer',
         build: (data = {}) => {
-            const rawImages = Array.isArray(data.images) ? data.images : (data.images ? [data.images] : []);
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const images = Array.isArray(data.images) ? data.images : [data.imageUrl || data.url || ''];
             const defaultSender = data.sender || {};
-            const normalizedImages = rawImages.map(item => {
+            const normalizedImages = images.map((item, idx) => {
                 if (typeof item === 'string') {
                     return {
                         url: item,
@@ -3379,40 +3113,40 @@ export const ModalTemplates = {
     },
 
     setup2faModal: {
-        customBoxClass: 'component-modal-box--2fa-setup',
+        customBoxClass: 'component-modal-box--split',
         build: (data = {}) => {
             const secret = data.secret || '';
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
 
                 <!-- Left Column: Form & Steps -->
-                <div class="component-2fa-modal-left">
+                <div class="component-modal-split-left">
                     <!-- Step 1: Scan & Enter Code -->
-                    <div class="active" data-ref="2fa-setup-step-1" style="display: flex; flex-direction: column; gap: 8px; justify-content: flex-start;">
-                        <div class="component-modal-header" style="padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px;">
-                            <h2 class="component-modal-title" style="margin: 0;">
+                    <div class="active component-modal-step-inner" data-ref="2fa-setup-step-1">
+                        <div class="component-modal-header">
+                            <h2 class="component-modal-title">
                                 ${__('2fa_protect_account_title') || __('2fa_title')}
                             </h2>
-                            <p class="component-modal-desc" style="margin: 0;">
+                            <p class="component-modal-desc">
                                 ${__('2fa_protect_account_desc') || __('2fa_desc')}
                             </p>
                         </div>
 
-                        <div class="component-modal-body" style="padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
-                            <div class="component-input-group" style="margin: 0;">
+                        <div class="component-modal-body">
+                            <div class="component-input-group">
                                 <input type="text" data-ref="2fa_setup_totp_code" class="component-input-field" placeholder=" " maxlength="6" autocomplete="off" inputmode="numeric">
                                 <label class="component-input-label">${__('lbl_6_digit_code') || 'Código de 6 dígitos'}</label>
                             </div>
 
-                            <button type="button" class="component-button component-button--primary component-button--h40" data-action="submitSetupEnable2FA" style="width: 100%; margin: 0;">
+                            <button type="button" class="component-button component-button--primary component-button--h40" data-action="submitSetupEnable2FA">
                                 ${__('btn_enable_authenticator_app') || __('btn_activate')}
                             </button>
 
-                            <div class="component-link-container component-link-container--start" style="margin: 0;">
+                            <div class="component-link-container component-link-container--start">
                                 <span class="component-link" data-action="toggle2FASecretKey">${__('btn_show_secret_key') || __('2fa_cant_scan') || 'Mostrar clave secreta'}</span>
                             </div>
 
-                            <div class="disabled" data-ref="2fa_secret_key_container" style="margin: 0;">
+                            <div class="disabled" data-ref="2fa_secret_key_container">
                                 <div class="component-2fa-secret-box" data-ref="2fa_secret_key_text" data-action="copy2FASecretKey" title="${__('copy')}">
                                     ${escapeHTML(secret) || '...'}
                                 </div>
@@ -3421,26 +3155,26 @@ export const ModalTemplates = {
                     </div>
 
                     <!-- Step 2: Recovery Codes -->
-                    <div class="disabled" data-ref="2fa-setup-step-2-recovery" style="display: flex; flex-direction: column; gap: 8px; justify-content: flex-start;">
-                        <div class="component-modal-header" style="padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px;">
-                            <h2 class="component-modal-title" style="margin: 0;">
+                    <div class="disabled component-modal-step-inner" data-ref="2fa-setup-step-2-recovery">
+                        <div class="component-modal-header">
+                            <h2 class="component-modal-title">
                                 ${__('2fa_activated_title')}
                             </h2>
-                            <p class="component-modal-desc" style="margin: 0;">
+                            <p class="component-modal-desc">
                                 ${__('2fa_new_codes_desc')}
                             </p>
                         </div>
 
-                        <div class="component-modal-body" style="padding: 0; margin: 0;">
-                            <div class="component-2fa-recovery-list" data-ref="2fa-recovery-codes-grid" style="margin: 0;"></div>
+                        <div class="component-modal-body">
+                            <div class="component-modal-code-grid" data-ref="2fa-recovery-codes-grid"></div>
                         </div>
 
-                        <div class="component-modal-actions" style="padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
-                            <button type="button" class="component-button component-button--h40" data-action="copySetupRecoveryCodes" style="width: 100%; margin: 0;">
+                        <div class="component-modal-actions">
+                            <button type="button" class="component-button component-button--h40" data-action="copySetupRecoveryCodes">
                                 <span class="material-symbols-rounded">content_copy</span>
                                 <span>${__('btn_copy_codes')}</span>
                             </button>
-                            <button type="button" class="component-button component-button--primary component-button--h40" data-action="finishSetup2FA" style="width: 100%; margin: 0;">
+                            <button type="button" class="component-button component-button--primary component-button--h40" data-action="finishSetup2FA">
                                 <span>${__('btn_finish')}</span>
                             </button>
                         </div>
@@ -3448,9 +3182,9 @@ export const ModalTemplates = {
                 </div>
 
                 <!-- Right Column: Banner Gradient & QR Code -->
-                <div class="component-2fa-modal-right">
+                <div class="component-modal-split-right">
                     <div class="component-2fa-qr-frame">
-                        <div data-ref="2fa-qr-target" style="width: 218px; height: 218px; display: flex; align-items: center; justify-content: center;">
+                        <div class="component-modal-split-qr-target" data-ref="2fa-qr-target">
                             <div class="component-spinner"></div>
                         </div>
                     </div>
@@ -3459,39 +3193,8 @@ export const ModalTemplates = {
         }
     },
 
-    manage2faModal: {
-        build: () => `
-            <div class="pill-container"><div class="drag-handle"></div></div>
-            <div class="component-modal-header">
-                <h3 class="component-modal-title">${__('sec_2fa_title') || 'Autenticación en dos pasos'}</h3>
-                <p class="component-modal-desc">${__('2fa_manage_desc') || 'Gestiona la seguridad y los métodos de respaldo de tu cuenta.'}</p>
-            </div>
-            <div class="component-modal-body">
-                <div class="component-menu-list">
-                    <button type="button" class="component-menu-link" data-action="manageRegenerateRecoveryCodes">
-                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">key</span></div>
-                        <div class="component-menu-link-text">
-                            <span>${__('2fa_recovery_title_card') || 'Códigos de recuperación'}</span>
-                        </div>
-                        <div class="component-menu-link-arrow"><span class="material-symbols-rounded">chevron_right</span></div>
-                    </button>
-                    <button type="button" class="component-menu-link component-text-notice--danger" data-action="manageDisable2FA">
-                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">shield</span></div>
-                        <div class="component-menu-link-text">
-                            <span>${__('btn_deactivate') || 'Desactivar 2FA'}</span>
-                        </div>
-                        <div class="component-menu-link-arrow"><span class="material-symbols-rounded">chevron_right</span></div>
-                    </button>
-                </div>
-            </div>
-            <div class="component-modal-actions">
-                <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel') || 'Cancelar'}</button>
-            </div>
-        `
-    },
-
     recoveryCodesDisplayModal: {
-        customBoxClass: 'component-modal-box--2fa-setup',
+        customBoxClass: 'component-modal-box--split',
         build: (data = {}) => {
             const codes = Array.isArray(data.recovery_codes) ? data.recovery_codes : [];
             let codesHtml = '';
@@ -3508,36 +3211,36 @@ export const ModalTemplates = {
                 <div class="pill-container"><div class="drag-handle"></div></div>
 
                 <!-- Left Column: Codes & Actions -->
-                <div class="component-2fa-modal-left">
-                    <div class="component-modal-header" style="padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px;">
-                        <h2 class="component-modal-title" style="margin: 0;">
+                <div class="component-modal-split-left">
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">
                             ${__('2fa_new_codes_title') || 'Nuevos códigos de recuperación'}
                         </h2>
-                        <p class="component-modal-desc" style="margin: 0;">
+                        <p class="component-modal-desc">
                             ${__('2fa_new_codes_desc') || 'Guarda estos códigos en un lugar seguro. Los códigos anteriores han sido invalidados.'}
                         </p>
                     </div>
 
-                    <div class="component-modal-body" style="padding: 0; margin: 0;">
-                        <div class="component-2fa-recovery-list" data-ref="2fa-display-recovery-codes-grid" style="margin: 0;">
+                    <div class="component-modal-body">
+                        <div class="component-modal-code-grid" data-ref="2fa-display-recovery-codes-grid">
                             ${codesHtml}
                         </div>
                     </div>
 
-                    <div class="component-modal-actions" style="padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
-                        <button type="button" class="component-button component-button--h40" data-action="copyDisplayRecoveryCodes" data-codes="${escapeHTML(codes.join('\n'))}" style="width: 100%; margin: 0;">
+                    <div class="component-modal-actions">
+                        <button type="button" class="component-button component-button--h40" data-action="copyDisplayRecoveryCodes" data-codes="${escapeHTML(codes.join('\n'))}">
                             <span class="material-symbols-rounded">content_copy</span>
                             <span>${__('btn_copy_codes') || 'Copiar códigos'}</span>
                         </button>
-                        <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="cancel" style="width: 100%; margin: 0;">
+                        <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="cancel">
                             <span>${__('btn_finish_configuration') || 'Terminar configuración'}</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- Right Column: Banner Gradient & Illustration -->
-                <div class="component-2fa-modal-right">
-                    <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
+                <div class="component-modal-split-right">
+                    <div class="component-modal-split-art-stage">
                         <svg width="180" height="180" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <circle cx="100" cy="100" r="85" fill="rgba(255, 255, 255, 0.08)" stroke="rgba(255, 255, 255, 0.2)" stroke-width="2" stroke-dasharray="6 6"/>
                             <circle cx="100" cy="100" r="65" fill="rgba(255, 255, 255, 0.12)"/>
@@ -3550,5 +3253,3 @@ export const ModalTemplates = {
         }
     }
 };
-
-

@@ -117,28 +117,24 @@ class DevModalsController {
             confirmProtectAreaModal: {
                 count: 64
             },
-            confirmDeleteTemplateModal: {
-                templateId: 'tpl_demo_123'
-            },
-            confirmResetNow: {
-                title: '¿Reiniciar lienzo ahora?',
-                desc: 'Esta acción borrará los trazos actuales y creará una copia de respaldo.'
-            },
-            confirmResizeNow: {
-                title: '¿Redimensionar lienzo?',
-                desc: 'El tamaño cambiará a 1024x1024. Los elementos existentes se mantendrán.'
-            },
             offlineResizeModal: {
-                currentWidth: 512,
-                currentHeight: 512
+                currentSize: '64x64',
+                userTier: 2,
+                isOfflineMode: false,
+                resizeActive: false,
+                nextResizeAt: ''
             },
             offlineResetModal: {
-                canvasName: 'Mi Espacio de Arte'
+                canTakeSnapshot: true,
+                isOfflineMode: false,
+                resetActive: false,
+                nextResetAt: ''
             },
             imageViewer: {
                 images: [
                     {
                         url: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=800&q=80',
+                        name: 'Arte Conceptual #1',
                         sender: 'Artista Digital',
                         date: '24/08/2026 18:30'
                     }
