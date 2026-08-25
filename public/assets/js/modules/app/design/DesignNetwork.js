@@ -1952,14 +1952,15 @@ export const DesignNetwork = {
 
             try {
                 let base64Data = null;
+                let layersData = null;
                 if (this.renderWorker) {
-                    base64Data = await new Promise((resolve) => {
+                    const exported = await new Promise((resolve) => {
                         let timeoutId = null;
                         const handler = (e) => {
                             if (e.data?.type === 'OFFLINE_STATE_EXPORTED') {
                                 if (timeoutId) clearTimeout(timeoutId);
                                 this.renderWorker.removeEventListener('message', handler);
-                                resolve(e.data.payload?.base64);
+                                resolve(e.data.payload);
                             }
                         };
                         this.renderWorker.addEventListener('message', handler);
@@ -1969,6 +1970,14 @@ export const DesignNetwork = {
                             resolve(null);
                         }, 3000);
                     });
+                    base64Data = exported?.base64 || null;
+                    layersData = exported?.layersData || null;
+
+                    if (layersData && this.canvasIntId) {
+                        try {
+                            localStorage.setItem(`rosaura_layers_${this.canvasIntId}`, JSON.stringify(layersData));
+                        } catch (e) {}
+                    }
                 } else if (this.offscreenCtx) {
                     const imgData = this.offscreenCtx.getImageData(0, 0, this.boardWidth, this.boardHeight);
                     const bytes = imgData.data;

@@ -7,6 +7,7 @@ import { InteractionShapesText } from './interactions/InteractionShapesText.js?v
 import { InteractionOwnerTools } from './interactions/InteractionOwnerTools.js?v=34';
 import { InteractionHistoryColors } from './interactions/InteractionHistoryColors.js?v=34';
 import { InteractionOfflineWorkspace } from './interactions/InteractionOfflineWorkspace.js?v=34';
+import { InteractionLayers } from './interactions/InteractionLayers.js?v=34';
 
 export {
     colorToAbgr,
@@ -19,7 +20,8 @@ export {
     InteractionShapesText,
     InteractionOwnerTools,
     InteractionHistoryColors,
-    InteractionOfflineWorkspace
+    InteractionOfflineWorkspace,
+    InteractionLayers
 };
 
 export const DesignInteractions = Object.assign(
@@ -31,5 +33,6 @@ export const DesignInteractions = Object.assign(
     InteractionShapesText,
     InteractionOwnerTools,
     InteractionHistoryColors,
-    InteractionOfflineWorkspace
+    InteractionOfflineWorkspace,
+    InteractionLayers
 );

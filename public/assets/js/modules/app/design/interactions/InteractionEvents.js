@@ -118,6 +118,112 @@ export const InteractionEvents = {
             }
         }
 
+        const btnToggleLayers = e.target.closest('[data-action="toggleLayersPanel"]');
+        if (btnToggleLayers) {
+            e.preventDefault();
+            if (typeof this.toggleLayersPanel === 'function') {
+                this.toggleLayersPanel();
+            }
+            return;
+        }
+
+        const btnAddLayer = e.target.closest('[data-action="addLayer"]');
+        if (btnAddLayer) {
+            e.preventDefault();
+            if (typeof this.addLayer === 'function') {
+                this.addLayer();
+            }
+            return;
+        }
+
+        const btnDeleteLayer = e.target.closest('[data-action="deleteLayer"]');
+        if (btnDeleteLayer) {
+            e.preventDefault();
+            const layerId = btnDeleteLayer.getAttribute('data-layer-id');
+            if (typeof this.deleteLayer === 'function') {
+                this.deleteLayer(layerId);
+            }
+            return;
+        }
+
+        const btnMoveLayerUp = e.target.closest('[data-action="moveLayerUp"]');
+        if (btnMoveLayerUp) {
+            e.preventDefault();
+            const layerId = btnMoveLayerUp.getAttribute('data-layer-id');
+            if (typeof this.moveLayerUp === 'function') {
+                this.moveLayerUp(layerId);
+            }
+            return;
+        }
+
+        const btnMoveLayerDown = e.target.closest('[data-action="moveLayerDown"]');
+        if (btnMoveLayerDown) {
+            e.preventDefault();
+            const layerId = btnMoveLayerDown.getAttribute('data-layer-id');
+            if (typeof this.moveLayerDown === 'function') {
+                this.moveLayerDown(layerId);
+            }
+            return;
+        }
+
+        const btnDuplicateLayer = e.target.closest('[data-action="duplicateLayer"]');
+        if (btnDuplicateLayer) {
+            e.preventDefault();
+            const layerId = btnDuplicateLayer.getAttribute('data-layer-id');
+            if (typeof this.duplicateLayer === 'function') {
+                this.duplicateLayer(layerId);
+            }
+            return;
+        }
+
+        const btnMergeLayerUp = e.target.closest('[data-action="mergeLayerUp"]');
+        if (btnMergeLayerUp) {
+            e.preventDefault();
+            const layerId = btnMergeLayerUp.getAttribute('data-layer-id');
+            if (typeof this.mergeLayerUp === 'function') {
+                this.mergeLayerUp(layerId);
+            }
+            return;
+        }
+
+        const btnMergeLayerDown = e.target.closest('[data-action="mergeLayerDown"]');
+        if (btnMergeLayerDown) {
+            e.preventDefault();
+            const layerId = btnMergeLayerDown.getAttribute('data-layer-id');
+            if (typeof this.mergeLayerDown === 'function') {
+                this.mergeLayerDown(layerId);
+            }
+            return;
+        }
+
+        const btnToggleLayerLock = e.target.closest('[data-action="toggleLayerLock"]');
+        if (btnToggleLayerLock) {
+            e.preventDefault();
+            const layerId = btnToggleLayerLock.getAttribute('data-layer-id');
+            if (typeof this.toggleLayerLock === 'function') {
+                this.toggleLayerLock(layerId);
+            }
+            return;
+        }
+
+        const inputToggleLayerVis = e.target.closest('[data-action="toggleLayerVisibility"]');
+        if (inputToggleLayerVis) {
+            const layerId = inputToggleLayerVis.getAttribute('data-layer-id');
+            if (typeof this.toggleLayerVisibility === 'function') {
+                this.toggleLayerVisibility(layerId, inputToggleLayerVis.checked);
+            }
+            return;
+        }
+
+        const layerSelectTarget = e.target.closest('[data-action="selectLayer"]');
+        if (layerSelectTarget) {
+            const layerId = layerSelectTarget.getAttribute('data-layer-id');
+            if (layerId && typeof this.selectLayer === 'function') {
+                this.selectLayer(layerId);
+            }
+            return;
+        }
+
         const btnOpenOfflineResize = e.target.closest('[data-action="openOfflineResizeModal"]');
         if (btnOpenOfflineResize) {
             e.preventDefault();
@@ -1064,6 +1170,11 @@ export const InteractionEvents = {
             if (this.isOfflineMode && typeof this.toggleOfflineDither === 'function') {
                 e.preventDefault();
                 this.toggleOfflineDither();
+            }
+        } else if (keyUpper === 'L') {
+            if (this.isOfflineMode && typeof this.toggleLayersPanel === 'function') {
+                e.preventDefault();
+                this.toggleLayersPanel();
             }
         } else if (keyUpper === 'H') {
             const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-chat"]');

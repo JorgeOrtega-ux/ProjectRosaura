@@ -263,6 +263,11 @@ extract($designData);
 
             <?php if (isset($isOwner) && $isOwner): ?>
             <div class="canvas-design-toolbar-vertical-right <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="workspace-tools-vertical-right">
+                <?php if (!$isOnlineModeActive): ?>
+                <button class="component-button component-button--icon component-button--h32" data-action="toggleLayersPanel" data-ref="btn-toggle-layers" data-tooltip="<?php echo __('tooltip_layers'); ?> [L]" data-position="left">
+                    <span class="material-symbols-rounded">layers</span>
+                </button>
+                <?php endif; ?>
                 <button class="component-button component-button--icon component-button--h32" data-action="openOfflineResizeModal" data-tooltip="<?php echo __('tooltip_resize_canvas'); ?>" data-position="left">
                     <span class="material-symbols-rounded">aspect_ratio</span>
                 </button>
@@ -272,6 +277,46 @@ extract($designData);
                 <button class="component-button component-button--icon component-button--h32" data-action="openOfflineResetModal" data-tooltip="<?php echo __('tooltip_manage_resets'); ?>" data-position="left">
                     <span class="material-symbols-rounded">restart_alt</span>
                 </button>
+            </div>
+            <?php endif; ?>
+
+            <?php if (!$isOnlineModeActive): ?>
+            <div class="component-layers-panel disabled" data-ref="layers-floating-panel">
+                <div class="component-layers-preview-container">
+                    <div class="component-layers-preview-box">
+                        <canvas class="component-layers-preview-canvas" data-ref="layer-preview-canvas" width="96" height="96"></canvas>
+                        <div class="component-layers-preview-info">
+                            <span class="component-layers-preview-name" data-ref="layer-active-name"><?php echo __('lbl_default_layer_name'); ?> 1</span>
+                            <span class="component-layers-preview-dimensions" data-ref="layer-active-dimensions"><?php echo htmlspecialchars($canvasSize); ?> px</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-layers-list-container" data-ref="layers-list-scroll"></div>
+
+                <div class="component-layers-actions-footer" data-ref="layers-actions-toolbar">
+                    <button class="component-button component-button--icon component-button--h28" data-action="addLayer" data-tooltip="<?php echo __('tooltip_add_layer'); ?>" data-position="top">
+                        <span class="material-symbols-rounded">add</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h28" data-action="moveLayerUp" data-tooltip="<?php echo __('tooltip_move_layer_up'); ?>" data-position="top">
+                        <span class="material-symbols-rounded">arrow_upward</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h28" data-action="moveLayerDown" data-tooltip="<?php echo __('tooltip_move_layer_down'); ?>" data-position="top">
+                        <span class="material-symbols-rounded">arrow_downward</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h28" data-action="duplicateLayer" data-tooltip="<?php echo __('tooltip_duplicate_layer'); ?>" data-position="top">
+                        <span class="material-symbols-rounded">content_copy</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h28" data-action="mergeLayerUp" data-tooltip="<?php echo __('tooltip_merge_layer_up'); ?>" data-position="top">
+                        <span class="material-symbols-rounded">vertical_align_top</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h28" data-action="mergeLayerDown" data-tooltip="<?php echo __('tooltip_merge_layer_down'); ?>" data-position="top">
+                        <span class="material-symbols-rounded">vertical_align_bottom</span>
+                    </button>
+                    <button class="component-button component-button--icon component-button--h28 component-button--danger" data-action="deleteLayer" data-tooltip="<?php echo __('tooltip_delete_layer'); ?>" data-position="top">
+                        <span class="material-symbols-rounded">delete</span>
+                    </button>
+                </div>
             </div>
             <?php endif; ?>
 

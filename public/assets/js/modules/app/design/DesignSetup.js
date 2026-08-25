@@ -371,11 +371,22 @@ export const DesignSetup = {
 
     async hydrateCanvasState(base64String, templateCoords = null) {
         try {
+            let layersData = null;
+            if (this.isOfflineMode && this.canvasIntId) {
+                try {
+                    const stored = localStorage.getItem(`rosaura_layers_${this.canvasIntId}`);
+                    if (stored) {
+                        layersData = JSON.parse(stored);
+                    }
+                } catch (e) {}
+            }
+
             if (this.renderWorker) {
                 this.renderWorker.postMessage({
                     type: 'HYDRATE_STATE',
                     payload: {
                         base64String,
+                        layersData,
                         boardWidth: this.boardWidth,
                         boardHeight: this.boardHeight,
                         templateCoords
@@ -654,6 +665,26 @@ export const DesignSetup = {
                                 if (this.interactionMode === 'offline_eyedropper' && typeof this.toggleEyedropper === 'function') {
                                     this.toggleEyedropper();
                                 }
+                            }
+                        }
+                        if (e.data?.type === 'LAYERS_STATE_CHANGED') {
+                            if (typeof this.handleLayersStateChanged === 'function') {
+                                this.handleLayersStateChanged(e.data.payload);
+                            }
+                            if (this.isOfflineMode && typeof this.saveOfflineCanvasState === 'function') {
+                                this.saveOfflineCanvasState(false);
+                            }
+                        }
+                        if (e.data?.type === 'LAYER_PREVIEW_UPDATED') {
+                            if (typeof this.handleLayerPreviewUpdated === 'function') {
+                                this.handleLayerPreviewUpdated(e.data.payload);
+                            }
+                        }
+                        if (e.data?.type === 'SHOW_NOTICE') {
+                            const msgKey = e.data.payload?.messageKey;
+                            const level = e.data.payload?.level || 'info';
+                            if (msgKey && typeof showMessage === 'function') {
+                                showMessage(window.__(msgKey) || msgKey, level);
                             }
                         }
                     });
