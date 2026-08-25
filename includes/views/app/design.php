@@ -206,8 +206,9 @@ extract($designData);
                             $optRef = !empty($opt['ref']) ? ' data-ref="' . htmlspecialchars($opt['ref']) . '"' : '';
                             $dataValAttr = htmlspecialchars($sub['data_attr']) . '="' . htmlspecialchars($opt['id']) . '"';
                             $optTooltip = !empty($opt['name_key']) ? __($opt['name_key']) : '';
+                            $optAction = !empty($opt['action']) ? $opt['action'] : $sub['action'];
                         ?>
-                        <button class="component-button component-button--icon component-button--h32 <?php echo $isActive ? 'active' : ''; ?>" data-action="<?php echo htmlspecialchars($sub['action']); ?>" <?php echo $dataValAttr; ?><?php echo $optRef; ?> data-tooltip="<?php echo htmlspecialchars($optTooltip); ?>" data-position="right">
+                        <button class="component-button component-button--icon component-button--h32 <?php echo $isActive ? 'active' : ''; ?>" data-action="<?php echo htmlspecialchars($optAction); ?>" <?php echo $dataValAttr; ?><?php echo $optRef; ?> data-tooltip="<?php echo htmlspecialchars($optTooltip); ?>" data-position="right">
                             <span class="material-symbols-rounded"><?php echo htmlspecialchars($opt['icon']); ?></span>
                         </button>
                         <?php endforeach; ?>

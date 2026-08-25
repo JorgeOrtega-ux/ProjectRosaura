@@ -12,9 +12,10 @@ export const OfflineToolsConfig = {
             dataAttr: 'data-brush-shape',
             default: 'square',
             options: [
-                { id: 'square', icon: 'square', nameKey: 'tooltip_brush_square' },
-                { id: 'circle', icon: 'circle', nameKey: 'tooltip_brush_circle' },
-                { id: 'slash',  icon: 'edit',   nameKey: 'tooltip_brush_slash' }
+                { id: 'square',        icon: 'square',        nameKey: 'tooltip_brush_square' },
+                { id: 'circle',        icon: 'circle',        nameKey: 'tooltip_brush_circle' },
+                { id: 'slash',         icon: 'edit',          nameKey: 'tooltip_brush_slash' },
+                { id: 'pixel_perfect', icon: 'auto_fix_high', nameKey: 'tooltip_pixel_perfect', action: 'togglePixelPerfect', ref: 'btn-brush-pixel-perfect' }
             ]
         },
         sizes: {
@@ -28,13 +29,54 @@ export const OfflineToolsConfig = {
             }
         }
     },
+    quickShapes: {
+        id: 'quickShapes',
+        nameKey: 'tooltip_quick_shapes',
+        icon: 'polyline',
+        shortcut: 'U',
+        action: 'toggleOfflineQuickShapes',
+        ref: 'btn-offline-quick-shapes',
+        subtoolbar: {
+            id: 'quickShapes',
+            action: 'setQuickShapeType',
+            dataAttr: 'data-shape-type',
+            default: 'line',
+            options: [
+                { id: 'line',      icon: 'show_chart',             nameKey: 'tooltip_shape_line' },
+                { id: 'rectangle', icon: 'crop_din',               nameKey: 'tooltip_shape_rectangle' },
+                { id: 'circle',    icon: 'radio_button_unchecked', nameKey: 'tooltip_shape_circle' },
+                { id: 'fill',      icon: 'format_paint',           nameKey: 'tooltip_shape_mode_fill', action: 'toggleQuickShapeFill', ref: 'btn-quick-shape-fill' }
+            ]
+        },
+        sizes: {
+            id: 'quickShapes',
+            action: 'setQuickShapeStroke',
+            default: 1,
+            tiers: {
+                small:  [1, 2, 3, 4],
+                medium: [1, 2, 3, 4, 6],
+                large:  [1, 2, 4, 6, 8]
+            }
+        }
+    },
     mirror: {
         id: 'mirror',
         nameKey: 'tooltip_mirror_mode',
         icon: 'flip',
         shortcut: 'X',
         action: 'toggleOfflineMirror',
-        ref: 'btn-offline-mirror'
+        ref: 'btn-offline-mirror',
+        subtoolbar: {
+            id: 'mirror',
+            action: 'setOfflineMirrorMode',
+            dataAttr: 'data-mirror-axis',
+            default: 'x',
+            options: [
+                { id: 'x',    icon: 'flip',           nameKey: 'tooltip_mirror_x' },
+                { id: 'y',    icon: 'swap_vert',      nameKey: 'tooltip_mirror_y' },
+                { id: 'quad', icon: 'control_camera', nameKey: 'tooltip_mirror_quad' }
+            ]
+        }
     },
     moveArea: {
         id: 'moveArea',
@@ -50,7 +92,17 @@ export const OfflineToolsConfig = {
         icon: 'format_color_fill',
         shortcut: 'G',
         action: 'toggleOfflineBucket',
-        ref: 'btn-offline-bucket'
+        ref: 'btn-offline-bucket',
+        subtoolbar: {
+            id: 'bucket',
+            action: 'setOfflineBucketMode',
+            dataAttr: 'data-bucket-mode',
+            default: 'flood',
+            options: [
+                { id: 'flood', icon: 'format_color_fill', nameKey: 'tooltip_bucket_flood' },
+                { id: 'swap',  icon: 'change_circle',     nameKey: 'tooltip_bucket_swap' }
+            ]
+        }
     },
     spray: {
         id: 'spray',
@@ -85,8 +137,9 @@ export const OfflineToolsConfig = {
             dataAttr: 'data-eraser-mode',
             default: 'box',
             options: [
-                { id: 'box',   icon: 'highlight_alt', ref: 'btn-eraser-mode-box',   nameKey: 'tooltip_eraser_box' },
-                { id: 'brush', icon: 'draw',          ref: 'btn-eraser-mode-brush', nameKey: 'tooltip_eraser_brush' }
+                { id: 'box',   icon: 'highlight_alt',   ref: 'btn-eraser-mode-box',   nameKey: 'tooltip_eraser_box' },
+                { id: 'brush', icon: 'draw',            ref: 'btn-eraser-mode-brush', nameKey: 'tooltip_eraser_brush' },
+                { id: 'color', icon: 'auto_fix_normal', ref: 'btn-eraser-mode-color', nameKey: 'tooltip_eraser_color' }
             ]
         },
         sizes: {

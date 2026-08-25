@@ -46,6 +46,7 @@ let activePixelText = null;
 
 let isOfflineMode = false;
 let isMirrorMode = false;
+let mirrorAxis = 'x';
 let isEyedropperActive = false;
 let tileGridSize = 0;
 let brushSize = 1;
@@ -1634,12 +1635,19 @@ function render() {
     if (isMirrorMode && boardWidth > 0 && boardHeight > 0) {
         ctx.save();
         const midX = boardWidth / 2;
+        const midY = boardHeight / 2;
         ctx.strokeStyle = '#10b981';
         ctx.lineWidth = 1.5 / transform.scale;
         ctx.setLineDash([4 / transform.scale, 4 / transform.scale]);
         ctx.beginPath();
-        ctx.moveTo(midX, 0);
-        ctx.lineTo(midX, boardHeight);
+        if (mirrorAxis === 'x' || mirrorAxis === 'quad') {
+            ctx.moveTo(midX, 0);
+            ctx.lineTo(midX, boardHeight);
+        }
+        if (mirrorAxis === 'y' || mirrorAxis === 'quad') {
+            ctx.moveTo(0, midY);
+            ctx.lineTo(boardWidth, midY);
+        }
         ctx.stroke();
         ctx.restore();
     }
@@ -1800,6 +1808,7 @@ self.onmessage = function (e) {
 
         case 'SET_MIRROR_MODE':
             isMirrorMode = !!payload.isMirrorMode;
+            if (payload.mirrorAxis !== undefined) mirrorAxis = payload.mirrorAxis || 'x';
             requestRender();
             break;
 
@@ -1897,6 +1906,7 @@ self.onmessage = function (e) {
             isFrozen = !!payload.isFrozen;
             isOwner = !!payload.isOwner;
             if (payload.isMirrorMode !== undefined) isMirrorMode = !!payload.isMirrorMode;
+            if (payload.mirrorAxis !== undefined) mirrorAxis = payload.mirrorAxis || 'x';
             if (isOwnerProtecting !== !!payload.isOwnerProtecting) {
                 isOwnerProtecting = !!payload.isOwnerProtecting;
                 protectedPixelsDirty = true;
@@ -2265,8 +2275,19 @@ self.onmessage = function (e) {
                     const off = offsets[i];
                     applyShadeToCoord(pt.x + off.dx, pt.y + off.dy);
                     if (isMirrorMode) {
-                        const symX = bw - 1 - (pt.x + off.dx);
-                        applyShadeToCoord(symX, pt.y + off.dy);
+                        const px = pt.x + off.dx;
+                        const py = pt.y + off.dy;
+                        const symX = bw - 1 - px;
+                        const symY = bh - 1 - py;
+                        if (mirrorAxis === 'x' || mirrorAxis === 'quad') {
+                            applyShadeToCoord(symX, py);
+                        }
+                        if (mirrorAxis === 'y' || mirrorAxis === 'quad') {
+                            applyShadeToCoord(px, symY);
+                        }
+                        if (mirrorAxis === 'quad') {
+                            applyShadeToCoord(symX, symY);
+                        }
                     }
                 }
             }
@@ -2738,6 +2759,70 @@ self.onmessage = function (e) {
             flushDirtyRect();
             requestRender();
             if (isOfflineMode) generateLayerPreview(activeLayerId);
+            break;
+        }
+
+        case 'COLOR_SWAP': {
+            if (!pixelBuffer || !payload) break;
+            const activeL = isOfflineMode ? getActiveLayer() : null;
+            if (isOfflineMode && activeL && (activeL.locked || !activeL.visible)) {
+                notifyLayerBlocked(activeL.locked ? 'locked' : 'hidden');
+                break;
+            }
+            const targetBuffer = (isOfflineMode && activeL) ? activeL.buffer : pixelBuffer;
+
+            const startX = Math.floor(payload.startX);
+            const startY = Math.floor(payload.startY);
+            const fillColor = colorToAbgr(payload.color);
+
+            if (startX < 0 || startX >= boardWidth || startY < 0 || startY >= boardHeight) break;
+
+            processPixelQueue();
+
+            const bw = boardWidth;
+            const bh = boardHeight;
+            const totalPixels = bw * bh;
+            const sIdx = startY * bw + startX;
+            const targetColor = targetBuffer[sIdx];
+            if (targetColor === fillColor) break;
+
+            const diffs = isOfflineMode ? [] : null;
+            let minX = bw, minY = bh, maxX = -1, maxY = -1;
+
+            for (let idx = 0; idx < totalPixels; idx++) {
+                if (targetBuffer[idx] === targetColor) {
+                    const cx = idx % bw;
+                    const cy = (idx / bw) | 0;
+                    targetBuffer[idx] = fillColor;
+                    if (diffs) diffs.push({ x: cx, y: cy, prev: targetColor, next: fillColor, layerId: activeL ? activeL.id : null });
+                    if (cx < minX) minX = cx;
+                    if (cy < minY) minY = cy;
+                    if (cx > maxX) maxX = cx;
+                    if (cy > maxY) maxY = cy;
+                }
+            }
+
+            if (isOfflineMode && diffs && diffs.length > 0) {
+                undoStack.push({ type: 'color_swap', diffs });
+                redoStack.length = 0;
+                if (undoStack.length > MAX_HISTORY) undoStack.shift();
+                self.postMessage({
+                    type: 'HISTORY_CHANGED',
+                    payload: { canUndo: undoStack.length > 0, canRedo: false, action: 'color_swap' }
+                });
+            }
+
+            if (minX <= maxX && minY <= maxY) {
+                if (isOfflineMode && layers.length > 0) {
+                    composeDirtyRect(minX, minY, maxX, maxY);
+                } else {
+                    markDirty(minX, minY);
+                    markDirty(maxX, maxY);
+                }
+                flushDirtyRect();
+                requestRender();
+                if (isOfflineMode) generateLayerPreview(activeLayerId);
+            }
             break;
         }
 

@@ -26,6 +26,7 @@ class OfflineToolsConfig {
                         ['id' => 'square', 'icon' => 'square', 'name_key' => 'tooltip_brush_square'],
                         ['id' => 'circle', 'icon' => 'circle', 'name_key' => 'tooltip_brush_circle'],
                         ['id' => 'slash',  'icon' => 'edit',   'name_key' => 'tooltip_brush_slash'],
+                        ['id' => 'pixel_perfect', 'icon' => 'auto_fix_high', 'name_key' => 'tooltip_pixel_perfect', 'action' => 'togglePixelPerfect', 'ref' => 'btn-brush-pixel-perfect'],
                     ]
                 ],
                 'sizes'       => [
@@ -39,6 +40,36 @@ class OfflineToolsConfig {
                     ]
                 ]
             ],
+            'quickShapes' => [
+                'id'          => 'quickShapes',
+                'name_key'    => 'tooltip_quick_shapes',
+                'icon'        => 'polyline',
+                'shortcut'    => 'U',
+                'action'      => 'toggleOfflineQuickShapes',
+                'ref'         => 'btn-offline-quick-shapes',
+                'subtoolbar'  => [
+                    'id'          => 'quickShapes',
+                    'action'      => 'setQuickShapeType',
+                    'data_attr'   => 'data-shape-type',
+                    'default'     => 'line',
+                    'options'     => [
+                        ['id' => 'line',      'icon' => 'show_chart',             'name_key' => 'tooltip_shape_line'],
+                        ['id' => 'rectangle', 'icon' => 'crop_din',               'name_key' => 'tooltip_shape_rectangle'],
+                        ['id' => 'circle',    'icon' => 'radio_button_unchecked', 'name_key' => 'tooltip_shape_circle'],
+                        ['id' => 'fill',      'icon' => 'format_paint',           'name_key' => 'tooltip_shape_mode_fill', 'action' => 'toggleQuickShapeFill', 'ref' => 'btn-quick-shape-fill'],
+                    ]
+                ],
+                'sizes'       => [
+                    'id'          => 'quickShapes',
+                    'action'      => 'setQuickShapeStroke',
+                    'default'     => 1,
+                    'tiers'       => [
+                        'small'  => [1, 2, 3, 4],
+                        'medium' => [1, 2, 3, 4, 6],
+                        'large'  => [1, 2, 4, 6, 8],
+                    ]
+                ]
+            ],
             'mirror' => [
                 'id'          => 'mirror',
                 'name_key'    => 'tooltip_mirror_mode',
@@ -46,6 +77,17 @@ class OfflineToolsConfig {
                 'shortcut'    => 'X',
                 'action'      => 'toggleOfflineMirror',
                 'ref'         => 'btn-offline-mirror',
+                'subtoolbar'  => [
+                    'id'          => 'mirror',
+                    'action'      => 'setOfflineMirrorMode',
+                    'data_attr'   => 'data-mirror-axis',
+                    'default'     => 'x',
+                    'options'     => [
+                        ['id' => 'x',    'icon' => 'flip',           'name_key' => 'tooltip_mirror_x'],
+                        ['id' => 'y',    'icon' => 'swap_vert',      'name_key' => 'tooltip_mirror_y'],
+                        ['id' => 'quad', 'icon' => 'control_camera', 'name_key' => 'tooltip_mirror_quad'],
+                    ]
+                ]
             ],
             'moveArea' => [
                 'id'          => 'moveArea',
@@ -62,6 +104,16 @@ class OfflineToolsConfig {
                 'shortcut'    => 'G',
                 'action'      => 'toggleOfflineBucket',
                 'ref'         => 'btn-offline-bucket',
+                'subtoolbar'  => [
+                    'id'          => 'bucket',
+                    'action'      => 'setOfflineBucketMode',
+                    'data_attr'   => 'data-bucket-mode',
+                    'default'     => 'flood',
+                    'options'     => [
+                        ['id' => 'flood', 'icon' => 'format_color_fill', 'name_key' => 'tooltip_bucket_flood'],
+                        ['id' => 'swap',  'icon' => 'change_circle',     'name_key' => 'tooltip_bucket_swap'],
+                    ]
+                ]
             ],
             'spray' => [
                 'id'          => 'spray',
@@ -96,8 +148,9 @@ class OfflineToolsConfig {
                     'data_attr'   => 'data-eraser-mode',
                     'default'     => 'box',
                     'options'     => [
-                        ['id' => 'box',   'icon' => 'highlight_alt', 'ref' => 'btn-eraser-mode-box',   'name_key' => 'tooltip_eraser_box'],
-                        ['id' => 'brush', 'icon' => 'draw',          'ref' => 'btn-eraser-mode-brush', 'name_key' => 'tooltip_eraser_brush'],
+                        ['id' => 'box',   'icon' => 'highlight_alt',   'ref' => 'btn-eraser-mode-box',   'name_key' => 'tooltip_eraser_box'],
+                        ['id' => 'brush', 'icon' => 'draw',            'ref' => 'btn-eraser-mode-brush', 'name_key' => 'tooltip_eraser_brush'],
+                        ['id' => 'color', 'icon' => 'auto_fix_normal', 'ref' => 'btn-eraser-mode-color', 'name_key' => 'tooltip_eraser_color'],
                     ]
                 ],
                 'sizes'       => [

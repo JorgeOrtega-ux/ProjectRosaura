@@ -169,6 +169,14 @@ export const InteractionPointer = {
                 return;
             }
 
+            if (this.interactionMode === 'offline_quick_shapes') {
+                this.isQuickShapeDrawing = true;
+                this.quickShapeStart = { x: coords.x, y: coords.y };
+                this.quickShapeCurrent = { x: coords.x, y: coords.y };
+                this.updateQuickShapePreview(e && e.shiftKey);
+                return;
+            }
+
             if (this.interactionMode === 'offline_shape') {
                 this.isShapeDrawing = true;
                 this.shapeStart = { x: coords.x, y: coords.y };
@@ -363,6 +371,25 @@ export const InteractionPointer = {
                     this.applyBrushStrokeLine(line.slice(1), false);
                     this.brushLastCoords = { x: coords.x, y: coords.y };
                 }
+            }
+            return;
+        }
+
+        if (this.interactionMode === 'offline_quick_shapes' && this.isQuickShapeDrawing && this.quickShapeStart) {
+            let coords = this.getBoardCoords(e.clientX, e.clientY);
+            if (!coords && this.canvas) {
+                const rect = this.canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                const bw = this.boardWidth || 64;
+                const bh = this.boardHeight || 64;
+                const boardX = Math.max(0, Math.min(bw - 1, Math.floor((mouseX - this.transform.x) / this.transform.scale)));
+                const boardY = Math.max(0, Math.min(bh - 1, Math.floor((mouseY - this.transform.y) / this.transform.scale)));
+                coords = { x: boardX, y: boardY };
+            }
+            if (coords) {
+                this.quickShapeCurrent = { x: coords.x, y: coords.y };
+                this.updateQuickShapePreview(e && e.shiftKey);
             }
             return;
         }
@@ -723,6 +750,10 @@ export const InteractionPointer = {
             this.textDragStart = null;
         }
 
+        if (this.interactionMode === 'offline_quick_shapes' && this.isQuickShapeDrawing) {
+            this.commitQuickShapeDrawing(e && e.shiftKey);
+        }
+
         if (this.interactionMode === 'offline_shape' && this.isShapeDrawing) {
             this.commitShapeDrawing();
         }
@@ -1001,6 +1032,18 @@ export const InteractionPointer = {
                 }
             }
 
+            if (this.interactionMode === 'offline_quick_shapes' && !this.isSpectator && !isOperationalLocked) {
+                const coords = this.getBoardCoords(this.touchStartX, this.touchStartY);
+                if (coords) {
+                    e.preventDefault();
+                    this.isQuickShapeDrawing = true;
+                    this.quickShapeStart = { x: coords.x, y: coords.y };
+                    this.quickShapeCurrent = { x: coords.x, y: coords.y };
+                    this.updateQuickShapePreview(false);
+                    return;
+                }
+            }
+
             if (this.interactionMode === 'offline_shape' && !this.isSpectator && !isOperationalLocked) {
                 const coords = this.getBoardCoords(this.touchStartX, this.touchStartY);
                 if (coords) {
@@ -1160,6 +1203,26 @@ export const InteractionPointer = {
                     this.applyBrushStrokeLine(line.slice(1), false);
                     this.brushLastCoords = { x: coords.x, y: coords.y };
                 }
+            }
+            return;
+        }
+
+        if (this.interactionMode === 'offline_quick_shapes' && this.isQuickShapeDrawing && this.quickShapeStart && e.touches.length === 1) {
+            e.preventDefault();
+            let coords = this.getBoardCoords(e.touches[0].clientX, e.touches[0].clientY);
+            if (!coords && this.canvas) {
+                const rect = this.canvas.getBoundingClientRect();
+                const mouseX = e.touches[0].clientX - rect.left;
+                const mouseY = e.touches[0].clientY - rect.top;
+                const bw = this.boardWidth || 64;
+                const bh = this.boardHeight || 64;
+                const boardX = Math.max(0, Math.min(bw - 1, Math.floor((mouseX - this.transform.x) / this.transform.scale)));
+                const boardY = Math.max(0, Math.min(bh - 1, Math.floor((mouseY - this.transform.y) / this.transform.scale)));
+                coords = { x: boardX, y: boardY };
+            }
+            if (coords) {
+                this.quickShapeCurrent = { x: coords.x, y: coords.y };
+                this.updateQuickShapePreview(false);
             }
             return;
         }
@@ -1378,6 +1441,11 @@ export const InteractionPointer = {
         if (this.interactionMode === 'offline_text' && this.isTextDragging) {
             this.isTextDragging = false;
             this.textDragStart = null;
+        }
+
+        if (this.interactionMode === 'offline_quick_shapes' && this.isQuickShapeDrawing) {
+            this.commitQuickShapeDrawing(false);
+            return;
         }
 
         if (this.interactionMode === 'offline_shape' && this.isShapeDrawing) {

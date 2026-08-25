@@ -1,6 +1,7 @@
 import { showMessage, hexToHsv, hsvToHex } from '../../../../core/utils/uiUtils.js';
 import { getCanvasTier, getToolSizes, getSprayRadii, getTileGridLevels } from '../data/OfflineToolsData.js';
 import { colorToAbgr, abgrToHex } from './InteractionHelpers.js';
+import { generateShapePixels } from '../utils/GeometricShapesUtils.js';
 
 export const InteractionDrawingTools = {
     toggleEyedropper() {
@@ -62,7 +63,325 @@ export const InteractionDrawingTools = {
             btns.forEach(b => b.classList.toggle('active', parseInt(b.getAttribute('data-size'), 10) === this.brushSize));
         }
         if (typeof showMessage === 'function') {
-            showMessage(`Tama├▒o de pincel: ${this.brushSize}x${this.brushSize} px`, 'info');
+            showMessage(`Tamaño de pincel: ${this.brushSize}x${this.brushSize} px`, 'info');
+        }
+        this.requestRender();
+    },
+
+    togglePixelPerfect() {
+        this.isPixelPerfect = !this.isPixelPerfect;
+        const btn = document.querySelector('[data-ref="btn-brush-pixel-perfect"]') || document.querySelector('[data-action="togglePixelPerfect"]');
+        if (btn) btn.classList.toggle('active', !!this.isPixelPerfect);
+        const msg = this.isPixelPerfect 
+            ? (window.__('msg_pixel_perfect_on') || 'Modo Pixel-Perfect activado')
+            : (window.__('msg_pixel_perfect_off') || 'Modo Pixel-Perfect desactivado');
+        if (typeof showMessage === 'function') showMessage(msg, 'info');
+    },
+
+    filterPixelPerfectStroke(points) {
+        if (!this.isPixelPerfect || (this.brushSize || 1) !== 1 || points.length < 3) {
+            return points;
+        }
+        const result = [];
+        let i = 0;
+        while (i < points.length) {
+            if (i > 0 && i < points.length - 1) {
+                const p0 = points[i - 1];
+                const p1 = points[i];
+                const p2 = points[i + 1];
+                const dx0 = p1.x - p0.x;
+                const dy0 = p1.y - p0.y;
+                const dx1 = p2.x - p1.x;
+                const dy1 = p2.y - p1.y;
+                if ((dx0 === 0 && dy1 === 0 && dy0 !== 0 && dx1 !== 0) ||
+                    (dy0 === 0 && dx1 === 0 && dx0 !== 0 && dy1 !== 0)) {
+                    if (Math.abs(p2.x - p0.x) === 1 && Math.abs(p2.y - p0.y) === 1) {
+                        i++;
+                        continue;
+                    }
+                }
+            }
+            result.push(points[i]);
+            i++;
+        }
+        return result;
+    },
+
+    getSymmetryPoints(x, y, bw = 64, bh = 64) {
+        const pts = [{ x, y }];
+        if (!this.isMirrorMode) return pts;
+        const axis = this.mirrorAxis || 'x';
+        const symX = bw - 1 - x;
+        const symY = bh - 1 - y;
+
+        if (axis === 'x' || axis === 'quad') {
+            if (symX >= 0 && symX < bw && symX !== x) {
+                pts.push({ x: symX, y });
+            }
+        }
+        if (axis === 'y' || axis === 'quad') {
+            if (symY >= 0 && symY < bh && symY !== y) {
+                pts.push({ x, y: symY });
+            }
+        }
+        if (axis === 'quad') {
+            if (symX >= 0 && symX < bw && symY >= 0 && symY < bh && (symX !== x || symY !== y)) {
+                pts.push({ x: symX, y: symY });
+            }
+        }
+        return pts;
+    },
+
+    toggleOfflineQuickShapes() {
+        if (this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
+
+        const btn = document.querySelector('[data-ref="btn-offline-quick-shapes"]') || document.querySelector('[data-action="toggleOfflineQuickShapes"]');
+        if (this.interactionMode === 'offline_quick_shapes') {
+            this.interactionMode = 'normal';
+            if (btn) btn.classList.remove('active');
+            this.closeSubtoolbar();
+            this.closeBrushSizeToolbar();
+        } else {
+            if (typeof this.cancelInteractionMode === 'function') {
+                this.cancelInteractionMode();
+            }
+            this.interactionMode = 'offline_quick_shapes';
+            if (!this.quickShapeType) this.quickShapeType = 'line';
+            if (!this.quickShapeStroke) this.quickShapeStroke = 1;
+            if (this.quickShapeFill === undefined) this.quickShapeFill = false;
+
+            if (btn) btn.classList.add('active');
+            this.openSubtoolbar('quickShapes');
+            this.openBrushSizeToolbar('quickShapes');
+
+            const typeNames = { line: 'Línea Recta', rectangle: 'Rectángulo', circle: 'Círculo' };
+            const shapeName = typeNames[this.quickShapeType] || this.quickShapeType;
+            if (typeof showMessage === 'function') {
+                showMessage(`Primitivas Rápidas: ${shapeName}. Arrastra en el lienzo (mantén Shift para bloquear ángulo/proporción).`, 'info');
+            }
+        }
+        this.requestRender();
+    },
+
+    setQuickShapeType(type = 'line', targetEl = null) {
+        this.quickShapeType = type;
+        const subtoolbar = document.querySelector('[data-ref="offline-subtoolbar-vertical"]');
+        if (subtoolbar) {
+            const btns = subtoolbar.querySelectorAll('[data-action="setQuickShapeType"]');
+            btns.forEach(b => b.classList.toggle('active', b.getAttribute('data-shape-type') === type));
+        }
+        const typeNames = { line: 'Línea Recta', rectangle: 'Rectángulo', circle: 'Círculo' };
+        if (typeof showMessage === 'function') {
+            showMessage(`Primitiva seleccionada: ${typeNames[type] || type}`, 'info');
+        }
+        this.requestRender();
+    },
+
+    toggleQuickShapeFill(targetEl = null) {
+        this.quickShapeFill = !this.quickShapeFill;
+        const btn = document.querySelector('[data-ref="btn-quick-shape-fill"]') || document.querySelector('[data-action="toggleQuickShapeFill"]');
+        if (btn) btn.classList.toggle('active', !!this.quickShapeFill);
+        const label = this.quickShapeFill ? 'Rellena' : 'Solo Contorno';
+        if (typeof showMessage === 'function') {
+            showMessage(`Modo de figura: ${label}`, 'info');
+        }
+        this.requestRender();
+    },
+
+    setQuickShapeStroke(stroke = 1, targetEl = null) {
+        this.quickShapeStroke = parseInt(stroke, 10) || 1;
+        const toolbar = document.querySelector('[data-ref="brush-size-toolbar"]');
+        if (toolbar) {
+            const btns = toolbar.querySelectorAll('[data-action="setQuickShapeStroke"]');
+            btns.forEach(b => b.classList.toggle('active', parseInt(b.getAttribute('data-size'), 10) === this.quickShapeStroke));
+        }
+        if (typeof showMessage === 'function') {
+            showMessage(`Grosor de línea: ${this.quickShapeStroke} px`, 'info');
+        }
+        this.requestRender();
+    },
+
+    snapQuickShapeCoords(x0, y0, x1, y1, shapeType) {
+        const dx = x1 - x0;
+        const dy = y1 - y0;
+        if (dx === 0 && dy === 0) return { x: x1, y: y1 };
+
+        if (shapeType === 'line') {
+            const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+            const absAngle = Math.abs(angle);
+            const signX = dx >= 0 ? 1 : -1;
+            const signY = dy >= 0 ? 1 : -1;
+            const absDx = Math.abs(dx);
+            const absDy = Math.abs(dy);
+
+            if (absAngle < 15 || absAngle > 165) {
+                return { x: x1, y: y0 };
+            } else if (absAngle > 75 && absAngle < 105) {
+                return { x: x0, y: y1 };
+            } else if ((absAngle >= 35 && absAngle <= 55) || (absAngle >= 125 && absAngle <= 145)) {
+                const d = Math.max(absDx, absDy);
+                return { x: x0 + signX * d, y: y0 + signY * d };
+            } else if ((absAngle >= 15 && absAngle < 35) || (absAngle > 145 && absAngle <= 165)) {
+                const dY = Math.round(absDx / 2);
+                return { x: x1, y: y0 + signY * dY };
+            } else if ((absAngle > 55 && absAngle <= 75) || (absAngle >= 105 && absAngle < 125)) {
+                const dX = Math.round(absDy / 2);
+                return { x: x0 + signX * dX, y: y1 };
+            }
+            return { x: x1, y: y1 };
+        } else {
+            const maxSide = Math.max(Math.abs(dx), Math.abs(dy));
+            const signX = dx >= 0 ? 1 : -1;
+            const signY = dy >= 0 ? 1 : -1;
+            return { x: x0 + signX * maxSide, y: y0 + signY * maxSide };
+        }
+    },
+
+    updateQuickShapePreview(isShift = false) {
+        if (!this.isQuickShapeDrawing || !this.quickShapeStart || !this.quickShapeCurrent) {
+            this.shapePreviewPixels = null;
+            this.shapePreviewBox = null;
+            this.requestRender();
+            return;
+        }
+
+        const shapeType = this.quickShapeType || 'line';
+        const isFill = !!this.quickShapeFill;
+        const strokeWidth = this.quickShapeStroke || 1;
+        const bw = this.boardWidth || 64;
+        const bh = this.boardHeight || 64;
+
+        const x0 = this.quickShapeStart.x;
+        const y0 = this.quickShapeStart.y;
+        let x1 = this.quickShapeCurrent.x;
+        let y1 = this.quickShapeCurrent.y;
+
+        if (isShift) {
+            const snapped = this.snapQuickShapeCoords(x0, y0, x1, y1, shapeType);
+            x1 = Math.max(0, Math.min(bw - 1, snapped.x));
+            y1 = Math.max(0, Math.min(bh - 1, snapped.y));
+        }
+
+        const minX = Math.min(x0, x1);
+        const maxX = Math.max(x0, x1);
+        const minY = Math.min(y0, y1);
+        const maxY = Math.max(y0, y1);
+        const w = maxX - minX + 1;
+        const h = maxY - minY + 1;
+
+        const points = generateShapePixels(shapeType, x0, y0, x1, y1, isFill, strokeWidth, bw, bh);
+        const previewKeys = [];
+        const seen = new Set();
+
+        const addKey = (px, py) => {
+            if (px >= 0 && px < bw && py >= 0 && py < bh) {
+                const symPts = this.getSymmetryPoints(px, py, bw, bh);
+                for (let s = 0; s < symPts.length; s++) {
+                    const sp = symPts[s];
+                    const key = (sp.y << 16) | (sp.x & 0xFFFF);
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        previewKeys.push(key);
+                    }
+                }
+            }
+        };
+
+        for (let i = 0; i < points.length; i++) {
+            addKey(points[i].x, points[i].y);
+        }
+
+        this.shapePreviewPixels = previewKeys;
+        this.shapePreviewBox = {
+            shape: shapeType,
+            x0, y0, x1, y1,
+            minX, minY, maxX, maxY,
+            w, h,
+            isFill,
+            strokeWidth,
+            color: this.currentColor
+        };
+
+        if (typeof this.setCanvasBadge === 'function') {
+            this.setCanvasBadge('coords', 'shapes', `${w} × ${h} px`, 'left');
+        }
+        this.requestRender();
+    },
+
+    commitQuickShapeDrawing(isShift = false) {
+        if (!this.isQuickShapeDrawing || !this.quickShapeStart || !this.quickShapeCurrent) {
+            this.isQuickShapeDrawing = false;
+            this.quickShapeStart = null;
+            this.quickShapeCurrent = null;
+            this.shapePreviewPixels = null;
+            this.shapePreviewBox = null;
+            this.requestRender();
+            return;
+        }
+
+        const shapeType = this.quickShapeType || 'line';
+        const isFill = !!this.quickShapeFill;
+        const strokeWidth = this.quickShapeStroke || 1;
+        const bw = this.boardWidth || 64;
+        const bh = this.boardHeight || 64;
+
+        const x0 = this.quickShapeStart.x;
+        const y0 = this.quickShapeStart.y;
+        let x1 = this.quickShapeCurrent.x;
+        let y1 = this.quickShapeCurrent.y;
+
+        if (isShift) {
+            const snapped = this.snapQuickShapeCoords(x0, y0, x1, y1, shapeType);
+            x1 = Math.max(0, Math.min(bw - 1, snapped.x));
+            y1 = Math.max(0, Math.min(bh - 1, snapped.y));
+        }
+
+        const points = generateShapePixels(shapeType, x0, y0, x1, y1, isFill, strokeWidth, bw, bh);
+        const pixelsToPaint = [];
+        const color = this.currentColor || '#000000';
+        const seen = new Set();
+
+        for (let i = 0; i < points.length; i++) {
+            const pt = points[i];
+            const symPts = this.getSymmetryPoints(pt.x, pt.y, bw, bh);
+            for (let s = 0; s < symPts.length; s++) {
+                const sp = symPts[s];
+                const key = (sp.y << 16) | (sp.x & 0xFFFF);
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    pixelsToPaint.push({ x: sp.x, y: sp.y, color });
+                }
+            }
+        }
+
+        this.isQuickShapeDrawing = false;
+        this.quickShapeStart = null;
+        this.quickShapeCurrent = null;
+        this.shapePreviewPixels = null;
+        this.shapePreviewBox = null;
+
+        if (pixelsToPaint.length > 0) {
+            if (this.isOfflineMode) {
+                if (this.renderWorker) {
+                    this.renderWorker.postMessage({
+                        type: 'PUSH_PIXELS',
+                        payload: {
+                            pixels: pixelsToPaint,
+                            strokePhase: 'single'
+                        }
+                    });
+                }
+                if (this.offscreenCtx) {
+                    this.offscreenCtx.fillStyle = color;
+                    pixelsToPaint.forEach(p => {
+                        this.offscreenCtx.fillRect(p.x, p.y, 1, 1);
+                    });
+                }
+            }
+        }
+
+        if (typeof this.setCanvasBadge === 'function') {
+            this.setCanvasBadge('coords', 'shapes', null, 'left');
         }
         this.requestRender();
     },
@@ -219,20 +538,13 @@ export const InteractionDrawingTools = {
             const px = cx + off.dx;
             const py = cy + off.dy;
             if (px >= 0 && px < bw && py >= 0 && py < bh) {
-                const k = (py << 16) | px;
-                if (!seen.has(k)) {
-                    seen.add(k);
-                    pixelsToPaint.push({ x: px, y: py, color });
-                }
-            }
-            if (this.isMirrorMode) {
-                const symX = bw - 1 - (cx + off.dx);
-                const py = cy + off.dy;
-                if (symX >= 0 && symX < bw && py >= 0 && py < bh) {
-                    const k = (py << 16) | symX;
+                const symPts = this.getSymmetryPoints(px, py, bw, bh);
+                for (let s = 0; s < symPts.length; s++) {
+                    const sp = symPts[s];
+                    const k = (sp.y << 16) | sp.x;
                     if (!seen.has(k)) {
                         seen.add(k);
-                        pixelsToPaint.push({ x: symX, y: py, color });
+                        pixelsToPaint.push({ x: sp.x, y: sp.y, color });
                     }
                 }
             }
@@ -270,26 +582,22 @@ export const InteractionDrawingTools = {
         const pixelsToPaint = [];
         const seen = new Set();
 
-        for (let i = 0; i < line.length; i++) {
-            const pt = line[i];
+        const filteredLine = (this.isPixelPerfect && size === 1) ? this.filterPixelPerfectStroke(line) : line;
+
+        for (let i = 0; i < filteredLine.length; i++) {
+            const pt = filteredLine[i];
             for (let j = 0; j < offsets.length; j++) {
                 const off = offsets[j];
                 const px = pt.x + off.dx;
                 const py = pt.y + off.dy;
                 if (px >= 0 && px < bw && py >= 0 && py < bh) {
-                    const k = (py << 16) | px;
-                    if (!seen.has(k)) {
-                        seen.add(k);
-                        pixelsToPaint.push({ x: px, y: py, color });
-                    }
-                }
-                if (this.isMirrorMode) {
-                    const symX = bw - 1 - (pt.x + off.dx);
-                    if (symX >= 0 && symX < bw && py >= 0 && py < bh) {
-                        const k = (py << 16) | symX;
+                    const symPts = this.getSymmetryPoints(px, py, bw, bh);
+                    for (let s = 0; s < symPts.length; s++) {
+                        const sp = symPts[s];
+                        const k = (sp.y << 16) | sp.x;
                         if (!seen.has(k)) {
                             seen.add(k);
-                            pixelsToPaint.push({ x: symX, y: py, color });
+                            pixelsToPaint.push({ x: sp.x, y: sp.y, color });
                         }
                     }
                 }
@@ -336,19 +644,13 @@ export const InteractionDrawingTools = {
 
             for (let y = minY; y <= maxY; y++) {
                 for (let x = minX; x <= maxX; x++) {
-                    const k = (y << 16) | x;
-                    if (!seen.has(k)) {
-                        seen.add(k);
-                        pixelsToErase.push({ x, y, color: 'transparent' });
-                    }
-                    if (this.isMirrorMode) {
-                        const symX = bw - 1 - x;
-                        if (symX >= 0 && symX < bw && symX !== x) {
-                            const symK = (y << 16) | symX;
-                            if (!seen.has(symK)) {
-                                seen.add(symK);
-                                pixelsToErase.push({ x: symX, y, color: 'transparent' });
-                            }
+                    const symPts = this.getSymmetryPoints(x, y, bw, bh);
+                    for (let s = 0; s < symPts.length; s++) {
+                        const sp = symPts[s];
+                        const k = (sp.y << 16) | sp.x;
+                        if (!seen.has(k)) {
+                            seen.add(k);
+                            pixelsToErase.push({ x: sp.x, y: sp.y, color: 'transparent' });
                         }
                     }
                 }
@@ -396,22 +698,14 @@ export const InteractionDrawingTools = {
 
             for (let y = minY; y <= maxY; y++) {
                 for (let x = minX; x <= maxX; x++) {
-                    if (this.isDitherPixel(x, y, pattern)) {
-                        const k = (y << 16) | x;
-                        if (!seen.has(k)) {
-                            seen.add(k);
-                            pixelsToPaint.push({ x, y, color });
-                        }
-                    }
-                    if (this.isMirrorMode) {
-                        const symX = bw - 1 - x;
-                        if (symX >= 0 && symX < bw && symX !== x) {
-                            if (this.isDitherPixel(symX, y, pattern)) {
-                                const symK = (y << 16) | symX;
-                                if (!seen.has(symK)) {
-                                    seen.add(symK);
-                                    pixelsToPaint.push({ x: symX, y, color });
-                                }
+                    const symPts = this.getSymmetryPoints(x, y, bw, bh);
+                    for (let s = 0; s < symPts.length; s++) {
+                        const sp = symPts[s];
+                        if (this.isDitherPixel(sp.x, sp.y, pattern)) {
+                            const k = (sp.y << 16) | sp.x;
+                            if (!seen.has(k)) {
+                                seen.add(k);
+                                pixelsToPaint.push({ x: sp.x, y: sp.y, color });
                             }
                         }
                     }
@@ -549,31 +843,58 @@ export const InteractionDrawingTools = {
         if (this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
 
         this.isMirrorMode = !this.isMirrorMode;
+        if (!this.mirrorAxis) this.mirrorAxis = 'x';
         const btnMirror = document.querySelector('[data-action="toggleOfflineMirror"]');
         if (btnMirror) {
-            if (this.isMirrorMode) {
-                btnMirror.classList.add('active');
-            } else {
-                btnMirror.classList.remove('active');
+            btnMirror.classList.toggle('active', !!this.isMirrorMode);
+        }
+
+        if (this.isMirrorMode) {
+            this.openSubtoolbar('mirror');
+            const subtoolbar = document.querySelector('[data-ref="offline-subtoolbar-vertical"]');
+            if (subtoolbar) {
+                const btns = subtoolbar.querySelectorAll('[data-action="setOfflineMirrorMode"]');
+                btns.forEach(b => b.classList.toggle('active', b.getAttribute('data-mirror-axis') === (this.mirrorAxis || 'x')));
             }
+        } else {
+            this.closeSubtoolbar();
         }
 
         if (this.renderWorker) {
             this.renderWorker.postMessage({
                 type: 'SET_MIRROR_MODE',
-                payload: { isMirrorMode: this.isMirrorMode }
+                payload: { isMirrorMode: this.isMirrorMode, mirrorAxis: this.mirrorAxis || 'x' }
             });
         }
 
         if (typeof showMessage === 'function') {
             showMessage(
                 this.isMirrorMode 
-                    ? (window.__('msg_mirror_mode_on') || 'Modo Espejo activado. Dibuja para pintar en ambos lados a la vez.')
+                    ? (window.__('msg_mirror_mode_on') || 'Modo Espejo activado.')
                     : (window.__('msg_mirror_mode_off') || 'Modo Espejo desactivado.'),
                 'info'
             );
         }
 
+        this.requestRender();
+    },
+
+    setOfflineMirrorMode(axis = 'x', targetEl = null) {
+        this.mirrorAxis = axis;
+        const subtoolbar = document.querySelector('[data-ref="offline-subtoolbar-vertical"]');
+        if (subtoolbar) {
+            const btns = subtoolbar.querySelectorAll('[data-action="setOfflineMirrorMode"]');
+            btns.forEach(b => b.classList.toggle('active', b.getAttribute('data-mirror-axis') === axis));
+        }
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({
+                type: 'SET_MIRROR_MODE',
+                payload: { isMirrorMode: !!this.isMirrorMode, mirrorAxis: this.mirrorAxis }
+            });
+        }
+        const axisNames = { x: 'Vertical (X)', y: 'Horizontal (Y)', quad: 'Cuádruple (Dual X+Y)' };
+        const msg = (window.__('msg_symmetry_mode') || 'Modo de simetría: :mode').replace(':mode', axisNames[axis] || axis);
+        if (typeof showMessage === 'function') showMessage(msg, 'info');
         this.requestRender();
     },
 
@@ -592,7 +913,31 @@ export const InteractionDrawingTools = {
             }
         });
 
-        if (name === 'tilegrid') {
+        if (name === 'brush') {
+            const btns = subtoolbar.querySelectorAll('[data-action="setBrushShape"]');
+            const currentShape = this.brushShape || 'square';
+            btns.forEach(b => b.classList.toggle('active', b.getAttribute('data-brush-shape') === currentShape));
+            const btnPP = subtoolbar.querySelector('[data-ref="btn-brush-pixel-perfect"]') || subtoolbar.querySelector('[data-action="togglePixelPerfect"]');
+            if (btnPP) btnPP.classList.toggle('active', !!this.isPixelPerfect);
+        } else if (name === 'quickShapes') {
+            const btns = subtoolbar.querySelectorAll('[data-action="setQuickShapeType"]');
+            const currentType = this.quickShapeType || 'line';
+            btns.forEach(b => b.classList.toggle('active', b.getAttribute('data-shape-type') === currentType));
+            const btnFill = subtoolbar.querySelector('[data-ref="btn-quick-shape-fill"]') || subtoolbar.querySelector('[data-action="toggleQuickShapeFill"]');
+            if (btnFill) btnFill.classList.toggle('active', !!this.quickShapeFill);
+        } else if (name === 'mirror') {
+            const btns = subtoolbar.querySelectorAll('[data-action="setOfflineMirrorMode"]');
+            const currentAxis = this.mirrorAxis || 'x';
+            btns.forEach(b => b.classList.toggle('active', b.getAttribute('data-mirror-axis') === currentAxis));
+        } else if (name === 'bucket') {
+            const btns = subtoolbar.querySelectorAll('[data-action="setOfflineBucketMode"]');
+            const currentMode = this.offlineBucketMode || 'flood';
+            btns.forEach(b => b.classList.toggle('active', b.getAttribute('data-bucket-mode') === currentMode));
+        } else if (name === 'eraser') {
+            const btns = subtoolbar.querySelectorAll('[data-action="setOfflineEraserMode"]');
+            const currentMode = this.offlineEraserMode || 'box';
+            btns.forEach(b => b.classList.toggle('active', b.getAttribute('data-eraser-mode') === currentMode));
+        } else if (name === 'tilegrid') {
             const btns = subtoolbar.querySelectorAll('[data-action="setTileGridLevel"]');
             const current = this.tileGridSize || 0;
             btns.forEach(b => {
@@ -654,6 +999,13 @@ export const InteractionDrawingTools = {
         } else if (forTool === 'brush') {
             const btns = toolbar.querySelectorAll('[data-action="setBrushSize"]');
             const currentSize = this.brushSize || 1;
+            btns.forEach(btn => {
+                const s = btn.getAttribute('data-size');
+                btn.classList.toggle('active', s == currentSize);
+            });
+        } else if (forTool === 'quickShapes') {
+            const btns = toolbar.querySelectorAll('[data-action="setQuickShapeStroke"]');
+            const currentSize = this.quickShapeStroke || 1;
             btns.forEach(btn => {
                 const s = btn.getAttribute('data-size');
                 btn.classList.toggle('active', s == currentSize);
@@ -853,10 +1205,12 @@ export const InteractionDrawingTools = {
         this.isDitherPainting = false;
         this.ditherLastCoords = null;
 
-        const btnBox = document.querySelector('[data-ref="btn-eraser-mode-box"]');
-        const btnBrush = document.querySelector('[data-ref="btn-eraser-mode-brush"]');
-        if (btnBox) btnBox.classList.toggle('active', mode === 'box');
-        if (btnBrush) btnBrush.classList.toggle('active', mode === 'brush');
+        const subtoolbar = document.querySelector('[data-ref="offline-subtoolbar-vertical"]');
+        if (subtoolbar) {
+            const btns = subtoolbar.querySelectorAll('[data-action="setOfflineEraserMode"]');
+            btns.forEach(b => b.classList.toggle('active', b.getAttribute('data-eraser-mode') === mode));
+        }
+
         if (btnEraser) btnEraser.classList.add('active');
         this.selectedPixels.clear();
         this.ownerEraserBox = null;
@@ -869,7 +1223,13 @@ export const InteractionDrawingTools = {
             this.interactionMode = 'owner_erasing';
             this.closeBrushSizeToolbar();
             if (typeof showMessage === 'function') {
-                showMessage('Borrador de Selecci├│n / ├ürea activado. Haz clic en la primera esquina para definir la zona.', 'info');
+                showMessage('Borrador de Selección / Área activado. Haz clic en la primera esquina para definir la zona.', 'info');
+            }
+        } else if (mode === 'color') {
+            this.interactionMode = 'offline_eraser_brush';
+            this.openBrushSizeToolbar('eraser');
+            if (typeof showMessage === 'function') {
+                showMessage('Borrador de Color Selectivo activado. Pinta para borrar el color activo.', 'info');
             }
         } else {
             this.interactionMode = 'offline_eraser_brush';
@@ -899,15 +1259,14 @@ export const InteractionDrawingTools = {
 
         const pixelsToErase = [];
         const bw = this.boardWidth || 64;
+        const bh = this.boardHeight || 64;
 
         for (let y = minY; y <= maxY; y++) {
             for (let x = minX; x <= maxX; x++) {
-                pixelsToErase.push({ x, y, color: 'transparent' });
-                if (this.isMirrorMode) {
-                    const symX = bw - 1 - x;
-                    if (symX >= 0 && symX < bw && symX !== x) {
-                        pixelsToErase.push({ x: symX, y, color: 'transparent' });
-                    }
+                const symPts = this.getSymmetryPoints(x, y, bw, bh);
+                for (let s = 0; s < symPts.length; s++) {
+                    const sp = symPts[s];
+                    pixelsToErase.push({ x: sp.x, y: sp.y, color: 'transparent' });
                 }
             }
         }
@@ -925,13 +1284,9 @@ export const InteractionDrawingTools = {
                 });
             }
             if (this.offscreenCtx) {
-                const w = maxX - minX + 1;
-                const h = maxY - minY + 1;
-                this.offscreenCtx.clearRect(minX, minY, w, h);
-                if (this.isMirrorMode) {
-                    const symMinX = bw - 1 - maxX;
-                    this.offscreenCtx.clearRect(symMinX, minY, w, h);
-                }
+                pixelsToErase.forEach(p => {
+                    this.offscreenCtx.clearRect(p.x, p.y, 1, 1);
+                });
             }
         }
     },
@@ -958,18 +1313,39 @@ export const InteractionDrawingTools = {
             this.interactionMode = 'normal';
             this.selectedPixels.clear();
             if (btnBucket) btnBucket.classList.remove('active');
+            this.closeSubtoolbar();
             if (typeof showMessage === 'function') showMessage(window.__('msg_bucket_mode_off') || 'Modo Bote de Pintura desactivado.', 'info');
         } else {
             this.interactionMode = 'offline_bucket';
+            if (!this.offlineBucketMode) this.offlineBucketMode = 'flood';
             this.selectedPixels.clear();
             this.ownerEraserBox = null;
             this.ownerEraserStep = 0;
             this.ownerEraserStart = null;
             if (btnBucket) btnBucket.classList.add('active');
-            if (typeof showMessage === 'function') showMessage(window.__('msg_bucket_mode_on') || 'Modo Bote de Pintura activado. Haz clic en una zona para rellenar.', 'info');
+            this.openSubtoolbar('bucket');
+            const subtoolbar = document.querySelector('[data-ref="offline-subtoolbar-vertical"]');
+            if (subtoolbar) {
+                const btns = subtoolbar.querySelectorAll('[data-action="setOfflineBucketMode"]');
+                btns.forEach(b => b.classList.toggle('active', b.getAttribute('data-bucket-mode') === (this.offlineBucketMode || 'flood')));
+            }
+            const modeName = this.offlineBucketMode === 'swap' ? 'Color Swap (Reemplazo Global)' : 'Relleno Contiguo';
+            if (typeof showMessage === 'function') showMessage(`Modo Bote de Pintura (${modeName}) activado.`, 'info');
         }
         this.updateSelectionUI();
         if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
+        this.requestRender();
+    },
+
+    setOfflineBucketMode(mode = 'flood', targetEl = null) {
+        this.offlineBucketMode = mode;
+        const subtoolbar = document.querySelector('[data-ref="offline-subtoolbar-vertical"]');
+        if (subtoolbar) {
+            const btns = subtoolbar.querySelectorAll('[data-action="setOfflineBucketMode"]');
+            btns.forEach(b => b.classList.toggle('active', b.getAttribute('data-bucket-mode') === mode));
+        }
+        const label = mode === 'swap' ? 'Color Swap (Reemplazo Global)' : 'Relleno Contiguo (Flood Fill)';
+        if (typeof showMessage === 'function') showMessage(`Modo de Relleno: ${label}`, 'info');
         this.requestRender();
     },
 
@@ -1291,6 +1667,25 @@ export const InteractionDrawingTools = {
     executeOfflineBucket(startX, startY) {
         if (!this.isOfflineMode || this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
         if (startX < 0 || startX >= this.boardWidth || startY < 0 || startY >= this.boardHeight) return;
+
+        const mode = this.offlineBucketMode || 'flood';
+
+        if (mode === 'swap') {
+            if (this.renderWorker) {
+                this.renderWorker.postMessage({
+                    type: 'COLOR_SWAP',
+                    payload: {
+                        startX,
+                        startY,
+                        color: this.currentColor
+                    }
+                });
+                if (typeof this.saveOfflineCanvasState === 'function') {
+                    this.saveOfflineCanvasState(false);
+                }
+            }
+            return;
+        }
 
         if (this.renderWorker) {
             this.renderWorker.postMessage({

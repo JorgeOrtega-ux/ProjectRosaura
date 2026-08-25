@@ -352,6 +352,12 @@ export const InteractionSelection = {
         if (btnSpray) btnSpray.classList.remove('active');
         const btnDither = document.querySelector('[data-action="toggleOfflineDither"]');
         if (btnDither) btnDither.classList.remove('active');
+        const btnQuickShapes = document.querySelector('[data-ref="btn-offline-quick-shapes"]') || document.querySelector('[data-action="toggleOfflineQuickShapes"]');
+        if (btnQuickShapes) btnQuickShapes.classList.remove('active');
+        this.isQuickShapeDrawing = false;
+        this.quickShapeStart = null;
+        this.quickShapeCurrent = null;
+
         const btnShapes = document.querySelector('[data-ref="btn-offline-shapes"]');
         if (btnShapes) btnShapes.classList.remove('active');
         const shapesGrid = document.querySelector('[data-ref="shapes-grid"]');

@@ -522,10 +522,77 @@ export const InteractionEvents = {
             return;
         }
 
+        const btnPixelPerfect = e.target.closest('[data-action="togglePixelPerfect"]');
+        if (btnPixelPerfect) {
+            e.preventDefault();
+            if (typeof this.togglePixelPerfect === 'function') {
+                this.togglePixelPerfect();
+            }
+            return;
+        }
+
+        const btnOfflineQuickShapes = e.target.closest('[data-action="toggleOfflineQuickShapes"]');
+        if (btnOfflineQuickShapes) {
+            e.preventDefault();
+            if (typeof this.toggleOfflineQuickShapes === 'function') {
+                this.toggleOfflineQuickShapes();
+            }
+            return;
+        }
+
+        const btnSetQuickShapeType = e.target.closest('[data-action="setQuickShapeType"]');
+        if (btnSetQuickShapeType) {
+            e.preventDefault();
+            const shapeType = btnSetQuickShapeType.getAttribute('data-shape-type') || 'line';
+            if (typeof this.setQuickShapeType === 'function') {
+                this.setQuickShapeType(shapeType, btnSetQuickShapeType);
+            }
+            return;
+        }
+
+        const btnToggleQuickShapeFill = e.target.closest('[data-action="toggleQuickShapeFill"]');
+        if (btnToggleQuickShapeFill) {
+            e.preventDefault();
+            if (typeof this.toggleQuickShapeFill === 'function') {
+                this.toggleQuickShapeFill(btnToggleQuickShapeFill);
+            }
+            return;
+        }
+
+        const btnSetQuickShapeStroke = e.target.closest('[data-action="setQuickShapeStroke"]');
+        if (btnSetQuickShapeStroke) {
+            e.preventDefault();
+            const stroke = parseInt(btnSetQuickShapeStroke.getAttribute('data-size'), 10) || 1;
+            if (typeof this.setQuickShapeStroke === 'function') {
+                this.setQuickShapeStroke(stroke, btnSetQuickShapeStroke);
+            }
+            return;
+        }
+
+        const btnSetMirrorMode = e.target.closest('[data-action="setOfflineMirrorMode"]');
+        if (btnSetMirrorMode) {
+            e.preventDefault();
+            const axis = btnSetMirrorMode.getAttribute('data-mirror-axis') || 'x';
+            if (typeof this.setOfflineMirrorMode === 'function') {
+                this.setOfflineMirrorMode(axis, btnSetMirrorMode);
+            }
+            return;
+        }
+
         const btnOfflineBucket = e.target.closest('[data-action="toggleOfflineBucket"]');
         if (btnOfflineBucket) {
             e.preventDefault();
             this.toggleOfflineBucket();
+            return;
+        }
+
+        const btnSetBucketMode = e.target.closest('[data-action="setOfflineBucketMode"]');
+        if (btnSetBucketMode) {
+            e.preventDefault();
+            const mode = btnSetBucketMode.getAttribute('data-bucket-mode') || 'flood';
+            if (typeof this.setOfflineBucketMode === 'function') {
+                this.setOfflineBucketMode(mode, btnSetBucketMode);
+            }
             return;
         }
 
@@ -1190,6 +1257,10 @@ export const InteractionEvents = {
             }
         } else if (keyUpper === 'U') {
             e.preventDefault();
+            if (this.isOfflineMode && typeof this.toggleOfflineQuickShapes === 'function') {
+                this.toggleOfflineQuickShapes();
+                return;
+            }
             if (this.activeTemplateId) {
                 const tpl = this.templates ? this.templates.find(t => t.id === this.activeTemplateId) : null;
                 if (tpl && !tpl.locked) {
