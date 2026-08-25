@@ -2397,3 +2397,114 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     }
 }
 
+/* ── Animation Export Modal Styles ── */
+.component-tabs-pill {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 9999px;
+    padding: 3px;
+    gap: 4px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.component-tabs-pill__btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: rgba(255, 255, 255, 0.6);
+    padding: 6px 12px;
+    border-radius: 9999px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    height: 32px;
+    box-sizing: border-box;
+}
+
+.component-tabs-pill__btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.component-tabs-pill__btn.active {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.2);
+    font-weight: 600;
+}
+
+.component-anim-preview-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 16px;
+    gap: 12px;
+}
+
+.component-anim-preview-stage {
+    width: 160px;
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-image: 
+        linear-gradient(45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%), 
+        linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%), 
+        linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.component-anim-preview-canvas {
+    width: 160px;
+    height: 160px;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+.component-anim-preview-meta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.component-badge-subtext {
+    font-size: 0.72rem;
+    opacity: 0.65;
+    margin-left: 2px;
+}
+
+.component-menu-link-subtext {
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.6);
+    display: block;
+    white-space: normal;
+    line-height: 1.2;
+    margin-top: 2px;
+}
+
+.component-form-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+

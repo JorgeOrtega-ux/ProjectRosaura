@@ -77,11 +77,22 @@ export const DesignRender = {
     },
 
     renderCustomPickedColors() {
-        const container = document.querySelector('[data-ref="custom-colors-container"]');
+        const container = document.querySelector('[data-ref="recent-colors-container"]') || document.querySelector('[data-ref="custom-colors-container"]');
         if (!container) return;
 
         // Remove any previously rendered custom swatches in this container
         container.querySelectorAll('.component-color-btn--custom-picked').forEach(el => el.remove());
+
+        const section = container.closest('[data-ref="recent-colors-section"]');
+        if (section && this.isOfflineMode) {
+            if (Array.isArray(this.customPickedColors) && this.customPickedColors.length > 0) {
+                section.classList.remove('disabled');
+                section.classList.add('active');
+            } else {
+                section.classList.remove('active');
+                section.classList.add('disabled');
+            }
+        }
 
         // Append buttons for each color in customPickedColors
         if (Array.isArray(this.customPickedColors)) {
@@ -184,7 +195,7 @@ export const DesignRender = {
                 if (!this.renderWorker) return;
 
                 const selArray = this.selectedPixels ? Array.from(this.selectedPixels) : [];
-                const hoverKey = this.hoveredPixel ? ((this.hoveredPixel.y << 16) | this.hoveredPixel.x) : -1;
+                const hoverKey = this.hoveredPixel ? (((this.hoveredPixel.y & 0xFFFF) << 16) | (this.hoveredPixel.x & 0xFFFF)) : -1;
                 const isOwnerProtecting = (this.interactionMode === 'owner_protecting');
                 
                 const topBar = document.querySelector('.general-content-top');
@@ -782,7 +793,6 @@ export const DesignRender = {
         if (!this.hoveredPixel || !ctx) return;
         const hx = this.hoveredPixel.x;
         const hy = this.hoveredPixel.y;
-        if (hx < 0 || hx >= this.boardWidth || hy < 0 || hy >= this.boardHeight) return;
 
         const dpr = window.devicePixelRatio || 1;
         ctx.save();
@@ -796,15 +806,9 @@ export const DesignRender = {
         const cellSize = 12;
         const loupeRadius = (gridSize * cellSize) / 2;
 
-        let centerHex = '#FFFFFF';
-        if (this.offscreenCtx) {
-            const img = this.offscreenCtx.getImageData(hx, hy, 1, 1);
-            const val = new Uint32Array(img.data.buffer)[0];
-            if (val !== 0) {
-                const r = val & 0xFF, g = (val >> 8) & 0xFF, b = (val >> 16) & 0xFF;
-                centerHex = '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
-            }
-        }
+        const centerHex = typeof this.sampleColorAtExact === 'function'
+            ? this.sampleColorAtExact(hx + 0.5, hy + 0.5)
+            : '#FFFFFF';
 
         ctx.save();
         ctx.beginPath();
@@ -823,19 +827,9 @@ export const DesignRender = {
             for (let gx = -gridRadius; gx <= gridRadius; gx++) {
                 const bx = hx + gx;
                 const by = hy + gy;
-                let cellColor = '#FFFFFF';
-                if (bx >= 0 && bx < this.boardWidth && by >= 0 && by < this.boardHeight) {
-                    if (this.offscreenCtx) {
-                        const img = this.offscreenCtx.getImageData(bx, by, 1, 1);
-                        const val = new Uint32Array(img.data.buffer)[0];
-                        if (val !== 0) {
-                            const r = val & 0xFF, g = (val >> 8) & 0xFF, b = (val >> 16) & 0xFF;
-                            cellColor = '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
-                        }
-                    }
-                } else {
-                    cellColor = this.isDarkMode() ? '#111827' : '#e5e7eb';
-                }
+                const cellColor = typeof this.sampleColorAtExact === 'function'
+                    ? this.sampleColorAtExact(bx + 0.5, by + 0.5)
+                    : (this.isDarkMode() ? '#111827' : '#e5e7eb');
 
                 const cellX = screenX + gx * cellSize - cellSize / 2;
                 const cellY = screenY + gy * cellSize - cellSize / 2;

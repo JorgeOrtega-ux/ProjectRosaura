@@ -28,20 +28,17 @@ export const InteractionPointer = {
 
         if (this.interactionMode === 'offline_eyedropper' && !this.isSpectator && !isOperationalLocked) {
             e.preventDefault();
-            const coords = this.getBoardCoords(e.clientX, e.clientY);
-            if (coords) {
-                if (this.renderWorker) {
-                    this.renderWorker.postMessage({
-                        type: 'PICK_PIXEL_COLOR',
-                        payload: { x: coords.x, y: coords.y }
-                    });
-                } else if (this.offscreenCtx) {
-                    const img = this.offscreenCtx.getImageData(coords.x, coords.y, 1, 1);
-                    const val = new Uint32Array(img.data.buffer)[0];
-                    const hex = (val === 0) ? '#FFFFFF' : abgrToHex(val);
-                    this.selectAndAddCustomColor(hex);
-                    this.toggleEyedropper();
-                }
+            const bx = Math.floor(exact.x);
+            const by = Math.floor(exact.y);
+            if (this.renderWorker) {
+                this.renderWorker.postMessage({
+                    type: 'PICK_PIXEL_COLOR',
+                    payload: { x: bx, y: by, exactX: exact.x, exactY: exact.y }
+                });
+            } else {
+                const hex = typeof this.sampleColorAtExact === 'function' ? this.sampleColorAtExact(exact.x, exact.y) : '#FFFFFF';
+                this.selectAndAddCustomColor(hex);
+                this.toggleEyedropper();
             }
             return;
         }
@@ -257,6 +254,17 @@ export const InteractionPointer = {
                         showMessage(`Zona fijada (${areaSize} px). Haz clic en '${actionWord}' abajo para confirmar.`, 'success');
                     }
                 }
+                return;
+            }
+
+            if (this.isOfflineMode) {
+                if (this.selectedPixels && this.selectedPixels.size > 0) {
+                    this.selectedPixels.clear();
+                    this.updateSelectionUI();
+                }
+                this.isBrushPainting = true;
+                this.brushLastCoords = { x: coords.x, y: coords.y };
+                this.applyBrushAt(coords.x, coords.y, true);
                 return;
             }
 
@@ -928,17 +936,17 @@ export const InteractionPointer = {
 
             if (this.interactionMode === 'offline_eyedropper' && !this.isSpectator && !isOperationalLocked) {
                 e.preventDefault();
-                const coords = this.getBoardCoords(this.touchStartX, this.touchStartY);
-                if (coords) {
+                const exact = this.getExactBoardCoords(this.touchStartX, this.touchStartY);
+                if (exact) {
+                    const bx = Math.floor(exact.x);
+                    const by = Math.floor(exact.y);
                     if (this.renderWorker) {
                         this.renderWorker.postMessage({
                             type: 'PICK_PIXEL_COLOR',
-                            payload: { x: coords.x, y: coords.y }
+                            payload: { x: bx, y: by, exactX: exact.x, exactY: exact.y }
                         });
-                    } else if (this.offscreenCtx) {
-                        const img = this.offscreenCtx.getImageData(coords.x, coords.y, 1, 1);
-                        const val = new Uint32Array(img.data.buffer)[0];
-                        const hex = (val === 0) ? '#FFFFFF' : abgrToHex(val);
+                    } else {
+                        const hex = typeof this.sampleColorAtExact === 'function' ? this.sampleColorAtExact(exact.x, exact.y) : '#FFFFFF';
                         this.selectAndAddCustomColor(hex);
                         this.toggleEyedropper();
                     }
@@ -1021,10 +1029,14 @@ export const InteractionPointer = {
                 }
             }
 
-            if (this.interactionMode === 'offline_brush' && !this.isSpectator && !isOperationalLocked) {
+            if ((this.interactionMode === 'offline_brush' || (this.isOfflineMode && this.interactionMode === 'normal')) && !this.isSpectator && !isOperationalLocked) {
                 const coords = this.getBoardCoords(this.touchStartX, this.touchStartY);
                 if (coords) {
                     e.preventDefault();
+                    if (this.selectedPixels && this.selectedPixels.size > 0) {
+                        this.selectedPixels.clear();
+                        this.updateSelectionUI();
+                    }
                     this.isBrushPainting = true;
                     this.brushLastCoords = { x: coords.x, y: coords.y };
                     this.applyBrushAt(coords.x, coords.y, true);
@@ -1301,14 +1313,15 @@ export const InteractionPointer = {
 
             const scaleRatio = currentDistance / this.initialPinchDistance;
             let newScale = this.initialScale * scaleRatio;
-            const minScale = 200 / Math.max(this.boardWidth || 1000, this.boardHeight || 1000);
-            newScale = Math.max(minScale, Math.min(newScale, 40));
+            const { minScale, maxScale } = typeof this.getZoomBounds === 'function' ? this.getZoomBounds() : { minScale: 0.1, maxScale: 30.0 };
+            newScale = Math.max(minScale, Math.min(newScale, maxScale));
 
             this.transform.x = mouseX - (mouseX - this.transform.x) * (newScale / this.transform.scale);
             this.transform.y = mouseY - (mouseY - this.transform.y) * (newScale / this.transform.scale);
             this.transform.scale = newScale;
 
             if (typeof this.limitBounds === 'function') this.limitBounds();
+            if (typeof this.updateZoomUI === 'function') this.updateZoomUI();
             this.requestRender();
             return;
         }
@@ -1557,6 +1570,7 @@ export const InteractionPointer = {
             if (e.touches.length < 2) {
                 this.isPinching = false;
                 this.isDragging = false; 
+                if (typeof this.updateZoomUI === 'function') this.updateZoomUI();
             }
             return;
         }

@@ -37,7 +37,16 @@ export const InteractionSelection = {
     },
 
     calculateHoverPixel(clientX, clientY) {
-        const newHover = this.getBoardCoords(clientX, clientY);
+        let newHover = null;
+        if (this.interactionMode === 'offline_eyedropper') {
+            const exact = this.getExactBoardCoords(clientX, clientY);
+            if (exact) {
+                newHover = { x: Math.floor(exact.x), y: Math.floor(exact.y) };
+            }
+        } else {
+            newHover = this.getBoardCoords(clientX, clientY);
+        }
+
         const hasHoveredPixel = !!this.hoveredPixel;
         const hasNewHover = !!newHover;
         
@@ -394,8 +403,7 @@ export const InteractionSelection = {
         if (btnBrush) btnBrush.classList.remove('active');
         const btnShading = document.querySelector('[data-action="toggleOfflineShading"]');
         if (btnShading) btnShading.classList.remove('active');
-        const btnEyedropper = document.querySelector('[data-action="toggleEyedropper"]');
-        if (btnEyedropper) btnEyedropper.classList.remove('active');
+        document.querySelectorAll('[data-action="toggleEyedropper"]').forEach(btn => btn.classList.remove('active'));
         if (this.canvas) this.canvas.classList.remove('component-cursor-eyedropper');
         this.updateSelectionUI();
         if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();

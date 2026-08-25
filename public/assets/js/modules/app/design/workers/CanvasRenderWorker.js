@@ -143,8 +143,15 @@ function initMemoryEngine(w, h) {
 }
 
 // ---------------------------------------------------------
-// MOTOR DE CAPAS (LAYERS ENGINE)
+// MOTOR DE CAPAS Y ANIMACIÓN (LAYERS & ANIMATION TIMELINE ENGINE)
 // ---------------------------------------------------------
+let frames = [];
+let activeFrameId = null;
+let isPlayingAnimation = false;
+let animationTimer = null;
+let animationFps = 12;
+let showOnionSkin = false;
+
 let layers = [];
 let activeLayerId = null;
 
@@ -161,43 +168,67 @@ function notifyLayerBlocked(reason) {
 }
 
 function initLayersEngine(w, h) {
-    if (layers.length === 0) {
+    if (frames.length === 0) {
         const buf = new Uint32Array(w * h);
         if (pixelBuffer) {
             buf.set(pixelBuffer.subarray(0, Math.min(pixelBuffer.length, w * h)));
         }
-        layers = [
-            {
-                id: 'layer-1',
-                name: 'Capa 1',
-                visible: true,
-                locked: false,
-                opacity: 1.0,
-                buffer: buf
-            }
-        ];
+        const initialLayer = {
+            id: 'layer-1',
+            name: 'Capa 1',
+            visible: true,
+            locked: false,
+            opacity: 1.0,
+            buffer: buf
+        };
+        const initialFrame = {
+            id: 'frame-1',
+            durationMs: 100,
+            layers: [initialLayer]
+        };
+        frames = [initialFrame];
+        activeFrameId = 'frame-1';
+        layers = initialFrame.layers;
         activeLayerId = 'layer-1';
     } else {
         const totalPixels = w * h;
-        layers.forEach(layer => {
-            if (layer.buffer.length !== totalPixels) {
-                const oldBuf = layer.buffer;
-                const newBuf = new Uint32Array(totalPixels);
-                const oldDim = Math.round(Math.sqrt(oldBuf.length));
-                if (oldDim * oldDim === oldBuf.length) {
-                    const minW = Math.min(oldDim, w);
-                    const minH = Math.min(oldDim, h);
-                    for (let y = 0; y < minH; y++) {
-                        newBuf.set(oldBuf.subarray(y * oldDim, y * oldDim + minW), y * w);
+        frames.forEach(frame => {
+            if (frame.layers) {
+                frame.layers.forEach(layer => {
+                    if (layer.buffer.length !== totalPixels) {
+                        const oldBuf = layer.buffer;
+                        const newBuf = new Uint32Array(totalPixels);
+                        const oldDim = Math.round(Math.sqrt(oldBuf.length));
+                        if (oldDim * oldDim === oldBuf.length) {
+                            const minW = Math.min(oldDim, w);
+                            const minH = Math.min(oldDim, h);
+                            for (let y = 0; y < minH; y++) {
+                                newBuf.set(oldBuf.subarray(y * oldDim, y * oldDim + minW), y * w);
+                            }
+                        } else {
+                            const copyLen = Math.min(oldBuf.length, totalPixels);
+                            newBuf.set(oldBuf.subarray(0, copyLen));
+                        }
+                        layer.buffer = newBuf;
                     }
-                } else {
-                    const copyLen = Math.min(oldBuf.length, totalPixels);
-                    newBuf.set(oldBuf.subarray(0, copyLen));
-                }
-                layer.buffer = newBuf;
+                });
             }
         });
+        const curFrame = getActiveFrame();
+        if (curFrame) {
+            layers = curFrame.layers;
+        }
     }
+}
+
+function getActiveFrame() {
+    if (!frames || frames.length === 0) return null;
+    let found = frames.find(f => f.id === activeFrameId);
+    if (!found) {
+        found = frames[0];
+        activeFrameId = found ? found.id : null;
+    }
+    return found;
 }
 
 function getActiveLayer() {
@@ -275,9 +306,63 @@ function composeDirtyRect(minX, minY, maxX, maxY) {
     markDirty(x1, y1);
 }
 
+function composeFrameToBuffer(frameObj, outBuffer, isGhost = false, ghostTintRgba = 0) {
+    if (!frameObj || !frameObj.layers || !outBuffer) return;
+    const fLayers = frameObj.layers;
+    const len = boardWidth * boardHeight;
+
+    for (let i = 0; i < fLayers.length; i++) {
+        const l = fLayers[i];
+        if (!l.visible) continue;
+        const lBuf = l.buffer;
+
+        for (let idx = 0; idx < len; idx++) {
+            const col = lBuf[idx];
+            if (!col || (col & 0xFF000000) === 0) continue;
+
+            let drawCol = col;
+            if (isGhost) {
+                const alpha = Math.round(((col >>> 24) & 0xFF) * 0.35);
+                if (ghostTintRgba) {
+                    drawCol = ((alpha << 24) | (ghostTintRgba & 0x00FFFFFF)) >>> 0;
+                } else {
+                    drawCol = ((alpha << 24) | (col & 0x00FFFFFF)) >>> 0;
+                }
+            } else if (l.opacity < 1.0) {
+                const a = Math.round(((col >>> 24) & 0xFF) * l.opacity);
+                drawCol = ((a << 24) | (col & 0x00FFFFFF)) >>> 0;
+            }
+
+            if (outBuffer[idx] === 0) {
+                outBuffer[idx] = drawCol;
+            } else {
+                outBuffer[idx] = blendAbgr(outBuffer[idx], drawCol, 1.0);
+            }
+        }
+    }
+}
+
 function composeAll() {
-    if (!pixelBuffer || layers.length === 0) return;
-    composeDirtyRect(0, 0, boardWidth - 1, boardHeight - 1);
+    if (!pixelBuffer) return;
+
+    if (showOnionSkin && !isPlayingAnimation && frames.length > 1) {
+        pixelBuffer.fill(0);
+        const curIdx = frames.findIndex(f => f.id === activeFrameId);
+        // Previous frame (blue ghost: 0x00FF8800)
+        if (curIdx > 0) {
+            composeFrameToBuffer(frames[curIdx - 1], pixelBuffer, true, 0x00FF8800);
+        }
+        // Next frame (green ghost: 0x0044DD44)
+        if (curIdx >= 0 && curIdx < frames.length - 1) {
+            composeFrameToBuffer(frames[curIdx + 1], pixelBuffer, true, 0x0044DD44);
+        }
+        // Active frame on top
+        if (layers.length > 0) {
+            composeDirtyRect(0, 0, boardWidth - 1, boardHeight - 1);
+        }
+    } else if (layers.length > 0) {
+        composeDirtyRect(0, 0, boardWidth - 1, boardHeight - 1);
+    }
     flushDirtyRect();
     requestRender();
 }
@@ -300,6 +385,73 @@ function notifyLayersState() {
         }
     });
     generateAllLayerPreviews();
+    notifyFramesState();
+}
+
+function notifyFramesState() {
+    const serializedFrames = frames.map(f => ({
+        id: f.id,
+        durationMs: f.durationMs || 100,
+        layersCount: f.layers ? f.layers.length : 1
+    }));
+    self.postMessage({
+        type: 'FRAMES_STATE_CHANGED',
+        payload: {
+            frames: serializedFrames,
+            activeFrameId,
+            isPlayingAnimation,
+            animationFps,
+            showOnionSkin,
+            boardWidth,
+            boardHeight
+        }
+    });
+    generateAllFramePreviews();
+}
+
+function generateFramePreview(frameId = null) {
+    if (typeof OffscreenCanvas === 'undefined' || !frames) return;
+    const targetFrame = frameId ? frames.find(f => f.id === frameId) : getActiveFrame();
+    if (!targetFrame) return;
+
+    try {
+        const previewW = 96;
+        const previewH = 96;
+        const previewCanvas = new OffscreenCanvas(previewW, previewH);
+        const pCtx = previewCanvas.getContext('2d', { alpha: true });
+        pCtx.imageSmoothingEnabled = false;
+
+        const tempCanvas = new OffscreenCanvas(boardWidth, boardHeight);
+        const tempCtx = tempCanvas.getContext('2d', { alpha: true });
+        const imgData = tempCtx.createImageData(boardWidth, boardHeight);
+        const data32 = new Uint32Array(imgData.data.buffer);
+        
+        composeFrameToBuffer(targetFrame, data32, false);
+        tempCtx.putImageData(imgData, 0, 0);
+
+        const scale = Math.min(previewW / boardWidth, previewH / boardHeight);
+        const drawW = Math.max(1, Math.round(boardWidth * scale));
+        const drawH = Math.max(1, Math.round(boardHeight * scale));
+        const drawX = Math.round((previewW - drawW) / 2);
+        const drawY = Math.round((previewH - drawH) / 2);
+
+        pCtx.drawImage(tempCanvas, drawX, drawY, drawW, drawH);
+
+        createImageBitmap(previewCanvas).then(imageBitmap => {
+            self.postMessage({
+                type: 'FRAME_CARD_PREVIEW_UPDATED',
+                payload: {
+                    frameId: targetFrame.id,
+                    imageBitmap
+                }
+            }, [imageBitmap]);
+        }).catch(() => {});
+    } catch (e) {}
+}
+
+function generateAllFramePreviews() {
+    if (!frames || frames.length === 0) return;
+    frames.forEach(f => generateFramePreview(f.id));
 }
 
 function generateAllLayerPreviews() {
@@ -358,6 +510,10 @@ function generateLayerPreview(layerId = null) {
                 }
             });
         });
+
+        if (activeFrameId) {
+            generateFramePreview(activeFrameId);
+        }
     } catch (e) {
         // Fallback
     }
@@ -1661,16 +1817,67 @@ function render() {
 
     ctx.restore();
 
-    if (isEyedropperActive && hoveredPixelKey >= 0) {
+    if (isEyedropperActive && hoveredPixelKey !== -1) {
         drawEyedropperLoupe();
     }
 }
 
+let sampleOffscreenCanvas = null;
+let sampleOffscreenCtx = null;
+
+function sampleColorAtPoint(ex, ey) {
+    if (templatesList && templatesList.length > 0) {
+        for (let i = templatesList.length - 1; i >= 0; i--) {
+            const tpl = templatesList[i];
+            if (!tpl || !tpl.imageBitmap) continue;
+            let px = ex, py = ey;
+            if (tpl.angle) {
+                const cx = tpl.x + tpl.w / 2;
+                const cy = tpl.y + tpl.h / 2;
+                const rad = (-tpl.angle * Math.PI) / 180;
+                const cos = Math.cos(rad);
+                const sin = Math.sin(rad);
+                px = cos * (ex - cx) - sin * (ey - cy) + cx;
+                py = sin * (ex - cx) + cos * (ey - cy) + cy;
+            }
+            if (px >= tpl.x && px <= tpl.x + tpl.w && py >= tpl.y && py <= tpl.y + tpl.h) {
+                const u = (px - tpl.x) / tpl.w;
+                const v = (py - tpl.y) / tpl.h;
+                const srcW = tpl.imageBitmap.width || tpl.w;
+                const srcH = tpl.imageBitmap.height || tpl.h;
+                const imgX = Math.max(0, Math.min(Math.floor(u * srcW), srcW - 1));
+                const imgY = Math.max(0, Math.min(Math.floor(v * srcH), srcH - 1));
+
+                if (!sampleOffscreenCtx) {
+                    sampleOffscreenCanvas = new OffscreenCanvas(1, 1);
+                    sampleOffscreenCtx = sampleOffscreenCanvas.getContext('2d', { willReadFrequently: true });
+                }
+                sampleOffscreenCtx.clearRect(0, 0, 1, 1);
+                try {
+                    sampleOffscreenCtx.drawImage(tpl.imageBitmap, imgX, imgY, 1, 1, 0, 0, 1, 1);
+                    const pixel = sampleOffscreenCtx.getImageData(0, 0, 1, 1).data;
+                    if (pixel[3] > 10) {
+                        return '#' + ((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase();
+                    }
+                } catch (e) {}
+            }
+        }
+    }
+
+    const bx = Math.floor(ex);
+    const by = Math.floor(ey);
+    if (pixelBuffer && bx >= 0 && bx < boardWidth && by >= 0 && by < boardHeight) {
+        const val = pixelBuffer[by * boardWidth + bx];
+        if (val !== 0) return abgrToHex(val);
+    }
+
+    return isDarkMode ? '#1F2937' : '#FFFFFF';
+}
+
 function drawEyedropperLoupe() {
-    if (!isEyedropperActive || hoveredPixelKey < 0) return;
-    const hx = hoveredPixelKey & 0xFFFF;
+    if (!isEyedropperActive || hoveredPixelKey === -1) return;
+    const hx = (hoveredPixelKey << 16) >> 16;
     const hy = hoveredPixelKey >> 16;
-    if (hx < 0 || hx >= boardWidth || hy < 0 || hy >= boardHeight) return;
 
     ctx.save();
     ctx.scale(dpr, dpr);
@@ -1684,11 +1891,7 @@ function drawEyedropperLoupe() {
     const loupeRadius = (gridSize * cellSize) / 2; // 54px radius
 
     // Read sampled color at center
-    let centerHex = '#FFFFFF';
-    if (pixelBuffer) {
-        const val = pixelBuffer[hy * boardWidth + hx];
-        if (val !== 0) centerHex = abgrToHex(val);
-    }
+    const centerHex = sampleColorAtPoint(hx + 0.5, hy + 0.5);
 
     // Shadow for the loupe
     ctx.save();
@@ -1711,15 +1914,7 @@ function drawEyedropperLoupe() {
         for (let gx = -gridRadius; gx <= gridRadius; gx++) {
             const bx = hx + gx;
             const by = hy + gy;
-            let cellColor = '#FFFFFF';
-            if (bx >= 0 && bx < boardWidth && by >= 0 && by < boardHeight) {
-                if (pixelBuffer) {
-                    const val = pixelBuffer[by * boardWidth + bx];
-                    if (val !== 0) cellColor = abgrToHex(val);
-                }
-            } else {
-                cellColor = isDarkMode ? '#111827' : '#e5e7eb';
-            }
+            const cellColor = sampleColorAtPoint(bx + 0.5, by + 0.5);
 
             const cellX = screenX + gx * cellSize - cellSize / 2;
             const cellY = screenY + gy * cellSize - cellSize / 2;
@@ -1734,7 +1929,7 @@ function drawEyedropperLoupe() {
         }
     }
 
-    // Highlight center pixel with a dual-contrast square border (as shown in reference image)
+    // Highlight center pixel with a dual-contrast square border
     const centerX = screenX - cellSize / 2;
     const centerY = screenY - cellSize / 2;
     ctx.strokeStyle = '#000000';
@@ -1978,12 +2173,10 @@ self.onmessage = function (e) {
             break;
 
         case 'PICK_PIXEL_COLOR': {
-            const { x, y } = payload;
-            let hex = '#FFFFFF';
-            if (pixelBuffer && x >= 0 && x < boardWidth && y >= 0 && y < boardHeight) {
-                const val = pixelBuffer[y * boardWidth + x];
-                hex = (val === 0) ? '#FFFFFF' : abgrToHex(val);
-            }
+            const { x, y, exactX, exactY } = payload;
+            const ex = (exactX !== undefined) ? exactX : (x + 0.5);
+            const ey = (exactY !== undefined) ? exactY : (y + 0.5);
+            const hex = sampleColorAtPoint(ex, ey);
             self.postMessage({
                 type: 'PIXEL_COLOR_PICKED',
                 payload: { x, y, hex }
@@ -2434,33 +2627,77 @@ self.onmessage = function (e) {
                 }
             }
             selectionBitmaskDirty = true;
-            if (payload.layersData && payload.layersData.layers && payload.layersData.layers.length > 0) {
-                initMemoryEngine(boardWidth, boardHeight);
+            initMemoryEngine(boardWidth, boardHeight);
+
+            let rawFrames = null;
+            if (payload.layersData) {
+                if (Array.isArray(payload.layersData)) {
+                    if (payload.layersData[0]?.layers) {
+                        rawFrames = payload.layersData;
+                    } else {
+                        rawFrames = [{ id: 'frame-1', durationMs: 100, layers: payload.layersData }];
+                    }
+                } else if (payload.layersData.frames && Array.isArray(payload.layersData.frames)) {
+                    rawFrames = payload.layersData.frames;
+                } else if (payload.layersData.layers && Array.isArray(payload.layersData.layers)) {
+                    rawFrames = [{ id: 'frame-1', durationMs: 100, layers: payload.layersData.layers }];
+                }
+            }
+
+            if (rawFrames && rawFrames.length > 0) {
                 const savedW = payload.layersData.boardWidth || boardWidth;
                 const savedH = payload.layersData.boardHeight || boardHeight;
-                layers = payload.layersData.layers.map(l => {
-                    const rawBuf = base64ToUint32(l.bufferBase64, savedW * savedH);
-                    let finalBuf = rawBuf;
-                    if (savedW !== boardWidth || savedH !== boardHeight) {
-                        finalBuf = new Uint32Array(boardWidth * boardHeight);
-                        const minW = Math.min(savedW, boardWidth);
-                        const minH = Math.min(savedH, boardHeight);
-                        for (let y = 0; y < minH; y++) {
-                            finalBuf.set(rawBuf.subarray(y * savedW, y * savedW + minW), y * boardWidth);
+
+                frames = rawFrames.map(f => {
+                    const fLayers = (f.layers || []).map(l => {
+                        const b64 = l.buffer_base64 || l.bufferBase64;
+                        let finalBuf;
+                        if (b64) {
+                            const rawBuf = base64ToUint32(b64, savedW * savedH);
+                            finalBuf = rawBuf;
+                            if (savedW !== boardWidth || savedH !== boardHeight) {
+                                finalBuf = new Uint32Array(boardWidth * boardHeight);
+                                const minW = Math.min(savedW, boardWidth);
+                                const minH = Math.min(savedH, boardHeight);
+                                for (let y = 0; y < minH; y++) {
+                                    finalBuf.set(rawBuf.subarray(y * savedW, y * savedW + minW), y * boardWidth);
+                                }
+                            }
+                        } else {
+                            finalBuf = new Uint32Array(boardWidth * boardHeight);
                         }
+                        return {
+                            id: l.id || ('layer-' + Date.now()),
+                            name: l.name || 'Capa 1',
+                            visible: l.visible !== false,
+                            locked: !!l.locked,
+                            opacity: typeof l.opacity === 'number' ? l.opacity : 1.0,
+                            buffer: finalBuf
+                        };
+                    });
+                    if (fLayers.length === 0) {
+                        fLayers.push({
+                            id: 'layer-' + Date.now(),
+                            name: 'Capa 1',
+                            visible: true,
+                            locked: false,
+                            opacity: 1.0,
+                            buffer: new Uint32Array(boardWidth * boardHeight)
+                        });
                     }
                     return {
-                        id: l.id,
-                        name: l.name,
-                        visible: l.visible !== false,
-                        locked: !!l.locked,
-                        opacity: typeof l.opacity === 'number' ? l.opacity : 1.0,
-                        buffer: finalBuf
+                        id: f.id,
+                        durationMs: f.durationMs || 100,
+                        layers: fLayers
                     };
                 });
-                activeLayerId = payload.layersData.activeLayerId || (layers[layers.length - 1] ? layers[layers.length - 1].id : 'layer-1');
+
+                activeFrameId = frames[0]?.id || 'frame-1';
+                layers = frames[0]?.layers || [];
+                activeLayerId = layers[0]?.id || 'layer-1';
                 composeAll();
                 notifyLayersState();
+                notifyFramesState();
             } else if (payload.base64String) {
                 if (injectAnimation) {
                     pendingHydrateStateBase64 = payload.base64String;
@@ -2469,6 +2706,7 @@ self.onmessage = function (e) {
                     if (isOfflineMode) {
                         initLayersEngine(boardWidth, boardHeight);
                         notifyLayersState();
+                        notifyFramesState();
                     }
                 }
             }
@@ -2618,7 +2856,34 @@ self.onmessage = function (e) {
                     const base64 = btoa(binaryStr);
 
                     let layersPayload = null;
-                    if (layers && layers.length > 0) {
+                    if (frames && frames.length > 0) {
+                        layersPayload = {
+                            boardWidth,
+                            boardHeight,
+                            activeFrameId,
+                            activeLayerId,
+                            frames: frames.map(f => ({
+                                id: f.id,
+                                durationMs: f.durationMs || 100,
+                                layers: (f.layers || []).map(l => ({
+                                    id: l.id,
+                                    name: l.name,
+                                    visible: l.visible !== false,
+                                    locked: !!l.locked,
+                                    opacity: typeof l.opacity === 'number' ? l.opacity : 1.0,
+                                    bufferBase64: uint32ToBase64(l.buffer)
+                                }))
+                            })),
+                            layers: layers.map(l => ({
+                                id: l.id,
+                                name: l.name,
+                                visible: l.visible !== false,
+                                locked: !!l.locked,
+                                opacity: typeof l.opacity === 'number' ? l.opacity : 1.0,
+                                bufferBase64: uint32ToBase64(l.buffer)
+                            }))
+                        };
+                    } else if (layers && layers.length > 0) {
                         layersPayload = {
                             boardWidth,
                             boardHeight,
@@ -2648,6 +2913,51 @@ self.onmessage = function (e) {
                     payload: { base64: null, layersData: null }
                 });
             }
+            break;
+        }
+
+        case 'GET_EXPORT_FRAMES': {
+            (async () => {
+                const resultFrames = [];
+                const w = boardWidth || 32;
+                const h = boardHeight || 32;
+                const allFrames = (frames && frames.length > 0) ? frames : [{ id: 'frame-1', durationMs: 100, layers }];
+
+                for (let fIdx = 0; fIdx < allFrames.length; fIdx++) {
+                    const fr = allFrames[fIdx];
+                    const tempCanvas = new OffscreenCanvas(w, h);
+                    const tempCtx = tempCanvas.getContext('2d', { alpha: true });
+                    const imgData = tempCtx.createImageData(w, h);
+                    const data32 = new Uint32Array(imgData.data.buffer);
+                    composeFrameToBuffer(fr, data32, false);
+                    tempCtx.putImageData(imgData, 0, 0);
+
+                    try {
+                        const bitmap = await createImageBitmap(tempCanvas);
+                        resultFrames.push({
+                            id: fr.id,
+                            durationMs: fr.durationMs || 100,
+                            bitmap
+                        });
+                    } catch (bErr) {
+                        resultFrames.push({
+                            id: fr.id,
+                            durationMs: fr.durationMs || 100,
+                            bitmap: null
+                        });
+                    }
+                }
+
+                const transferables = resultFrames.map(rf => rf.bitmap).filter(Boolean);
+                self.postMessage({
+                    type: 'EXPORT_FRAMES_READY',
+                    payload: {
+                        frames: resultFrames,
+                        boardWidth: w,
+                        boardHeight: h
+                    }
+                }, transferables);
+            })();
             break;
         }
 
@@ -3441,6 +3751,240 @@ self.onmessage = function (e) {
 
         case 'GET_LAYER_PREVIEW': {
             generateLayerPreview(payload?.layerId || activeLayerId);
+            break;
+        }
+
+        case 'GET_FRAMES_STATE': {
+            if (frames.length === 0) {
+                initLayersEngine(boardWidth, boardHeight);
+            }
+            notifyFramesState();
+            break;
+        }
+
+        case 'ADD_FRAME': {
+            if (frames.length >= 50) {
+                self.postMessage({ type: 'SHOW_NOTICE', payload: { messageKey: 'msg_frame_limit_reached', level: 'warning' } });
+                break;
+            }
+            if (frames.length === 0) {
+                initLayersEngine(boardWidth, boardHeight);
+            }
+            const newFrameId = 'frame-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
+            const newLayers = [
+                {
+                    id: 'layer-' + Date.now() + '-1',
+                    name: 'Capa 1',
+                    visible: true,
+                    locked: false,
+                    opacity: 1.0,
+                    buffer: new Uint32Array(boardWidth * boardHeight)
+                }
+            ];
+            const newFrame = {
+                id: newFrameId,
+                durationMs: 100,
+                layers: newLayers
+            };
+            const curIdx = frames.findIndex(f => f.id === activeFrameId);
+            if (curIdx >= 0) {
+                frames.splice(curIdx + 1, 0, newFrame);
+            } else {
+                frames.push(newFrame);
+            }
+            activeFrameId = newFrameId;
+            layers = newFrame.layers;
+            activeLayerId = newLayers[0].id;
+            composeAll();
+            notifyFramesState();
+            notifyLayersState();
+            break;
+        }
+
+        case 'DUPLICATE_FRAME': {
+            if (frames.length >= 50) {
+                self.postMessage({ type: 'SHOW_NOTICE', payload: { messageKey: 'msg_frame_limit_reached', level: 'warning' } });
+                break;
+            }
+            const targetFrame = frames.find(f => f.id === activeFrameId) || frames[0];
+            if (!targetFrame) break;
+
+            const newFrameId = 'frame-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
+            const clonedLayers = targetFrame.layers.map(l => {
+                const buf = new Uint32Array(l.buffer.length);
+                buf.set(l.buffer);
+                return {
+                    id: 'layer-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6),
+                    name: l.name,
+                    visible: l.visible,
+                    locked: l.locked,
+                    opacity: l.opacity,
+                    buffer: buf
+                };
+            });
+            const newFrame = {
+                id: newFrameId,
+                durationMs: targetFrame.durationMs || 100,
+                layers: clonedLayers
+            };
+            const curIdx = frames.findIndex(f => f.id === activeFrameId);
+            if (curIdx >= 0) {
+                frames.splice(curIdx + 1, 0, newFrame);
+            } else {
+                frames.push(newFrame);
+            }
+            activeFrameId = newFrameId;
+            layers = newFrame.layers;
+            activeLayerId = clonedLayers[0]?.id || null;
+            composeAll();
+            notifyFramesState();
+            notifyLayersState();
+            break;
+        }
+
+        case 'DELETE_FRAME': {
+            if (frames.length <= 1) {
+                self.postMessage({ type: 'SHOW_NOTICE', payload: { messageKey: 'msg_frame_cannot_delete_last', level: 'warning' } });
+                break;
+            }
+            const targetId = payload?.frameId || activeFrameId;
+            const idx = frames.findIndex(f => f.id === targetId);
+            if (idx >= 0) {
+                frames.splice(idx, 1);
+                if (activeFrameId === targetId) {
+                    const newIdx = Math.max(0, idx - 1);
+                    activeFrameId = frames[newIdx].id;
+                    layers = frames[newIdx].layers;
+                    activeLayerId = layers[0]?.id || null;
+                }
+                composeAll();
+                notifyFramesState();
+                notifyLayersState();
+            }
+            break;
+        }
+
+        case 'SELECT_FRAME': {
+            const targetId = payload?.frameId;
+            const target = frames.find(f => f.id === targetId);
+            if (target && target.id !== activeFrameId) {
+                activeFrameId = target.id;
+                layers = target.layers;
+                activeLayerId = layers[0]?.id || null;
+                composeAll();
+                notifyFramesState();
+                notifyLayersState();
+            }
+            break;
+        }
+
+        case 'REORDER_FRAMES': {
+            const order = payload?.order;
+            if (Array.isArray(order) && order.length === frames.length) {
+                const map = new Map(frames.map(f => [f.id, f]));
+                const reordered = [];
+                for (const id of order) {
+                    if (map.has(id)) reordered.push(map.get(id));
+                }
+                if (reordered.length === frames.length) {
+                    frames = reordered;
+                    notifyFramesState();
+                }
+            }
+            break;
+        }
+
+        case 'PLAY_ANIMATION': {
+            if (isPlayingAnimation) break;
+            isPlayingAnimation = true;
+            let playIdx = frames.findIndex(f => f.id === activeFrameId);
+            if (playIdx < 0) playIdx = 0;
+            
+            const intervalMs = Math.round(1000 / (animationFps || 12));
+            if (animationTimer) clearInterval(animationTimer);
+            animationTimer = setInterval(() => {
+                if (!isPlayingAnimation || frames.length === 0) {
+                    if (animationTimer) clearInterval(animationTimer);
+                    return;
+                }
+                playIdx = (playIdx + 1) % frames.length;
+                const currentFrame = frames[playIdx];
+                if (currentFrame && pixelBuffer) {
+                    pixelBuffer.fill(0);
+                    composeFrameToBuffer(currentFrame, pixelBuffer, false);
+                    markDirty(0, 0);
+                    markDirty(boardWidth - 1, boardHeight - 1);
+                    flushDirtyRect();
+                    requestRender();
+                    self.postMessage({
+                        type: 'ANIMATION_FRAME_TICK',
+                        payload: {
+                            frameId: currentFrame.id,
+                            frameIndex: playIdx
+                        }
+                    });
+                }
+            }, intervalMs);
+            notifyFramesState();
+            break;
+        }
+
+        case 'STOP_ANIMATION': {
+            isPlayingAnimation = false;
+            if (animationTimer) {
+                clearInterval(animationTimer);
+                animationTimer = null;
+            }
+            const curFrame = frames.find(f => f.id === activeFrameId) || frames[0];
+            if (curFrame) {
+                layers = curFrame.layers;
+                activeLayerId = layers[0]?.id || null;
+            }
+            composeAll();
+            notifyFramesState();
+            break;
+        }
+
+        case 'SET_FPS': {
+            const newFps = Math.max(1, Math.min(30, parseInt(payload?.fps, 10) || 12));
+            animationFps = newFps;
+            if (isPlayingAnimation) {
+                if (animationTimer) clearInterval(animationTimer);
+                let playIdx = frames.findIndex(f => f.id === activeFrameId);
+                if (playIdx < 0) playIdx = 0;
+                const intervalMs = Math.round(1000 / animationFps);
+                animationTimer = setInterval(() => {
+                    if (!isPlayingAnimation || frames.length === 0) {
+                        if (animationTimer) clearInterval(animationTimer);
+                        return;
+                    }
+                    playIdx = (playIdx + 1) % frames.length;
+                    const currentFrame = frames[playIdx];
+                    if (currentFrame && pixelBuffer) {
+                        pixelBuffer.fill(0);
+                        composeFrameToBuffer(currentFrame, pixelBuffer, false);
+                        markDirty(0, 0);
+                        markDirty(boardWidth - 1, boardHeight - 1);
+                        flushDirtyRect();
+                        requestRender();
+                        self.postMessage({
+                            type: 'ANIMATION_FRAME_TICK',
+                            payload: {
+                                frameId: currentFrame.id,
+                                frameIndex: playIdx
+                            }
+                        });
+                    }
+                }, intervalMs);
+            }
+            notifyFramesState();
+            break;
+        }
+
+        case 'TOGGLE_ONION_SKIN': {
+            showOnionSkin = (payload?.enabled !== undefined) ? !!payload.enabled : !showOnionSkin;
+            composeAll();
+            notifyFramesState();
             break;
         }
 

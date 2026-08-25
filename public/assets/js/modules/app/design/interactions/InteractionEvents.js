@@ -10,6 +10,7 @@ export const InteractionEvents = {
         document.addEventListener('keydown', this.handleKeyDownBound);
         document.addEventListener('click', this.handleClickBound);
         document.addEventListener('input', this.handleInputBound);
+        document.addEventListener('change', this.handleInputBound);
         window.addEventListener('resize', this.handleResizeBound);
 
         if (this.canvas && this.canvas.parentElement && typeof ResizeObserver !== 'undefined') {
@@ -132,6 +133,164 @@ export const InteractionEvents = {
             e.preventDefault();
             if (typeof this.toggleLayersCarousel === 'function') {
                 this.toggleLayersCarousel();
+            }
+            return;
+        }
+
+        const btnSetCarouselModeLayers = e.target.closest('[data-action="setCarouselModeLayers"]');
+        if (btnSetCarouselModeLayers) {
+            e.preventDefault();
+            if (typeof this.setCarouselMode === 'function') {
+                this.setCarouselMode('layers');
+            }
+            return;
+        }
+
+        const btnSetCarouselModeTimeline = e.target.closest('[data-action="setCarouselModeTimeline"]');
+        if (btnSetCarouselModeTimeline) {
+            e.preventDefault();
+            if (typeof this.setCarouselMode === 'function') {
+                this.setCarouselMode('timeline');
+            }
+            return;
+        }
+
+        const btnTogglePlayAnim = e.target.closest('[data-action="togglePlayAnimation"]');
+        if (btnTogglePlayAnim) {
+            e.preventDefault();
+            if (typeof this.togglePlayAnimation === 'function') {
+                this.togglePlayAnimation();
+            }
+            return;
+        }
+
+        const btnCycleFps = e.target.closest('[data-action="cycleAnimationFps"]');
+        if (btnCycleFps) {
+            e.preventDefault();
+            if (typeof this.cycleAnimationFps === 'function') {
+                this.cycleAnimationFps();
+            }
+            return;
+        }
+
+        const btnToggleOnion = e.target.closest('[data-action="toggleOnionSkin"]');
+        if (btnToggleOnion) {
+            e.preventDefault();
+            if (typeof this.toggleOnionSkin === 'function') {
+                this.toggleOnionSkin();
+            }
+            return;
+        }
+
+        const btnAddFrame = e.target.closest('[data-action="addFrame"]');
+        if (btnAddFrame) {
+            e.preventDefault();
+            if (typeof this.addFrame === 'function') {
+                this.addFrame();
+            }
+            return;
+        }
+
+        const btnDuplicateFrame = e.target.closest('[data-action="duplicateFrame"]');
+        if (btnDuplicateFrame) {
+            e.preventDefault();
+            e.stopPropagation();
+            const frameId = btnDuplicateFrame.getAttribute('data-frame-id');
+            if (typeof this.duplicateFrame === 'function') {
+                this.duplicateFrame(frameId);
+            }
+            return;
+        }
+
+        const btnDeleteFrame = e.target.closest('[data-action="deleteFrame"]');
+        if (btnDeleteFrame) {
+            e.preventDefault();
+            e.stopPropagation();
+            const frameId = btnDeleteFrame.getAttribute('data-frame-id');
+            if (typeof this.deleteFrame === 'function') {
+                this.deleteFrame(frameId);
+            }
+            return;
+        }
+
+        const btnOpenExportAnim = e.target.closest('[data-action="openExportAnimationModal"]');
+        if (btnOpenExportAnim) {
+            e.preventDefault();
+            if (typeof this.openExportAnimationModal === 'function') {
+                this.openExportAnimationModal();
+            }
+            return;
+        }
+
+        const btnExportAnimNext = e.target.closest('[data-action="exportAnimNextStep"]');
+        if (btnExportAnimNext) {
+            e.preventDefault();
+            if (typeof this.exportAnimNextStep === 'function') {
+                this.exportAnimNextStep();
+            }
+            return;
+        }
+
+        const btnExportAnimPrev = e.target.closest('[data-action="exportAnimPrevStep"]');
+        if (btnExportAnimPrev) {
+            e.preventDefault();
+            if (typeof this.exportAnimPrevStep === 'function') {
+                this.exportAnimPrevStep();
+            }
+            return;
+        }
+
+        const btnSelectExportFormatOpt = e.target.closest('[data-action="selectExportAnimFormatOption"]');
+        if (btnSelectExportFormatOpt) {
+            e.preventDefault();
+            if (typeof this.handleSelectExportFormatOption === 'function') {
+                this.handleSelectExportFormatOption(btnSelectExportFormatOpt);
+            }
+            return;
+        }
+
+        const btnSelectExportScaleOpt = e.target.closest('[data-action="selectExportAnimScaleOption"]');
+        if (btnSelectExportScaleOpt) {
+            e.preventDefault();
+            if (typeof this.handleSelectExportScaleOption === 'function') {
+                this.handleSelectExportScaleOption(btnSelectExportScaleOpt);
+            }
+            return;
+        }
+
+        const btnSelectExportBgOpt = e.target.closest('[data-action="selectExportAnimBgOption"]');
+        if (btnSelectExportBgOpt) {
+            e.preventDefault();
+            if (typeof this.handleSelectExportBgOption === 'function') {
+                this.handleSelectExportBgOption(btnSelectExportBgOpt);
+            }
+            return;
+        }
+
+        const btnSelectExportJsonOpt = e.target.closest('[data-action="selectExportAnimJsonOption"]');
+        if (btnSelectExportJsonOpt) {
+            e.preventDefault();
+            if (typeof this.handleSelectExportJsonOption === 'function') {
+                this.handleSelectExportJsonOption(btnSelectExportJsonOpt);
+            }
+            return;
+        }
+
+        const btnTriggerExportDownload = e.target.closest('[data-action="triggerExportAnimationDownload"]');
+        if (btnTriggerExportDownload) {
+            e.preventDefault();
+            if (typeof this.triggerExportAnimationDownload === 'function') {
+                this.triggerExportAnimationDownload(btnTriggerExportDownload);
+            }
+            return;
+        }
+
+        const btnSelectFrame = e.target.closest('[data-action="selectFrame"]');
+        if (btnSelectFrame) {
+            e.preventDefault();
+            const frameId = btnSelectFrame.getAttribute('data-frame-id');
+            if (frameId && typeof this.selectFrame === 'function') {
+                this.selectFrame(frameId);
             }
             return;
         }
@@ -280,21 +439,28 @@ export const InteractionEvents = {
         const btnZoomIn = e.target.closest('[data-action="zoomInStep"]');
         if (btnZoomIn) {
             e.preventDefault();
-            this.stepZoom(1.25);
+            this.stepZoom(1);
             return;
         }
 
         const btnZoomOut = e.target.closest('[data-action="zoomOutStep"]');
         if (btnZoomOut) {
             e.preventDefault();
-            this.stepZoom(0.8);
+            this.stepZoom(-1);
             return;
         }
 
         const btnResetZoom = e.target.closest('[data-action="resetZoomFit"]');
         if (btnResetZoom) {
             e.preventDefault();
-            this.resetZoomToScale(1.0);
+            if (Math.abs((this.transform?.scale || 1) - 1.0) < 0.05) {
+                if (typeof this.centerBoard === 'function') {
+                    this.centerBoard();
+                    this.requestRender();
+                }
+            } else {
+                this.resetZoomToScale(1.0);
+            }
             return;
         }
 
@@ -1127,6 +1293,30 @@ export const InteractionEvents = {
                 return;
             }
         }
+
+        // Atajos estándar de Zoom tipo Figma / Photoshop: Ctrl/Cmd + (+, -, 0, 1)
+        if (e.ctrlKey || e.metaKey) {
+            if (e.key === '+' || e.key === '=' || e.key === 'Add') {
+                e.preventDefault();
+                this.stepZoom(1);
+                return;
+            } else if (e.key === '-' || e.key === '_' || e.key === 'Subtract') {
+                e.preventDefault();
+                this.stepZoom(-1);
+                return;
+            } else if (e.key === '0') {
+                e.preventDefault();
+                if (typeof this.centerBoard === 'function') {
+                    this.centerBoard();
+                    this.requestRender();
+                }
+                return;
+            } else if (e.key === '1') {
+                e.preventDefault();
+                this.resetZoomToScale(1.0);
+                return;
+            }
+        }
         
         if (e.ctrlKey || e.metaKey || e.altKey) return;
         
@@ -1365,9 +1555,9 @@ export const InteractionEvents = {
         const delta = e.deltaY < 0 ? 1 : -1;
         const zoomFactor = Math.exp(delta * zoomIntensity);
 
+        const { minScale, maxScale } = this.getZoomBounds();
         let newScale = this.transform.scale * zoomFactor;
-        const minScale = 200 / Math.max(this.boardWidth || 1000, this.boardHeight || 1000);
-        newScale = Math.max(minScale, Math.min(newScale, 40)); 
+        newScale = Math.max(minScale, Math.min(newScale, maxScale));
 
         this.transform.x = mouseX - (mouseX - this.transform.x) * (newScale / this.transform.scale);
         this.transform.y = mouseY - (mouseY - this.transform.y) * (newScale / this.transform.scale);
@@ -1405,27 +1595,57 @@ export const InteractionEvents = {
         this.requestRender();
     },
 
+    getZoomBounds() {
+        const bw = this.boardWidth || 64;
+        const bh = this.boardHeight || 64;
+        const minScale = 200 / Math.max(bw, bh);
+        const maxScale = 30.0;
+        return { minScale, maxScale: Math.max(minScale * 1.5, maxScale) };
+    },
+
     updateZoomUI() {
         if (!this.transform) return;
-        const zoomPct = Math.round(this.transform.scale * 100);
+        const { minScale, maxScale } = this.getZoomBounds();
+        const currentScale = Math.max(minScale, Math.min(this.transform.scale, maxScale));
+        const zoomPct = Math.round(currentScale * 100);
+
         const labelEl = document.querySelector('[data-ref="footer-zoom-label"]');
         const sliderEl = document.querySelector('[data-ref="footer-zoom-slider"]');
+
         if (labelEl) {
             labelEl.textContent = `${zoomPct}%`;
         }
         if (sliderEl && document.activeElement !== sliderEl) {
-            sliderEl.value = Math.min(3000, Math.max(10, zoomPct));
+            const logRatio = Math.log(currentScale / minScale) / Math.log(maxScale / minScale);
+            const sliderVal = Math.max(0, Math.min(1000, Math.round(logRatio * 1000)));
+            sliderEl.value = sliderVal;
         }
     },
 
-    stepZoom(factor) {
+    stepZoom(direction = 1) {
         if (!this.transform || !this.canvas) return;
         const rect = this.canvas.getBoundingClientRect();
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;
-        let newScale = this.transform.scale * factor;
-        const minScale = 200 / Math.max(this.boardWidth || 1000, this.boardHeight || 1000);
-        newScale = Math.max(minScale, Math.min(newScale, 30));
+        const { minScale, maxScale } = this.getZoomBounds();
+
+        const current = this.transform.scale;
+        const presets = [0.1, 0.25, 0.333, 0.5, 0.667, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0, 12.0, 16.0, 20.0, 24.0, 30.0];
+        let newScale;
+
+        if (typeof direction === 'number' && direction > 0 && direction < 2 && direction !== 1 && direction !== -1) {
+            if (direction > 1) {
+                newScale = presets.find(p => p > current + 0.005) || (current * direction);
+            } else {
+                newScale = [...presets].reverse().find(p => p < current - 0.005) || (current * direction);
+            }
+        } else if (direction > 0) {
+            newScale = presets.find(p => p > current + 0.005) || (current * 1.25);
+        } else {
+            newScale = [...presets].reverse().find(p => p < current - 0.005) || (current * 0.8);
+        }
+
+        newScale = Math.max(minScale, Math.min(newScale, maxScale));
         this.transform.x = centerX - (centerX - this.transform.x) * (newScale / this.transform.scale);
         this.transform.y = centerY - (centerY - this.transform.y) * (newScale / this.transform.scale);
         this.transform.scale = newScale;
@@ -1439,9 +1659,11 @@ export const InteractionEvents = {
         const rect = this.canvas.getBoundingClientRect();
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;
-        this.transform.x = centerX - (this.boardWidth * scale) / 2;
-        this.transform.y = centerY - (this.boardHeight * scale) / 2;
-        this.transform.scale = scale;
+        const { minScale, maxScale } = this.getZoomBounds();
+        const targetScale = Math.max(minScale, Math.min(scale, maxScale));
+        this.transform.x = centerX - (this.boardWidth * targetScale) / 2;
+        this.transform.y = centerY - (this.boardHeight * targetScale) / 2;
+        this.transform.scale = targetScale;
         if (typeof this.limitBounds === 'function') this.limitBounds();
         this.updateZoomUI();
         this.requestRender();
@@ -1452,8 +1674,10 @@ export const InteractionEvents = {
 
         const isZoomSlider = e.target.matches('[data-ref="footer-zoom-slider"]');
         if (isZoomSlider) {
-            const val = parseFloat(e.target.value);
-            const newScale = val / 100;
+            const t = parseFloat(e.target.value);
+            const { minScale, maxScale } = this.getZoomBounds();
+            const newScale = minScale * Math.pow(maxScale / minScale, t / 1000);
+
             if (newScale > 0 && this.transform && this.canvas) {
                 const rect = this.canvas.getBoundingClientRect();
                 const centerX = rect.width / 2;
@@ -1464,7 +1688,7 @@ export const InteractionEvents = {
                 if (typeof this.limitBounds === 'function') this.limitBounds();
                 const labelEl = document.querySelector('[data-ref="footer-zoom-label"]');
                 if (labelEl) {
-                    labelEl.textContent = `${Math.round(val)}%`;
+                    labelEl.textContent = `${Math.round(newScale * 100)}%`;
                 }
                 this.requestRender();
             }

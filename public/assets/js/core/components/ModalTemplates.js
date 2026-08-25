@@ -3255,5 +3255,180 @@ export const ModalTemplates = {
                 </div>
             `;
         }
+    },
+
+    exportAnimationModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const w = data.boardWidth || 32;
+            const h = data.boardHeight || 32;
+            const framesCount = data.framesCount || 1;
+            const fps = data.fps || 12;
+            const defaultScale = data.defaultScale || (w <= 32 ? 8 : (w <= 64 ? 4 : 2));
+
+            const scales = [1, 2, 4, 8, 16];
+            const scaleOptionsHtml = scales.map(s => {
+                const isActive = (s === defaultScale);
+                return `
+                    <div class="component-menu-link ${isActive ? 'active' : ''}" data-action="selectExportAnimScaleOption" data-value="${s}" data-label="${s}x (${w * s}x${h * s} px)" data-icon="aspect_ratio" data-res="${w * s}x${h * s} px">
+                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">aspect_ratio</span></div>
+                        <div class="component-menu-link-text"><span>${s}x (${w * s}x${h * s} px)</span></div>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+
+                <!-- ETAPA 1: SELECCIÓN DE FORMATO -->
+                <div class="component-card--grouped component-card--flush active component-modal-step" data-ref="export-anim-step-1">
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('lbl_export_animation_title') || 'Exportar Animación'}</h2>
+                        <p class="component-modal-desc">${__('lbl_export_step1_desc') || 'Selecciona el formato en el que deseas exportar tu animación o secuencia de fotogramas.'}</p>
+                    </div>
+
+                    <div class="component-modal-body">
+                        <!-- Dropdown Trigger: Formato de Exportación -->
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleExportAnimFormat" data-ref="export-format-trigger" data-value="gif">
+                                <span class="material-symbols-rounded" data-ref="export-format-icon">gif</span>
+                                <span class="component-dropdown-text" data-ref="export-format-label">${__('lbl_export_format_gif') || 'GIF Animado (.gif)'}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
+                            </div>
+                            <div class="component-module component-module--dropdown disabled" data-module="moduleExportAnimFormat">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list">
+                                        <div class="component-menu-link active" data-action="selectExportAnimFormatOption" data-value="gif" data-label="${__('lbl_export_format_gif') || 'GIF Animado (.gif)'}" data-icon="gif">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">gif</span></div>
+                                            <div class="component-menu-link-text">
+                                                <span>${__('lbl_export_format_gif') || 'GIF Animado (.gif)'}</span>
+                                                <span class="component-menu-link-subtext">${__('lbl_export_format_gif_desc') || 'Secuencia animada en bucle para compartir en web o redes'}</span>
+                                            </div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectExportAnimFormatOption" data-value="spritesheet" data-label="${__('lbl_export_format_spritesheet') || 'Sprite Sheet (.png)'}" data-icon="grid_on">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">grid_on</span></div>
+                                            <div class="component-menu-link-text">
+                                                <span>${__('lbl_export_format_spritesheet') || 'Sprite Sheet (.png)'}</span>
+                                                <span class="component-menu-link-subtext">${__('lbl_export_format_spritesheet_desc') || 'Tira horizontal de sprites para motores de videojuegos'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-modal-actions">
+                        <button type="button" class="component-button component-button--h40" data-modal-action="cancel">
+                            <span>${__('btn_cancel') || 'Cancelar'}</span>
+                        </button>
+                        <button type="button" class="component-button component-button--primary component-button--h40" data-action="exportAnimNextStep">
+                            <span>${__('btn_continue') || 'Continuar'}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ETAPA 2: CONFIGURACIÓN Y PREVISUALIZADOR -->
+                <div class="component-card--grouped component-card--flush disabled component-modal-step" data-ref="export-anim-step-2">
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title" data-ref="export-step2-title">${__('lbl_export_step2_title') || 'Ajustes y Previsualización'}</h2>
+                        <p class="component-modal-desc">${__('lbl_export_step2_desc') || 'Configura el escalado de píxeles y fondo antes de generar el archivo final.'}</p>
+                    </div>
+
+                    <div class="component-modal-body">
+                        <!-- Visualizador de Animación en Vivo -->
+                        <div class="component-anim-preview-box mb-16">
+                            <div class="component-anim-preview-stage">
+                                <canvas class="component-anim-preview-canvas" data-ref="export-preview-canvas" width="160" height="160"></canvas>
+                            </div>
+                            <div class="component-anim-preview-meta">
+                                <span class="component-badge component-badge--sm"><span class="material-symbols-rounded">movie</span> <span data-ref="export-meta-frames">${framesCount} frames</span></span>
+                                <span class="component-badge component-badge--sm" data-ref="export-meta-fps"><span class="material-symbols-rounded">speed</span> ${fps} FPS</span>
+                                <span class="component-badge component-badge--sm" data-ref="export-meta-res"><span class="material-symbols-rounded">aspect_ratio</span> <span data-ref="export-meta-res-text">${w * defaultScale}x${h * defaultScale} px</span></span>
+                            </div>
+                        </div>
+
+                        <!-- Dropdown 1: Escalado de Píxeles -->
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleExportAnimScale" data-ref="export-scale-trigger" data-value="${defaultScale}">
+                                <span class="material-symbols-rounded" data-ref="export-scale-icon">aspect_ratio</span>
+                                <span class="component-dropdown-text" data-ref="export-scale-label">${defaultScale}x (${w * defaultScale}x${h * defaultScale} px)</span>
+                                <span class="material-symbols-rounded">expand_more</span>
+                            </div>
+                            <div class="component-module component-module--dropdown disabled" data-module="moduleExportAnimScale">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list">
+                                        ${scaleOptionsHtml}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dropdown 2: Fondo (Transparente / Blanco) -->
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleExportAnimBg" data-ref="export-bg-trigger" data-value="transparent">
+                                <span class="material-symbols-rounded" data-ref="export-bg-icon">opacity</span>
+                                <span class="component-dropdown-text" data-ref="export-bg-label">${__('lbl_export_bg_transparent') || 'Fondo transparente'}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
+                            </div>
+                            <div class="component-module component-module--dropdown disabled" data-module="moduleExportAnimBg">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list">
+                                        <div class="component-menu-link active" data-action="selectExportAnimBgOption" data-value="transparent" data-label="${__('lbl_export_bg_transparent') || 'Fondo transparente'}" data-icon="opacity">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">opacity</span></div>
+                                            <div class="component-menu-link-text"><span>${__('lbl_export_bg_transparent') || 'Fondo transparente'}</span></div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectExportAnimBgOption" data-value="white" data-label="${__('lbl_export_bg_white') || 'Fondo blanco / sólido'}" data-icon="format_color_fill">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">format_color_fill</span></div>
+                                            <div class="component-menu-link-text"><span>${__('lbl_export_bg_white') || 'Fondo blanco / sólido'}</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dropdown 3 (Solo visible para Sprite Sheet): Metadata JSON -->
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full disabled" data-ref="export-json-wrapper">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleExportAnimJson" data-ref="export-json-trigger" data-value="true">
+                                <span class="material-symbols-rounded" data-ref="export-json-icon">data_object</span>
+                                <span class="component-dropdown-text" data-ref="export-json-label">${__('lbl_export_json_yes') || 'Incluir metadata JSON (.json)'}</span>
+                                <span class="material-symbols-rounded">expand_more</span>
+                            </div>
+                            <div class="component-module component-module--dropdown disabled" data-module="moduleExportAnimJson">
+                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                    <div class="component-menu-list">
+                                        <div class="component-menu-link active" data-action="selectExportAnimJsonOption" data-value="true" data-label="${__('lbl_export_json_yes') || 'Incluir metadata JSON (.json)'}" data-icon="data_object">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">data_object</span></div>
+                                            <div class="component-menu-link-text">
+                                                <span>${__('lbl_export_json_yes') || 'Incluir metadata JSON (.json)'}</span>
+                                                <span class="component-menu-link-subtext">Para Godot, Unity, Phaser o Web</span>
+                                            </div>
+                                        </div>
+                                        <div class="component-menu-link" data-action="selectExportAnimJsonOption" data-value="false" data-label="${__('lbl_export_json_no') || 'Solo imagen (.png)'}" data-icon="image">
+                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">image</span></div>
+                                            <div class="component-menu-link-text"><span>${__('lbl_export_json_no') || 'Solo imagen (.png)'}</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-modal-actions">
+                        <button type="button" class="component-button component-button--h40" data-action="exportAnimPrevStep">
+                            <span>${__('btn_back') || 'Atrás'}</span>
+                        </button>
+                        <button type="button" class="component-button component-button--primary component-button--h40" data-action="triggerExportAnimationDownload">
+                            <span class="material-symbols-rounded">download</span>
+                            <span data-ref="export-download-label">${__('btn_download_gif') || 'Descargar GIF'}</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
     }
 };

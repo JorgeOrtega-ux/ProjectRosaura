@@ -137,11 +137,23 @@ export const DesignSetup = {
                 this.customPickedColors = [];
             }
 
+            const recentSection = document.querySelector('[data-ref="recent-colors-section"]');
+            if (recentSection) {
+                if (this.isOfflineMode && Array.isArray(this.customPickedColors) && this.customPickedColors.length > 0) {
+                    recentSection.classList.remove('disabled');
+                    recentSection.classList.add('active');
+                } else {
+                    recentSection.classList.remove('active');
+                    recentSection.classList.add('disabled');
+                }
+            }
+
             this.setupCanvas();
             if (this.isOfflineMode && typeof this.syncOfflineToolsTier === 'function') {
                 this.syncOfflineToolsTier();
             }
             this.centerBoard();
+            if (typeof this.updateZoomUI === 'function') this.updateZoomUI();
             this.setCanvasBadge('coords', 'my_location', '- , -', 'left');
             this.renderColorPalette(this.canvasPaletteId);
             if (typeof this.loadStickersLibrary === 'function') {
@@ -373,16 +385,37 @@ export const DesignSetup = {
         try {
             let layersData = null;
             if (this.isOfflineMode && this.canvasIntId) {
-                if (serverLayersData && typeof serverLayersData === 'object' && serverLayersData.layers) {
+                if (serverLayersData && (typeof serverLayersData === 'object' || Array.isArray(serverLayersData))) {
                     layersData = serverLayersData;
                     try {
                         localStorage.setItem(`rosaura_layers_${this.canvasIntId}`, JSON.stringify(serverLayersData));
                     } catch (e) {}
+
+                    const serverColors = serverLayersData.recent_colors || serverLayersData.custom_colors;
+                    if (Array.isArray(serverColors) && serverColors.length > 0) {
+                        this.customPickedColors = serverColors.slice(0, 18);
+                        if (typeof this.saveCustomColors === 'function') {
+                            this.saveCustomColors();
+                        }
+                        if (typeof this.renderCustomPickedColors === 'function') {
+                            this.renderCustomPickedColors();
+                        }
+                    }
                 } else {
                     try {
                         const stored = localStorage.getItem(`rosaura_layers_${this.canvasIntId}`);
                         if (stored) {
                             layersData = JSON.parse(stored);
+                            const storedColors = layersData.recent_colors || layersData.custom_colors;
+                            if (Array.isArray(storedColors) && storedColors.length > 0) {
+                                this.customPickedColors = storedColors.slice(0, 18);
+                                if (typeof this.saveCustomColors === 'function') {
+                                    this.saveCustomColors();
+                                }
+                                if (typeof this.renderCustomPickedColors === 'function') {
+                                    this.renderCustomPickedColors();
+                                }
+                            }
                         }
                     } catch (e) {}
                 }
@@ -683,9 +716,27 @@ export const DesignSetup = {
                                 this.saveOfflineCanvasState(false);
                             }
                         }
+                        if (e.data?.type === 'FRAMES_STATE_CHANGED') {
+                            if (typeof this.handleFramesStateChanged === 'function') {
+                                this.handleFramesStateChanged(e.data.payload);
+                            }
+                            if (this.isOfflineMode && typeof this.saveOfflineCanvasState === 'function') {
+                                this.saveOfflineCanvasState(false);
+                            }
+                        }
                         if (e.data?.type === 'LAYER_PREVIEW_UPDATED') {
                             if (typeof this.handleLayerPreviewUpdated === 'function') {
                                 this.handleLayerPreviewUpdated(e.data.payload);
+                            }
+                        }
+                        if (e.data?.type === 'FRAME_CARD_PREVIEW_UPDATED') {
+                            if (typeof this.handleFrameCardPreviewUpdated === 'function') {
+                                this.handleFrameCardPreviewUpdated(e.data.payload);
+                            }
+                        }
+                        if (e.data?.type === 'ANIMATION_FRAME_TICK') {
+                            if (typeof this.handleAnimationFrameTick === 'function') {
+                                this.handleAnimationFrameTick(e.data.payload);
                             }
                         }
                         if (e.data?.type === 'SHOW_NOTICE') {
@@ -811,6 +862,10 @@ export const DesignSetup = {
         
         this.transform.x = (rectW - (this.boardWidth * this.transform.scale)) / 2;
         this.transform.y = (rectH - (this.boardHeight * this.transform.scale)) / 2;
+
+        if (typeof this.updateZoomUI === 'function') {
+            this.updateZoomUI();
+        }
     },
 
     limitBounds() {

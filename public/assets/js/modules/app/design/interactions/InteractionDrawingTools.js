@@ -4,20 +4,39 @@ import { colorToAbgr, abgrToHex } from './InteractionHelpers.js';
 import { generateShapePixels } from '../utils/GeometricShapesUtils.js';
 
 export const InteractionDrawingTools = {
-    toggleEyedropper() {
+    async toggleEyedropper() {
+        if (typeof window !== 'undefined' && 'EyeDropper' in window) {
+            try {
+                document.querySelectorAll('[data-action="toggleEyedropper"]').forEach(btn => btn.classList.add('active'));
+                const eyeDropper = new window.EyeDropper();
+                const result = await eyeDropper.open();
+                if (result && result.sRGBHex) {
+                    if (typeof this.selectAndAddCustomColor === 'function') {
+                        this.selectAndAddCustomColor(result.sRGBHex);
+                    }
+                }
+            } catch (e) {
+                // Cancelado por el usuario (Escape o clic fuera)
+            } finally {
+                document.querySelectorAll('[data-action="toggleEyedropper"]').forEach(btn => btn.classList.remove('active'));
+            }
+            return;
+        }
+
+        // Modo fallback para navegadores sin API EyeDropper nativa
         if (this.interactionMode === 'offline_eyedropper') {
             this.interactionMode = 'normal';
-            const btn = document.querySelector('[data-action="toggleEyedropper"]');
-            if (btn) btn.classList.remove('active');
+            document.querySelectorAll('[data-action="toggleEyedropper"]').forEach(btn => btn.classList.remove('active'));
             if (this.canvas) this.canvas.classList.remove('component-cursor-eyedropper');
         } else {
             if (typeof this.cancelInteractionMode === 'function') {
                 this.cancelInteractionMode();
             }
             this.interactionMode = 'offline_eyedropper';
-            const btn = document.querySelector('[data-action="toggleEyedropper"]');
-            if (btn) btn.classList.add('active');
+            document.querySelectorAll('[data-action="toggleEyedropper"]').forEach(btn => btn.classList.add('active'));
             if (this.canvas) this.canvas.classList.add('component-cursor-eyedropper');
+            if (typeof this.closeSubtoolbar === 'function') this.closeSubtoolbar();
+            if (typeof this.closeBrushSizeToolbar === 'function') this.closeBrushSizeToolbar();
         }
         this.requestRender();
     },
@@ -551,6 +570,10 @@ export const InteractionDrawingTools = {
         });
 
         if (pixelsToPaint.length === 0) return;
+
+        if (isStart && this.isOfflineMode && typeof this.recordRecentColor === 'function') {
+            this.recordRecentColor(color);
+        }
 
         if (this.isOfflineMode) {
             if (this.renderWorker) {
@@ -1687,6 +1710,10 @@ export const InteractionDrawingTools = {
             return;
         }
 
+        if (this.isOfflineMode && typeof this.recordRecentColor === 'function') {
+            this.recordRecentColor(this.currentColor);
+        }
+
         if (this.renderWorker) {
             this.renderWorker.postMessage({
                 type: 'FLOOD_FILL',
@@ -1783,5 +1810,58 @@ export const InteractionDrawingTools = {
             }
             this.requestRender();
         }
+    },
+
+    sampleColorAtExact(exactX, exactY) {
+        if (this.templates && this.templates.length > 0) {
+            for (let i = this.templates.length - 1; i >= 0; i--) {
+                const tpl = this.templates[i];
+                if (!tpl || (!tpl.img && !tpl.imageBitmap && !tpl.canvas)) continue;
+                let px = exactX, py = exactY;
+                if (tpl.angle) {
+                    const cx = tpl.x + tpl.w / 2;
+                    const cy = tpl.y + tpl.h / 2;
+                    const rad = (-tpl.angle * Math.PI) / 180;
+                    const cos = Math.cos(rad);
+                    const sin = Math.sin(rad);
+                    px = cos * (exactX - cx) - sin * (exactY - cy) + cx;
+                    py = sin * (exactX - cx) + cos * (exactY - cy) + cy;
+                }
+                if (px >= tpl.x && px <= tpl.x + tpl.w && py >= tpl.y && py <= tpl.y + tpl.h) {
+                    const u = (px - tpl.x) / tpl.w;
+                    const v = (py - tpl.y) / tpl.h;
+                    const source = tpl.canvas || tpl.img || tpl.imageBitmap;
+                    const srcW = source.width || source.naturalWidth || tpl.w;
+                    const srcH = source.height || source.naturalHeight || tpl.h;
+                    const imgX = Math.max(0, Math.min(Math.floor(u * srcW), srcW - 1));
+                    const imgY = Math.max(0, Math.min(Math.floor(v * srcH), srcH - 1));
+                    
+                    if (!this._sampleCanvas) {
+                        this._sampleCanvas = document.createElement('canvas');
+                        this._sampleCanvas.width = 1;
+                        this._sampleCanvas.height = 1;
+                        this._sampleCtx = this._sampleCanvas.getContext('2d', { willReadFrequently: true });
+                    }
+                    this._sampleCtx.clearRect(0, 0, 1, 1);
+                    try {
+                        this._sampleCtx.drawImage(source, imgX, imgY, 1, 1, 0, 0, 1, 1);
+                        const pixel = this._sampleCtx.getImageData(0, 0, 1, 1).data;
+                        if (pixel[3] > 10) {
+                            return '#' + ((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase();
+                        }
+                    } catch (e) {}
+                }
+            }
+        }
+
+        const bx = Math.floor(exactX);
+        const by = Math.floor(exactY);
+        if (this.offscreenCtx && bx >= 0 && bx < this.boardWidth && by >= 0 && by < this.boardHeight) {
+            const img = this.offscreenCtx.getImageData(bx, by, 1, 1);
+            const val = new Uint32Array(img.data.buffer)[0];
+            if (val !== 0) return abgrToHex(val);
+        }
+
+        return (typeof this.isDarkMode === 'function' && this.isDarkMode()) ? '#1F2937' : '#FFFFFF';
     }
 };

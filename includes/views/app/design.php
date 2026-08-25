@@ -401,7 +401,7 @@ extract($designData);
             
             <div class="canvas-badges-right" data-ref="badges-right"></div>
             
-            <?php if (!$isSnapshot): ?>
+            <?php if (!$isSnapshot && !empty($isOnlineActive)): ?>
             <div class="component-action-pill <?php echo ($isBlockedInit || $isSpectatorInit || $isSubscriptionLockedInit) ? 'disabled' : ''; ?>">
                 <button class="component-button component-button--h45 disabled-interaction" data-action="placePixels" data-ref="pixel-action-btn">
                     <span class="material-symbols-rounded">touch_app</span>
@@ -418,7 +418,20 @@ extract($designData);
         <?php endif; ?>
 
         <div class="canvas-design-footer" data-ref="canvas-design-footer">
-            <div class="canvas-design-footer-left" data-ref="canvas-design-footer-left"></div>
+            <div class="canvas-design-footer-left" data-ref="canvas-design-footer-left">
+                <?php if (!$isOnlineModeActive): ?>
+                <div class="canvas-design-footer-tabs" data-ref="footer-carousel-tabs">
+                    <button type="button" class="canvas-design-footer-tab-btn active" data-action="setCarouselModeLayers" data-tooltip="<?php echo __('tooltip_layers', 'Modo Capas'); ?>" data-position="top">
+                        <span class="material-symbols-rounded">layers</span>
+                        <span class="canvas-design-footer-tab-text"><?php echo __('tooltip_layers', 'Capas'); ?></span>
+                    </button>
+                    <button type="button" class="canvas-design-footer-tab-btn" data-action="setCarouselModeTimeline" data-tooltip="<?php echo __('lbl_timeline', 'Línea de Tiempo / Animación'); ?>" data-position="top">
+                        <span class="material-symbols-rounded">movie</span>
+                        <span class="canvas-design-footer-tab-text"><?php echo __('lbl_timeline', 'Animación'); ?></span>
+                    </button>
+                </div>
+                <?php endif; ?>
+            </div>
 
             <div class="canvas-design-footer-right" data-ref="canvas-design-footer-right">
                 <!-- 1. Controles de Zoom -->
@@ -427,19 +440,19 @@ extract($designData);
                         <span class="material-symbols-rounded">remove</span>
                     </button>
                     <div class="canvas-design-footer-slider-box">
-                        <input type="range" class="canvas-design-footer-slider" data-ref="footer-zoom-slider" min="10" max="3000" step="5" value="100" />
+                        <input type="range" class="canvas-design-footer-slider" data-ref="footer-zoom-slider" min="0" max="1000" step="1" value="400" />
                     </div>
                     <button type="button" class="component-button component-button--icon component-button--h32" data-action="zoomInStep" data-tooltip="<?php echo __('lbl_zoom_in', 'Aumentar zoom'); ?>" data-position="top">
                         <span class="material-symbols-rounded">add</span>
                     </button>
                     <button type="button" class="canvas-design-footer-zoom-tag" data-action="resetZoomFit" data-ref="footer-zoom-label" data-tooltip="<?php echo __('lbl_reset_zoom', 'Restablecer zoom al 100%'); ?>" data-position="top">
-                        100%
+                        --%
                     </button>
                 </div>
 
                 <?php if (!$isOnlineModeActive): ?>
-                <!-- 2. Botón y contador de Capas -->
-                <div class="canvas-design-footer-group">
+                <!-- 2. Controles de Capas (Modo Capas) -->
+                <div class="canvas-design-footer-group" data-ref="footer-layers-controls">
                     <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleLayersCarousel" data-ref="btn-footer-toggle-layers" data-tooltip="<?php echo __('tooltip_layers', 'Capas'); ?> [L]" data-position="top">
                         <span class="material-symbols-rounded">layers</span>
                     </button>
@@ -447,9 +460,28 @@ extract($designData);
                         1/1
                     </div>
                 </div>
+
+                <!-- 3. Controles de Animación (Modo Timeline) -->
+                <div class="canvas-design-footer-group disabled" data-ref="footer-anim-controls">
+                    <button type="button" class="component-button component-button--icon component-button--h32 btn-anim-play" data-action="togglePlayAnimation" data-ref="btn-anim-play" data-tooltip="<?php echo __('lbl_play_animation', 'Reproducir / Pausar animación'); ?>" data-position="top">
+                        <span class="material-symbols-rounded">play_arrow</span>
+                    </button>
+                    <button type="button" class="canvas-design-footer-zoom-tag" data-action="cycleAnimationFps" data-ref="anim-fps-label" data-tooltip="<?php echo __('lbl_anim_speed', 'Velocidad de reproducción (FPS)'); ?>" data-position="top">
+                        12 FPS
+                    </button>
+                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleOnionSkin" data-ref="btn-anim-onion" data-tooltip="<?php echo __('lbl_onion_skin', 'Piel de cebolla (Onion Skin)'); ?>" data-position="top">
+                        <span class="material-symbols-rounded">animation</span>
+                    </button>
+                    <div class="canvas-design-footer-layers-badge" data-ref="footer-frames-count" data-tooltip="<?php echo __('lbl_active_frame_count', 'Fotograma activo / Total de fotogramas'); ?>" data-position="top">
+                        1/1
+                    </div>
+                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="openExportAnimationModal" data-ref="btn-anim-export" data-tooltip="<?php echo __('lbl_export_animation_btn', 'Exportar animación (GIF / Spritesheet)'); ?>" data-position="top">
+                        <span class="material-symbols-rounded">file_download</span>
+                    </button>
+                </div>
                 <?php endif; ?>
 
-                <!-- 3. Botón de Información / Ayuda a la derecha del todo -->
+                <!-- 4. Botón de Información / Ayuda a la derecha del todo -->
                 <button type="button" class="component-button component-button--icon component-button--h32" data-action="openShortcutsHelp" data-ref="btn-footer-help" data-tooltip="<?php echo __('tooltip_shortcuts', 'Atajos de teclado e información'); ?> [?]" data-position="top">
                     <span class="material-symbols-rounded">info</span>
                 </button>

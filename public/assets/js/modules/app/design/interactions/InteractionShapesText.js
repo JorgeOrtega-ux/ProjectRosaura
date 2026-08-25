@@ -640,6 +640,9 @@ export const InteractionShapesText = {
         addPoints(result.points, this.currentColor);
 
         if (pixelsToPush.length > 0 && this.isOfflineMode) {
+            if (typeof this.recordRecentColor === 'function') {
+                this.recordRecentColor(this.currentColor);
+            }
             if (this.renderWorker) {
                 this.renderWorker.postMessage({
                     type: 'PUSH_PIXELS',

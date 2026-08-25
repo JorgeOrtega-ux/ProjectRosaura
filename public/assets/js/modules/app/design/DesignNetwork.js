@@ -1711,7 +1711,13 @@ export const DesignNetwork = {
                 designTools.classList.remove('disabled');
                 designTools.classList.add('active');
             }
-            if (actionPill) actionPill.classList.remove('disabled');
+            if (actionPill) {
+                if (this.isOfflineMode) {
+                    actionPill.classList.add('disabled');
+                } else {
+                    actionPill.classList.remove('disabled');
+                }
+            }
             if (cooldownBadge) cooldownBadge.classList.remove('disabled');
             if (specBadge) specBadge.classList.add('disabled');
             if (privBadge) privBadge.classList.add('disabled');
@@ -1972,6 +1978,17 @@ export const DesignNetwork = {
                     });
                     base64Data = exported?.base64 || null;
                     layersData = exported?.layersData || null;
+
+                    if (layersData && typeof layersData === 'object') {
+                        if (Array.isArray(layersData)) {
+                            layersData = {
+                                layers: layersData,
+                                recent_colors: this.customPickedColors || []
+                            };
+                        } else {
+                            layersData.recent_colors = this.customPickedColors || [];
+                        }
+                    }
 
                     if (layersData && this.canvasIntId) {
                         try {

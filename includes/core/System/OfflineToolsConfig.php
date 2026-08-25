@@ -70,6 +70,14 @@ class OfflineToolsConfig {
                     ]
                 ]
             ],
+            'eyedropper' => [
+                'id'          => 'eyedropper',
+                'name_key'    => 'dt_eyedropper',
+                'icon'        => 'colorize',
+                'shortcut'    => 'I',
+                'action'      => 'toggleEyedropper',
+                'ref'         => 'btn-offline-eyedropper',
+            ],
             'mirror' => [
                 'id'          => 'mirror',
                 'name_key'    => 'tooltip_mirror_mode',

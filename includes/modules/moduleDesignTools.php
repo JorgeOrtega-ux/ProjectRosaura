@@ -25,7 +25,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
             </div>
             
             <div class="component-menu-section-body">
-                <div class="component-items-grid" data-ref="custom-colors-container">
+                <div class="component-items-grid" data-ref="custom-colors-tools-container">
                     <div class="component-dropdown-wrapper component-dropdown-wrapper--fit component-dropdown-wrapper--grid-item" data-ref="custom-color-dropdown-wrapper">
                         <button type="button" class="component-color-btn component-color-btn--rainbow" data-action="toggleModule" data-target="moduleCustomColorPicker" data-tooltip="<?php echo __('dt_add_custom_color'); ?>" data-position="right-start">
                             <div class="component-color-btn--rainbow-inner">
@@ -66,6 +66,19 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                         <span class="material-symbols-rounded">colorize</span>
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <div class="component-menu-section-parent disabled" data-ref="recent-colors-section">
+            <div class="component-menu-section-header">
+                <div class="component-menu-header-box">
+                    <span class="material-symbols-rounded">history</span>
+                    <span class="component-menu-header-title"><?php echo __('dt_recent_colors'); ?></span>
+                </div>
+            </div>
+            
+            <div class="component-menu-section-body">
+                <div class="component-items-grid" data-ref="recent-colors-container"></div>
             </div>
         </div>
 

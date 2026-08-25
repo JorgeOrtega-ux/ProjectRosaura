@@ -26,7 +26,7 @@ export const InteractionHistoryColors = {
                 this.saveOfflineCanvasState(false);
             }
             this.requestRender();
-            if (typeof showMessage === 'function') showMessage(window.__('msg_undo') || 'Acci├│n deshecha', 'info');
+            if (typeof showMessage === 'function') showMessage(window.__('msg_undo') || 'Acción deshecha', 'info');
         }
     },
 
@@ -54,14 +54,19 @@ export const InteractionHistoryColors = {
                 this.saveOfflineCanvasState(false);
             }
             this.requestRender();
-            if (typeof showMessage === 'function') showMessage(window.__('msg_redo') || 'Acci├│n rehecha', 'info');
+            if (typeof showMessage === 'function') showMessage(window.__('msg_redo') || 'Acción rehecha', 'info');
         }
+    },
+
+    getCustomColorsStorageKey() {
+        const id = this.canvasId || this.canvasIntId || (typeof this.getCanvasId === 'function' ? this.getCanvasId() : null);
+        return id ? `rosaura_custom_colors_${id}` : 'rosaura_offline_custom_colors';
     },
 
     loadCustomColors() {
         try {
-            const key = this.canvasId ? `rosaura_custom_colors_${this.canvasId}` : 'rosaura_offline_custom_colors';
-            const saved = localStorage.getItem(key) || localStorage.getItem('rosaura_offline_custom_colors');
+            const key = this.getCustomColorsStorageKey();
+            const saved = localStorage.getItem(key);
             if (saved) {
                 const parsed = JSON.parse(saved);
                 if (Array.isArray(parsed)) return parsed.slice(0, 18);
@@ -74,17 +79,17 @@ export const InteractionHistoryColors = {
 
     saveCustomColors() {
         try {
-            const key = this.canvasId ? `rosaura_custom_colors_${this.canvasId}` : 'rosaura_offline_custom_colors';
+            const key = this.getCustomColorsStorageKey();
             if (Array.isArray(this.customPickedColors)) {
                 localStorage.setItem(key, JSON.stringify(this.customPickedColors.slice(0, 18)));
-                localStorage.setItem('rosaura_offline_custom_colors', JSON.stringify(this.customPickedColors.slice(0, 18)));
             }
         } catch (e) {
             console.warn('Failed to save custom colors to localStorage:', e);
         }
     },
 
-    selectAndAddCustomColor(hex) {
+    recordRecentColor(hex) {
+        if (!this.isOfflineMode) return;
         if (!hex || typeof hex !== 'string') return;
         hex = hex.trim().toUpperCase();
         if (!hex.startsWith('#')) hex = '#' + hex;
@@ -104,6 +109,18 @@ export const InteractionHistoryColors = {
         }
 
         this.saveCustomColors();
+        if (typeof this.renderCustomPickedColors === 'function') {
+            this.renderCustomPickedColors();
+        }
+    },
+
+    selectAndAddCustomColor(hex) {
+        if (!hex || typeof hex !== 'string') return;
+        hex = hex.trim().toUpperCase();
+        if (!hex.startsWith('#')) hex = '#' + hex;
+        if (!/^#[0-9A-F]{6}$/i.test(hex) && !/^#[0-9A-F]{3}$/i.test(hex)) return;
+
+        this.recordRecentColor(hex);
 
         this.currentColor = hex;
         if (this.btnColorPalette) {
@@ -111,7 +128,6 @@ export const InteractionHistoryColors = {
             this.applyColorBorderStyle(this.btnColorPalette, this.currentColor);
         }
 
-        this.renderCustomPickedColors();
         this.updateActiveColorPreview();
         this.syncActiveColorHighlight();
         this.requestRender();
