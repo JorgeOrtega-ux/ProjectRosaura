@@ -9,8 +9,9 @@ export class CalendarSystem {
         this.onClear = null;
         this.initialized = false;
         this.disablePastDates = false;
-        this.selectedHours = '00';
-        this.selectedMinutes = '00';
+        this.selectedHours = '23';
+        this.selectedMinutes = '59';
+        this.maxYearsFuture = 5;
 
         if (!window.calendarInstances) {
             window.calendarInstances = {};
@@ -96,26 +97,33 @@ export class CalendarSystem {
         if (initialDateStr) {
             const sanitizedDateStr = String(initialDateStr).replace(' ', 'T');
             let dateObj;
+            let hasTimeSpecified = false;
+
             if (sanitizedDateStr.includes('Z') || /[-+]\d{2}:?\d{2}$/.test(sanitizedDateStr)) {
                 dateObj = new Date(sanitizedDateStr);
+                hasTimeSpecified = true;
             } else {
                 const parts = sanitizedDateStr.split('T');
                 const dateParts = parts[0].split('-');
-                const timeParts = parts[1] ? parts[1].split(':') : ['00', '00'];
+                const timeParts = parts[1] ? parts[1].split(':') : null;
+                if (timeParts && timeParts.length >= 2) {
+                    hasTimeSpecified = true;
+                }
+                const timeToUse = timeParts || ['23', '59'];
                 dateObj = new Date(
                     parseInt(dateParts[0], 10),
                     parseInt(dateParts[1], 10) - 1,
                     parseInt(dateParts[2], 10),
-                    parseInt(timeParts[0], 10),
-                    parseInt(timeParts[1], 10)
+                    parseInt(timeToUse[0], 10),
+                    parseInt(timeToUse[1], 10)
                 );
             }
 
             if (!isNaN(dateObj.getTime())) {
                 this.selectedDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
                 this.currentDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
-                this.selectedHours = String(dateObj.getHours()).padStart(2, '0');
-                this.selectedMinutes = String(dateObj.getMinutes()).padStart(2, '0');
+                this.selectedHours = hasTimeSpecified ? String(dateObj.getHours()).padStart(2, '0') : '23';
+                this.selectedMinutes = hasTimeSpecified ? String(dateObj.getMinutes()).padStart(2, '0') : '59';
 
                 const hInput = container ? container.querySelector('[data-ref="calendar-hours"]') : null;
                 const mInput = container ? container.querySelector('[data-ref="calendar-minutes"]') : null;
@@ -124,30 +132,62 @@ export class CalendarSystem {
             } else {
                 this.selectedDate = null;
                 this.currentDate = new Date();
-                this.selectedHours = '00';
-                this.selectedMinutes = '00';
+                this.selectedHours = '23';
+                this.selectedMinutes = '59';
                 const hInput = container ? container.querySelector('[data-ref="calendar-hours"]') : null;
                 const mInput = container ? container.querySelector('[data-ref="calendar-minutes"]') : null;
-                if (hInput) hInput.value = '00';
-                if (mInput) mInput.value = '00';
+                if (hInput) hInput.value = '23';
+                if (mInput) mInput.value = '59';
             }
         } else {
             this.selectedDate = null;
             this.currentDate = new Date();
-            this.selectedHours = '00';
-            this.selectedMinutes = '00';
+            this.selectedHours = '23';
+            this.selectedMinutes = '59';
             
             const hInput = container ? container.querySelector('[data-ref="calendar-hours"]') : null;
             const mInput = container ? container.querySelector('[data-ref="calendar-minutes"]') : null;
-            if (hInput) hInput.value = '00';
-            if (mInput) mInput.value = '00';
+            if (hInput) hInput.value = '23';
+            if (mInput) mInput.value = '59';
         }
 
+        const hCenter = container ? container.querySelector('[data-ref="calendar-modal-hours-val"]') : null;
+        const mCenter = container ? container.querySelector('[data-ref="calendar-modal-minutes-val"]') : null;
+        if (hCenter) {
+            hCenter.setAttribute('data-value', parseInt(this.selectedHours, 10));
+            hCenter.textContent = this.selectedHours;
+        }
+        if (mCenter) {
+            mCenter.setAttribute('data-value', parseInt(this.selectedMinutes, 10));
+            mCenter.textContent = this.selectedMinutes;
+        }
+
+        this.updateTimeDisplay();
         this.render();
     }
 
+    updateTimeDisplay() {
+        const container = this.getContainer();
+        if (!container) return;
+
+        const timeDisplays = container.querySelectorAll('[data-ref="calendar-time-step-text"], [data-ref="offline-resize-time-text"], [data-ref="offline-reset-time-text"], [data-ref="sanction-time-text"], [data-ref="invite-time-text"], [data-ref="calendar-modal-time-text"]');
+        timeDisplays.forEach(el => {
+            el.textContent = `${this.selectedHours}:${this.selectedMinutes}`;
+        });
+
+        const hCenter = container.querySelector('[data-ref="calendar-modal-hours-val"]');
+        const mCenter = container.querySelector('[data-ref="calendar-modal-minutes-val"]');
+        if (hCenter) {
+            hCenter.setAttribute('data-value', parseInt(this.selectedHours, 10));
+            hCenter.textContent = this.selectedHours;
+        }
+        if (mCenter) {
+            mCenter.setAttribute('data-value', parseInt(this.selectedMinutes, 10));
+            mCenter.textContent = this.selectedMinutes;
+        }
+    }
+
     bindEvents() {
-        
         document.addEventListener('click', this.handleClickBound);
         document.addEventListener('focusout', this.handleFocusOutBound);
     }
@@ -184,12 +224,16 @@ export class CalendarSystem {
             if (val < 0) val = 0;
             if (val > 23) val = 23;
             e.target.value = String(val).padStart(2, '0');
+            this.selectedHours = e.target.value;
+            this.updateTimeDisplay();
         }
         if (e.target.getAttribute('data-ref') === 'calendar-minutes') {
             let val = parseInt(e.target.value) || 0;
             if (val < 0) val = 0;
             if (val > 59) val = 59;
             e.target.value = String(val).padStart(2, '0');
+            this.selectedMinutes = e.target.value;
+            this.updateTimeDisplay();
         }
     }
 
@@ -198,14 +242,36 @@ export class CalendarSystem {
         if (!container) return;
         const year = this.currentDate.getFullYear();
         const month = this.currentDate.getMonth();
+
+        const today = new Date();
+        const currentYear = today.getFullYear();
+        const currentMonth = today.getMonth();
+        const maxYear = currentYear + (this.maxYearsFuture || 5);
         
         const firstDay = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         const daysInPrevMonth = new Date(year, month, 0).getDate();
         
         const title = container.querySelector('[data-ref="calendar-title"]');
-        if (title) title.textContent = `${this.monthsStr[month]} ${year}`;
+        if (title) title.textContent = `${this.monthsStr[month] || ''} ${year}`;
         
+        // Control de botones de navegación mensual (Límites 5 años y bloqueo del pasado)
+        const btnPrev = container.querySelector('[data-action="calendarPrevMonth"]');
+        if (btnPrev) {
+            const isAtMin = this.disablePastDates && (year < currentYear || (year === currentYear && month <= currentMonth));
+            btnPrev.disabled = isAtMin;
+            btnPrev.classList.toggle('disabled-interaction', isAtMin);
+            btnPrev.classList.toggle('muted', isAtMin);
+        }
+
+        const btnNext = container.querySelector('[data-action="calendarNextMonth"]');
+        if (btnNext) {
+            const isAtMax = (year > maxYear || (year === maxYear && month >= 11));
+            btnNext.disabled = isAtMax;
+            btnNext.classList.toggle('disabled-interaction', isAtMax);
+            btnNext.classList.toggle('muted', isAtMax);
+        }
+
         const daysContainer = container.querySelector('[data-ref="calendar-days"]');
         if (!daysContainer) return;
         daysContainer.innerHTML = '';
@@ -215,7 +281,6 @@ export class CalendarSystem {
             daysContainer.innerHTML += `<button type="button" class="component-calendar-day muted" disabled>${dayNum}</button>`;
         }
         
-        const today = new Date();
         today.setHours(0, 0, 0, 0);
 
         for (let i = 1; i <= daysInMonth; i++) {
@@ -249,10 +314,27 @@ export class CalendarSystem {
         for (let i = 1; i <= nextDays; i++) {
             daysContainer.innerHTML += `<button type="button" class="component-calendar-day muted" disabled>${i}</button>`;
         }
+
+        this.updateTimeDisplay();
     }
 
     changeMonth(dir) {
-        this.currentDate.setMonth(this.currentDate.getMonth() + dir);
+        const targetDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + dir, 1);
+        const targetYear = targetDate.getFullYear();
+        const targetMonth = targetDate.getMonth();
+        const today = new Date();
+        const currentYear = today.getFullYear();
+        const currentMonth = today.getMonth();
+        const maxYear = currentYear + (this.maxYearsFuture || 5);
+
+        if (dir < 0 && this.disablePastDates && (targetYear < currentYear || (targetYear === currentYear && targetMonth < currentMonth))) {
+            return;
+        }
+        if (dir > 0 && (targetYear > maxYear || (targetYear === maxYear && targetMonth > 11))) {
+            return;
+        }
+
+        this.currentDate = targetDate;
         this.render();
     }
 
@@ -282,8 +364,8 @@ export class CalendarSystem {
         const hInput = container ? container.querySelector('[data-ref="calendar-hours"]') : null;
         const mInput = container ? container.querySelector('[data-ref="calendar-minutes"]') : null;
         
-        const h = hInput ? hInput.value.padStart(2, '0') : (this.selectedHours || '00');
-        const m = mInput ? mInput.value.padStart(2, '0') : (this.selectedMinutes || '00');
+        const h = hInput ? hInput.value.padStart(2, '0') : (this.selectedHours || '23');
+        const m = mInput ? mInput.value.padStart(2, '0') : (this.selectedMinutes || '59');
         
         const y = this.selectedDate.getFullYear();
         const mo = String(this.selectedDate.getMonth() + 1).padStart(2, '0');
@@ -331,8 +413,8 @@ export class CalendarSystem {
         const confirmCb = onConfirmCallback || this.onConfirm;
         const clearCb = onClearCallback || this.onClear;
 
-        let hours = this.selectedHours || '00';
-        let minutes = this.selectedMinutes || '00';
+        let hours = this.selectedHours || '23';
+        let minutes = this.selectedMinutes || '59';
         let isoDate = '';
         let dateDisplay = '';
 
@@ -349,8 +431,8 @@ export class CalendarSystem {
             }
             if (parts[1]) {
                 const timeParts = parts[1].split(':');
-                hours = (timeParts[0] || '00').padStart(2, '0');
-                minutes = (timeParts[1] || '00').padStart(2, '0');
+                hours = (timeParts[0] || '23').padStart(2, '0');
+                minutes = (timeParts[1] || '59').padStart(2, '0');
             }
         } else if (this.selectedDate) {
             isoDate = `${this.selectedDate.getFullYear()}-${String(this.selectedDate.getMonth() + 1).padStart(2, '0')}-${String(this.selectedDate.getDate()).padStart(2, '0')}`;

@@ -960,8 +960,9 @@ export const ModalTemplates = {
                     </div>
                 `;
             }
-
-            const initialDateObj = data.nextResizeAt ? (parseUtcToLocalDate(data.nextResizeAt) || new Date(Date.now() + 3600000)) : new Date(Date.now() + 3600000);
+            const defaultDateObj = new Date(Date.now() + 86400000);
+            defaultDateObj.setHours(23, 59, 0, 0);
+            const initialDateObj = data.nextResizeAt ? (parseUtcToLocalDate(data.nextResizeAt) || defaultDateObj) : defaultDateObj;
             const defaultResizeIso = formatLocalDateTimeToInput(initialDateObj);
             const initialSchedDetails = getScheduledTimeDetails(initialDateObj);
             const defaultResizeDisplay = initialSchedDetails.formattedDateShort;
@@ -1029,8 +1030,8 @@ export const ModalTemplates = {
                 <!-- STEP 1: Tipo de Expansión & Fecha si es programada -->
                 <div class="component-card--grouped component-card--flush ${hasActiveSchedule ? 'disabled' : 'active'} component-modal-step" data-ref="offline-resize-step-1" data-selected-type="${hasActiveSchedule ? 'scheduled' : 'instant'}">
                     <div class="component-modal-header">
-                        <h2 class="component-modal-title">${__('canvas_resize_title') || 'Ajustar Tamaño'}</h2>
-                        <p class="component-modal-desc">${__('canvas_resize_desc') || 'Modifica el tamaño de la cuadrícula del lienzo.'}</p>
+                        <h2 class="component-modal-title">${__('canvas_resize_title') || 'Expandir Lienzo'}</h2>
+                        <p class="component-modal-desc">${__('canvas_resize_desc') || 'Aumenta el espacio disponible para dibujar píxeles.'}</p>
                     </div>
 
                     <div class="component-modal-body">
@@ -1095,7 +1096,7 @@ export const ModalTemplates = {
                     </div>
                 </div>
 
-                <!-- STEP CALENDAR: Etapa de Selección de Fecha y Hora -->
+                <!-- STEP CALENDAR: Etapa de Selección de Fecha -->
                 <div class="component-card--grouped component-card--flush disabled component-modal-step" data-ref="offline-resize-step-calendar">
                     <div class="component-modal-header">
                         <h2 class="component-modal-title">${__('calendar_modal_title') || 'Seleccionar fecha'}</h2>
@@ -1114,11 +1115,40 @@ export const ModalTemplates = {
                                 </button>
                             </div>
                             <div class="component-calendar-weekdays">
-                                <span>${__('cal_su') || 'Do'}</span><span>${__('cal_mo') || 'Lu'}</span><span>${__('cal_tu') || 'Ma'}</span><span>${__('cal_we') || 'Mi'}</span><span>${__('cal_th') || 'Ju'}</span><span>${__('cal_fr') || 'Vi'}</span><span>${__('cal_sa') || 'Sa'}</span>
+                                <span>${__('cal_su') || 'Do'}</span><span>${__('cal_mo') || 'Lu'}</span><span>${__('cal_tu') || 'Ma'}</span><span>${__('cal_we') || 'Mi'}</span><span>${__('cal_th') || 'Ju'}</span><span>${__('cal_fr') || 'Vi'}</span><span>${__('cal_sa') || 'Sá'}</span>
                             </div>
                             <div class="component-calendar-days" data-ref="calendar-days"></div>
                         </div>
 
+                        <!-- Trigger compacto para ajustar hora -->
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full" style="margin-top: 12px;">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="offlineResizeTimeStep" data-ref="offline-resize-time-trigger">
+                                <span class="material-symbols-rounded">schedule</span>
+                                <span class="component-dropdown-text"><span class="component-text-muted" style="margin-right: 4px;">${__('lbl_configured_time') || 'Hora'}:</span> <strong data-ref="offline-resize-time-text">${hh}:${mm}</strong></span>
+                                <span class="component-badge component-badge--sm">${activeSchedDetails ? activeSchedDetails.timezoneString : getUserTimezoneString()}</span>
+                                <span class="material-symbols-rounded">chevron_right</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--h40" data-action="offlineResizePrevDateStep">
+                            <span>${__('btn_back')}</span>
+                        </button>
+                        <button class="component-button component-button--primary component-button--h40" data-action="offlineResizeConfirmDate">
+                            <span>${__('btn_accept')}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP TIME: Etapa de Ajuste de Hora y Minutos -->
+                <div class="component-card--grouped component-card--flush disabled component-modal-step" data-ref="offline-resize-step-time">
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('lbl_time_picker_title') || 'Ajustar hora'}</h2>
+                        <p class="component-modal-desc">${__('lbl_time_picker_desc') || 'Define la hora y minutos exactos para la ejecución.'}</p>
+                    </div>
+
+                    <div class="component-modal-body">
                         <div class="calendar-modal-controls">
                             <div class="calendar-control-column">
                                 <div class="calendar-control-label">${__('lbl_hours') || 'Horas'}</div>
@@ -1168,10 +1198,10 @@ export const ModalTemplates = {
                     </div>
 
                     <div class="component-modal-actions">
-                        <button class="component-button component-button--h40" data-action="offlineResizePrevDateStep">
+                        <button class="component-button component-button--h40" data-action="offlineResizePrevTimeStep">
                             <span>${__('btn_back')}</span>
                         </button>
-                        <button class="component-button component-button--primary component-button--h40" data-action="offlineResizeConfirmDate">
+                        <button class="component-button component-button--primary component-button--h40" data-action="offlineResizeConfirmTime">
                             <span>${__('btn_accept')}</span>
                         </button>
                     </div>
@@ -1227,7 +1257,9 @@ export const ModalTemplates = {
             const canTakeSnapshot = data.canTakeSnapshot !== false;
             const hasActiveSchedule = !isOffline && !!data.resetActive && !!data.nextResetAt;
 
-            const initialDateObj = data.nextResetAt ? (parseUtcToLocalDate(data.nextResetAt) || new Date(Date.now() + 3600000)) : new Date(Date.now() + 3600000);
+            const defaultDateObj = new Date(Date.now() + 86400000);
+            defaultDateObj.setHours(23, 59, 0, 0);
+            const initialDateObj = data.nextResetAt ? (parseUtcToLocalDate(data.nextResetAt) || defaultDateObj) : defaultDateObj;
             const defaultResetIso = formatLocalDateTimeToInput(initialDateObj);
             const initialSchedDetails = getScheduledTimeDetails(initialDateObj);
             const defaultResetDisplay = initialSchedDetails.formattedDateShort;
@@ -1361,7 +1393,7 @@ export const ModalTemplates = {
                     </div>
                 </div>
 
-                <!-- STEP CALENDAR: Etapa de Selección de Fecha y Hora -->
+                <!-- STEP CALENDAR: Etapa de Selección de Fecha -->
                 <div class="component-card--grouped component-card--flush disabled component-modal-step" data-ref="offline-reset-step-calendar">
                     <div class="component-modal-header">
                         <h2 class="component-modal-title">${__('calendar_modal_title') || 'Seleccionar fecha'}</h2>
@@ -1380,11 +1412,40 @@ export const ModalTemplates = {
                                 </button>
                             </div>
                             <div class="component-calendar-weekdays">
-                                <span>${__('cal_su') || 'Do'}</span><span>${__('cal_mo') || 'Lu'}</span><span>${__('cal_tu') || 'Ma'}</span><span>${__('cal_we') || 'Mi'}</span><span>${__('cal_th') || 'Ju'}</span><span>${__('cal_fr') || 'Vi'}</span><span>${__('cal_sa') || 'Sa'}</span>
+                                <span>${__('cal_su') || 'Do'}</span><span>${__('cal_mo') || 'Lu'}</span><span>${__('cal_tu') || 'Ma'}</span><span>${__('cal_we') || 'Mi'}</span><span>${__('cal_th') || 'Ju'}</span><span>${__('cal_fr') || 'Vi'}</span><span>${__('cal_sa') || 'Sá'}</span>
                             </div>
                             <div class="component-calendar-days" data-ref="calendar-days"></div>
                         </div>
 
+                        <!-- Trigger compacto para ajustar hora -->
+                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full" style="margin-top: 12px;">
+                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="offlineResetTimeStep" data-ref="offline-reset-time-trigger">
+                                <span class="material-symbols-rounded">schedule</span>
+                                <span class="component-dropdown-text"><span class="component-text-muted" style="margin-right: 4px;">${__('lbl_configured_time') || 'Hora'}:</span> <strong data-ref="offline-reset-time-text">${hh}:${mm}</strong></span>
+                                <span class="component-badge component-badge--sm">${activeSchedDetails ? activeSchedDetails.timezoneString : getUserTimezoneString()}</span>
+                                <span class="material-symbols-rounded">chevron_right</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-modal-actions">
+                        <button class="component-button component-button--h40" data-action="offlineResetPrevDateStep">
+                            <span>${__('btn_back')}</span>
+                        </button>
+                        <button class="component-button component-button--primary component-button--h40" data-action="offlineResetConfirmDate">
+                            <span>${__('btn_accept')}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP TIME: Etapa de Ajuste de Hora y Minutos -->
+                <div class="component-card--grouped component-card--flush disabled component-modal-step" data-ref="offline-reset-step-time">
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('lbl_time_picker_title') || 'Ajustar hora'}</h2>
+                        <p class="component-modal-desc">${__('lbl_time_picker_desc') || 'Define la hora y minutos exactos para la ejecución.'}</p>
+                    </div>
+
+                    <div class="component-modal-body">
                         <div class="calendar-modal-controls">
                             <div class="calendar-control-column">
                                 <div class="calendar-control-label">${__('lbl_hours') || 'Horas'}</div>
@@ -1434,10 +1495,10 @@ export const ModalTemplates = {
                     </div>
 
                     <div class="component-modal-actions">
-                        <button class="component-button component-button--h40" data-action="offlineResetPrevDateStep">
+                        <button class="component-button component-button--h40" data-action="offlineResetPrevTimeStep">
                             <span>${__('btn_back')}</span>
                         </button>
-                        <button class="component-button component-button--primary component-button--h40" data-action="offlineResetConfirmDate">
+                        <button class="component-button component-button--primary component-button--h40" data-action="offlineResetConfirmTime">
                             <span>${__('btn_accept')}</span>
                         </button>
                     </div>
@@ -2066,7 +2127,7 @@ export const ModalTemplates = {
                             </div>
                         </div>
 
-                        <!-- Step 2: Calendario inline + H:MM -->
+                        <!-- Step 2: Calendario inline -->
                         <div class="step-modal-step disabled" data-step="2">
                             <div class="component-calendar">
                                 <div class="component-calendar-header">
@@ -2090,6 +2151,18 @@ export const ModalTemplates = {
                                 <div class="component-calendar-days" data-ref="calendar-days"></div>
                             </div>
 
+                            <!-- Trigger compacto para ajustar hora -->
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--full" style="margin-top: 12px;">
+                                <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="sanctionTimeStep" data-ref="sanction-time-trigger">
+                                    <span class="material-symbols-rounded">schedule</span>
+                                    <span class="component-dropdown-text"><span class="component-text-muted" style="margin-right: 4px;">${__('lbl_configured_time') || 'Hora'}:</span> <strong data-ref="sanction-time-text">${sanctionHours}:${sanctionMinutes}</strong></span>
+                                    <span class="material-symbols-rounded">chevron_right</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Ajuste de Hora y Minutos -->
+                        <div class="step-modal-step disabled" data-step="3">
                             <div class="calendar-modal-controls">
                                 <div class="calendar-control-column">
                                     <div class="calendar-control-label">${__('lbl_hours')}</div>
@@ -2102,7 +2175,7 @@ export const ModalTemplates = {
                                                 <span class="material-symbols-rounded">chevron_left</span>
                                             </button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-value="${parseInt(sanctionHours) || 0}">${sanctionHours}</div>
+                                        <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-value="${parseInt(sanctionHours) || 23}">${sanctionHours}</div>
                                         <div class="component-inline-control__group">
                                             <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="1">
                                                 <span class="material-symbols-rounded">chevron_right</span>
@@ -2124,7 +2197,7 @@ export const ModalTemplates = {
                                                 <span class="material-symbols-rounded">chevron_left</span>
                                             </button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-value="${parseInt(sanctionMinutes) || 0}">${sanctionMinutes}</div>
+                                        <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-value="${parseInt(sanctionMinutes) || 59}">${sanctionMinutes}</div>
                                         <div class="component-inline-control__group">
                                             <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="1">
                                                 <span class="material-symbols-rounded">chevron_right</span>
@@ -2219,8 +2292,8 @@ export const ModalTemplates = {
             const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
             const title = data.title || __('calendar_modal_title');
             const dateDisplay = data.dateDisplay || __('lbl_select_date');
-            const hours = data.hours || '00';
-            const minutes = data.minutes || '00';
+            const hours = data.hours || '23';
+            const minutes = data.minutes || '59';
             const isoDate = data.isoDate || '';
             const btnCancel = __('btn_cancel');
             const btnConfirm = __('btn_accept');
@@ -2248,7 +2321,7 @@ export const ModalTemplates = {
                             </div>
                         </div>
 
-                        <!-- Step 2: Calendario + H:MM -->
+                        <!-- Step 2: Calendario -->
                         <div class="step-modal-step disabled" data-step="2">
                             <div class="component-calendar">
                                 <div class="component-calendar-header">
@@ -2272,7 +2345,18 @@ export const ModalTemplates = {
                                 <div class="component-calendar-days" data-ref="calendar-days"></div>
                             </div>
 
-                            <!-- Hours and Minutes -->
+                            <!-- Trigger compacto para ajustar hora -->
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--full" style="margin-top: 12px;">
+                                <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="calendarModalTimeStep" data-ref="calendar-modal-time-trigger">
+                                    <span class="material-symbols-rounded">schedule</span>
+                                    <span class="component-dropdown-text"><span class="component-text-muted" style="margin-right: 4px;">${__('lbl_configured_time') || 'Hora'}:</span> <strong data-ref="calendar-modal-time-text">${hours}:${minutes}</strong></span>
+                                    <span class="material-symbols-rounded">chevron_right</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Ajuste de Hora y Minutos -->
+                        <div class="step-modal-step disabled" data-step="3">
                             <div class="calendar-modal-controls">
                                 <div>
                                     <div class="calendar-control-label">${__('lbl_hours')}</div>
@@ -2285,7 +2369,7 @@ export const ModalTemplates = {
                                                 <span class="material-symbols-rounded msr-chevron_left">chevron_left</span>
                                             </button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-value="${parseInt(hours) || 0}">${hours}</div>
+                                        <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-value="${parseInt(hours) || 23}">${hours}</div>
                                         <div class="component-inline-control__group">
                                             <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="1">
                                                 <span class="material-symbols-rounded msr-chevron_right">chevron_right</span>
@@ -2307,7 +2391,7 @@ export const ModalTemplates = {
                                                 <span class="material-symbols-rounded msr-chevron_left">chevron_left</span>
                                             </button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-value="${parseInt(minutes) || 0}">${minutes}</div>
+                                        <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-value="${parseInt(minutes) || 59}">${minutes}</div>
                                         <div class="component-inline-control__group">
                                             <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="1">
                                                 <span class="material-symbols-rounded msr-chevron_right">chevron_right</span>
@@ -2326,7 +2410,7 @@ export const ModalTemplates = {
                 <div class="component-modal-actions">
                     <button type="button" class="component-button component-button--h40" data-modal-action="cancel">${btnCancel}</button>
                     <button type="button" class="component-button component-button--h40 disabled" data-action="calendarModalPrevStep" data-ref="btn-calmodal-prev">${__('btn_prev')}</button>
-                    <button type="button" class="component-button component-button--primary component-button--h40 disabled" data-modal-action="confirm" data-ref="btn-calmodal-confirm">${btnConfirm}</button>
+                    <button type="button" class="component-button component-button--primary component-button--h40 disabled" data-action="calendarModalConfirmDate" data-ref="btn-calmodal-confirm">${btnConfirm}</button>
                 </div>
             `;
         }
@@ -2444,7 +2528,7 @@ export const ModalTemplates = {
                             </div>
                         </div>
 
-                        <!-- Step 2: Calendario inline + H:MM -->
+                        <!-- Step 2: Calendario -->
                         <div class="step-modal-step disabled" data-step="2">
                             <div class="component-calendar">
                                 <div class="component-calendar-header">
@@ -2468,6 +2552,18 @@ export const ModalTemplates = {
                                 <div class="component-calendar-days" data-ref="calendar-days"></div>
                             </div>
 
+                            <!-- Trigger compacto para ajustar hora -->
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--full" style="margin-top: 12px;">
+                                <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="inviteTimeStep" data-ref="invite-time-trigger">
+                                    <span class="material-symbols-rounded">schedule</span>
+                                    <span class="component-dropdown-text"><span class="component-text-muted" style="margin-right: 4px;">${__('lbl_configured_time') || 'Hora'}:</span> <strong data-ref="invite-time-text">23:59</strong></span>
+                                    <span class="material-symbols-rounded">chevron_right</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Ajuste de Hora y Minutos -->
+                        <div class="step-modal-step disabled" data-step="3">
                             <div class="calendar-modal-controls">
                                 <div class="calendar-control-column">
                                     <div class="calendar-control-label">${__('lbl_hours')}</div>
@@ -2480,7 +2576,7 @@ export const ModalTemplates = {
                                                 <span class="material-symbols-rounded">chevron_left</span>
                                             </button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-value="0">00</div>
+                                        <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-value="23">23</div>
                                         <div class="component-inline-control__group">
                                             <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="1">
                                                 <span class="material-symbols-rounded">chevron_right</span>
@@ -2502,7 +2598,7 @@ export const ModalTemplates = {
                                                 <span class="material-symbols-rounded">chevron_left</span>
                                             </button>
                                         </div>
-                                        <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-value="0">00</div>
+                                        <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-value="59">59</div>
                                         <div class="component-inline-control__group">
                                             <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="1">
                                                 <span class="material-symbols-rounded">chevron_right</span>

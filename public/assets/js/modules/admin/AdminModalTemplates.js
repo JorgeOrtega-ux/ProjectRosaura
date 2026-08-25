@@ -268,7 +268,7 @@ export const AdminModalTemplates = {
                                             <span class="material-symbols-rounded">chevron_left</span>
                                         </button>
                                     </div>
-                                    <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-value="${expDate ? String(parseInt((expDate.split('T')[1] || '00:00').split(':')[0]) || 0) : '0'}">${expDate ? (expDate.split('T')[1] || '00:00').split(':')[0].padStart(2,'0') : '00'}</div>
+                                    <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-value="${expDate ? String(parseInt((expDate.split('T')[1] || '23:59').split(':')[0]) || 23) : '23'}">${expDate ? (expDate.split('T')[1] || '23:59').split(':')[0].padStart(2,'0') : '23'}</div>
                                     <div class="component-inline-control__group">
                                         <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="1">
                                             <span class="material-symbols-rounded">chevron_right</span>
@@ -291,7 +291,7 @@ export const AdminModalTemplates = {
                                             <span class="material-symbols-rounded">chevron_left</span>
                                         </button>
                                     </div>
-                                    <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-value="${expDate ? String(parseInt((expDate.split('T')[1] || '00:00').split(':')[1]) || 0) : '0'}">${expDate ? (expDate.split('T')[1] || '00:00').split(':')[1].padStart(2,'0') : '00'}</div>
+                                    <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-value="${expDate ? String(parseInt((expDate.split('T')[1] || '23:59').split(':')[1]) || 59) : '59'}">${expDate ? (expDate.split('T')[1] || '23:59').split(':')[1].padStart(2,'0') : '59'}</div>
                                     <div class="component-inline-control__group">
                                         <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="1">
                                             <span class="material-symbols-rounded">chevron_right</span>

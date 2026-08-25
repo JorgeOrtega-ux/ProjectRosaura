@@ -391,8 +391,13 @@ export class ModalSystem {
                 let val = parseInt(centerEl.getAttribute('data-value')) || 0;
                 val = (val + step) % 24;
                 if (val < 0) val += 24;
+                const formatted = String(val).padStart(2, '0');
                 centerEl.setAttribute('data-value', val);
-                centerEl.textContent = String(val).padStart(2, '0');
+                centerEl.textContent = formatted;
+                if (this.calendarSystem) {
+                    this.calendarSystem.selectedHours = formatted;
+                    this.calendarSystem.updateTimeDisplay();
+                }
             }
             return;
         }
@@ -406,8 +411,13 @@ export class ModalSystem {
                 let val = parseInt(centerEl.getAttribute('data-value')) || 0;
                 val = (val + step) % 60;
                 if (val < 0) val += 60;
+                const formatted = String(val).padStart(2, '0');
                 centerEl.setAttribute('data-value', val);
-                centerEl.textContent = String(val).padStart(2, '0');
+                centerEl.textContent = formatted;
+                if (this.calendarSystem) {
+                    this.calendarSystem.selectedMinutes = formatted;
+                    this.calendarSystem.updateTimeDisplay();
+                }
             }
             return;
         }
@@ -504,22 +514,49 @@ export class ModalSystem {
 
         const sanctionPrevBtn = e.target.closest('[data-action="sanctionPrevStep"]');
         if (sanctionPrevBtn && this.activeBox) {
-            this._setSanctionStep(1);
+            const activeStepEl = this.activeBox.querySelector('.step-modal-step.active');
+            const curStep = activeStepEl ? parseInt(activeStepEl.getAttribute('data-step'), 10) : 1;
+            if (curStep === 3) {
+                this._setSanctionStep(2);
+            } else {
+                this._setSanctionStep(1);
+            }
+            return;
+        }
+
+        const sanctionTimeBtn = e.target.closest('[data-action="sanctionTimeStep"]');
+        if (sanctionTimeBtn && this.activeBox) {
+            this._setSanctionStep(3);
+            return;
+        }
+
+        const sanctionPrevTimeBtn = e.target.closest('[data-action="sanctionPrevTimeStep"]');
+        const sanctionConfirmTimeBtn = e.target.closest('[data-action="sanctionConfirmTime"]');
+        if ((sanctionPrevTimeBtn || sanctionConfirmTimeBtn) && this.activeBox) {
+            this._setSanctionStep(2);
+            if (this.calendarSystem) this.calendarSystem.updateTimeDisplay();
             return;
         }
 
         const sanctionConfirmBtn = e.target.closest('[data-action="sanctionConfirmDate"]');
         if (sanctionConfirmBtn && this.activeBox) {
+            const activeStepEl = this.activeBox.querySelector('.step-modal-step.active');
+            const curStep = activeStepEl ? parseInt(activeStepEl.getAttribute('data-step'), 10) : 1;
+            if (curStep === 3) {
+                this._setSanctionStep(2);
+                if (this.calendarSystem) this.calendarSystem.updateTimeDisplay();
+                return;
+            }
+
             if (!this.calendarSystem || !this.calendarSystem.selectedDate) {
                 const __ = typeof window.__ === 'function' ? window.__ : k => k;
                 if (window.showMessage) showMessage(__('err_select_day') || 'Selecciona un día', 'error');
                 return;
             }
-            const step2 = this.activeBox.querySelector('.step-modal-step[data-step="2"]');
-            const hoursEl   = step2 ? step2.querySelector('[data-ref="calendar-modal-hours-val"]')   : null;
-            const minutesEl = step2 ? step2.querySelector('[data-ref="calendar-modal-minutes-val"]') : null;
-            const h = hoursEl   ? String(parseInt(hoursEl.getAttribute('data-value')   || '0')).padStart(2, '0') : '00';
-            const m = minutesEl ? String(parseInt(minutesEl.getAttribute('data-value') || '0')).padStart(2, '0') : '00';
+            const hoursEl   = this.activeBox.querySelector('[data-ref="calendar-modal-hours-val"]');
+            const minutesEl = this.activeBox.querySelector('[data-ref="calendar-modal-minutes-val"]');
+            const h = hoursEl   ? String(parseInt(hoursEl.getAttribute('data-value')   || '23')).padStart(2, '0') : (this.calendarSystem ? this.calendarSystem.selectedHours : '23');
+            const m = minutesEl ? String(parseInt(minutesEl.getAttribute('data-value') || '59')).padStart(2, '0') : (this.calendarSystem ? this.calendarSystem.selectedMinutes : '59');
 
             const d   = this.calendarSystem.selectedDate;
             const y   = d.getFullYear();
@@ -568,7 +605,45 @@ export class ModalSystem {
 
         const calModalPrevBtn = e.target.closest('[data-action="calendarModalPrevStep"]');
         if (calModalPrevBtn && this.activeBox) {
-            this._setCalendarModalStep(1);
+            const activeStepEl = this.activeBox.querySelector('.step-modal-step.active');
+            const curStep = activeStepEl ? parseInt(activeStepEl.getAttribute('data-step'), 10) : 1;
+            if (curStep === 3) {
+                this._setCalendarModalStep(2);
+            } else {
+                this._setCalendarModalStep(1);
+            }
+            return;
+        }
+
+        const calModalTimeBtn = e.target.closest('[data-action="calendarModalTimeStep"]');
+        if (calModalTimeBtn && this.activeBox) {
+            this._setCalendarModalStep(3);
+            return;
+        }
+
+        const calModalPrevTimeBtn = e.target.closest('[data-action="calendarModalPrevTimeStep"]');
+        const calModalConfirmTimeBtn = e.target.closest('[data-action="calendarModalConfirmTime"]');
+        if ((calModalPrevTimeBtn || calModalConfirmTimeBtn) && this.activeBox) {
+            this._setCalendarModalStep(2);
+            if (this.calendarSystem) this.calendarSystem.updateTimeDisplay();
+            return;
+        }
+
+        const calModalConfirmBtn = e.target.closest('[data-action="calendarModalConfirmDate"]');
+        if (calModalConfirmBtn && this.activeBox) {
+            const activeStepEl = this.activeBox.querySelector('.step-modal-step.active');
+            const curStep = activeStepEl ? parseInt(activeStepEl.getAttribute('data-step'), 10) : 1;
+            if (curStep === 3) {
+                this._setCalendarModalStep(2);
+                if (this.calendarSystem) this.calendarSystem.updateTimeDisplay();
+                return;
+            }
+            if (!this.calendarSystem || !this.calendarSystem.selectedDate) {
+                const __ = typeof window.__ === 'function' ? window.__ : k => k;
+                if (window.showMessage) showMessage(__('err_select_day') || 'Selecciona un día', 'error');
+                return;
+            }
+            this.closeCurrent(true);
             return;
         }
         // ── /calendarModal step navigation ──────────────────────────────────────
@@ -749,6 +824,32 @@ export class ModalSystem {
             return;
         }
 
+        const btnOfflineResizeTimeStep = e.target.closest('[data-action="offlineResizeTimeStep"]');
+        if (btnOfflineResizeTimeStep && this.activeBox) {
+            e.preventDefault();
+            const stepCal = this.activeBox.querySelector('[data-ref="offline-resize-step-calendar"]');
+            const stepTime = this.activeBox.querySelector('[data-ref="offline-resize-step-time"]');
+            if (stepCal && stepTime) {
+                stepCal.classList.replace('active', 'disabled');
+                stepTime.classList.replace('disabled', 'active');
+            }
+            return;
+        }
+
+        const btnOfflineResizePrevTime = e.target.closest('[data-action="offlineResizePrevTimeStep"]');
+        const btnOfflineResizeConfirmTime = e.target.closest('[data-action="offlineResizeConfirmTime"]');
+        if ((btnOfflineResizePrevTime || btnOfflineResizeConfirmTime) && this.activeBox) {
+            e.preventDefault();
+            const stepCal = this.activeBox.querySelector('[data-ref="offline-resize-step-calendar"]');
+            const stepTime = this.activeBox.querySelector('[data-ref="offline-resize-step-time"]');
+            if (stepCal && stepTime) {
+                stepTime.classList.replace('active', 'disabled');
+                stepCal.classList.replace('disabled', 'active');
+                if (this.calendarSystem) this.calendarSystem.updateTimeDisplay();
+            }
+            return;
+        }
+
         const btnOfflineResizePrevDateStep = e.target.closest('[data-action="offlineResizePrevDateStep"]');
         if (btnOfflineResizePrevDateStep && this.activeBox) {
             e.preventDefault();
@@ -768,10 +869,10 @@ export class ModalSystem {
                 return;
             }
             const stepCal = this.activeBox.querySelector('[data-ref="offline-resize-step-calendar"]') || this.activeBox;
-            const hoursEl = stepCal.querySelector('[data-ref="calendar-modal-hours-val"]');
-            const minutesEl = stepCal.querySelector('[data-ref="calendar-modal-minutes-val"]');
-            const h = hoursEl ? String(parseInt(hoursEl.getAttribute('data-value') || '0', 10)).padStart(2, '0') : '00';
-            const m = minutesEl ? String(parseInt(minutesEl.getAttribute('data-value') || '0', 10)).padStart(2, '0') : '00';
+            const hoursEl = this.activeBox.querySelector('[data-ref="calendar-modal-hours-val"]');
+            const minutesEl = this.activeBox.querySelector('[data-ref="calendar-modal-minutes-val"]');
+            const h = hoursEl ? String(parseInt(hoursEl.getAttribute('data-value') || '23', 10)).padStart(2, '0') : (this.calendarSystem ? this.calendarSystem.selectedHours : '23');
+            const m = minutesEl ? String(parseInt(minutesEl.getAttribute('data-value') || '59', 10)).padStart(2, '0') : (this.calendarSystem ? this.calendarSystem.selectedMinutes : '59');
 
             const d = this.calendarSystem.selectedDate;
             const y = d.getFullYear();
@@ -825,6 +926,32 @@ export class ModalSystem {
             return;
         }
 
+        const btnOfflineResetTimeStep = e.target.closest('[data-action="offlineResetTimeStep"]');
+        if (btnOfflineResetTimeStep && this.activeBox) {
+            e.preventDefault();
+            const stepCal = this.activeBox.querySelector('[data-ref="offline-reset-step-calendar"]');
+            const stepTime = this.activeBox.querySelector('[data-ref="offline-reset-step-time"]');
+            if (stepCal && stepTime) {
+                stepCal.classList.replace('active', 'disabled');
+                stepTime.classList.replace('disabled', 'active');
+            }
+            return;
+        }
+
+        const btnOfflineResetPrevTime = e.target.closest('[data-action="offlineResetPrevTimeStep"]');
+        const btnOfflineResetConfirmTime = e.target.closest('[data-action="offlineResetConfirmTime"]');
+        if ((btnOfflineResetPrevTime || btnOfflineResetConfirmTime) && this.activeBox) {
+            e.preventDefault();
+            const stepCal = this.activeBox.querySelector('[data-ref="offline-reset-step-calendar"]');
+            const stepTime = this.activeBox.querySelector('[data-ref="offline-reset-step-time"]');
+            if (stepCal && stepTime) {
+                stepTime.classList.replace('active', 'disabled');
+                stepCal.classList.replace('disabled', 'active');
+                if (this.calendarSystem) this.calendarSystem.updateTimeDisplay();
+            }
+            return;
+        }
+
         const btnOfflineResetPrevDateStep = e.target.closest('[data-action="offlineResetPrevDateStep"]');
         if (btnOfflineResetPrevDateStep && this.activeBox) {
             e.preventDefault();
@@ -844,10 +971,10 @@ export class ModalSystem {
                 return;
             }
             const stepCal = this.activeBox.querySelector('[data-ref="offline-reset-step-calendar"]') || this.activeBox;
-            const hoursEl = stepCal.querySelector('[data-ref="calendar-modal-hours-val"]');
-            const minutesEl = stepCal.querySelector('[data-ref="calendar-modal-minutes-val"]');
-            const h = hoursEl ? String(parseInt(hoursEl.getAttribute('data-value') || '0', 10)).padStart(2, '0') : '00';
-            const m = minutesEl ? String(parseInt(minutesEl.getAttribute('data-value') || '0', 10)).padStart(2, '0') : '00';
+            const hoursEl = this.activeBox.querySelector('[data-ref="calendar-modal-hours-val"]');
+            const minutesEl = this.activeBox.querySelector('[data-ref="calendar-modal-minutes-val"]');
+            const h = hoursEl ? String(parseInt(hoursEl.getAttribute('data-value') || '23', 10)).padStart(2, '0') : (this.calendarSystem ? this.calendarSystem.selectedHours : '23');
+            const m = minutesEl ? String(parseInt(minutesEl.getAttribute('data-value') || '59', 10)).padStart(2, '0') : (this.calendarSystem ? this.calendarSystem.selectedMinutes : '59');
 
             const d = this.calendarSystem.selectedDate;
             const y = d.getFullYear();
@@ -1161,7 +1288,27 @@ export class ModalSystem {
 
         const invitePrevBtn = e.target.closest('[data-action="invitePrevStep"]');
         if (invitePrevBtn && this.activeBox) {
-            this._setInviteStep(1);
+            const activeStepEl = this.activeBox.querySelector('.step-modal-step.active');
+            const curStep = activeStepEl ? parseInt(activeStepEl.getAttribute('data-step'), 10) : 1;
+            if (curStep === 3) {
+                this._setInviteStep(2);
+            } else {
+                this._setInviteStep(1);
+            }
+            return;
+        }
+
+        const inviteTimeBtn = e.target.closest('[data-action="inviteTimeStep"]');
+        if (inviteTimeBtn && this.activeBox) {
+            this._setInviteStep(3);
+            return;
+        }
+
+        const invitePrevTimeBtn = e.target.closest('[data-action="invitePrevTimeStep"]');
+        const inviteConfirmTimeBtn = e.target.closest('[data-action="inviteConfirmTime"]');
+        if ((invitePrevTimeBtn || inviteConfirmTimeBtn) && this.activeBox) {
+            this._setInviteStep(2);
+            if (this.calendarSystem) this.calendarSystem.updateTimeDisplay();
             return;
         }
 
@@ -1182,16 +1329,23 @@ export class ModalSystem {
 
         const inviteConfirmBtn = e.target.closest('[data-action="inviteConfirmDate"]');
         if (inviteConfirmBtn && this.activeBox) {
+            const activeStepEl = this.activeBox.querySelector('.step-modal-step.active');
+            const curStep = activeStepEl ? parseInt(activeStepEl.getAttribute('data-step'), 10) : 1;
+            if (curStep === 3) {
+                this._setInviteStep(2);
+                if (this.calendarSystem) this.calendarSystem.updateTimeDisplay();
+                return;
+            }
+
             if (!this.calendarSystem || !this.calendarSystem.selectedDate) {
                 const __ = typeof window.__ === 'function' ? window.__ : k => k;
                 if (window.showMessage) showMessage(__('err_select_day') || 'Selecciona un día', 'error');
                 return;
             }
-            const step2 = this.activeBox.querySelector('.step-modal-step[data-step="2"]');
-            const hoursEl   = step2 ? step2.querySelector('[data-ref="calendar-modal-hours-val"]')   : null;
-            const minutesEl = step2 ? step2.querySelector('[data-ref="calendar-modal-minutes-val"]') : null;
-            const h = hoursEl   ? String(parseInt(hoursEl.getAttribute('data-value')   || '0')).padStart(2, '0') : '00';
-            const m = minutesEl ? String(parseInt(minutesEl.getAttribute('data-value') || '0')).padStart(2, '0') : '00';
+            const hoursEl   = this.activeBox.querySelector('[data-ref="calendar-modal-hours-val"]');
+            const minutesEl = this.activeBox.querySelector('[data-ref="calendar-modal-minutes-val"]');
+            const h = hoursEl   ? String(parseInt(hoursEl.getAttribute('data-value')   || '23')).padStart(2, '0') : (this.calendarSystem ? this.calendarSystem.selectedHours : '23');
+            const m = minutesEl ? String(parseInt(minutesEl.getAttribute('data-value') || '59')).padStart(2, '0') : (this.calendarSystem ? this.calendarSystem.selectedMinutes : '59');
 
             const d   = this.calendarSystem.selectedDate;
             const y   = d.getFullYear();
@@ -1950,14 +2104,24 @@ export class ModalSystem {
         const prevBtn    = this.activeBox.querySelector('[data-ref="btn-sanction-prev"]');
         const confirmBtn = this.activeBox.querySelector('[data-ref="btn-sanction-confirm"]');
         const acceptBtn  = this.activeBox.querySelector('[data-ref="btn-sanction-accept"]');
+        const descEl     = this.activeBox.querySelector('[data-ref="sanction-step-desc"]');
+        const __ = typeof window.__ === 'function' ? window.__ : k => k;
+
         if (step === 1) {
             if (prevBtn)    prevBtn.classList.add('disabled');
             if (confirmBtn) confirmBtn.classList.remove('disabled');
             if (acceptBtn)  acceptBtn.classList.add('disabled');
-        } else {
+            if (descEl)     descEl.textContent = __('desc_chat_restriction');
+        } else if (step === 2) {
             if (prevBtn)    prevBtn.classList.remove('disabled');
             if (confirmBtn) confirmBtn.classList.add('disabled');
             if (acceptBtn)  acceptBtn.classList.remove('disabled');
+            if (descEl)     descEl.textContent = __('desc_chat_restriction');
+        } else if (step === 3) {
+            if (prevBtn)    prevBtn.classList.remove('disabled');
+            if (confirmBtn) confirmBtn.classList.add('disabled');
+            if (acceptBtn)  acceptBtn.classList.remove('disabled');
+            if (descEl)     descEl.textContent = __('lbl_time_picker_desc') || 'Ajusta la hora y los minutos';
         }
     }
 
@@ -2035,8 +2199,8 @@ export class ModalSystem {
 
             if (isoDateVal) {
                 const datePart = isoDateVal.split('T')[0];
-                const h = hoursEl ? hoursEl.getAttribute('data-value').padStart(2, '0') : '00';
-                const m = minutesEl ? minutesEl.getAttribute('data-value').padStart(2, '0') : '00';
+                const h = hoursEl ? String(parseInt(hoursEl.getAttribute('data-value') || '23')).padStart(2, '0') : (this.calendarSystem ? this.calendarSystem.selectedHours : '23');
+                const m = minutesEl ? String(parseInt(minutesEl.getAttribute('data-value') || '59')).padStart(2, '0') : (this.calendarSystem ? this.calendarSystem.selectedMinutes : '59');
                 
                 const dateObj = new Date(
                     parseInt(datePart.split('-')[0], 10),
