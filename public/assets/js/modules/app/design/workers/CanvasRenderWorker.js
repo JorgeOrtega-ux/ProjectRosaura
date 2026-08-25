@@ -147,6 +147,18 @@ function initMemoryEngine(w, h) {
 let layers = [];
 let activeLayerId = null;
 
+let lastLayerBlockedNotice = 0;
+function notifyLayerBlocked(reason) {
+    const now = Date.now();
+    if (now - lastLayerBlockedNotice > 2500) {
+        lastLayerBlockedNotice = now;
+        self.postMessage({
+            type: 'SHOW_NOTICE',
+            payload: { messageKey: reason === 'locked' ? 'msg_layer_locked' : 'msg_layer_hidden', level: 'warning' }
+        });
+    }
+}
+
 function initLayersEngine(w, h) {
     if (layers.length === 0) {
         const buf = new Uint32Array(w * h);
@@ -170,8 +182,17 @@ function initLayersEngine(w, h) {
             if (layer.buffer.length !== totalPixels) {
                 const oldBuf = layer.buffer;
                 const newBuf = new Uint32Array(totalPixels);
-                const copyLen = Math.min(oldBuf.length, totalPixels);
-                newBuf.set(oldBuf.subarray(0, copyLen));
+                const oldDim = Math.round(Math.sqrt(oldBuf.length));
+                if (oldDim * oldDim === oldBuf.length) {
+                    const minW = Math.min(oldDim, w);
+                    const minH = Math.min(oldDim, h);
+                    for (let y = 0; y < minH; y++) {
+                        newBuf.set(oldBuf.subarray(y * oldDim, y * oldDim + minW), y * w);
+                    }
+                } else {
+                    const copyLen = Math.min(oldBuf.length, totalPixels);
+                    newBuf.set(oldBuf.subarray(0, copyLen));
+                }
                 layer.buffer = newBuf;
             }
         });
@@ -806,12 +827,23 @@ function render() {
         
         if (progress >= 1) {
             if (pixelBuffer) pixelBuffer.fill(0);
+            if (isOfflineMode && layers && layers.length > 0) {
+                layers.forEach(l => l.buffer.fill(0));
+                undoStack.length = 0;
+                redoStack.length = 0;
+                notifyLayersState();
+            }
             if (offscreenCtx && mainImageData) {
                 if (pendingImageBitmap) {
                     offscreenCtx.drawImage(pendingImageBitmap, 0, 0, boardWidth, boardHeight);
                     mainImageData = offscreenCtx.getImageData(0, 0, boardWidth, boardHeight);
                     pixelBuffer = new Uint32Array(mainImageData.data.buffer);
                     pendingImageBitmap = null;
+                    if (isOfflineMode && layers && layers.length > 0) {
+                        layers[0].buffer.set(pixelBuffer);
+                        composeAll();
+                        notifyLayersState();
+                    }
                 } else {
                     offscreenCtx.putImageData(mainImageData, 0, 0);
                 }
@@ -890,6 +922,8 @@ function render() {
         if (progress >= 1) {
             if (injectAnimation.templatePixels && pixelBuffer) {
                 const ia = injectAnimation;
+                const activeL = isOfflineMode ? getActiveLayer() : null;
+                const targetBuffer = (isOfflineMode && activeL) ? activeL.buffer : pixelBuffer;
                 let finalFlush = false;
                 for (let iy = 0; iy < ia.h; iy++) {
                     for (let ix = 0; ix < ia.w; ix++) {
@@ -900,14 +934,18 @@ function render() {
                             const tplIdx = iy * ia.w + ix;
                             const color = ia.templatePixels[tplIdx];
                             if ((color & 0xFF000000) !== 0) {
-                                if (pixelBuffer[bufIdx] !== color) {
-                                    pixelBuffer[bufIdx] = color;
+                                if (targetBuffer[bufIdx] !== color) {
+                                    targetBuffer[bufIdx] = color;
                                     markDirty(absX, absY);
                                     finalFlush = true;
                                 }
                             }
                         }
                     }
+                }
+                if (isOfflineMode && layers.length > 0) {
+                    composeDirtyRect(ia.x, ia.y, ia.x + ia.w - 1, ia.y + ia.h - 1);
+                    generateLayerPreview(activeLayerId);
                 }
                 if (finalFlush) {
                     flushDirtyRect();
@@ -988,17 +1026,23 @@ function render() {
             const finished = (now - anim.startTime) >= anim.duration;
             if (finished) {
                 let areaCleared = false;
+                const activeL = isOfflineMode ? getActiveLayer() : null;
+                const targetBuffer = (isOfflineMode && activeL) ? activeL.buffer : pixelBuffer;
                 for (let y = anim.y1; y <= anim.y2; y++) {
                     for (let x = anim.x1; x <= anim.x2; x++) {
                         if (x >= 0 && x < boardWidth && y >= 0 && y < boardHeight) {
                             const bufferIdx = y * boardWidth + x;
-                            if (pixelBuffer && pixelBuffer[bufferIdx] !== 0) {
-                                pixelBuffer[bufferIdx] = 0;
+                            if (targetBuffer && targetBuffer[bufferIdx] !== 0) {
+                                targetBuffer[bufferIdx] = 0;
                                 markDirty(x, y);
                                 areaCleared = true;
                             }
                         }
                     }
+                }
+                if (isOfflineMode && layers.length > 0) {
+                    composeDirtyRect(anim.x1, anim.y1, anim.x2, anim.y2);
+                    generateLayerPreview(activeLayerId);
                 }
                 if (areaCleared) {
                     flushDirtyRect();
@@ -1086,6 +1130,23 @@ function render() {
                     newBuffer.set(pixelBuffer.subarray(srcIdx, srcIdx + minW), destIdx);
                 }
             }
+
+            if (isOfflineMode && layers && layers.length > 0) {
+                const minH = Math.min(resizeAnimation.startH, newH);
+                const minW = Math.min(resizeAnimation.startW, newW);
+                layers.forEach(layer => {
+                    const oldBuf = layer.buffer;
+                    const newBuf = new Uint32Array(newW * newH);
+                    for (let y = 0; y < minH; y++) {
+                        const srcIdx = y * resizeAnimation.startW;
+                        const destIdx = y * newW;
+                        newBuf.set(oldBuf.subarray(srcIdx, srcIdx + minW), destIdx);
+                    }
+                    layer.buffer = newBuf;
+                });
+                undoStack.length = 0;
+                redoStack.length = 0;
+            }
             
             boardWidth = newW;
             boardHeight = newH;
@@ -1110,6 +1171,11 @@ function render() {
                         offscreenCtx.putImageData(mainImageData, 0, 0);
                     }
                 }
+            }
+
+            if (isOfflineMode && layers && layers.length > 0) {
+                composeAll();
+                notifyLayersState();
             }
             
             resizeAnimation = null;
@@ -1920,6 +1986,7 @@ self.onmessage = function (e) {
             if (w > 0 && h > 0) {
                 const activeL = isOfflineMode ? getActiveLayer() : null;
                 if (isOfflineMode && activeL && (activeL.locked || !activeL.visible)) {
+                    notifyLayerBlocked(activeL.locked ? 'locked' : 'hidden');
                     break;
                 }
                 const targetBuffer = (isOfflineMode && activeL) ? activeL.buffer : pixelBuffer;
@@ -1998,6 +2065,7 @@ self.onmessage = function (e) {
 
             const activeL = isOfflineMode ? getActiveLayer() : null;
             if (isOfflineMode && activeL && (activeL.locked || !activeL.visible)) {
+                notifyLayerBlocked(activeL.locked ? 'locked' : 'hidden');
                 if (strokePhase === 'end') {
                     activeBrushStrokeDiffs = null;
                 }
@@ -2131,6 +2199,7 @@ self.onmessage = function (e) {
 
             const activeL = isOfflineMode ? getActiveLayer() : null;
             if (isOfflineMode && activeL && (activeL.locked || !activeL.visible)) {
+                notifyLayerBlocked(activeL.locked ? 'locked' : 'hidden');
                 if (strokePhase === 'end') {
                     activeBrushStrokeDiffs = null;
                 }
@@ -2339,14 +2408,28 @@ self.onmessage = function (e) {
             selectionBitmaskDirty = true;
             if (payload.layersData && payload.layersData.layers && payload.layersData.layers.length > 0) {
                 initMemoryEngine(boardWidth, boardHeight);
-                layers = payload.layersData.layers.map(l => ({
-                    id: l.id,
-                    name: l.name,
-                    visible: l.visible !== false,
-                    locked: !!l.locked,
-                    opacity: typeof l.opacity === 'number' ? l.opacity : 1.0,
-                    buffer: base64ToUint32(l.bufferBase64, boardWidth * boardHeight)
-                }));
+                const savedW = payload.layersData.boardWidth || boardWidth;
+                const savedH = payload.layersData.boardHeight || boardHeight;
+                layers = payload.layersData.layers.map(l => {
+                    const rawBuf = base64ToUint32(l.bufferBase64, savedW * savedH);
+                    let finalBuf = rawBuf;
+                    if (savedW !== boardWidth || savedH !== boardHeight) {
+                        finalBuf = new Uint32Array(boardWidth * boardHeight);
+                        const minW = Math.min(savedW, boardWidth);
+                        const minH = Math.min(savedH, boardHeight);
+                        for (let y = 0; y < minH; y++) {
+                            finalBuf.set(rawBuf.subarray(y * savedW, y * savedW + minW), y * boardWidth);
+                        }
+                    }
+                    return {
+                        id: l.id,
+                        name: l.name,
+                        visible: l.visible !== false,
+                        locked: !!l.locked,
+                        opacity: typeof l.opacity === 'number' ? l.opacity : 1.0,
+                        buffer: finalBuf
+                    };
+                });
                 activeLayerId = payload.layersData.activeLayerId || (layers[layers.length - 1] ? layers[layers.length - 1].id : 'layer-1');
                 composeAll();
                 notifyLayersState();
@@ -2543,7 +2626,10 @@ self.onmessage = function (e) {
         case 'FLOOD_FILL': {
             if (!pixelBuffer || !payload) break;
             const activeL = isOfflineMode ? getActiveLayer() : null;
-            if (isOfflineMode && activeL && (activeL.locked || !activeL.visible)) break;
+            if (isOfflineMode && activeL && (activeL.locked || !activeL.visible)) {
+                notifyLayerBlocked(activeL.locked ? 'locked' : 'hidden');
+                break;
+            }
             const targetBuffer = (isOfflineMode && activeL) ? activeL.buffer : pixelBuffer;
 
             const startX = Math.floor(payload.startX);
@@ -2658,7 +2744,10 @@ self.onmessage = function (e) {
         case 'SPRAY_BURST': {
             if (!pixelBuffer || !payload) break;
             const activeL = isOfflineMode ? getActiveLayer() : null;
-            if (isOfflineMode && activeL && (activeL.locked || !activeL.visible)) break;
+            if (isOfflineMode && activeL && (activeL.locked || !activeL.visible)) {
+                notifyLayerBlocked(activeL.locked ? 'locked' : 'hidden');
+                break;
+            }
             const targetBuffer = (isOfflineMode && activeL) ? activeL.buffer : pixelBuffer;
 
             const centerX = Math.floor(payload.centerX);
@@ -2769,7 +2858,10 @@ self.onmessage = function (e) {
         case 'COMMIT_MOVE_AREA': {
             if (!pixelBuffer || !payload) break;
             const activeL = isOfflineMode ? getActiveLayer() : null;
-            if (isOfflineMode && activeL && (activeL.locked || !activeL.visible)) break;
+            if (isOfflineMode && activeL && (activeL.locked || !activeL.visible)) {
+                notifyLayerBlocked(activeL.locked ? 'locked' : 'hidden');
+                break;
+            }
             const targetBuffer = (isOfflineMode && activeL) ? activeL.buffer : pixelBuffer;
 
             const { x1, y1, x2, y2, dx = 0, dy = 0 } = payload;
@@ -2876,8 +2968,15 @@ self.onmessage = function (e) {
                 for (let i = 0; i < diffs.length; i++) {
                     const d = diffs[i];
                     const idx = d.y * boardWidth + d.x;
-                    const targetLayer = (isOfflineMode && d.layerId) ? layers.find(l => l.id === d.layerId) : (isOfflineMode ? getActiveLayer() : null);
-                    const targetBuffer = (isOfflineMode && targetLayer) ? targetLayer.buffer : pixelBuffer;
+                    let targetBuffer = pixelBuffer;
+                    if (isOfflineMode && d.layerId) {
+                        const targetLayer = layers.find(l => l.id === d.layerId);
+                        if (!targetLayer) continue;
+                        targetBuffer = targetLayer.buffer;
+                    } else if (isOfflineMode) {
+                        const activeL = getActiveLayer();
+                        if (activeL) targetBuffer = activeL.buffer;
+                    }
 
                     if (idx >= 0 && idx < targetBuffer.length) {
                         targetBuffer[idx] = d.prev;
@@ -2925,8 +3024,15 @@ self.onmessage = function (e) {
                 for (let i = 0; i < diffs.length; i++) {
                     const d = diffs[i];
                     const idx = d.y * boardWidth + d.x;
-                    const targetLayer = (isOfflineMode && d.layerId) ? layers.find(l => l.id === d.layerId) : (isOfflineMode ? getActiveLayer() : null);
-                    const targetBuffer = (isOfflineMode && targetLayer) ? targetLayer.buffer : pixelBuffer;
+                    let targetBuffer = pixelBuffer;
+                    if (isOfflineMode && d.layerId) {
+                        const targetLayer = layers.find(l => l.id === d.layerId);
+                        if (!targetLayer) continue;
+                        targetBuffer = targetLayer.buffer;
+                    } else if (isOfflineMode) {
+                        const activeL = getActiveLayer();
+                        if (activeL) targetBuffer = activeL.buffer;
+                    }
 
                     if (idx >= 0 && idx < targetBuffer.length) {
                         targetBuffer[idx] = d.next;
@@ -2984,6 +3090,13 @@ self.onmessage = function (e) {
         }
 
         case 'ADD_LAYER': {
+            if (layers.length >= 20) {
+                self.postMessage({
+                    type: 'SHOW_NOTICE',
+                    payload: { messageKey: 'msg_layer_limit_reached', level: 'warning' }
+                });
+                break;
+            }
             if (layers.length === 0) {
                 initLayersEngine(boardWidth, boardHeight);
             } else if (layers.length === 1 && pixelBuffer) {
@@ -2998,7 +3111,7 @@ self.onmessage = function (e) {
                     layers[0].buffer.set(pixelBuffer.subarray(0, Math.min(pixelBuffer.length, layers[0].buffer.length)));
                 }
             }
-            const newId = 'layer-' + Date.now();
+            const newId = 'layer-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
             const newLayerNum = layers.length + 1;
             const newLayer = {
                 id: newId,
@@ -3126,13 +3239,20 @@ self.onmessage = function (e) {
         }
 
         case 'DUPLICATE_LAYER': {
+            if (layers.length >= 20) {
+                self.postMessage({
+                    type: 'SHOW_NOTICE',
+                    payload: { messageKey: 'msg_layer_limit_reached', level: 'warning' }
+                });
+                break;
+            }
             const targetId = payload?.layerId || activeLayerId;
             const srcIdx = layers.findIndex(l => l.id === targetId);
             if (srcIdx >= 0) {
                 const src = layers[srcIdx];
                 const cloneBuf = new Uint32Array(src.buffer.length);
                 cloneBuf.set(src.buffer);
-                const cloneId = 'layer-' + Date.now();
+                const cloneId = 'layer-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
                 const cloneLayer = {
                     id: cloneId,
                     name: `${src.name} (Copia)`,
@@ -3155,6 +3275,13 @@ self.onmessage = function (e) {
             if (idx > 0) {
                 const topLayer = layers[idx];
                 const bottomLayer = layers[idx - 1];
+                if (topLayer.locked || bottomLayer.locked) {
+                    self.postMessage({
+                        type: 'SHOW_NOTICE',
+                        payload: { messageKey: 'msg_layer_locked', level: 'warning' }
+                    });
+                    break;
+                }
                 const totalLen = boardWidth * boardHeight;
                 for (let p = 0; p < totalLen; p++) {
                     const topCol = topLayer.buffer[p];
@@ -3176,6 +3303,13 @@ self.onmessage = function (e) {
             if (idx >= 0 && idx < layers.length - 1) {
                 const bottomLayer = layers[idx];
                 const topLayer = layers[idx + 1];
+                if (bottomLayer.locked || topLayer.locked) {
+                    self.postMessage({
+                        type: 'SHOW_NOTICE',
+                        payload: { messageKey: 'msg_layer_locked', level: 'warning' }
+                    });
+                    break;
+                }
                 const totalLen = boardWidth * boardHeight;
                 for (let p = 0; p < totalLen; p++) {
                     const topCol = topLayer.buffer[p];

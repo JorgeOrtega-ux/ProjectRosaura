@@ -83,11 +83,77 @@ export const InteractionLayers = {
             const item = document.createElement('div');
             item.className = `component-layer-item ${isActive ? 'active' : ''} ${isLocked ? 'locked' : ''}`;
             item.setAttribute('data-layer-id', layer.id);
+            item.draggable = true;
 
             // Drag handle
             const dragHandle = document.createElement('div');
             dragHandle.className = 'component-layer-item__drag';
             dragHandle.innerHTML = '<span class="material-symbols-rounded">drag_indicator</span>';
+
+            // Drag & drop events for reordering
+            item.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', layer.id);
+                e.dataTransfer.effectAllowed = 'move';
+                item.classList.add('is-dragging');
+            });
+
+            item.addEventListener('dragend', () => {
+                item.classList.remove('is-dragging');
+                container.querySelectorAll('.component-layer-item').forEach(el => el.classList.remove('drag-over-top', 'drag-over-bottom'));
+            });
+
+            item.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                const rect = item.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                if (e.clientY < midY) {
+                    item.classList.add('drag-over-top');
+                    item.classList.remove('drag-over-bottom');
+                } else {
+                    item.classList.add('drag-over-bottom');
+                    item.classList.remove('drag-over-top');
+                }
+            });
+
+            item.addEventListener('dragleave', () => {
+                item.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
+
+            item.addEventListener('drop', (e) => {
+                e.preventDefault();
+                item.classList.remove('drag-over-top', 'drag-over-bottom');
+                const draggedId = e.dataTransfer.getData('text/plain');
+                if (!draggedId || draggedId === layer.id) return;
+
+                const fromIdx = this.layers.findIndex(l => l.id === draggedId);
+                let toIdx = this.layers.findIndex(l => l.id === layer.id);
+                if (fromIdx < 0 || toIdx < 0) return;
+
+                const rect = item.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                const isBelow = e.clientY >= midY;
+
+                const newLayers = [...this.layers];
+                const [moved] = newLayers.splice(fromIdx, 1);
+                
+                let targetInsertIdx = this.layers.findIndex(l => l.id === layer.id);
+                if (fromIdx < targetInsertIdx) targetInsertIdx--;
+                if (isBelow) targetInsertIdx++;
+                
+                targetInsertIdx = Math.max(0, Math.min(newLayers.length, targetInsertIdx));
+                newLayers.splice(targetInsertIdx, 0, moved);
+
+                this.layers = newLayers;
+                this.renderLayersUI();
+
+                if (this.renderWorker) {
+                    this.renderWorker.postMessage({
+                        type: 'REORDER_LAYERS',
+                        payload: { order: this.layers.map(l => l.id) }
+                    });
+                }
+            });
 
             // Visibility toggle
             const visLabel = document.createElement('label');

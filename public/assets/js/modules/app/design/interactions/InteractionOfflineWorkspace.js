@@ -601,8 +601,15 @@ export const InteractionOfflineWorkspace = {
             if (typeof this.updateSelectionUI === 'function') this.updateSelectionUI();
             this.requestRender();
 
-            if (this.isOfflineMode && typeof this.saveOfflineCanvasState === 'function') {
-                this.saveOfflineCanvasState(false);
+            if (this.isOfflineMode) {
+                if (this.canvasIntId) {
+                    try {
+                        localStorage.removeItem(`rosaura_layers_${this.canvasIntId}`);
+                    } catch (e) {}
+                }
+                if (typeof this.saveOfflineCanvasState === 'function') {
+                    this.saveOfflineCanvasState(false);
+                }
             }
         } else {
             showMessage(result?.message || window.__('err_occurred'), 'error');

@@ -1096,6 +1096,7 @@
     "msg_layer_locked": "La capa activa está bloqueada.",
     "msg_layer_hidden": "La capa activa está oculta.",
     "msg_layer_cannot_delete_last": "No puedes eliminar la única capa del lienzo.",
+    "msg_layer_limit_reached": "Has alcanzado el límite máximo de 20 capas para este lienzo.",
     "lbl_default_layer_name": "Capa",
     "ph_canvas_name": "Nombre del lienzo...",
     "msg_captura_deleted": "Captura eliminada correctamente.",

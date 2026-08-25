@@ -1841,6 +1841,18 @@
     border-color: rgba(255, 255, 255, 0.45);
 }
 
+.component-layer-item.is-dragging {
+    opacity: 0.35;
+}
+
+.component-layer-item.drag-over-top {
+    border-top: 2px solid #ffffff !important;
+}
+
+.component-layer-item.drag-over-bottom {
+    border-bottom: 2px solid #ffffff !important;
+}
+
 .component-layer-item.locked {
     opacity: 0.75;
 }
