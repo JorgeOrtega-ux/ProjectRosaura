@@ -103,33 +103,47 @@ class TestApiClient:
         }
         url = f"{self.base_url}/api/index.php"
         try:
-            resp = self.session.post(url, json=data, headers=headers, timeout=25)
+            resp = self.session.post(url, json=data, headers=headers, timeout=15)
+            # Manejo proactivo de rotación de token CSRF
             try:
-                res_json = resp.json()
-                if isinstance(res_json, dict) and res_json.get('csrf_token'):
-                    self.csrf_token = res_json['csrf_token']
+                rd = resp.json()
+                if rd.get('csrf_token'):
+                    self.csrf_token = rd['csrf_token']
                     self.session.headers.update({'X-CSRF-Token': self.csrf_token})
             except Exception:
                 pass
+
+            if resp.status_code == 403:
+                # Reintentar una vez con token renovado si fue error de CSRF
+                try:
+                    rd = resp.json()
+                    if rd.get('message_key') == 'error.invalid_csrf_token' and rd.get('csrf_token'):
+                        self.csrf_token = rd['csrf_token']
+                        self.session.headers.update({'X-CSRF-Token': self.csrf_token})
+                        data['csrf_token'] = self.csrf_token
+                        headers['X-CSRF-Token'] = self.csrf_token
+                        resp = self.session.post(url, json=data, headers=headers, timeout=15)
+                except Exception:
+                    pass
+
             return resp
         except Exception as e:
-            resp = requests.Response()
-            resp.status_code = 504
-            resp._content = json.dumps({'success': False, 'message': f'Timeout o error de conexion: {e}'}).encode('utf-8')
-            return resp
+            dummy = requests.Response()
+            dummy.status_code = 500
+            dummy._content = json.dumps({'success': False, 'message': str(e)}).encode('utf-8')
+            return dummy
 
     def get_route(self, route: str, params: dict = None) -> requests.Response:
+        p = params.copy() if params else {}
+        p['route'] = route
         url = f"{self.base_url}/api/index.php"
-        queryParams = {'route': route}
-        if params:
-            queryParams.update(params)
         try:
-            return self.session.get(url, params=queryParams, timeout=25)
+            return self.session.get(url, params=p, timeout=15)
         except Exception as e:
-            resp = requests.Response()
-            resp.status_code = 504
-            resp._content = json.dumps({'success': False, 'message': f'Timeout o error de conexion: {e}'}).encode('utf-8')
-            return resp
+            dummy = requests.Response()
+            dummy.status_code = 500
+            dummy._content = json.dumps({'success': False, 'message': str(e)}).encode('utf-8')
+            return dummy
 
     def reset_session(self):
         self.session = requests.Session()
@@ -141,7 +155,7 @@ class TestApiClient:
         self.refresh_csrf()
 
 # ==============================================================================
-# GESTOR DE SUITE DE PRUEBAS E2E
+# SUITE PRINCIPAL DE PRUEBAS
 # ==============================================================================
 class RosauraWebTestSuite:
     def __init__(self, project_root: str, script_dir: str):
@@ -205,6 +219,7 @@ class RosauraWebTestSuite:
             keys = self.redis_client.keys("rate_limit:*")
             keys += self.redis_client.keys("global_api_ip_*")
             keys += self.redis_client.keys("2fa_used:*")
+            keys += self.redis_client.keys("ws:ticket_ratelimit:*")
             if keys:
                 self.redis_client.delete(*keys)
         except Exception:
@@ -250,61 +265,66 @@ class RosauraWebTestSuite:
             'module': module,
             'test_name': test_name,
             'passed': passed,
-            'duration_ms': round(duration_ms, 2),
-            'response_code': response_code,
-            'details': details
+            'duration_ms': int(duration_ms),
+            'details': details,
+            'response_code': response_code
         })
 
-    # ==========================================================================
-    # EJECUCIÓN DE PRUEBAS POR MÓDULO
-    # ==========================================================================
+    # --------------------------------------------------------------------------
+    # EJECUTOR PRINCIPAL
+    # --------------------------------------------------------------------------
     def run_all(self):
-        start_total = time.time()
-        print(f"\n{Colors.HEADER}{Colors.BOLD}{'='*75}", flush=True)
-        print(f"🚀 INICIANDO SUITE DE PRUEBAS INTEGRALES (E2E WEB TEST SUITE)", flush=True)
+        print(f"\n{Colors.BOLD}{'='*75}{Colors.ENDC}", flush=True)
+        print(f"{Colors.HEADER}{Colors.BOLD}🚀 INICIANDO SUITE DE PRUEBAS INTEGRALES (E2E WEB TEST SUITE){Colors.ENDC}", flush=True)
         print(f"   Objetivo: {Colors.CYAN}{self.app_url}{Colors.ENDC} | ID de Ejecución: {Colors.WARNING}{self.run_id}{Colors.ENDC}", flush=True)
-        print(f"{'='*75}{Colors.ENDC}\n", flush=True)
+        print(f"{Colors.BOLD}{'='*75}{Colors.ENDC}\n", flush=True)
 
-        # 0. Conectividad
-        print(f"{Colors.BOLD}▶ Verificando conectividad inicial...{Colors.ENDC}", flush=True)
-        if not self.test_connectivity():
-            print(f"{Colors.FAIL}❌ Error crítico de conectividad. Abortando pruebas.{Colors.ENDC}", flush=True)
-            return
-
+        start_total = time.time()
         self.flush_rate_limits()
 
-        # Variables compartidas de usuario de prueba
+        # 0. Verificación Inicial de Conectividad
+        print(f"{Colors.BLUE}▶ Verificando conectividad inicial...{Colors.ENDC}", flush=True)
+        if not self.test_connectivity():
+            print(f"{Colors.FAIL}❌ Falló la verificación de conectividad básica. Abortando suite.{Colors.ENDC}", flush=True)
+            return
+
+        # Generar datos del usuario de prueba (usando dominio permitido gmail.com)
         test_user = {
-            'username': f"tuser_{self.run_id}",
+            'username': f"test_{self.run_id}",
             'email': f"test_{self.run_id}@gmail.com",
-            'password': "Password123!@#Test",
-            'new_password': "NewPassword123!@#Test",
+            'password': f"SecretP@ssw0rd_{self.run_id}!",
+            'new_password': f"NewP@ssw0rd_{self.run_id}#2026",
             'user_id': None,
+            'uuid': None,
             '2fa_secret': None
         }
         self.created_users.append(test_user['email'])
 
-        # 1. Módulo Autenticación y Seguridad
+        # 1. Módulo Auth & Seguridad
         print(f"\n{Colors.HEADER}{Colors.BOLD}━━━ MÓDULO 1: AUTENTICACIÓN, SEGURIDAD & 2FA ━━━{Colors.ENDC}", flush=True)
         self.module_auth(test_user)
 
-        # 2. Módulo Lienzos (Canvases)
-        print(f"\n{Colors.HEADER}{Colors.BOLD}━━━ MÓDULO 2: GESTIÓN INTEGRAL DE LIENZOS ━━━{Colors.ENDC}", flush=True)
-        self.module_canvases(test_user)
-
-        # 3. Módulo Roles RBAC y Administración
-        print(f"\n{Colors.HEADER}{Colors.BOLD}━━━ MÓDULO 3: ROLES RBAC & PERMISOS ADMINISTRATIVOS ━━━{Colors.ENDC}", flush=True)
-        self.module_roles_and_admin(test_user)
-
-        # 4. Módulo Configuración de Usuario y Perfil
-        print(f"\n{Colors.HEADER}{Colors.BOLD}━━━ MÓDULO 4: PREFERENCIAS Y PERFIL DE USUARIO ━━━{Colors.ENDC}", flush=True)
+        # 2. Módulo Preferencias y Perfil
+        print(f"\n{Colors.HEADER}{Colors.BOLD}━━━ MÓDULO 2: PREFERENCIAS, PERFIL & DISPOSITIVOS ━━━{Colors.ENDC}", flush=True)
         self.module_user_profile(test_user)
 
-        # 5. Teardown y Limpieza
+        # 3. Módulo Lienzos (Canvases)
+        print(f"\n{Colors.HEADER}{Colors.BOLD}━━━ MÓDULO 3: GESTIÓN INTEGRAL DE LIENZOS ━━━{Colors.ENDC}", flush=True)
+        active_canvas = self.module_canvases(test_user)
+
+        # 4. Módulo Chat & Mensajería
+        print(f"\n{Colors.HEADER}{Colors.BOLD}━━━ MÓDULO 4: CHAT EN VIVO & INTERACCIONES ━━━{Colors.ENDC}", flush=True)
+        self.module_chat(test_user, active_canvas)
+
+        # 5. Módulo RBAC & Panel de Administración
+        print(f"\n{Colors.HEADER}{Colors.BOLD}━━━ MÓDULO 5: ROLES RBAC & PERMISOS ADMINISTRATIVOS ━━━{Colors.ENDC}", flush=True)
+        self.module_roles_and_admin(test_user)
+
+        # 6. Teardown y Limpieza
         print(f"\n{Colors.HEADER}{Colors.BOLD}━━━ LIMPIEZA AUTOMÁTICA (TEARDOWN) ━━━{Colors.ENDC}", flush=True)
         self.teardown()
 
-        # 6. Resumen y Reporte
+        # 7. Resumen y Reporte
         total_time = round(time.time() - start_total, 2)
         self.generate_report(total_time)
 
@@ -387,17 +407,18 @@ class RosauraWebTestSuite:
         try:
             conn = self.get_db_connection('db_identity')
             with conn.cursor() as cur:
-                cur.execute("SELECT id FROM users WHERE email = %s", (u['email'],))
+                cur.execute("SELECT id, uuid FROM users WHERE email = %s", (u['email'],))
                 row = cur.fetchone()
                 if row:
                     u['user_id'] = row['id']
-                    cur.execute("UPDATE users SET subscription_tier = 3, real_subscription_tier = 3 WHERE id = %s", (u['user_id'],))
+                    u['uuid'] = row['uuid']
+                    cur.execute("UPDATE users SET subscription_tier = 3 WHERE id = %s", (u['user_id'],))
                     conn.commit()
             conn.close()
             if self.redis_client and u['user_id']:
                 self.redis_client.delete(f"user:profile:{u['user_id']}")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"       {Colors.WARNING}Advertencia al elevar nivel de suscripción: {e}{Colors.ENDC}", flush=True)
 
         # 1.5 Login con credenciales válidas
         self.flush_rate_limits()
@@ -410,6 +431,7 @@ class RosauraWebTestSuite:
         dur = (time.time() - t0) * 1000
         d_login = r_login.json() if r_login.status_code == 200 else {}
         p_login = r_login.status_code == 200 and d_login.get('success')
+        self.client.refresh_csrf()
         self.log_test("Auth", "Login con credenciales válidas", p_login, dur, d_login.get('message', ''), r_login.status_code)
 
         # 1.6 Generación de secreto 2FA
@@ -447,7 +469,7 @@ class RosauraWebTestSuite:
             p_l2 = r_l2.status_code == 200 and (d_l2.get('requires_2fa') or d_l2.get('status') == 'requires_2fa' or bool(temp_auth_token))
             self.log_test("Auth", "2FA: Login solicita desafío de segundo factor", p_l2, dur, d_l2.get('message', ''), r_l2.status_code)
 
-            # Responder al desafío 2FA
+            # 1.9 Responder al desafío 2FA
             totp_code_2 = generate_totp_code(secret)
             t0 = time.time()
             r_v2fa = self.client.post_json('auth.login.verify_2fa', {
@@ -458,9 +480,18 @@ class RosauraWebTestSuite:
             dur = (time.time() - t0) * 1000
             d_v2fa = r_v2fa.json() if r_v2fa.status_code == 200 else {}
             p_v2fa = r_v2fa.status_code == 200 and d_v2fa.get('success')
+            self.client.refresh_csrf()
             self.log_test("Auth", f"2FA: Validación de desafío con TOTP ({totp_code_2})", p_v2fa, dur, d_v2fa.get('message', ''), r_v2fa.status_code)
 
-            # 1.9 Deshabilitar 2FA con contraseña
+            # 1.10 Regenerar códigos de recuperación
+            t0 = time.time()
+            r_rec = self.client.post_json('settings.2fa_regenerate_recovery', {'password': u['password']})
+            dur = (time.time() - t0) * 1000
+            d_rec = r_rec.json() if r_rec.status_code == 200 else {}
+            p_rec = r_rec.status_code == 200 and d_rec.get('success')
+            self.log_test("Auth", "2FA: Regenerar códigos de respaldo de emergencia", p_rec, dur, d_rec.get('message', ''), r_rec.status_code)
+
+            # 1.11 Deshabilitar 2FA con contraseña
             t0 = time.time()
             r_2fa_dis = self.client.post_json('settings.2fa_disable', {'password': u['password']})
             dur = (time.time() - t0) * 1000
@@ -468,7 +499,7 @@ class RosauraWebTestSuite:
             p_2fa_dis = r_2fa_dis.status_code == 200 and d_2fa_dis.get('success')
             self.log_test("Auth", "2FA: Desactivar segundo factor", p_2fa_dis, dur, d_2fa_dis.get('message', ''), r_2fa_dis.status_code)
 
-        # 1.10 Recuperación de contraseña (Forgot Password)
+        # 1.12 Recuperación de contraseña (Forgot Password)
         self.client.reset_session()
         self.flush_rate_limits()
         t0 = time.time()
@@ -481,7 +512,7 @@ class RosauraWebTestSuite:
         p_fp = r_fp.status_code == 200 and d_fp.get('success')
         self.log_test("Auth", "Forgot Password: Solicitud de enlace de recuperación", p_fp, dur, d_fp.get('message', ''), r_fp.status_code)
 
-        # 1.11 Reseteo de contraseña (Reset Password)
+        # 1.13 Reseteo de contraseña (Reset Password)
         time.sleep(0.1)
         reset_token = self.get_verification_code(u['email'], 'password_reset')
         if reset_token:
@@ -496,7 +527,7 @@ class RosauraWebTestSuite:
             p_rp = r_rp.status_code == 200 and d_rp.get('success')
             self.log_test("Auth", f"Reset Password: Cambio exitoso con token ({reset_token[:8]}...)", p_rp, dur, d_rp.get('message', ''), r_rp.status_code)
 
-            # Verificar login con la nueva contraseña
+            # 1.14 Verificar login con la nueva contraseña
             self.flush_rate_limits()
             t0 = time.time()
             r_lnew = self.client.post_json('auth.login', {
@@ -507,28 +538,79 @@ class RosauraWebTestSuite:
             dur = (time.time() - t0) * 1000
             d_lnew = r_lnew.json() if r_lnew.status_code == 200 else {}
             p_lnew = r_lnew.status_code == 200 and d_lnew.get('success')
+            self.client.refresh_csrf()
             self.log_test("Auth", "Login con la nueva contraseña actualizada", p_lnew, dur, d_lnew.get('message', ''), r_lnew.status_code)
             u['password'] = u['new_password']
 
     # --------------------------------------------------------------------------
-    # 2. MÓDULO: LIENZOS (CANVASES)
+    # 2. MÓDULO: PREFERENCIAS Y PERFIL
     # --------------------------------------------------------------------------
-    def module_canvases(self, u: dict):
+    def module_user_profile(self, u: dict):
+        # 2.1 Actualizar tema (dark)
+        t0 = time.time()
+        r_pref = self.client.post_json('settings.update_preferences', {
+            'key': 'theme',
+            'value': 'dark'
+        })
+        dur = (time.time() - t0) * 1000
+        d_pref = r_pref.json() if r_pref.status_code == 200 else {}
+        p_pref = r_pref.status_code == 200 and d_pref.get('success')
+        self.log_test("User Profile", "Actualizar preferencias (Tema: dark)", p_pref, dur, d_pref.get('message', ''), r_pref.status_code)
+
+        # 2.2 Actualizar idioma (es-419)
+        t0 = time.time()
+        r_lang = self.client.post_json('settings.update_preferences', {
+            'key': 'language',
+            'value': 'es-419'
+        })
+        dur = (time.time() - t0) * 1000
+        d_lang = r_lang.json() if r_lang.status_code == 200 else {}
+        p_lang = r_lang.status_code == 200 and d_lang.get('success')
+        self.log_test("User Profile", "Actualizar preferencia de idioma (es-419)", p_lang, dur, d_lang.get('message', ''), r_lang.status_code)
+
+        # 2.3 Consultar lista de dispositivos/sesiones
+        t0 = time.time()
+        r_dev = self.client.post_json('settings.get_devices')
+        dur = (time.time() - t0) * 1000
+        d_dev = r_dev.json() if r_dev.status_code == 200 else {}
+        p_dev = r_dev.status_code == 200 and d_dev.get('success')
+        self.log_test("User Profile", "Consultar sesiones activas del usuario (settings.get_devices)", p_dev, dur, d_dev.get('message', ''), r_dev.status_code)
+
+        # 2.4 Actualizar bandera de usuario (settings.set_flag)
+        t0 = time.time()
+        r_flag = self.client.post_json('settings.set_flag', {'flag_key': 'editor_tooltips'})
+        dur = (time.time() - t0) * 1000
+        d_flag = r_flag.json() if r_flag.status_code == 200 else {}
+        p_flag = r_flag.status_code == 200 and d_flag.get('success')
+        self.log_test("User Profile", "Configurar bandera de interfaz (settings.set_flag)", p_flag, dur, d_flag.get('message', ''), r_flag.status_code)
+
+        # 2.5 Verificar contraseña actual del usuario
+        t0 = time.time()
+        r_vp = self.client.post_json('settings.verify_current_password', {'password': u['password']})
+        dur = (time.time() - t0) * 1000
+        d_vp = r_vp.json() if r_vp.status_code == 200 else {}
+        p_vp = r_vp.status_code == 200 and d_vp.get('success')
+        self.log_test("User Profile", "Validar contraseña actual del usuario (settings.verify_current_password)", p_vp, dur, d_vp.get('message', ''), r_vp.status_code)
+
+    # --------------------------------------------------------------------------
+    # 3. MÓDULO: LIENZOS (CANVASES)
+    # --------------------------------------------------------------------------
+    def module_canvases(self, u: dict) -> dict:
         # Asegurar tier 3 en DB y purgar cache de perfil para permitir paletas y roles personalizados
         if u.get('user_id'):
             try:
                 conn = self.get_db_connection('db_identity')
                 with conn.cursor() as cur:
-                    cur.execute("UPDATE users SET subscription_tier = 3, real_subscription_tier = 3 WHERE id = %s", (u['user_id'],))
+                    cur.execute("UPDATE users SET subscription_tier = 3 WHERE id = %s", (u['user_id'],))
                     conn.commit()
                 conn.close()
                 if self.redis_client:
                     for k in self.redis_client.keys("user:profile:*"):
                         self.redis_client.delete(k)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"       {Colors.WARNING}Advertencia al elevar nivel de suscripción: {e}{Colors.ENDC}", flush=True)
 
-        # 2.1 Crear Lienzo
+        # 3.1 Crear Lienzo
         canvas_name = f"Canvas Test {self.run_id}"
         t0 = time.time()
         r_create = self.client.post_json('canvases.create', {
@@ -549,7 +631,7 @@ class RosauraWebTestSuite:
         self.log_test("Canvases", f"Crear nuevo lienzo ('{canvas_name}')", p_create, dur, d_create.get('message', ''), r_create.status_code)
 
         if not canvas_uuid:
-            return
+            return {}
 
         self.created_canvases.append(canvas_uuid)
 
@@ -566,7 +648,7 @@ class RosauraWebTestSuite:
         except Exception:
             pass
 
-        # 2.2 Consultar lienzo (canvases.get)
+        # 3.2 Consultar lienzo (canvases.get)
         t0 = time.time()
         r_get = self.client.get_route('canvases.get', {'id': canvas_id})
         dur = (time.time() - t0) * 1000
@@ -574,7 +656,39 @@ class RosauraWebTestSuite:
         p_get = r_get.status_code == 200 and d_get.get('success')
         self.log_test("Canvases", f"Consultar detalles del lienzo (ID: {canvas_id})", p_get, dur, d_get.get('message', ''), r_get.status_code)
 
-        # 2.3 Modificar opciones del lienzo (canvases.update)
+        # 3.3 Explorar feed público / home
+        t0 = time.time()
+        r_home = self.client.get_route('canvases.get_home_feed', {'limit': 10})
+        dur = (time.time() - t0) * 1000
+        d_home = r_home.json() if r_home.status_code == 200 else {}
+        p_home = r_home.status_code == 200 and d_home.get('success')
+        self.log_test("Canvases", "Consultar feed principal de lienzos (canvases.get_home_feed)", p_home, dur, d_home.get('message', ''), r_home.status_code)
+
+        # 3.4 Consultar lienzos públicos
+        t0 = time.time()
+        r_pub = self.client.get_route('canvases.get_public', {'limit': 10})
+        dur = (time.time() - t0) * 1000
+        d_pub = r_pub.json() if r_pub.status_code == 200 else {}
+        p_pub = r_pub.status_code == 200 and d_pub.get('success')
+        self.log_test("Canvases", "Consultar directorio de lienzos públicos (canvases.get_public)", p_pub, dur, d_pub.get('message', ''), r_pub.status_code)
+
+        # 3.5 Consultar mis lienzos (canvases.get_mine)
+        t0 = time.time()
+        r_mine = self.client.get_route('canvases.get_mine', {'filter': 'all'})
+        dur = (time.time() - t0) * 1000
+        d_mine = r_mine.json() if r_mine.status_code == 200 else {}
+        p_mine = r_mine.status_code == 200 and d_mine.get('success')
+        self.log_test("Canvases", "Consultar lista de lienzos del usuario (canvases.get_mine)", p_mine, dur, d_mine.get('message', ''), r_mine.status_code)
+
+        # 3.6 Búsqueda global de lienzos (search.query)
+        t0 = time.time()
+        r_search = self.client.get_route('search.query', {'q': self.run_id})
+        dur = (time.time() - t0) * 1000
+        d_search = r_search.json() if r_search.status_code == 200 else {}
+        p_search = r_search.status_code == 200 and d_search.get('success')
+        self.log_test("Canvases", f"Búsqueda global de lienzos por término ('{self.run_id}')", p_search, dur, d_search.get('message', ''), r_search.status_code)
+
+        # 3.7 Modificar opciones del lienzo (canvases.update)
         t0 = time.time()
         r_up = self.client.post_json('canvases.update', {
             'id': canvas_id,
@@ -584,7 +698,7 @@ class RosauraWebTestSuite:
             'max_members': 20,
             'cooldown_pixels_batch': 5,
             'cooldown_seconds': 10,
-            'allow_chat': 0,
+            'allow_chat': 1,
             'tags': ['pixelart']
         })
         dur = (time.time() - t0) * 1000
@@ -592,7 +706,55 @@ class RosauraWebTestSuite:
         p_up = r_up.status_code == 200 and d_up.get('success')
         self.log_test("Canvases", "Modificar opciones y privacidad del lienzo", p_up, dur, d_up.get('message', ''), r_up.status_code)
 
-        # 2.4 Paletas personalizadas (Crear, Listar, Eliminar)
+        # 3.8 Activar modo Online en tiempo real (canvases.activate_online)
+        t0 = time.time()
+        r_on = self.client.post_json('canvases.activate_online', {'canvas_id': canvas_id})
+        dur = (time.time() - t0) * 1000
+        d_on = r_on.json() if r_on.status_code == 200 else {}
+        p_on = r_on.status_code == 200 and d_on.get('success')
+        self.log_test("Canvases", "Activar sala online para colaboración en tiempo real (canvases.activate_online)", p_on, dur, d_on.get('message', ''), r_on.status_code)
+
+        # 3.9 Obtener WebSocket ticket para colaboración en tiempo real
+        t0 = time.time()
+        r_ws = self.client.post_json('canvases.get_ws_ticket', {'canvas_id': canvas_id})
+        dur = (time.time() - t0) * 1000
+        d_ws = r_ws.json() if r_ws.status_code == 200 else {}
+        p_ws = r_ws.status_code == 200 and d_ws.get('success') and bool(d_ws.get('data', {}).get('ticket') or d_ws.get('ticket'))
+        self.log_test("Canvases", "Generar Ticket de WebSocket para tiempo real", p_ws, dur, d_ws.get('message', ''), r_ws.status_code)
+
+        # 3.10 Alternar activación de chat (canvases.toggle_chat)
+        t0 = time.time()
+        r_tchat = self.client.post_json('canvases.toggle_chat', {'id': canvas_id, 'allow_chat': 1})
+        dur = (time.time() - t0) * 1000
+        d_tchat = r_tchat.json() if r_tchat.status_code == 200 else {}
+        p_tchat = r_tchat.status_code == 200 and d_tchat.get('success')
+        self.log_test("Canvases", "Alternar activación de chat del lienzo (canvases.toggle_chat)", p_tchat, dur, d_tchat.get('message', ''), r_tchat.status_code)
+
+        # 3.11 Alternar favorito (canvases.toggle_favorite)
+        t0 = time.time()
+        r_fav = self.client.post_json('canvases.toggle_favorite', {'canvas_id': canvas_id})
+        dur = (time.time() - t0) * 1000
+        d_fav = r_fav.json() if r_fav.status_code == 200 else {}
+        p_fav = r_fav.status_code == 200 and d_fav.get('success')
+        self.log_test("Canvases", "Marcar / Desmarcar lienzo como favorito (canvases.toggle_favorite)", p_fav, dur, d_fav.get('message', ''), r_fav.status_code)
+
+        # 3.12 Consultar ajustes de redimensionamiento (canvases.get_resize_settings)
+        t0 = time.time()
+        r_resz = self.client.get_route('canvases.get_resize_settings', {'id': canvas_id})
+        dur = (time.time() - t0) * 1000
+        d_resz = r_resz.json() if r_resz.status_code == 200 else {}
+        p_resz = r_resz.status_code == 200 and d_resz.get('success')
+        self.log_test("Canvases", "Consultar opciones de redimensionamiento del lienzo", p_resz, dur, d_resz.get('message', ''), r_resz.status_code)
+
+        # 3.13 Consultar ajustes de reinicio automático (canvases.get_reset_settings)
+        t0 = time.time()
+        r_rst = self.client.get_route('canvases.get_reset_settings', {'id': canvas_id})
+        dur = (time.time() - t0) * 1000
+        d_rst = r_rst.json() if r_rst.status_code == 200 else {}
+        p_rst = r_rst.status_code == 200 and d_rst.get('success')
+        self.log_test("Canvases", "Consultar ajustes de reseteo programado del lienzo", p_rst, dur, d_rst.get('message', ''), r_rst.status_code)
+
+        # 3.14 Paletas personalizadas (Crear, Listar, Eliminar)
         t0 = time.time()
         r_pal = self.client.post_json('canvases.create_custom_palette', {
             'name': f"Palette_{self.run_id}",
@@ -623,7 +785,7 @@ class RosauraWebTestSuite:
             p_dpal = r_dpal.status_code == 200 and d_dpal.get('success')
             self.log_test("Canvases", "Eliminar paleta de colores personalizada", p_dpal, dur, d_dpal.get('message', ''), r_dpal.status_code)
 
-        # 2.5 Roles en el lienzo (Crear rol, listar, eliminar rol)
+        # 3.15 Roles en el lienzo (Crear rol, listar, permisos, eliminar rol)
         crole_id = None
         if canvas_id:
             t0 = time.time()
@@ -635,11 +797,27 @@ class RosauraWebTestSuite:
             })
             dur = (time.time() - t0) * 1000
             d_crole = r_crole.json() if r_crole.status_code == 200 else {}
-            crole_id = d_crole.get('role_id') or d_crole.get('data', {}).get('role_id')
-            p_crole = r_crole.status_code == 200 and d_crole.get('success')
+            crole_id = d_crole.get('id') or d_crole.get('role_id') or d_crole.get('data', {}).get('id') or d_crole.get('data', {}).get('role_id')
+            p_crole = r_crole.status_code == 200 and d_crole.get('success') and bool(crole_id)
             self.log_test("Canvases", "Crear rol personalizado dentro del lienzo", p_crole, dur, d_crole.get('message', ''), r_crole.status_code)
 
-            # 2.6 Generar invitación al lienzo (vinculada al rol creado o viewer)
+            # 3.16 Consultar roles del lienzo
+            t0 = time.time()
+            r_groles = self.client.get_route('canvases.get_roles', {'canvas_id': canvas_id})
+            dur = (time.time() - t0) * 1000
+            d_groles = r_groles.json() if r_groles.status_code == 200 else {}
+            p_groles = r_groles.status_code == 200 and d_groles.get('success')
+            self.log_test("Canvases", "Consultar roles configurados en el lienzo", p_groles, dur, d_groles.get('message', ''), r_groles.status_code)
+
+            # 3.17 Consultar catálogo de permisos a nivel de lienzo
+            t0 = time.time()
+            r_cperms = self.client.get_route('canvases.get_permissions', {'canvas_id': canvas_id})
+            dur = (time.time() - t0) * 1000
+            d_cperms = r_cperms.json() if r_cperms.status_code == 200 else {}
+            p_cperms = r_cperms.status_code == 200 and d_cperms.get('success')
+            self.log_test("Canvases", "Consultar catálogo de permisos a nivel de lienzo", p_cperms, dur, d_cperms.get('message', ''), r_cperms.status_code)
+
+            # 3.18 Generar invitación al lienzo
             t0 = time.time()
             r_inv = self.client.post_json('canvases.generate_invite', {
                 'canvas_id': canvas_id,
@@ -651,13 +829,27 @@ class RosauraWebTestSuite:
             p_inv = r_inv.status_code == 200 and d_inv.get('success')
             self.log_test("Canvases", "Generar enlace/código de invitación al lienzo", p_inv, dur, d_inv.get('message', ''), r_inv.status_code)
 
-            # 2.7 Listar invitaciones
+            # 3.19 Listar invitaciones
             t0 = time.time()
             r_linv = self.client.get_route('canvases.list_invites', {'canvas_id': canvas_id})
             dur = (time.time() - t0) * 1000
             d_linv = r_linv.json() if r_linv.status_code == 200 else {}
             p_linv = r_linv.status_code == 200 and d_linv.get('success')
+            invites_list = d_linv.get('data', [])
             self.log_test("Canvases", "Listar invitaciones activas del lienzo", p_linv, dur, d_linv.get('message', ''), r_linv.status_code)
+
+            # 3.20 Revocar invitación
+            if invites_list and isinstance(invites_list, list) and len(invites_list) > 0:
+                invite_id = invites_list[0].get('id')
+                t0 = time.time()
+                r_rinv = self.client.post_json('canvases.revoke_invite', {
+                    'canvas_id': canvas_id,
+                    'invite_id': invite_id
+                })
+                dur = (time.time() - t0) * 1000
+                d_rinv = r_rinv.json() if r_rinv.status_code == 200 else {}
+                p_rinv = r_rinv.status_code == 200 and d_rinv.get('success')
+                self.log_test("Canvases", "Revocar código de invitación del lienzo", p_rinv, dur, d_rinv.get('message', ''), r_rinv.status_code)
 
             # Eliminar rol del lienzo
             if crole_id:
@@ -671,7 +863,102 @@ class RosauraWebTestSuite:
                 p_dcrole = r_dcrole.status_code == 200 and d_dcrole.get('success')
                 self.log_test("Canvases", "Eliminar rol personalizado del lienzo", p_dcrole, dur, d_dcrole.get('message', ''), r_dcrole.status_code)
 
-        # 2.8 Papelera de lienzos (Soft Delete y Restaurar)
+        # 3.21 Consultar plantillas disponibles (canvases.get_templates)
+        t0 = time.time()
+        r_tmpls = self.client.get_route('canvases.get_templates')
+        dur = (time.time() - t0) * 1000
+        d_tmpls = r_tmpls.json() if r_tmpls.status_code == 200 else {}
+        p_tmpls = r_tmpls.status_code == 200 and d_tmpls.get('success')
+        self.log_test("Canvases", "Consultar catálogo de plantillas (canvases.get_templates)", p_tmpls, dur, d_tmpls.get('message', ''), r_tmpls.status_code)
+
+        # Retornamos datos del lienzo activo para ser usado en chat y otras pruebas antes de borrarlo
+        return {'id': canvas_id, 'uuid': canvas_uuid}
+
+    # --------------------------------------------------------------------------
+    # 4. MÓDULO: CHAT EN VIVO & INTERACCIONES
+    # --------------------------------------------------------------------------
+    def module_chat(self, u: dict, canvas: dict):
+        if not canvas or not canvas.get('id'):
+            print(f"       {Colors.WARNING}Saltando módulo de chat: no hay lienzo activo.{Colors.ENDC}", flush=True)
+            return
+
+        canvas_id = canvas['id']
+        msg_text = f"Hola mundo desde suite de pruebas! ID: {self.run_id}"
+
+        # 4.1 Enviar mensaje al chat
+        t0 = time.time()
+        r_send = self.client.post_json('chat.send', {
+            'canvas_id': canvas_id,
+            'message': msg_text
+        })
+        dur = (time.time() - t0) * 1000
+        d_send = r_send.json() if r_send.status_code == 200 else {}
+        msg_id = d_send.get('message_id') or d_send.get('id') or d_send.get('data', {}).get('id')
+        p_send = r_send.status_code == 200 and d_send.get('success')
+        self.log_test("Live Chat", "Enviar mensaje al chat en vivo del lienzo", p_send, dur, d_send.get('message', ''), r_send.status_code)
+
+        # 4.2 Obtener historial de chat
+        t0 = time.time()
+        r_hist = self.client.get_route('chat.history', {'canvas_id': canvas_id, 'offset': 0})
+        dur = (time.time() - t0) * 1000
+        d_hist = r_hist.json() if r_hist.status_code == 200 else {}
+        p_hist = r_hist.status_code == 200 and d_hist.get('success')
+        self.log_test("Live Chat", "Consultar historial de mensajes del lienzo (chat.history)", p_hist, dur, d_hist.get('message', ''), r_hist.status_code)
+
+        if not msg_id and d_hist.get('messages'):
+            for m in d_hist['messages']:
+                if msg_text in m.get('message', ''):
+                    msg_id = m.get('id') or m.get('uuid')
+                    break
+
+        # 4.3 Reaccionar a mensaje con emoji
+        if msg_id:
+            t0 = time.time()
+            r_react = self.client.post_json('chat.react', {
+                'canvas_id': canvas_id,
+                'message_id': msg_id,
+                'emoji': '❤️'
+            })
+            dur = (time.time() - t0) * 1000
+            d_react = r_react.json() if r_react.status_code == 200 else {}
+            p_react = r_react.status_code == 200 and d_react.get('success')
+            self.log_test("Live Chat", "Reaccionar con emoji a un mensaje del chat (chat.react)", p_react, dur, d_react.get('message', ''), r_react.status_code)
+
+            # 4.4 Reportar mensaje a moderación
+            t0 = time.time()
+            r_rep = self.client.post_json('chat.report', {
+                'message_id': msg_id,
+                'reason': 'spam',
+                'details': f'Prueba automatizada {self.run_id}'
+            })
+            dur = (time.time() - t0) * 1000
+            d_rep = r_rep.json() if r_rep.status_code == 200 else {}
+            p_rep = r_rep.status_code == 200 and d_rep.get('success')
+            self.log_test("Live Chat", "Reportar mensaje a moderación (chat.report)", p_rep, dur, d_rep.get('message', ''), r_rep.status_code)
+
+            # 4.5 Eliminar mensaje del chat
+            t0 = time.time()
+            r_delm = self.client.post_json('chat.delete', {
+                'canvas_id': canvas_id,
+                'message_id': msg_id
+            })
+            dur = (time.time() - t0) * 1000
+            d_delm = r_delm.json() if r_delm.status_code == 200 else {}
+            p_delm = r_delm.status_code == 200 and d_delm.get('success')
+            self.log_test("Live Chat", "Eliminar mensaje emitido en el chat (chat.delete)", p_delm, dur, d_delm.get('message', ''), r_delm.status_code)
+
+        # 4.6 Consultar galería multimedia del chat
+        t0 = time.time()
+        r_gal = self.client.get_route('chat.media_gallery', {'canvas_id': canvas_id})
+        dur = (time.time() - t0) * 1000
+        d_gal = r_gal.json() if r_gal.status_code == 200 else {}
+        p_gal = r_gal.status_code == 200 and d_gal.get('success')
+        self.log_test("Live Chat", "Consultar galería de archivos compartidos (chat.media_gallery)", p_gal, dur, d_gal.get('message', ''), r_gal.status_code)
+
+        # 4.7 Flujo de Papelera y Borrado del lienzo de prueba
+        canvas_uuid = canvas['uuid']
+
+        # Enviar a la papelera (Soft Delete)
         t0 = time.time()
         r_del = self.client.post_json('canvases.delete', {'uuid': canvas_uuid, 'password': u['password']})
         dur = (time.time() - t0) * 1000
@@ -707,10 +994,10 @@ class RosauraWebTestSuite:
         self.log_test("Canvases", "Eliminación permanente del lienzo (Permanent Delete)", p_pdel, dur, d_pdel.get('message', ''), r_pdel.status_code)
 
     # --------------------------------------------------------------------------
-    # 3. MÓDULO: ROLES RBAC & PANEL DE ADMINISTRACIÓN
+    # 5. MÓDULO: ROLES RBAC & PANEL DE ADMINISTRACIÓN
     # --------------------------------------------------------------------------
     def module_roles_and_admin(self, u: dict):
-        # 3.1 Probar restricción de acceso con usuario común (Debe dar 403 Forbidden)
+        # 5.1 Probar restricción de acceso con usuario común (Debe dar 403 Forbidden)
         unauth_client = TestApiClient(self.app_url)
         t0 = time.time()
         r_unauth = unauth_client.get_route('admin.get_roles')
@@ -719,7 +1006,7 @@ class RosauraWebTestSuite:
         p_unauth = r_unauth.status_code == 403 or (r_unauth.status_code == 200 and not d_unauth.get('success'))
         self.log_test("Admin RBAC", "Verificar denegación 403 Forbidden en ruta protegida de Admin", p_unauth, dur, d_unauth.get('message', ''), r_unauth.status_code)
 
-        # 3.2 Elevar a SuperAdministrador en la BD
+        # 5.2 Elevar a SuperAdministrador en la BD
         if u.get('user_id'):
             try:
                 conn = self.get_db_connection('db_identity')
@@ -736,8 +1023,8 @@ class RosauraWebTestSuite:
                     self.redis_client.delete(f"rbac:user_perms:{u['user_id']}")
                     self.redis_client.delete(f"rbac:user_roles:{u['user_id']}")
                     self.redis_client.delete(f"rbac:user_highest_role:{u['user_id']}")
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"       {Colors.WARNING}Advertencia al elevar rol en BD: {e}{Colors.ENDC}", flush=True)
 
         # Relogin para refrescar sesión con los nuevos roles SuperAdmin
         self.client.reset_session()
@@ -747,8 +1034,17 @@ class RosauraWebTestSuite:
             'password': u['password'],
             'turnstile_token': self.client.dummy_turnstile
         })
+        self.client.refresh_csrf()
 
-        # 3.3 Consultar lista de roles (admin.get_roles) con permisos elevados
+        # 5.3 Consultar métricas del panel de administración
+        t0 = time.time()
+        r_metrics = self.client.get_route('admin.get_dashboard_metrics')
+        dur = (time.time() - t0) * 1000
+        d_metrics = r_metrics.json() if r_metrics.status_code == 200 else {}
+        p_metrics = r_metrics.status_code == 200 and d_metrics.get('success')
+        self.log_test("Admin RBAC", "Consultar métricas generales del sistema (admin.get_dashboard_metrics)", p_metrics, dur, d_metrics.get('message', ''), r_metrics.status_code)
+
+        # 5.4 Consultar lista de roles (admin.get_roles) con permisos elevados
         t0 = time.time()
         r_roles = self.client.get_route('admin.get_roles')
         dur = (time.time() - t0) * 1000
@@ -756,7 +1052,15 @@ class RosauraWebTestSuite:
         p_roles = r_roles.status_code == 200 and d_roles.get('success')
         self.log_test("Admin RBAC", "Consultar lista de roles globales del sistema (admin.get_roles)", p_roles, dur, d_roles.get('message', ''), r_roles.status_code)
 
-        # 3.4 Crear un rol de alta jerarquía (admin.create_role) con peso 85
+        # 5.5 Consultar catálogo de permisos globales (admin.get_permissions)
+        t0 = time.time()
+        r_perms = self.client.get_route('admin.get_permissions')
+        dur = (time.time() - t0) * 1000
+        d_perms = r_perms.json() if r_perms.status_code == 200 else {}
+        p_perms = r_perms.status_code == 200 and d_perms.get('success')
+        self.log_test("Admin RBAC", "Consultar catálogo completo de permisos (admin.get_permissions)", p_perms, dur, d_perms.get('message', ''), r_perms.status_code)
+
+        # 5.6 Crear un rol de alta jerarquía (admin.create_role) con peso 85
         role_name = f"Role_{self.run_id}"
         t0 = time.time()
         r_crole = self.client.post_json('admin.create_role', {
@@ -782,7 +1086,7 @@ class RosauraWebTestSuite:
         except Exception:
             pass
 
-        # 3.5 Asignar matriz de permisos al rol (admin.update_role_permissions)
+        # 5.7 Asignar matriz de permisos al rol (admin.update_role_permissions)
         if role_id:
             t0 = time.time()
             r_uperm = self.client.post_json('admin.update_role_permissions', {
@@ -794,7 +1098,15 @@ class RosauraWebTestSuite:
             p_uperm = r_uperm.status_code == 200 and d_uperm.get('success')
             self.log_test("Admin RBAC", "Actualizar matriz de permisos del rol (admin.update_role_permissions)", p_uperm, dur, d_uperm.get('message', ''), r_uperm.status_code)
 
-            # 3.6 Eliminar rol del sistema (admin.delete_role)
+            # 5.8 Consultar permisos asignados al rol específico
+            t0 = time.time()
+            r_gperm = self.client.get_route('admin.get_role_permissions', {'id': role_id})
+            dur = (time.time() - t0) * 1000
+            d_gperm = r_gperm.json() if r_gperm.status_code == 200 else {}
+            p_gperm = r_gperm.status_code == 200 and d_gperm.get('success')
+            self.log_test("Admin RBAC", "Consultar permisos específicos del rol (admin.get_role_permissions)", p_gperm, dur, d_gperm.get('message', ''), r_gperm.status_code)
+
+            # 5.9 Eliminar rol del sistema (admin.delete_role)
             t0 = time.time()
             r_drole = self.client.post_json('admin.delete_role', {'id': role_id})
             dur = (time.time() - t0) * 1000
@@ -802,31 +1114,65 @@ class RosauraWebTestSuite:
             p_drole = r_drole.status_code == 200 and d_drole.get('success')
             self.log_test("Admin RBAC", "Eliminar rol de prueba del sistema (admin.delete_role)", p_drole, dur, d_drole.get('message', ''), r_drole.status_code)
 
-    # --------------------------------------------------------------------------
-    # 4. MÓDULO: PREFERENCIAS Y PERFIL
-    # --------------------------------------------------------------------------
-    def module_user_profile(self, u: dict):
-        # 4.1 Actualizar preferencias de usuario
+        # 5.10 Consultar configuración del servidor (admin.get_server_config)
         t0 = time.time()
-        r_pref = self.client.post_json('settings.update_preferences', {
-            'key': 'theme',
-            'value': 'dark'
-        })
+        r_cfg = self.client.get_route('admin.get_server_config')
         dur = (time.time() - t0) * 1000
-        d_pref = r_pref.json() if r_pref.status_code == 200 else {}
-        p_pref = r_pref.status_code == 200 and d_pref.get('success')
-        self.log_test("User Profile", "Actualizar preferencias (Tema: dark)", p_pref, dur, d_pref.get('message', ''), r_pref.status_code)
+        d_cfg = r_cfg.json() if r_cfg.status_code == 200 else {}
+        p_cfg = r_cfg.status_code == 200 and d_cfg.get('success')
+        self.log_test("Admin Config", "Consultar variables de configuración del servidor (admin.get_server_config)", p_cfg, dur, d_cfg.get('message', ''), r_cfg.status_code)
 
-        # 4.2 Logout de sesión
+        # 5.11 Consultar información de un usuario (admin.get_user)
+        if u.get('user_id'):
+            t0 = time.time()
+            r_uinfo = self.client.get_route('admin.get_user', {'target_user_id': u['user_id']})
+            dur = (time.time() - t0) * 1000
+            d_uinfo = r_uinfo.json() if r_uinfo.status_code == 200 else {}
+            p_uinfo = r_uinfo.status_code == 200 and d_uinfo.get('success')
+            self.log_test("Admin Users", "Consultar perfil detallado de usuario (admin.get_user)", p_uinfo, dur, d_uinfo.get('message', ''), r_uinfo.status_code)
+
+        # 5.12 Consultar esquema de backups (admin.get_backup_schema)
+        t0 = time.time()
+        r_schema = self.client.get_route('admin.get_backup_schema')
+        dur = (time.time() - t0) * 1000
+        d_schema = r_schema.json() if r_schema.status_code == 200 else {}
+        p_schema = r_schema.status_code == 200 and d_schema.get('success')
+        self.log_test("Admin Backups", "Consultar esquema y tablas de base de datos para backups", p_schema, dur, d_schema.get('message', ''), r_schema.status_code)
+
+        # 5.13 Comprobar estado de workers de mantenimiento (admin.check_worker_status)
+        t0 = time.time()
+        r_worker = self.client.get_route('admin.check_worker_status')
+        dur = (time.time() - t0) * 1000
+        d_worker = r_worker.json() if r_worker.status_code == 200 else {}
+        p_worker = r_worker.status_code == 200 and d_worker.get('success')
+        self.log_test("Admin System", "Comprobar estado de workers y colas (admin.check_worker_status)", p_worker, dur, d_worker.get('message', ''), r_worker.status_code)
+
+        # 5.14 Consultar proveedores de anuncios (admin.advertisements.list)
+        t0 = time.time()
+        r_ads = self.client.get_route('admin.advertisements.list')
+        dur = (time.time() - t0) * 1000
+        d_ads = r_ads.json() if r_ads.status_code == 200 else {}
+        p_ads = r_ads.status_code == 200 and ('providers' in d_ads or d_ads.get('success'))
+        self.log_test("Admin Ads", "Consultar lista de proveedores de anuncios publicitarios", p_ads, dur, d_ads.get('message', ''), r_ads.status_code)
+
+        # 5.15 Consultar traducciones del panel de administración
+        t0 = time.time()
+        r_trans = self.client.get_route('admin.get_translations')
+        dur = (time.time() - t0) * 1000
+        d_trans = r_trans.json() if r_trans.status_code == 200 else {}
+        p_trans = r_trans.status_code == 200 and d_trans.get('success')
+        self.log_test("Admin System", "Consultar diccionario de traducciones administrativas", p_trans, dur, d_trans.get('message', ''), r_trans.status_code)
+
+        # 5.16 Cierre de sesión final
         t0 = time.time()
         r_out = self.client.post_json('auth.logout')
         dur = (time.time() - t0) * 1000
         d_out = r_out.json() if r_out.status_code == 200 else {}
         p_out = r_out.status_code == 200 and d_out.get('success')
-        self.log_test("Auth", "Cierre de sesión (auth.logout)", p_out, dur, d_out.get('message', ''), r_out.status_code)
+        self.log_test("Auth", "Cierre de sesión final (auth.logout)", p_out, dur, d_out.get('message', ''), r_out.status_code)
 
     # --------------------------------------------------------------------------
-    # 5. TEARDOWN (LIMPIEZA AUTOMÁTICA DE DATOS DE PRUEBA)
+    # 6. TEARDOWN (LIMPIEZA AUTOMÁTICA DE DATOS DE PRUEBA)
     # --------------------------------------------------------------------------
     def teardown(self):
         t0 = time.time()
@@ -902,7 +1248,7 @@ class RosauraWebTestSuite:
         print(f"  {Colors.GREEN}✔ Teardown completado ({int(dur)}ms): {cleaned_users} usuarios, {cleaned_canvases} lienzos y {cleaned_roles} roles temporales eliminados.{Colors.ENDC}", flush=True)
 
     # --------------------------------------------------------------------------
-    # 6. GENERACIÓN DE REPORTE FINAL
+    # 7. GENERACIÓN DE REPORTE FINAL
     # --------------------------------------------------------------------------
     def generate_report(self, total_time: float):
         total_tests = len(self.results)

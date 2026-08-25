@@ -52,7 +52,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
                                     </div>
                                     <div class="component-input-group component-input-group--h34 component-input-group--color">
                                         <div class="component-color-swatch component-color-swatch--sm" data-ref="customHexInputPreview"></div>
-                                        <input type="text" class="component-input-field component-input-field--mono" data-ref="customHexInput" value="#FF0000" maxlength="7" placeholder="#000000">
+                                        <input type="text" id="custom-hex-input" name="custom-hex-input" class="component-input-field component-input-field--mono" data-ref="customHexInput" value="#FF0000" maxlength="7" placeholder="#000000">
                                     </div>
                                     <button type="button" class="component-button component-button--primary component-button--full component-button--h34" data-action="applyCustomColor">
                                         <span class="material-symbols-rounded">check</span>
@@ -109,7 +109,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
         <div class="component-menu-section-parent component-menu-section-parent--bordered">
             <div class="component-menu-section-header">
                 <div class="component-template-upload-section">
-                    <input type="file" accept="image/jpeg, image/png, image/webp" class="hidden-input" data-ref="template-file-input">
+                    <input type="file" id="template-file-input" name="template-file-input" accept="image/jpeg, image/png, image/webp" class="hidden-input" data-ref="template-file-input">
                     <button class="component-button component-button--primary component-button--full component-button--h40" data-action="triggerTemplateUpload">
                         <span class="material-symbols-rounded">cloud_upload</span>
                         <?php echo __('dt_upload_library'); ?>

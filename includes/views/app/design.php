@@ -297,7 +297,7 @@ extract($designData);
                 <div class="component-canvas-floating-text__handle" data-action="dragFloatingText" data-tooltip="<?php echo __('tooltip_drag'); ?>" data-position="top">
                     <span class="material-symbols-rounded">drag_indicator</span>
                 </div>
-                <input class="component-canvas-floating-text__input" data-ref="floating-text-input" type="text" placeholder="<?php echo __('placeholder_text_input'); ?>" maxlength="60" />
+                <input id="floating-text-input" name="floating-text-input" class="component-canvas-floating-text__input" data-ref="floating-text-input" type="text" placeholder="<?php echo __('placeholder_text_input'); ?>" maxlength="60" />
                 <button class="component-button component-button--icon component-button--h24" data-action="cyclePixelFont" data-ref="btn-text-font" data-tooltip="<?php echo __('lbl_font_family'); ?>" data-position="top">
                     <span class="material-symbols-rounded">font_download</span>
                 </button>

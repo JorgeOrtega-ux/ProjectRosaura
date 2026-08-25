@@ -12,7 +12,7 @@ $languages = \App\Core\System\Translator::getAvailableLanguages();
                     <span class="material-symbols-rounded">search</span>
                 </div>
                 <div class="component-search-input">
-                    <input type="text" data-ref="language-search" placeholder="<?php echo __('search_language'); ?>">
+                    <input type="text" id="language-search-input" name="language-search-input" data-ref="language-search" placeholder="<?php echo __('search_language'); ?>">
                 </div>
             </div>
         </div>

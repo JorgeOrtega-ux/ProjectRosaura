@@ -81,7 +81,7 @@ $maxMB = $maxUploadMB ?? 10;
                                 </div>
                             </div>
                         </div>
-                        <input type="file" data-ref="chat-file-input" class="disabled" multiple accept="image/jpeg, image/png, image/webp, image/gif">
+                        <input type="file" id="chat-file-input" name="chat-file-input" data-ref="chat-file-input" class="disabled" multiple accept="image/jpeg, image/png, image/webp, image/gif">
                     </div>
 
                     <div class="component-chat-box__input-wrapper">
@@ -95,7 +95,7 @@ $maxMB = $maxUploadMB ?? 10;
                             }
                         }
                         ?>
-                        <textarea data-ref="chat-input-message" class="component-chat-textarea" placeholder="<?php echo htmlspecialchars($placeholder); ?>" maxlength="1000" rows="1" <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled' : ''; ?>></textarea>
+                        <textarea id="chat-input-message" name="chat-input-message" data-ref="chat-input-message" class="component-chat-textarea" placeholder="<?php echo htmlspecialchars($placeholder); ?>" maxlength="1000" rows="1" <?php echo (isset($isChatRestricted) && $isChatRestricted) ? 'disabled' : ''; ?>></textarea>
                     </div>
 
                     <div class="component-chat-box__actions-right">

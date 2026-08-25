@@ -83,7 +83,7 @@ if ($isLoggedIn) {
                 <span class="material-symbols-rounded">search</span>
             </div>
             <div class="component-search-input">
-                <input type="text" data-ref="global-search-input" placeholder="<?php echo __('search_placeholder'); ?>" autocomplete="off">
+                <input type="text" id="global-search-input" name="global-search-input" data-ref="global-search-input" placeholder="<?php echo __('search_placeholder'); ?>" autocomplete="off">
             </div>
         </div>
     </div>
