@@ -967,6 +967,10 @@ export const InteractionDrawingTools = {
                 const s = parseInt(b.getAttribute('data-grid-size'), 10) || 0;
                 b.classList.toggle('active', s === current);
             });
+        } else if (name === 'moveArea') {
+            const btns = subtoolbar.querySelectorAll('[data-action="setSelectionMode"]');
+            const currentMode = this.selectionMode || 'box';
+            btns.forEach(b => b.classList.toggle('active', b.getAttribute('data-selection-mode') === currentMode));
         }
 
         this.activeSubtoolbar = name;
@@ -1863,5 +1867,48 @@ export const InteractionDrawingTools = {
         }
 
         return (typeof this.isDarkMode === 'function' && this.isDarkMode()) ? '#1F2937' : '#FFFFFF';
+    },
+
+    toggleSeamlessTile() {
+        if (!this.isOfflineMode) return;
+        this.isSeamlessTileMode = !this.isSeamlessTileMode;
+
+        const btnSeamless = document.querySelector('[data-action="toggleSeamlessTile"]');
+        const btnSubToggle = document.querySelector('[data-ref="btn-seamless-sub-toggle"]');
+        if (btnSeamless) btnSeamless.classList.toggle('active', !!this.isSeamlessTileMode);
+        if (btnSubToggle) btnSubToggle.classList.toggle('active', !!this.isSeamlessTileMode);
+
+        if (this.isSeamlessTileMode) {
+            this.openSubtoolbar('seamlessTile');
+        }
+
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({
+                type: 'SET_SEAMLESS_TILE_MODE',
+                payload: { isSeamlessTileMode: !!this.isSeamlessTileMode }
+            });
+        }
+
+        const msg = this.isSeamlessTileMode
+            ? (window.__('msg_seamless_tile_on') || 'Modo Baldosa 3x3 (Seamless) activado')
+            : (window.__('msg_seamless_tile_off') || 'Modo Baldosa 3x3 desactivado');
+        if (typeof showMessage === 'function') showMessage(msg, 'info');
+
+        this.requestRender();
+    },
+
+    shiftTileOffset(dx = null, dy = null) {
+        if (!this.isOfflineMode || !this.renderWorker) return;
+        const shiftX = dx !== null ? dx : Math.floor((this.boardWidth || 64) / 2);
+        const shiftY = dy !== null ? dy : Math.floor((this.boardHeight || 64) / 2);
+
+        this.renderWorker.postMessage({
+            type: 'SHIFT_TILE_OFFSET',
+            payload: {
+                dx: shiftX,
+                dy: shiftY,
+                layerId: this.activeLayerId
+            }
+        });
     }
 };

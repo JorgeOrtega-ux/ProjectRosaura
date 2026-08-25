@@ -2,6 +2,8 @@ import { generateShapePixels } from '../utils/GeometricShapesUtils.js?v=34';
 import { SHAPE_SVG_PATHS } from '../data/ShapeSvgPathsData.js?v=34';
 import { renderPixelText } from '../utils/PixelTextUtils.js';
 import { showMessage } from '../../../../core/utils/uiUtils.js';
+import { getLassoSelectedPixels } from '../utils/LassoSelectionUtils.js';
+import { getMagicWandSelectedPixels } from '../utils/MagicWandUtils.js';
 
 export const InteractionShapesText = {
     selectGeometricShape(shapeId, targetEl) {
@@ -694,7 +696,8 @@ export const InteractionShapesText = {
 
         if (this.interactionMode === 'offline_moving_area') {
             this.cancelMoveArea(false);
-            if (typeof showMessage === 'function') showMessage('Modo mover selecci├│n desactivado.', 'info');
+            this.closeSubtoolbar();
+            if (typeof showMessage === 'function') showMessage('Modo mover selección desactivado.', 'info');
         } else {
             this.interactionMode = 'offline_moving_area';
             this.selectedPixels.clear();
@@ -706,8 +709,9 @@ export const InteractionShapesText = {
             this.moveAreaStart = null;
             this.moveAreaDragAnchor = null;
             if (btnMoveArea) btnMoveArea.classList.add('active');
+            if (typeof this.openSubtoolbar === 'function') this.openSubtoolbar('moveArea');
             this.updateMoveAreaFloatingToolbar();
-            if (typeof showMessage === 'function') showMessage(window.__('msg_move_area_on') || 'Modo Mover activado. Selecciona un ├írea para moverla.', 'info');
+            if (typeof showMessage === 'function') showMessage(window.__('msg_move_area_on') || 'Modo Selección activado. Elige modo en la barra lateral o usa M, Q o W.', 'info');
         }
         this.updateSelectionUI();
         if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
@@ -808,5 +812,138 @@ export const InteractionShapesText = {
         }
 
         this.requestRender();
+    },
+
+    setSelectionMode(mode = 'box') {
+        this.selectionMode = mode;
+        if (this.interactionMode !== 'offline_moving_area' && typeof this.toggleOfflineMoveArea === 'function') {
+            this.toggleOfflineMoveArea();
+        } else if (typeof this.openSubtoolbar === 'function') {
+            this.openSubtoolbar('moveArea');
+        }
+        const subtoolbar = document.querySelector('[data-subtoolbar="moveArea"]');
+        if (subtoolbar) {
+            subtoolbar.querySelectorAll('.component-button').forEach(btn => {
+                const actMode = btn.getAttribute('data-selection-mode');
+                btn.classList.toggle('active', actMode === mode);
+            });
+        }
+        const msgs = {
+            box: 'Modo Selección Rectangular [M]',
+            lasso: 'Modo Lazo a mano alzada [Q]',
+            wand: 'Modo Varita Mágica [W]'
+        };
+        if (typeof showMessage === 'function') showMessage(msgs[mode] || 'Modo selección cambiado', 'info');
+    },
+
+    executeLassoSelection(rawPoints) {
+        if (!this.isOfflineMode) return;
+        const bw = this.boardWidth || 64;
+        const bh = this.boardHeight || 64;
+        const pixels = getLassoSelectedPixels(rawPoints, bw, bh);
+        this.setSelectionPixels(pixels);
+    },
+
+    executeMagicWandSelection(startX, startY, tolerance = 0, contiguous = true) {
+        if (!this.isOfflineMode) return;
+        const bw = this.boardWidth || 64;
+        const bh = this.boardHeight || 64;
+
+        let buffer = null;
+        if (this.layers && this.activeLayerId) {
+            const l = this.layers.find(x => x.id === this.activeLayerId);
+            if (l && l.buffer) buffer = l.buffer;
+        }
+
+        if (!buffer && this.offscreenCtx) {
+            const imgData = this.offscreenCtx.getImageData(0, 0, bw, bh);
+            buffer = new Uint32Array(imgData.data.buffer);
+        }
+
+        if (!buffer) return;
+
+        const pixels = getMagicWandSelectedPixels(buffer, startX, startY, bw, bh, tolerance, contiguous);
+        this.setSelectionPixels(pixels);
+    },
+
+    setSelectionPixels(pixels) {
+        this.activeSelectionPixels = pixels || [];
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({
+                type: 'SET_SELECTION_MASK',
+                payload: { pixels: this.activeSelectionPixels }
+            });
+        }
+        if (this.activeSelectionPixels.length > 0) {
+            if (typeof showMessage === 'function') {
+                showMessage(`Área seleccionada (${this.activeSelectionPixels.length} px). Usa herramientas para pintar dentro o arrastra para mover/transformar.`, 'info');
+            }
+        }
+        this.requestRender();
+    },
+
+    clearSelection() {
+        this.activeSelectionPixels = [];
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({
+                type: 'CLEAR_SELECTION_MASK'
+            });
+        }
+        this.requestRender();
+    },
+
+    deleteSelection() {
+        if (!this.activeSelectionPixels || this.activeSelectionPixels.length === 0) return;
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({
+                type: 'CLEAR_SELECTION_PIXELS'
+            });
+        }
+        this.clearSelection();
+    },
+
+    floatSelection(isCut = false) {
+        if (!this.activeSelectionPixels || this.activeSelectionPixels.length === 0) return;
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({
+                type: 'EXTRACT_SELECTION_TO_BITMAP',
+                payload: { isCut }
+            });
+        }
+    },
+
+    handleSelectionBitmapExtracted(payload) {
+        if (!payload || !payload.imageBitmap) return;
+        const tpl = {
+            id: 'selection_' + Date.now(),
+            imageBitmap: payload.imageBitmap,
+            x: payload.x,
+            y: payload.y,
+            w: payload.w,
+            h: payload.h,
+            angle: 0,
+            locked: false,
+            opacity: 1.0,
+            isSticker: true,
+            isSelection: true,
+            title: 'Selección'
+        };
+        if (!this.templates) this.templates = [];
+        this.templates.push(tpl);
+        this.activeTemplateId = tpl.id;
+        this.clearSelection();
+        if (typeof this.updateTemplateUI === 'function') this.updateTemplateUI();
+        this.requestRender();
+        if (typeof showMessage === 'function') showMessage('Selección flotante lista para transformar [Mover, Escalar, Rotar, Voltear].', 'info');
+    },
+
+    copySelection() {
+        if (!this.activeSelectionPixels || this.activeSelectionPixels.length === 0) return;
+        this.floatSelection(false);
+    },
+
+    cutSelection() {
+        if (!this.activeSelectionPixels || this.activeSelectionPixels.length === 0) return;
+        this.floatSelection(true);
     }
 };

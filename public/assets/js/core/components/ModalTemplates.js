@@ -3430,5 +3430,133 @@ export const ModalTemplates = {
                 </div>
             `;
         }
+    },
+
+    autoOutlineModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const currentColor = data.currentColor || '#000000';
+            const layerName = data.layerName || 'Capa Activa';
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+
+                <div class="component-card--grouped component-card--flush active component-modal-step">
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('lbl_auto_outline_title') || 'Generar Contorno (Auto-Outline)'}</h2>
+                        <p class="component-modal-desc">${__('lbl_auto_outline_desc') || 'Añade automáticamente un contorno de 1px alrededor de todo el contenido de ' + layerName + '.'}</p>
+                    </div>
+
+                    <div class="component-modal-body">
+                        <!-- 1. Color del Contorno -->
+                        <div class="component-form-group">
+                            <label class="component-label">${__('lbl_outline_color') || 'Color del borde'}</label>
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                                <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleOutlineColorDropdown" data-ref="outline-color-trigger" data-value="#000000">
+                                    <span class="component-color-swatch component-color-swatch--sm" data-ref="outline-color-swatch" style="background-color: #000000;"></span>
+                                    <span class="component-dropdown-text" data-ref="outline-color-label">Negro (#000000)</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown disabled" data-module="moduleOutlineColorDropdown">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list">
+                                            <div class="component-menu-link active" data-action="selectOutlineColorOption" data-value="#000000" data-label="Negro (#000000)">
+                                                <div class="component-menu-link-icon"><span class="component-color-swatch component-color-swatch--sm" style="background-color: #000000;"></span></div>
+                                                <div class="component-menu-link-text"><span>Negro (#000000)</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="selectOutlineColorOption" data-value="${currentColor}" data-label="Color Actual (${currentColor})">
+                                                <div class="component-menu-link-icon"><span class="component-color-swatch component-color-swatch--sm" style="background-color: ${currentColor};"></span></div>
+                                                <div class="component-menu-link-text"><span>Color Actual (${currentColor})</span></div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="selectOutlineColorOption" data-value="#FFFFFF" data-label="Blanco (#FFFFFF)">
+                                                <div class="component-menu-link-icon"><span class="component-color-swatch component-color-swatch--sm" style="background-color: #FFFFFF; border: 1px solid rgba(255,255,255,0.4);"></span></div>
+                                                <div class="component-menu-link-text"><span>Blanco (#FFFFFF)</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Tipo de Conectividad (4 u 8 direcciones) -->
+                        <div class="component-form-group">
+                            <label class="component-label">${__('lbl_outline_shape') || 'Esquinas y Conectividad'}</label>
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                                <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleOutlineShapeDropdown" data-ref="outline-shape-trigger" data-value="false">
+                                    <span class="material-symbols-rounded" data-ref="outline-shape-icon">add</span>
+                                    <span class="component-dropdown-text" data-ref="outline-shape-label">4 Direcciones (Ortogonal / Cruz)</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown disabled" data-module="moduleOutlineShapeDropdown">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list">
+                                            <div class="component-menu-link active" data-action="selectOutlineShapeOption" data-value="false" data-label="4 Direcciones (Ortogonal / Cruz)" data-icon="add">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">add</span></div>
+                                                <div class="component-menu-link-text">
+                                                    <span>4 Direcciones (Ortogonal / Cruz)</span>
+                                                    <span class="component-menu-link-subtext">Borde limpio pixel art clásico sin esquinas dobles</span>
+                                                </div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="selectOutlineShapeOption" data-value="true" data-label="8 Direcciones (Completo con Diagonales)" data-icon="grid_view">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">grid_view</span></div>
+                                                <div class="component-menu-link-text">
+                                                    <span>8 Direcciones (Completo con Diagonales)</span>
+                                                    <span class="component-menu-link-subtext">Envuelve completamente incluyendo esquinas diagonales</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. Destino (Capa Actual vs Nueva Capa Inferior) -->
+                        <div class="component-form-group">
+                            <label class="component-label">${__('lbl_outline_target') || 'Destino del contorno'}</label>
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                                <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleOutlineTargetDropdown" data-ref="outline-target-trigger" data-value="new_below">
+                                    <span class="material-symbols-rounded" data-ref="outline-target-icon">layers</span>
+                                    <span class="component-dropdown-text" data-ref="outline-target-label">Crear en nueva capa debajo (Recomendado)</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown disabled" data-module="moduleOutlineTargetDropdown">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list">
+                                            <div class="component-menu-link active" data-action="selectOutlineTargetOption" data-value="new_below" data-label="Crear en nueva capa debajo (Recomendado)" data-icon="layers">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">layers</span></div>
+                                                <div class="component-menu-link-text">
+                                                    <span>Crear en nueva capa debajo</span>
+                                                    <span class="component-menu-link-subtext">Mantiene el dibujo original editable e independiente</span>
+                                                </div>
+                                            </div>
+                                            <div class="component-menu-link" data-action="selectOutlineTargetOption" data-value="current" data-label="Aplicar en la capa actual" data-icon="edit">
+                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">edit</span></div>
+                                                <div class="component-menu-link-text">
+                                                    <span>Aplicar en la capa actual</span>
+                                                    <span class="component-menu-link-subtext">Escribe directamente sobre los píxeles adyacentes</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-modal-actions">
+                        <button type="button" class="component-button component-button--h40" data-modal-action="cancel">
+                            <span>${__('btn_cancel') || 'Cancelar'}</span>
+                        </button>
+                        <button type="button" class="component-button component-button--primary component-button--h40" data-action="triggerGenerateAutoOutline">
+                            <span class="material-symbols-rounded">border_outer</span>
+                            <span>${__('btn_apply_outline') || 'Aplicar Contorno'}</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
     }
 };

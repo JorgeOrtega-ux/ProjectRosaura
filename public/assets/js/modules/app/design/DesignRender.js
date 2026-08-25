@@ -49,6 +49,9 @@ export const DesignRender = {
 
         this.renderCustomPickedColors();
         this.updateActiveColorPreview();
+        if (typeof this.renderShadingRamps === 'function') {
+            this.renderShadingRamps(this.currentColor);
+        }
         this.requestRender();
     },
 

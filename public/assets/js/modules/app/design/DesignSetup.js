@@ -739,6 +739,11 @@ export const DesignSetup = {
                                 this.handleAnimationFrameTick(e.data.payload);
                             }
                         }
+                        if (e.data?.type === 'SELECTION_BITMAP_EXTRACTED') {
+                            if (typeof this.handleSelectionBitmapExtracted === 'function') {
+                                this.handleSelectionBitmapExtracted(e.data.payload);
+                            }
+                        }
                         if (e.data?.type === 'SHOW_NOTICE') {
                             const msgKey = e.data.payload?.messageKey;
                             const level = e.data.payload?.level || 'info';

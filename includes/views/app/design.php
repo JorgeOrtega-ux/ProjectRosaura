@@ -308,6 +308,9 @@ extract($designData);
                     <button class="component-button component-button--icon component-button--h28" data-action="duplicateLayer" data-tooltip="<?php echo __('tooltip_duplicate_layer'); ?>" data-position="top">
                         <span class="material-symbols-rounded">content_copy</span>
                     </button>
+                    <button class="component-button component-button--icon component-button--h28" data-action="openAutoOutlineModal" data-tooltip="<?php echo __('tooltip_auto_outline', 'Generar Contorno (Auto-Outline) [Alt+O]'); ?>" data-position="top">
+                        <span class="material-symbols-rounded">border_outer</span>
+                    </button>
                     <button class="component-button component-button--icon component-button--h28" data-action="mergeLayerUp" data-tooltip="<?php echo __('tooltip_merge_layer_up'); ?>" data-position="top">
                         <span class="material-symbols-rounded">vertical_align_top</span>
                     </button>
@@ -327,6 +330,12 @@ extract($designData);
                 </button>
                 <button class="component-button component-button--icon component-button--h24" data-action="rotateTemplate" data-ref="btn-template-rotate" data-tooltip="<?php echo __('tooltip_rotate_template'); ?> [R]" data-position="top">
                     <span class="material-symbols-rounded">rotate_right</span>
+                </button>
+                <button class="component-button component-button--icon component-button--h24" data-action="flipTemplateH" data-ref="btn-template-flip-h" data-tooltip="<?php echo __('tooltip_flip_h') ?? 'Voltear horizontal'; ?> [H]" data-position="top">
+                    <span class="material-symbols-rounded">flip</span>
+                </button>
+                <button class="component-button component-button--icon component-button--h24" data-action="flipTemplateV" data-ref="btn-template-flip-v" data-tooltip="<?php echo __('tooltip_flip_v') ?? 'Voltear vertical'; ?> [V]" data-position="top">
+                    <span class="material-symbols-rounded" style="transform:rotate(90deg)">flip</span>
                 </button>
                 <?php
                     $injectLock = \App\Core\System\SubscriptionFeatureConfig::getLockDetails($userTier ?? 0, 'feat_inject_templates', 'button');

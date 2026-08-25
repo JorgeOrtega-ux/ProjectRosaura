@@ -19,6 +19,19 @@ export const InteractionSelection = {
         const boardX = Math.floor((mouseX - this.transform.x) / this.transform.scale);
         const boardY = Math.floor((mouseY - this.transform.y) / this.transform.scale);
 
+        if (this.isSeamlessTileMode) {
+            const minBoundX = -this.boardWidth;
+            const maxBoundX = this.boardWidth * 2;
+            const minBoundY = -this.boardHeight;
+            const maxBoundY = this.boardHeight * 2;
+            if (boardX >= minBoundX && boardX < maxBoundX && boardY >= minBoundY && boardY < maxBoundY) {
+                const wrappedX = ((boardX % this.boardWidth) + this.boardWidth) % this.boardWidth;
+                const wrappedY = ((boardY % this.boardHeight) + this.boardHeight) % this.boardHeight;
+                return { x: wrappedX, y: wrappedY };
+            }
+            return null;
+        }
+
         if (boardX >= 0 && boardX < this.boardWidth && boardY >= 0 && boardY < this.boardHeight) {
             return { x: boardX, y: boardY };
         }

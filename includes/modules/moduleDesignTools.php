@@ -69,6 +69,56 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
             </div>
         </div>
 
+        <div class="component-menu-section-parent disabled" data-ref="shading-ramps-section">
+            <div class="component-menu-section-header">
+                <div class="component-menu-header-box">
+                    <span class="material-symbols-rounded">gradient</span>
+                    <span class="component-menu-header-title"><?php echo __('lbl_shading_ramp', 'Rampa de Sombreado'); ?></span>
+                </div>
+                <div class="component-menu-header-actions">
+                    <div class="component-dropdown-wrapper component-dropdown-wrapper--fit">
+                        <button type="button" class="component-button component-button--icon component-button--h24" data-action="toggleModule" data-target="moduleRampPresetDropdown" data-tooltip="<?php echo __('lbl_shading_preset', 'Preset de Iluminación'); ?>" data-position="left">
+                            <span class="material-symbols-rounded" data-ref="ramp-preset-icon">wb_sunny</span>
+                        </button>
+                        <div class="component-module component-module--dropdown disabled" data-module="moduleRampPresetDropdown" data-ref="ramp-preset-dropdown">
+                            <div class="component-menu component-menu--w180 component-menu--h-auto component-menu--padding-xs">
+                                <ul class="component-menu-list">
+                                    <li>
+                                        <button type="button" class="component-menu-link active" data-action="setRampPreset" data-preset="warm_cool">
+                                            <span class="material-symbols-rounded">wb_sunny</span>
+                                            <span><?php echo __('lbl_hue_preset_warm_cool', 'Cálido / Frío'); ?></span>
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button type="button" class="component-menu-link" data-action="setRampPreset" data-preset="night_cyber">
+                                            <span class="material-symbols-rounded">bedtime</span>
+                                            <span><?php echo __('lbl_hue_preset_night', 'Nocturno'); ?></span>
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button type="button" class="component-menu-link" data-action="setRampPreset" data-preset="organic">
+                                            <span class="material-symbols-rounded">forest</span>
+                                            <span><?php echo __('lbl_hue_preset_organic', 'Orgánico'); ?></span>
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button type="button" class="component-menu-link" data-action="setRampPreset" data-preset="neutral">
+                                            <span class="material-symbols-rounded">contrast</span>
+                                            <span><?php echo __('lbl_hue_preset_neutral', 'Monocromático'); ?></span>
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="component-menu-section-body">
+                <div class="component-color-ramp-container" data-ref="color-ramp-swatches-container"></div>
+            </div>
+        </div>
+
         <div class="component-menu-section-parent disabled" data-ref="recent-colors-section">
             <div class="component-menu-section-header">
                 <div class="component-menu-header-box">

@@ -1097,6 +1097,60 @@ export const DesignTemplates = {
         }
     },
 
+    async flipTemplateH() {
+        if (!this.activeTemplateId) return;
+        const tpl = this.templates.find(t => t.id === this.activeTemplateId);
+        if (!tpl || tpl.locked) return;
+
+        const source = tpl.imageBitmap || tpl.canvas || tpl.img;
+        if (!source) return;
+
+        const w = source.width || source.naturalWidth || tpl.w;
+        const h = source.height || source.naturalHeight || tpl.h;
+        const offCanvas = document.createElement('canvas');
+        offCanvas.width = Math.round(w);
+        offCanvas.height = Math.round(h);
+        const offCtx = offCanvas.getContext('2d');
+        offCtx.imageSmoothingEnabled = false;
+
+        offCtx.translate(w, 0);
+        offCtx.scale(-1, 1);
+        offCtx.drawImage(source, 0, 0);
+
+        try {
+            tpl.imageBitmap = await createImageBitmap(offCanvas);
+            this.requestRender();
+            if (typeof showMessage === 'function') showMessage(window.__('msg_template_flipped_h') || 'Figura volteada horizontalmente', 'info');
+        } catch (e) {}
+    },
+
+    async flipTemplateV() {
+        if (!this.activeTemplateId) return;
+        const tpl = this.templates.find(t => t.id === this.activeTemplateId);
+        if (!tpl || tpl.locked) return;
+
+        const source = tpl.imageBitmap || tpl.canvas || tpl.img;
+        if (!source) return;
+
+        const w = source.width || source.naturalWidth || tpl.w;
+        const h = source.height || source.naturalHeight || tpl.h;
+        const offCanvas = document.createElement('canvas');
+        offCanvas.width = Math.round(w);
+        offCanvas.height = Math.round(h);
+        const offCtx = offCanvas.getContext('2d');
+        offCtx.imageSmoothingEnabled = false;
+
+        offCtx.translate(0, h);
+        offCtx.scale(1, -1);
+        offCtx.drawImage(source, 0, 0);
+
+        try {
+            tpl.imageBitmap = await createImageBitmap(offCanvas);
+            this.requestRender();
+            if (typeof showMessage === 'function') showMessage(window.__('msg_template_flipped_v') || 'Figura volteada verticalmente', 'info');
+        } catch (e) {}
+    },
+
     async injectTemplate() {
         if (!this.activeTemplateId) return;
         const tpl = this.templates.find(t => t.id === this.activeTemplateId);

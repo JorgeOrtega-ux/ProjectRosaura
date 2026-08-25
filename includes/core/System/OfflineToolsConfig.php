@@ -99,11 +99,22 @@ class OfflineToolsConfig {
             ],
             'moveArea' => [
                 'id'          => 'moveArea',
-                'name_key'    => 'tooltip_move_area',
+                'name_key'    => 'tooltip_selection_tools',
                 'icon'        => 'crop_free',
                 'shortcut'    => 'M',
                 'action'      => 'toggleOfflineMoveArea',
                 'ref'         => 'btn-offline-move-area',
+                'subtoolbar'  => [
+                    'id'          => 'moveArea',
+                    'action'      => 'setSelectionMode',
+                    'data_attr'   => 'data-selection-mode',
+                    'default'     => 'box',
+                    'options'     => [
+                        ['id' => 'box',   'icon' => 'crop_free',     'name_key' => 'tooltip_selection_box',   'ref' => 'btn-selection-mode-box'],
+                        ['id' => 'lasso', 'icon' => 'gesture',       'name_key' => 'tooltip_selection_lasso', 'ref' => 'btn-selection-mode-lasso'],
+                        ['id' => 'wand',  'icon' => 'auto_fix_high', 'name_key' => 'tooltip_selection_wand',  'ref' => 'btn-selection-mode-wand'],
+                    ]
+                ]
             ],
             'bucket' => [
                 'id'          => 'bucket',
@@ -277,6 +288,24 @@ class OfflineToolsConfig {
                         'small'  => [0, 4, 8, 16],
                         'medium' => [0, 8, 16, 32, 64],
                         'large'  => [0, 16, 32, 64, 128, 256],
+                    ]
+                ]
+            ],
+            'seamlessTile' => [
+                'id'          => 'seamlessTile',
+                'name_key'    => 'tooltip_seamless_tile',
+                'icon'        => 'repeat',
+                'shortcut'    => 'Shift+T',
+                'action'      => 'toggleSeamlessTile',
+                'ref'         => 'btn-offline-seamless-tile',
+                'subtoolbar'  => [
+                    'id'          => 'seamlessTile',
+                    'action'      => 'setSeamlessTileOption',
+                    'data_attr'   => 'data-seamless-action',
+                    'default'     => 'toggle',
+                    'options'     => [
+                        ['id' => 'toggle',       'icon' => 'repeat',       'name_key' => 'tooltip_seamless_toggle', 'action' => 'toggleSeamlessTile', 'ref' => 'btn-seamless-sub-toggle'],
+                        ['id' => 'shift_offset', 'icon' => 'dynamic_feed', 'name_key' => 'tooltip_seamless_offset', 'action' => 'shiftTileOffset',    'ref' => 'btn-seamless-sub-offset'],
                     ]
                 ]
             ]

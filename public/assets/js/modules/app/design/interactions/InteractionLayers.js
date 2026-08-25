@@ -1220,5 +1220,75 @@ export const InteractionLayers = {
         } finally {
             if (btn) restoreButton(btn);
         }
+    },
+
+    async openAutoOutlineModal() {
+        if (!this.isOfflineMode || !this.renderWorker) return;
+        if (!window.modalSystem) return;
+
+        const activeL = this.layers ? this.layers.find(l => l.id === this.activeLayerId) : null;
+        const layerName = activeL ? activeL.name : 'Capa Activa';
+
+        await window.modalSystem.show('autoOutlineModal', {
+            currentColor: this.currentColor || '#000000',
+            layerName
+        });
+    },
+
+    triggerGenerateAutoOutline() {
+        if (!this.isOfflineMode || !this.renderWorker) return;
+
+        const colorTrigger = document.querySelector('[data-ref="outline-color-trigger"]');
+        const shapeTrigger = document.querySelector('[data-ref="outline-shape-trigger"]');
+        const targetTrigger = document.querySelector('[data-ref="outline-target-trigger"]');
+
+        const color = colorTrigger ? (colorTrigger.getAttribute('data-value') || '#000000') : '#000000';
+        const diagonal = shapeTrigger ? (shapeTrigger.getAttribute('data-value') === 'true') : false;
+        const targetMode = targetTrigger ? (targetTrigger.getAttribute('data-value') || 'new_below') : 'new_below';
+
+        this.renderWorker.postMessage({
+            type: 'GENERATE_OUTLINE',
+            payload: {
+                layerId: this.activeLayerId,
+                color,
+                diagonal,
+                targetMode
+            }
+        });
+
+        if (window.modalSystem) {
+            window.modalSystem.closeCurrent(true);
+        }
+    },
+
+    handleSelectOutlineOption(linkEl) {
+        if (!linkEl) return;
+        const dropdown = linkEl.closest('.component-module--dropdown');
+        const wrapper = linkEl.closest('.component-dropdown-wrapper');
+        if (!wrapper) return;
+
+        const trigger = wrapper.querySelector('.component-dropdown-trigger');
+        const val = linkEl.getAttribute('data-value');
+        const label = linkEl.getAttribute('data-label');
+        const icon = linkEl.getAttribute('data-icon');
+
+        if (trigger) {
+            trigger.setAttribute('data-value', val);
+            const labelRef = trigger.querySelector('.component-dropdown-text');
+            if (labelRef && label) labelRef.textContent = label;
+
+            const iconRef = trigger.querySelector('.material-symbols-rounded:not(:last-child)');
+            if (iconRef && icon) iconRef.textContent = icon;
+
+            const swatch = trigger.querySelector('[data-ref="outline-color-swatch"]');
+            if (swatch) swatch.style.backgroundColor = val;
+        }
+
+        const links = wrapper.querySelectorAll('.component-menu-link');
+        links.forEach(l => l.classList.toggle('active', l === linkEl));
+
+        if (dropdown && typeof closeDropdown === 'function') {
+            closeDropdown(dropdown);
+        }
     }
 };

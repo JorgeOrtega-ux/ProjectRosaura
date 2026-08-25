@@ -18,6 +18,18 @@ export const InteractionPointer = {
             return;
         }
 
+        const textHandle = e.target.closest('[data-action="dragFloatingText"]');
+        if (textHandle && this.interactionMode === 'offline_text') {
+            this.isTextDragging = true;
+            const coords = this.getBoardCoords(e.clientX, e.clientY) || this.textPosition || { x: 0, y: 0 };
+            this.textDragStart = {
+                offsetX: coords.x - (this.textPosition?.x || 0),
+                offsetY: coords.y - (this.textPosition?.y || 0)
+            };
+            if (e.cancelable) e.preventDefault();
+            return;
+        }
+
         const target = e.target.closest('[data-ref="design-canvas"]');
         if (!target) return;
 
@@ -100,6 +112,27 @@ export const InteractionPointer = {
         const coords = this.getBoardCoords(e.clientX, e.clientY);
         if (coords) {
             if (this.interactionMode === 'offline_moving_area') {
+                const selMode = this.selectionMode || 'box';
+
+                if (selMode === 'wand') {
+                    this.executeMagicWandSelection(coords.x, coords.y);
+                    return;
+                }
+
+                if (selMode === 'lasso') {
+                    this.isLassoDrawing = true;
+                    this.lassPoints = [{ x: coords.x, y: coords.y }];
+                    return;
+                }
+
+                if (this.activeSelectionPixels && this.activeSelectionPixels.length > 0) {
+                    const isInside = this.activeSelectionPixels.some(p => p.x === coords.x && p.y === coords.y);
+                    if (isInside) {
+                        this.floatSelection(true);
+                        return;
+                    }
+                }
+
                 const box = this.moveAreaBox;
                 if (this.moveAreaStep === 2 && box) {
                     const curX1 = Math.min(box.x1, box.x2) + (box.dx || 0);
@@ -314,6 +347,13 @@ export const InteractionPointer = {
         if (this.interactionMode === 'offline_moving_area') {
             const coords = this.getBoardCoords(e.clientX, e.clientY);
             if (coords) {
+                if (this.isLassoDrawing && this.lassPoints) {
+                    const lastP = this.lassPoints[this.lassPoints.length - 1];
+                    if (!lastP || lastP.x !== coords.x || lastP.y !== coords.y) {
+                        this.lassPoints.push({ x: coords.x, y: coords.y });
+                    }
+                    return;
+                }
                 if (this.moveAreaStep === 1 && this.moveAreaStart) {
                     this.selectMoveArea(this.moveAreaStart.x, this.moveAreaStart.y, coords.x, coords.y, 0, 0, 1);
                     return;
@@ -767,9 +807,22 @@ export const InteractionPointer = {
         }
 
         if (this.interactionMode === 'offline_moving_area') {
+            if (this.isLassoDrawing && this.lassPoints) {
+                this.isLassoDrawing = false;
+                this.executeLassoSelection(this.lassPoints);
+                this.lassPoints = null;
+                return;
+            }
             if (this.moveAreaStep === 1 && this.moveAreaBox) {
                 this.moveAreaStep = 2;
                 this.selectMoveArea(this.moveAreaBox.x1, this.moveAreaBox.y1, this.moveAreaBox.x2, this.moveAreaBox.y2, 0, 0, 2);
+                const pixels = [];
+                for (let y = this.moveAreaBox.y1; y <= this.moveAreaBox.y2; y++) {
+                    for (let x = this.moveAreaBox.x1; x <= this.moveAreaBox.x2; x++) {
+                        pixels.push({ x, y });
+                    }
+                }
+                this.setSelectionPixels(pixels);
                 return;
             }
             if (this.moveAreaStep === 3 && this.moveAreaBox) {
@@ -909,6 +962,19 @@ export const InteractionPointer = {
             return;
         }
 
+        const textHandle = e.target.closest('[data-action="dragFloatingText"]');
+        if (textHandle && this.interactionMode === 'offline_text' && e.touches.length === 1) {
+            this.isTextDragging = true;
+            const touch = e.touches[0];
+            const coords = this.getBoardCoords(touch.clientX, touch.clientY) || this.textPosition || { x: 0, y: 0 };
+            this.textDragStart = {
+                offsetX: coords.x - (this.textPosition?.x || 0),
+                offsetY: coords.y - (this.textPosition?.y || 0)
+            };
+            if (e.cancelable) e.preventDefault();
+            return;
+        }
+
         const target = e.target.closest('[data-ref="design-canvas"]');
         if (!target) return;
 
@@ -957,6 +1023,30 @@ export const InteractionPointer = {
             if (this.interactionMode === 'offline_moving_area' && !this.isSpectator && !isOperationalLocked) {
                 const coords = this.getBoardCoords(this.touchStartX, this.touchStartY);
                 if (coords) {
+                    const selMode = this.selectionMode || 'box';
+
+                    if (selMode === 'wand') {
+                        e.preventDefault();
+                        this.executeMagicWandSelection(coords.x, coords.y);
+                        return;
+                    }
+
+                    if (selMode === 'lasso') {
+                        e.preventDefault();
+                        this.isLassoDrawing = true;
+                        this.lassPoints = [{ x: coords.x, y: coords.y }];
+                        return;
+                    }
+
+                    if (this.activeSelectionPixels && this.activeSelectionPixels.length > 0) {
+                        const isInside = this.activeSelectionPixels.some(p => p.x === coords.x && p.y === coords.y);
+                        if (isInside) {
+                            e.preventDefault();
+                            this.floatSelection(true);
+                            return;
+                        }
+                    }
+
                     const box = this.moveAreaBox;
                     if (this.moveAreaStep === 2 && box) {
                         const curX1 = Math.min(box.x1, box.x2) + (box.dx || 0);
@@ -1143,6 +1233,14 @@ export const InteractionPointer = {
         if (this.interactionMode === 'offline_moving_area' && e.touches.length === 1) {
             const coords = this.getBoardCoords(e.touches[0].clientX, e.touches[0].clientY);
             if (coords) {
+                if (this.isLassoDrawing && this.lassPoints) {
+                    e.preventDefault();
+                    const lastP = this.lassPoints[this.lassPoints.length - 1];
+                    if (!lastP || lastP.x !== coords.x || lastP.y !== coords.y) {
+                        this.lassPoints.push({ x: coords.x, y: coords.y });
+                    }
+                    return;
+                }
                 if (this.moveAreaStep === 1 && this.moveAreaStart) {
                     e.preventDefault();
                     this.selectMoveArea(this.moveAreaStart.x, this.moveAreaStart.y, coords.x, coords.y, 0, 0, 1);
@@ -1467,9 +1565,22 @@ export const InteractionPointer = {
         }
 
         if (this.interactionMode === 'offline_moving_area') {
+            if (this.isLassoDrawing && this.lassPoints) {
+                this.isLassoDrawing = false;
+                this.executeLassoSelection(this.lassPoints);
+                this.lassPoints = null;
+                return;
+            }
             if (this.moveAreaStep === 1 && this.moveAreaBox) {
                 this.moveAreaStep = 2;
                 this.selectMoveArea(this.moveAreaBox.x1, this.moveAreaBox.y1, this.moveAreaBox.x2, this.moveAreaBox.y2, 0, 0, 2);
+                const pixels = [];
+                for (let y = this.moveAreaBox.y1; y <= this.moveAreaBox.y2; y++) {
+                    for (let x = this.moveAreaBox.x1; x <= this.moveAreaBox.x2; x++) {
+                        pixels.push({ x, y });
+                    }
+                }
+                this.setSelectionPixels(pixels);
                 return;
             }
             if (this.moveAreaStep === 3 && this.moveAreaBox) {

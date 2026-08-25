@@ -427,6 +427,71 @@ export const InteractionEvents = {
             return;
         }
 
+        const btnOpenAutoOutline = e.target.closest('[data-action="openAutoOutlineModal"]');
+        if (btnOpenAutoOutline) {
+            e.preventDefault();
+            if (typeof this.openAutoOutlineModal === 'function') {
+                this.openAutoOutlineModal();
+            }
+            return;
+        }
+
+        const btnTriggerAutoOutline = e.target.closest('[data-action="triggerGenerateAutoOutline"]');
+        if (btnTriggerAutoOutline) {
+            e.preventDefault();
+            if (typeof this.triggerGenerateAutoOutline === 'function') {
+                this.triggerGenerateAutoOutline();
+            }
+            return;
+        }
+
+        const outlineOptionLink = e.target.closest('[data-action="selectOutlineColorOption"], [data-action="selectOutlineShapeOption"], [data-action="selectOutlineTargetOption"]');
+        if (outlineOptionLink) {
+            e.preventDefault();
+            if (typeof this.handleSelectOutlineOption === 'function') {
+                this.handleSelectOutlineOption(outlineOptionLink);
+            }
+            return;
+        }
+
+        const btnToggleSeamless = e.target.closest('[data-action="toggleSeamlessTile"]');
+        if (btnToggleSeamless) {
+            e.preventDefault();
+            if (typeof this.toggleSeamlessTile === 'function') {
+                this.toggleSeamlessTile();
+            }
+            return;
+        }
+
+        const btnShiftTileOffset = e.target.closest('[data-action="shiftTileOffset"]');
+        if (btnShiftTileOffset) {
+            e.preventDefault();
+            if (typeof this.shiftTileOffset === 'function') {
+                this.shiftTileOffset();
+            }
+            return;
+        }
+
+        const btnSelectRamp = e.target.closest('[data-action="selectRampColor"]');
+        if (btnSelectRamp) {
+            e.preventDefault();
+            const hex = btnSelectRamp.getAttribute('data-color');
+            if (hex && typeof this.selectRampColor === 'function') {
+                this.selectRampColor(hex);
+            }
+            return;
+        }
+
+        const btnSetRampPreset = e.target.closest('[data-action="setRampPreset"]');
+        if (btnSetRampPreset) {
+            e.preventDefault();
+            const preset = btnSetRampPreset.getAttribute('data-preset');
+            if (preset && typeof this.setRampPreset === 'function') {
+                this.setRampPreset(preset);
+            }
+            return;
+        }
+
         const btnCancelSchedResize = e.target.closest('[data-action="cancelScheduledResize"]');
         if (btnCancelSchedResize) {
             e.preventDefault();
@@ -1203,7 +1268,38 @@ export const InteractionEvents = {
             }
             return;
         }
-        
+
+        const btnFlipH = e.target.closest('[data-action="flipTemplateH"]');
+        if (btnFlipH) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof this.flipTemplateH === 'function') {
+                this.flipTemplateH();
+            }
+            return;
+        }
+
+        const btnFlipV = e.target.closest('[data-action="flipTemplateV"]');
+        if (btnFlipV) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof this.flipTemplateV === 'function') {
+                this.flipTemplateV();
+            }
+            return;
+        }
+
+        const btnSelMode = e.target.closest('[data-action="setSelectionMode"]');
+        if (btnSelMode) {
+            e.preventDefault();
+            e.stopPropagation();
+            const mode = btnSelMode.getAttribute('data-selection-mode') || 'box';
+            if (typeof this.setSelectionMode === 'function') {
+                this.setSelectionMode(mode);
+            }
+            return;
+        }
+
         const btnInject = e.target.closest('[data-action="injectTemplate"]');
         if (btnInject) {
             e.preventDefault();
@@ -1243,6 +1339,9 @@ export const InteractionEvents = {
             
             this.updateActiveColorPreview();
             this.syncActiveColorHighlight();
+            if (typeof this.renderShadingRamps === 'function') {
+                this.renderShadingRamps(this.currentColor);
+            }
 
             // Si hay una figura activa flotante en el lienzo, actualizar su color en tiempo real
             const activeTpl = this.templates ? this.templates.find(t => t.id === this.activeTemplateId) : null;
@@ -1292,6 +1391,28 @@ export const InteractionEvents = {
                 if (typeof this.redo === 'function') this.redo();
                 return;
             }
+
+            // Selection clipboard shortcuts (only when a mask is active)
+            const hasSelection = this.activeSelectionPixels && this.activeSelectionPixels.length > 0;
+            if (e.key === 'c' || e.key === 'C') {
+                if (hasSelection && typeof this.copySelection === 'function') {
+                    e.preventDefault();
+                    this.copySelection();
+                    return;
+                }
+            } else if (e.key === 'x' || e.key === 'X') {
+                if (hasSelection && typeof this.cutSelection === 'function') {
+                    e.preventDefault();
+                    this.cutSelection();
+                    return;
+                }
+            } else if (e.key === 'd' || e.key === 'D') {
+                if (hasSelection && typeof this.clearSelection === 'function') {
+                    e.preventDefault();
+                    this.clearSelection();
+                    return;
+                }
+            }
         }
 
         // Atajos estándar de Zoom tipo Figma / Photoshop: Ctrl/Cmd + (+, -, 0, 1)
@@ -1338,10 +1459,16 @@ export const InteractionEvents = {
                 return;
             }
             if (this.interactionMode === 'offline_moving_area') {
+                if (this.activeSelectionPixels && this.activeSelectionPixels.length > 0 && typeof this.clearSelection === 'function') {
+                    this.clearSelection();
+                }
                 this.cancelMoveArea();
             } else if (this.interactionMode !== 'normal') {
                 this.cancelInteractionMode();
             } else {
+                if (this.activeSelectionPixels && this.activeSelectionPixels.length > 0 && typeof this.clearSelection === 'function') {
+                    this.clearSelection();
+                }
                 this.isSelecting = false;
                 this.selectedPixels.clear();
                 this.ownerEraserBox = null;
@@ -1364,6 +1491,14 @@ export const InteractionEvents = {
                 e.preventDefault();
                 this.commitMoveArea();
                 return;
+            }
+            if (this.activeTemplateId && typeof this.injectTemplate === 'function') {
+                const tpl = this.templates ? this.templates.find(t => t.id === this.activeTemplateId) : null;
+                if (tpl && tpl.isSelection) {
+                    e.preventDefault();
+                    this.injectTemplate();
+                    return;
+                }
             }
             if (this.isOfflineMode && this.interactionMode === 'owner_erasing' && this.ownerEraserBox) {
                 e.preventDefault();
@@ -1407,9 +1542,35 @@ export const InteractionEvents = {
             if (this.isOfflineMode && typeof this.toggleOfflineMoveArea === 'function') {
                 e.preventDefault();
                 this.toggleOfflineMoveArea();
+                if (this.interactionMode === 'offline_moving_area' && typeof this.setSelectionMode === 'function') {
+                    this.setSelectionMode('box');
+                }
+            }
+        } else if (keyUpper === 'Q') {
+            if (this.isOfflineMode) {
+                e.preventDefault();
+                if (this.interactionMode !== 'offline_moving_area' && typeof this.toggleOfflineMoveArea === 'function') {
+                    this.toggleOfflineMoveArea();
+                }
+                if (typeof this.setSelectionMode === 'function') {
+                    this.setSelectionMode('lasso');
+                }
+            }
+        } else if (keyUpper === 'W') {
+            if (this.isOfflineMode) {
+                e.preventDefault();
+                if (this.interactionMode !== 'offline_moving_area' && typeof this.toggleOfflineMoveArea === 'function') {
+                    this.toggleOfflineMoveArea();
+                }
+                if (typeof this.setSelectionMode === 'function') {
+                    this.setSelectionMode('wand');
+                }
             }
         } else if (keyUpper === 'V') {
-            if (this.isOfflineMode) {
+            if (this.activeTemplateId && typeof this.flipTemplateV === 'function') {
+                e.preventDefault();
+                this.flipTemplateV();
+            } else if (this.isOfflineMode) {
                 const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-shapes"]');
                 if (btn && !btn.classList.contains('disabled')) {
                     e.preventDefault();
@@ -1483,16 +1644,21 @@ export const InteractionEvents = {
                 this.toggleLayersPanel();
             }
         } else if (keyUpper === 'H') {
-            const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-chat"]');
-            if (btn && !btn.classList.contains('disabled') && !btn.classList.contains('disabled-interaction')) { 
-                e.preventDefault(); 
-                btn.click(); 
-                setTimeout(() => {
-                    const chatInput = document.querySelector('[data-ref="chat-input-message"]');
-                    if (chatInput && chatInput.offsetParent !== null) {
-                        chatInput.focus();
-                    }
-                }, 100);
+            if (this.activeTemplateId && typeof this.flipTemplateH === 'function') {
+                e.preventDefault();
+                this.flipTemplateH();
+            } else {
+                const btn = document.querySelector('[data-action="toggleMenuInModule"][data-menu-target="menu-chat"]');
+                if (btn && !btn.classList.contains('disabled') && !btn.classList.contains('disabled-interaction')) {
+                    e.preventDefault();
+                    btn.click();
+                    setTimeout(() => {
+                        const chatInput = document.querySelector('[data-ref="chat-input-message"]');
+                        if (chatInput && chatInput.offsetParent !== null) {
+                            chatInput.focus();
+                        }
+                    }, 100);
+                }
             }
         } else if (keyUpper === 'U') {
             e.preventDefault();
@@ -1526,7 +1692,10 @@ export const InteractionEvents = {
                 this.toggleTileGrid();
             }
         } else if (e.key === 'Delete' || e.key === 'Backspace') {
-            if (this.activeTemplateId && typeof this.deleteTemplate === 'function') {
+            if (this.activeSelectionPixels && this.activeSelectionPixels.length > 0 && typeof this.deleteSelection === 'function') {
+                e.preventDefault();
+                this.deleteSelection();
+            } else if (this.activeTemplateId && typeof this.deleteTemplate === 'function') {
                 e.preventDefault();
                 this.deleteTemplate();
             } else if (this.isOfflineMode && this.interactionMode === 'owner_erasing' && this.ownerEraserBox) {
@@ -1534,9 +1703,26 @@ export const InteractionEvents = {
                 this.executeOwnerClearArea();
             }
         } else if (e.key === '[' || e.key === ']') {
-            if (this.isOfflineMode && typeof this.stepActiveToolSize === 'function') {
+            if (this.isOfflineMode) {
+                if (e.shiftKey || e.altKey) {
+                    e.preventDefault();
+                    if (typeof this.stepColorRamp === 'function') {
+                        this.stepColorRamp(e.key === ']' ? 1 : -1);
+                    }
+                } else if (typeof this.stepActiveToolSize === 'function') {
+                    e.preventDefault();
+                    this.stepActiveToolSize(e.key === ']' ? 1 : -1);
+                }
+            }
+        } else if (keyUpper === 'T' && (e.shiftKey || e.altKey)) {
+            if (this.isOfflineMode && typeof this.toggleSeamlessTile === 'function') {
                 e.preventDefault();
-                this.stepActiveToolSize(e.key === ']' ? 1 : -1);
+                this.toggleSeamlessTile();
+            }
+        } else if (keyUpper === 'O' && (e.shiftKey || e.altKey)) {
+            if (this.isOfflineMode && typeof this.openAutoOutlineModal === 'function') {
+                e.preventDefault();
+                this.openAutoOutlineModal();
             }
         }
     },

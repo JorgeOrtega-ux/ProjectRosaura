@@ -625,6 +625,22 @@ return [
             ],
         ],
     ],
+    'canvases.update_role_permissions' => [
+        'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasSettingsController',
+        'action' => 'update_role_permissions',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'canvas_update_role_perms',
+                'max' => 10,
+                'time' => 5,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
     'canvases.delete_role' => [
         'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasSettingsController',
         'action' => 'delete_role',

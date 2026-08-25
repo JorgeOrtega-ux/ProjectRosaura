@@ -214,6 +214,7 @@ class AdminLogsController {
             }
             if (passInput) passInput.value = '';
         }
+    }
     toggleViewMode(btn) {
         const wrapper = document.querySelector('[data-ref="manage-logs-wrapper"]');
         const header = document.querySelector('[data-ref="manage-logs-header"]');

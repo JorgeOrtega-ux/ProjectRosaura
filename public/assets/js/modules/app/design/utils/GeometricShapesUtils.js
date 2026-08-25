@@ -366,17 +366,21 @@ export function generateShapePixels(shapeType, x0, y0, x1, y1, isFill = false, s
 
     let rawPoints = [];
 
-    // Casos especiales nativos
+    // Casos especiales nativos pixel-perfect de alto rendimiento
     if (shapeType === 'line') {
         rawPoints = getThickLine(x0, y0, x1, y1, strokeWidth);
-    } else if (SHAPE_SVG_PATHS && SHAPE_SVG_PATHS[shapeType]) {
-        // RASTERIZADO VECTORIAL NATIVO PATH2D: 100% IDÉNTICO AL ICONO SVG
-        const localPoints = rasterizeSvgPathToPixels(SHAPE_SVG_PATHS[shapeType], w, h, isFill, strokeWidth);
-        rawPoints = localPoints.map(p => ({ x: minX + p.x, y: minY + p.y }));
     } else if (shapeType === 'square' || shapeType === 'rectangle' || shapeType === 'flow_process') {
         rawPoints = isFill ? getRectangleFilled(minX, minY, maxX, maxY) : getRectangleOutline(minX, minY, maxX, maxY, strokeWidth);
     } else if (shapeType === 'circle' || shapeType === 'ellipse') {
         rawPoints = isFill ? getEllipseFilled(minX, minY, maxX, maxY) : getEllipseOutline(minX, minY, maxX, maxY);
+    } else if (SHAPE_SVG_PATHS && SHAPE_SVG_PATHS[shapeType]) {
+        // RASTERIZADO VECTORIAL NATIVO PATH2D: 100% IDÉNTICO AL ICONO SVG
+        const localPoints = rasterizeSvgPathToPixels(SHAPE_SVG_PATHS[shapeType], w, h, isFill, strokeWidth);
+        if (localPoints && localPoints.length > 0) {
+            rawPoints = localPoints.map(p => ({ x: minX + p.x, y: minY + p.y }));
+        } else {
+            rawPoints = isFill ? getRectangleFilled(minX, minY, maxX, maxY) : getRectangleOutline(minX, minY, maxX, maxY, strokeWidth);
+        }
     } else {
         rawPoints = isFill ? getRectangleFilled(minX, minY, maxX, maxY) : getRectangleOutline(minX, minY, maxX, maxY, strokeWidth);
     }

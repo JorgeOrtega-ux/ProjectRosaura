@@ -1,7 +1,10 @@
 import { showMessage, hsvToHex, getEventCoords } from '../../../../core/utils/uiUtils.js';
 import { abgrToHex } from './InteractionHelpers.js';
+import { generateColorRamp, HUE_SHIFT_PRESETS } from '../utils/HueShiftUtils.js';
 
 export const InteractionHistoryColors = {
+    activeRampPreset: 'warm_cool',
+
     undo() {
         if (!this.isOfflineMode || this.isSpectator || this.isResetLocked || this.isResizeLocked) return;
         if (this.renderWorker) {
@@ -130,10 +133,107 @@ export const InteractionHistoryColors = {
 
         this.updateActiveColorPreview();
         this.syncActiveColorHighlight();
+        if (typeof this.renderShadingRamps === 'function') {
+            this.renderShadingRamps(this.currentColor);
+        }
         this.requestRender();
 
         if (window.ModuleManager && typeof window.ModuleManager.close === 'function') {
             window.ModuleManager.close('moduleCustomColorPicker');
+        }
+    },
+
+    renderShadingRamps(baseHex = null) {
+        if (!this.isOfflineMode) return;
+        const container = document.querySelector('[data-ref="color-ramp-swatches-container"]');
+        const section = document.querySelector('[data-ref="shading-ramps-section"]');
+        if (!container || !section) return;
+
+        section.classList.remove('disabled');
+        section.classList.add('active');
+
+        const hex = (baseHex || this.currentColor || '#FF0000').toUpperCase();
+        const ramp = generateColorRamp(hex, this.activeRampPreset || 'warm_cool');
+
+        container.innerHTML = '';
+        ramp.forEach(step => {
+            const swatch = document.createElement('button');
+            swatch.type = 'button';
+            swatch.className = `component-color-ramp-swatch ${step.hex.toUpperCase() === (this.currentColor || '').toUpperCase() ? 'active' : ''} ${step.isBase ? 'is-base' : ''}`;
+            swatch.setAttribute('data-action', 'selectRampColor');
+            swatch.setAttribute('data-color', step.hex);
+            swatch.style.backgroundColor = step.hex;
+
+            const roleName = typeof window.__ === 'function' ? window.__(step.nameKey) : step.defaultLabel;
+            swatch.setAttribute('data-tooltip', `${roleName}: ${step.hex}`);
+            swatch.setAttribute('data-position', 'top');
+
+            container.appendChild(swatch);
+        });
+
+        const iconRef = document.querySelector('[data-ref="ramp-preset-icon"]');
+        const presetConfig = HUE_SHIFT_PRESETS[this.activeRampPreset] || HUE_SHIFT_PRESETS.warm_cool;
+        if (iconRef && presetConfig) {
+            iconRef.textContent = presetConfig.icon || 'wb_sunny';
+        }
+    },
+
+    setRampPreset(presetKey) {
+        if (!HUE_SHIFT_PRESETS[presetKey]) return;
+        this.activeRampPreset = presetKey;
+        const dropdown = document.querySelector('[data-ref="ramp-preset-dropdown"]');
+        if (dropdown) {
+            dropdown.querySelectorAll('[data-action="setRampPreset"]').forEach(link => {
+                link.classList.toggle('active', link.getAttribute('data-preset') === presetKey);
+            });
+            if (window.ModuleManager && typeof window.ModuleManager.close === 'function') {
+                window.ModuleManager.close('moduleRampPresetDropdown');
+            }
+        }
+        this.renderShadingRamps(this.currentColor);
+        const presetName = (typeof window.__ === 'function' ? window.__(HUE_SHIFT_PRESETS[presetKey].nameKey) : null) || HUE_SHIFT_PRESETS[presetKey].defaultName;
+        if (typeof showMessage === 'function') {
+            showMessage(`Iluminación: ${presetName}`, 'info');
+        }
+    },
+
+    selectRampColor(hex) {
+        if (!hex) return;
+        this.currentColor = hex.toUpperCase();
+        if (this.btnColorPalette) {
+            this.btnColorPalette.style.setProperty('--active-color', this.currentColor);
+            this.applyColorBorderStyle(this.btnColorPalette, this.currentColor);
+        }
+        this.updateActiveColorPreview();
+        this.syncActiveColorHighlight();
+        this.renderShadingRamps(this.currentColor);
+
+        const activeTpl = this.templates ? this.templates.find(t => t.id === this.activeTemplateId) : null;
+        if (activeTpl && activeTpl.isShape && typeof this.refreshShapeTemplateColor === 'function') {
+            this.refreshShapeTemplateColor(activeTpl, this.currentColor);
+        }
+
+        this.requestRender();
+    },
+
+    stepColorRamp(direction = 1) {
+        if (!this.isOfflineMode) return;
+        const ramp = generateColorRamp(this.currentColor || '#FF0000', this.activeRampPreset || 'warm_cool');
+        if (!ramp || ramp.length === 0) return;
+
+        let curIdx = ramp.findIndex(s => s.hex.toUpperCase() === (this.currentColor || '').toUpperCase());
+        if (curIdx === -1) {
+            curIdx = 2; // base center
+        }
+
+        const nextIdx = Math.max(0, Math.min(ramp.length - 1, curIdx + direction));
+        if (nextIdx === curIdx) return;
+
+        const targetStep = ramp[nextIdx];
+        this.selectRampColor(targetStep.hex);
+        const roleName = (typeof window.__ === 'function' ? window.__(targetStep.nameKey) : null) || targetStep.defaultLabel;
+        if (typeof showMessage === 'function') {
+            showMessage(`Rampa [${roleName}]: ${targetStep.hex}`, 'info');
         }
     },
 

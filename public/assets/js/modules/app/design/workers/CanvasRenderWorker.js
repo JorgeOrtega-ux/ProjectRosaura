@@ -45,6 +45,7 @@ let textPosition = null;
 let activePixelText = null;
 
 let isOfflineMode = false;
+let isSeamlessTileMode = false;
 let isMirrorMode = false;
 let mirrorAxis = 'x';
 let isEyedropperActive = false;
@@ -56,6 +57,8 @@ let undoStack = [];
 let redoStack = [];
 let activeSprayStrokeDiffs = null;
 let activeBrushStrokeDiffs = null;
+let activeSelectionMask = null;
+let activeSelectionCount = 0;
 
 function updateProtectedOffscreen() {
     if (typeof OffscreenCanvas === 'undefined') return;
@@ -735,19 +738,27 @@ async function hydrateState(base64String) {
             if (pixelBuffer) {
                 buf.set(pixelBuffer.subarray(0, Math.min(pixelBuffer.length, totalPixels)));
             }
-            layers = [
+            const initialLayer = {
+                id: 'layer-1',
+                name: 'Capa 1',
+                visible: true,
+                locked: false,
+                opacity: 1.0,
+                buffer: buf
+            };
+            layers = [initialLayer];
+            activeLayerId = 'layer-1';
+            frames = [
                 {
-                    id: 'layer-1',
-                    name: 'Capa 1',
-                    visible: true,
-                    locked: false,
-                    opacity: 1.0,
-                    buffer: buf
+                    id: 'frame-1',
+                    durationMs: 100,
+                    layers: layers
                 }
             ];
-            activeLayerId = 'layer-1';
+            activeFrameId = 'frame-1';
             composeAll();
             notifyLayersState();
+            notifyFramesState();
         } else {
             offscreenCtx.putImageData(mainImageData, 0, 0);
             requestRender();
@@ -911,8 +922,12 @@ function processPixelQueue() {
             const p = pixelQueue.pop();
             const x = p.x, y = p.y;
             if (x >= 0 && x < boardWidth && y >= 0 && y < boardHeight) {
+                const idx = y * boardWidth + x;
+                if (activeSelectionCount > 0 && activeSelectionMask && activeSelectionMask[idx] !== 1) {
+                    continue;
+                }
                 const colorVal = colorToAbgr(p.color);
-                targetBuffer[y * boardWidth + x] = colorVal;
+                targetBuffer[idx] = colorVal;
                 if (x < minX) minX = x;
                 if (y < minY) minY = y;
                 if (x > maxX) maxX = x;
@@ -1379,6 +1394,23 @@ function render() {
         ctx.stroke();
     }
 
+    if (isSeamlessTileMode && offscreenCanvas && offscreenCanvas.width > 0 && offscreenCanvas.height > 0) {
+        // Render 3x3 surrounding tiles for infinite seamless preview
+        ctx.save();
+        for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+                if (dx === 0 && dy === 0) continue;
+                ctx.save();
+                ctx.globalAlpha = 0.85;
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(dx * drawW, dy * drawH, drawW, drawH);
+                ctx.drawImage(offscreenCanvas, dx * drawW, dy * drawH);
+                ctx.restore();
+            }
+        }
+        ctx.restore();
+    }
+
     ctx.save();
     ctx.beginPath();
     ctx.rect(0, 0, drawW, drawH);
@@ -1389,6 +1421,15 @@ function render() {
     }
     
     ctx.restore();
+
+    if (isSeamlessTileMode) {
+        ctx.save();
+        ctx.lineWidth = Math.max(1.5 / transform.scale, 1);
+        ctx.strokeStyle = isDarkMode ? 'rgba(59, 130, 246, 0.9)' : 'rgba(37, 99, 235, 0.85)';
+        ctx.setLineDash([4 / transform.scale, 3 / transform.scale]);
+        ctx.strokeRect(0, 0, drawW, drawH);
+        ctx.restore();
+    }
 
     // Cuadrícula de Tiles / Bloques con Viewport Culling & LOD
     if (tileGridSize > 0 && boardWidth > 0 && boardHeight > 0) {
@@ -1461,6 +1502,72 @@ function render() {
             }
             ctx.restore();
         });
+    }
+
+    // Render Active Selection Mask (Translucent blue fill + crisp dashed perimeter)
+    if (activeSelectionMask && activeSelectionCount > 0) {
+        const sc = transform.scale;
+        const tx = transform.x;
+        const ty = transform.y;
+
+        ctx.save();
+        ctx.fillStyle = isDarkMode ? 'rgba(59, 130, 246, 0.35)' : 'rgba(37, 99, 235, 0.30)';
+        const w = boardWidth;
+        const h = boardHeight;
+
+        // Relleno por scanline — coordenadas en screen space
+        for (let y = 0; y < h; y++) {
+            const sy = ty + y * sc;
+            let inRun = false;
+            let runStartX = 0;
+            for (let x = 0; x < w; x++) {
+                const isSel = activeSelectionMask[y * w + x] === 1;
+                if (isSel && !inRun) {
+                    inRun = true;
+                    runStartX = x;
+                } else if (!isSel && inRun) {
+                    inRun = false;
+                    ctx.fillRect(tx + runStartX * sc, sy, (x - runStartX) * sc, sc);
+                }
+            }
+            if (inRun) {
+                ctx.fillRect(tx + runStartX * sc, sy, (w - runStartX) * sc, sc);
+            }
+        }
+
+        // Borde punteado en screen space
+        ctx.strokeStyle = isDarkMode ? '#93c5fd' : '#2563eb';
+        ctx.lineWidth = Math.max(1.5, sc * 0.08);
+        ctx.setLineDash([Math.max(3, sc * 0.4), Math.max(2, sc * 0.25)]);
+        ctx.beginPath();
+
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                const idx = y * w + x;
+                if (activeSelectionMask[idx] === 1) {
+                    const sx = tx + x * sc;
+                    const sy = ty + y * sc;
+                    if (y === 0 || activeSelectionMask[(y - 1) * w + x] !== 1) {
+                        ctx.moveTo(sx, sy);
+                        ctx.lineTo(sx + sc, sy);
+                    }
+                    if (y === h - 1 || activeSelectionMask[(y + 1) * w + x] !== 1) {
+                        ctx.moveTo(sx, sy + sc);
+                        ctx.lineTo(sx + sc, sy + sc);
+                    }
+                    if (x === 0 || activeSelectionMask[y * w + (x - 1)] !== 1) {
+                        ctx.moveTo(sx, sy);
+                        ctx.lineTo(sx, sy + sc);
+                    }
+                    if (x === w - 1 || activeSelectionMask[y * w + (x + 1)] !== 1) {
+                        ctx.moveTo(sx + sc, sy);
+                        ctx.lineTo(sx + sc, sy + sc);
+                    }
+                }
+            }
+        }
+        ctx.stroke();
+        ctx.restore();
     }
 
     const selLen = selectedPixelsArray.length;
@@ -1969,7 +2076,7 @@ function drawEyedropperLoupe() {
     ctx.restore();
 }
 
-self.onmessage = function (e) {
+self.onmessage = async function (e) {
     const { type, payload } = e.data;
 
     switch (type) {
@@ -2011,6 +2118,11 @@ self.onmessage = function (e) {
         case 'SET_MIRROR_MODE':
             isMirrorMode = !!payload.isMirrorMode;
             if (payload.mirrorAxis !== undefined) mirrorAxis = payload.mirrorAxis || 'x';
+            requestRender();
+            break;
+
+        case 'SET_SEAMLESS_TILE_MODE':
+            isSeamlessTileMode = !!payload.isSeamlessTileMode;
             requestRender();
             break;
 
@@ -2300,6 +2412,9 @@ self.onmessage = function (e) {
                     const p = pixels[i];
                     if (p.x >= 0 && p.x < boardWidth && p.y >= 0 && p.y < boardHeight) {
                         const idx = p.y * boardWidth + p.x;
+                        if (activeSelectionCount > 0 && activeSelectionMask && activeSelectionMask[idx] !== 1) {
+                            continue;
+                        }
                         const prev = targetBuffer[idx];
                         const next = colorToAbgr(p.color);
                         if (prev !== next) {
@@ -2432,6 +2547,7 @@ self.onmessage = function (e) {
                 if (px < 0 || px >= bw || py < 0 || py >= bh) return;
                 const idx = py * bw + px;
 
+                if (activeSelectionCount > 0 && activeSelectionMask && activeSelectionMask[idx] !== 1) return;
                 if (activeBrushStrokeDiffs && activeBrushStrokeDiffs.has(idx)) return;
 
                 const prev = targetBuffer[idx];
@@ -2702,12 +2818,7 @@ self.onmessage = function (e) {
                 if (injectAnimation) {
                     pendingHydrateStateBase64 = payload.base64String;
                 } else {
-                    hydrateState(payload.base64String);
-                    if (isOfflineMode) {
-                        initLayersEngine(boardWidth, boardHeight);
-                        notifyLayersState();
-                        notifyFramesState();
-                    }
+                    await hydrateState(payload.base64String);
                 }
             }
             break;
@@ -3012,7 +3123,7 @@ self.onmessage = function (e) {
                     // Left
                     if (cx > 0) {
                         const nIdx = idx - 1;
-                        if (targetBuffer[nIdx] === targetColor) {
+                        if ((activeSelectionCount === 0 || !activeSelectionMask || activeSelectionMask[nIdx] === 1) && targetBuffer[nIdx] === targetColor) {
                             targetBuffer[nIdx] = fillColor;
                             if (diffs) diffs.push({ x: cx - 1, y: cy, prev: targetColor, next: fillColor, layerId: activeL ? activeL.id : null });
                             queue[tail++] = nIdx;
@@ -3021,7 +3132,7 @@ self.onmessage = function (e) {
                     // Right
                     if (cx < bw - 1) {
                         const nIdx = idx + 1;
-                        if (targetBuffer[nIdx] === targetColor) {
+                        if ((activeSelectionCount === 0 || !activeSelectionMask || activeSelectionMask[nIdx] === 1) && targetBuffer[nIdx] === targetColor) {
                             targetBuffer[nIdx] = fillColor;
                             if (diffs) diffs.push({ x: cx + 1, y: cy, prev: targetColor, next: fillColor, layerId: activeL ? activeL.id : null });
                             queue[tail++] = nIdx;
@@ -3030,7 +3141,7 @@ self.onmessage = function (e) {
                     // Up
                     if (cy > 0) {
                         const nIdx = idx - bw;
-                        if (targetBuffer[nIdx] === targetColor) {
+                        if ((activeSelectionCount === 0 || !activeSelectionMask || activeSelectionMask[nIdx] === 1) && targetBuffer[nIdx] === targetColor) {
                             targetBuffer[nIdx] = fillColor;
                             if (diffs) diffs.push({ x: cx, y: cy - 1, prev: targetColor, next: fillColor, layerId: activeL ? activeL.id : null });
                             queue[tail++] = nIdx;
@@ -3039,7 +3150,7 @@ self.onmessage = function (e) {
                     // Down
                     if (cy < bh - 1) {
                         const nIdx = idx + bw;
-                        if (targetBuffer[nIdx] === targetColor) {
+                        if ((activeSelectionCount === 0 || !activeSelectionMask || activeSelectionMask[nIdx] === 1) && targetBuffer[nIdx] === targetColor) {
                             targetBuffer[nIdx] = fillColor;
                             if (diffs) diffs.push({ x: cx, y: cy + 1, prev: targetColor, next: fillColor, layerId: activeL ? activeL.id : null });
                             queue[tail++] = nIdx;
@@ -3179,6 +3290,7 @@ self.onmessage = function (e) {
 
                 if (px >= 0 && px < boardWidth && py >= 0 && py < boardHeight) {
                     const idx = py * boardWidth + px;
+                    if (activeSelectionCount > 0 && activeSelectionMask && activeSelectionMask[idx] !== 1) continue;
                     const prevColor = targetBuffer[idx];
                     if (prevColor !== fillColor) {
                         targetBuffer[idx] = fillColor;
@@ -3248,6 +3360,160 @@ self.onmessage = function (e) {
                 generateLayerPreview(activeLayerId);
             }
             activeSprayStrokeDiffs = null;
+            break;
+        }
+
+        case 'SET_SELECTION_MASK': {
+            const pixels = payload?.pixels || [];
+            const totalLen = boardWidth * boardHeight;
+            if (!activeSelectionMask || activeSelectionMask.length !== totalLen) {
+                activeSelectionMask = new Uint8Array(totalLen);
+            } else {
+                activeSelectionMask.fill(0);
+            }
+            activeSelectionCount = pixels.length;
+            for (let i = 0; i < pixels.length; i++) {
+                const p = pixels[i];
+                if (p.x >= 0 && p.x < boardWidth && p.y >= 0 && p.y < boardHeight) {
+                    activeSelectionMask[p.y * boardWidth + p.x] = 1;
+                }
+            }
+            requestRender();
+            break;
+        }
+
+        case 'CLEAR_SELECTION_MASK': {
+            if (activeSelectionMask) {
+                activeSelectionMask.fill(0);
+            }
+            activeSelectionCount = 0;
+            requestRender();
+            break;
+        }
+
+        case 'CLEAR_SELECTION_PIXELS': {
+            if (!activeSelectionMask || activeSelectionCount === 0) break;
+            const activeL = isOfflineMode ? getActiveLayer() : null;
+            if (isOfflineMode && activeL && (activeL.locked || !activeL.visible)) {
+                notifyLayerBlocked(activeL.locked ? 'locked' : 'hidden');
+                break;
+            }
+            const targetBuffer = (isOfflineMode && activeL) ? activeL.buffer : pixelBuffer;
+            const diffs = [];
+            let minX = Infinity, minY = Infinity, maxX = -1, maxY = -1;
+
+            const totalLen = boardWidth * boardHeight;
+            for (let i = 0; i < totalLen; i++) {
+                if (activeSelectionMask[i] === 1) {
+                    const prev = targetBuffer[i];
+                    if (prev !== 0) {
+                        targetBuffer[i] = 0;
+                        const x = i % boardWidth;
+                        const y = Math.floor(i / boardWidth);
+                        diffs.push({ x, y, prev, next: 0, layerId: activeL ? activeL.id : null });
+                        if (x < minX) minX = x;
+                        if (y < minY) minY = y;
+                        if (x > maxX) maxX = x;
+                        if (y > maxY) maxY = y;
+                    }
+                }
+            }
+
+            if (diffs.length > 0) {
+                undoStack.push({ type: 'clear_selection', diffs });
+                redoStack.length = 0;
+                if (undoStack.length > MAX_HISTORY) undoStack.shift();
+                self.postMessage({
+                    type: 'HISTORY_CHANGED',
+                    payload: { canUndo: undoStack.length > 0, canRedo: false, action: 'clear_selection' }
+                });
+                if (minX <= maxX) {
+                    composeDirtyRect(minX, minY, maxX, maxY);
+                    flushDirtyRect();
+                } else {
+                    composeAll();
+                }
+                generateLayerPreview(activeLayerId);
+                notifyLayersState();
+                requestRender();
+            }
+            break;
+        }
+
+        case 'EXTRACT_SELECTION_TO_BITMAP': {
+            if (!activeSelectionMask || activeSelectionCount === 0) break;
+            const activeL = isOfflineMode ? getActiveLayer() : null;
+            const targetBuffer = (isOfflineMode && activeL) ? activeL.buffer : pixelBuffer;
+            const isCut = !!payload?.isCut;
+
+            let minX = boardWidth, maxX = -1, minY = boardHeight, maxY = -1;
+            const totalLen = boardWidth * boardHeight;
+            for (let i = 0; i < totalLen; i++) {
+                if (activeSelectionMask[i] === 1) {
+                    const x = i % boardWidth;
+                    const y = Math.floor(i / boardWidth);
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                }
+            }
+
+            if (minX > maxX || minY > maxY) break;
+            const w = maxX - minX + 1;
+            const h = maxY - minY + 1;
+
+            const tempCanvas = new OffscreenCanvas(w, h);
+            const tempCtx = tempCanvas.getContext('2d');
+            const imgData = tempCtx.createImageData(w, h);
+            const imgBuf32 = new Uint32Array(imgData.data.buffer);
+
+            const diffs = isCut ? [] : null;
+
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const gx = minX + x;
+                    const gy = minY + y;
+                    const gIdx = gy * boardWidth + gx;
+                    if (activeSelectionMask[gIdx] === 1) {
+                        const col = targetBuffer[gIdx];
+                        imgBuf32[y * w + x] = col;
+                        if (isCut && col !== 0) {
+                            targetBuffer[gIdx] = 0;
+                            if (diffs) diffs.push({ x: gx, y: gy, prev: col, next: 0, layerId: activeL ? activeL.id : null });
+                        }
+                    }
+                }
+            }
+            tempCtx.putImageData(imgData, 0, 0);
+
+            if (isCut && diffs && diffs.length > 0) {
+                undoStack.push({ type: 'cut_selection', diffs });
+                redoStack.length = 0;
+                if (undoStack.length > MAX_HISTORY) undoStack.shift();
+                self.postMessage({
+                    type: 'HISTORY_CHANGED',
+                    payload: { canUndo: undoStack.length > 0, canRedo: false, action: 'cut_selection' }
+                });
+                composeDirtyRect(minX, minY, maxX, maxY);
+                flushDirtyRect();
+                generateLayerPreview(activeLayerId);
+                notifyLayersState();
+            }
+
+            const imageBitmap = tempCanvas.transferToImageBitmap();
+            self.postMessage({
+                type: 'SELECTION_BITMAP_EXTRACTED',
+                payload: {
+                    imageBitmap,
+                    x: minX,
+                    y: minY,
+                    w,
+                    h,
+                    isCut
+                }
+            }, [imageBitmap]);
+
             break;
         }
 
@@ -3751,6 +4017,186 @@ self.onmessage = function (e) {
 
         case 'GET_LAYER_PREVIEW': {
             generateLayerPreview(payload?.layerId || activeLayerId);
+            break;
+        }
+
+        case 'GENERATE_OUTLINE': {
+            const targetId = payload?.layerId || activeLayerId;
+            const targetLayer = layers.find(l => l.id === targetId);
+            if (!targetLayer) break;
+
+            if (targetLayer.locked) {
+                self.postMessage({
+                    type: 'SHOW_NOTICE',
+                    payload: { messageKey: 'msg_layer_locked', level: 'warning' }
+                });
+                break;
+            }
+
+            const outlineColorHex = payload?.color || '#000000';
+            const outlineColorAbgr = colorToAbgr(outlineColorHex);
+            const isDiagonal = !!payload?.diagonal;
+            const targetMode = payload?.targetMode || 'current'; // 'current' or 'new_below'
+
+            const w = boardWidth;
+            const h = boardHeight;
+            const totalLen = w * h;
+            const src = targetLayer.buffer;
+
+            const outlinePositions = [];
+            const dirs4 = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+            const dirs8 = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, -1], [-1, 1], [1, 1]];
+            const dirs = isDiagonal ? dirs8 : dirs4;
+
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const idx = y * w + x;
+                    if (src[idx] === 0 || (src[idx] & 0xFF000000) === 0) {
+                        let hasNeighbor = false;
+                        for (let d = 0; d < dirs.length; d++) {
+                            const nx = x + dirs[d][0];
+                            const ny = y + dirs[d][1];
+                            if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+                                const nIdx = ny * w + nx;
+                                if (src[nIdx] !== 0 && (src[nIdx] & 0xFF000000) !== 0) {
+                                    hasNeighbor = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (hasNeighbor) {
+                            outlinePositions.push({ x, y, idx });
+                        }
+                    }
+                }
+            }
+
+            if (outlinePositions.length === 0) {
+                self.postMessage({
+                    type: 'SHOW_NOTICE',
+                    payload: { messageKey: 'msg_no_outline_pixels_found', level: 'info' }
+                });
+                break;
+            }
+
+            if (targetMode === 'new_below') {
+                const newId = 'layer_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+                const newBuffer = new Uint32Array(totalLen);
+                for (let i = 0; i < outlinePositions.length; i++) {
+                    newBuffer[outlinePositions[i].idx] = outlineColorAbgr;
+                }
+                const newLayer = {
+                    id: newId,
+                    name: `${targetLayer.name} (Borde)`,
+                    visible: true,
+                    locked: false,
+                    opacity: 1.0,
+                    buffer: newBuffer
+                };
+                const curIdx = layers.findIndex(l => l.id === targetId);
+                layers.splice(Math.max(0, curIdx), 0, newLayer);
+                activeLayerId = targetId;
+                composeAll();
+                notifyLayersState();
+                self.postMessage({
+                    type: 'SHOW_NOTICE',
+                    payload: { message: `Contorno creado en nueva capa (${outlinePositions.length} px)`, level: 'success' }
+                });
+            } else {
+                const diffs = [];
+                let minX = Infinity, minY = Infinity, maxX = -1, maxY = -1;
+                for (let i = 0; i < outlinePositions.length; i++) {
+                    const { x, y, idx } = outlinePositions[i];
+                    const prev = src[idx];
+                    src[idx] = outlineColorAbgr;
+                    diffs.push({ x, y, prev, next: outlineColorAbgr, layerId: targetLayer.id });
+                    if (x < minX) minX = x;
+                    if (y < minY) minY = y;
+                    if (x > maxX) maxX = x;
+                    if (y > maxY) maxY = y;
+                }
+                undoStack.push({ type: 'pixels', diffs });
+                redoStack.length = 0;
+                if (undoStack.length > MAX_HISTORY) undoStack.shift();
+                self.postMessage({
+                    type: 'HISTORY_CHANGED',
+                    payload: { canUndo: undoStack.length > 0, canRedo: false, action: 'push' }
+                });
+                if (minX <= maxX) {
+                    composeDirtyRect(minX, minY, maxX, maxY);
+                    flushDirtyRect();
+                } else {
+                    composeAll();
+                }
+                generateLayerPreview(targetLayer.id);
+                notifyLayersState();
+                requestRender();
+                self.postMessage({
+                    type: 'SHOW_NOTICE',
+                    payload: { message: `Contorno de 1px aplicado (${outlinePositions.length} px)`, level: 'success' }
+                });
+            }
+            break;
+        }
+
+        case 'SHIFT_TILE_OFFSET': {
+            const shiftX = Math.floor(payload?.dx ?? (boardWidth / 2));
+            const shiftY = Math.floor(payload?.dy ?? (boardHeight / 2));
+            const targetId = payload?.layerId || activeLayerId;
+            const targetLayer = layers.find(l => l.id === targetId);
+            if (!targetLayer) break;
+
+            if (targetLayer.locked) {
+                self.postMessage({
+                    type: 'SHOW_NOTICE',
+                    payload: { messageKey: 'msg_layer_locked', level: 'warning' }
+                });
+                break;
+            }
+
+            const w = boardWidth;
+            const h = boardHeight;
+            const totalLen = w * h;
+            const src = targetLayer.buffer;
+            const newBuf = new Uint32Array(totalLen);
+            const diffs = [];
+
+            for (let y = 0; y < h; y++) {
+                const targetY = (y + shiftY + h) % h;
+                for (let x = 0; x < w; x++) {
+                    const targetX = (x + shiftX + w) % w;
+                    const srcIdx = y * w + x;
+                    const destIdx = targetY * w + targetX;
+                    newBuf[destIdx] = src[srcIdx];
+                }
+            }
+
+            for (let i = 0; i < totalLen; i++) {
+                if (src[i] !== newBuf[i]) {
+                    const x = i % w;
+                    const y = Math.floor(i / w);
+                    diffs.push({ x, y, prev: src[i], next: newBuf[i], layerId: targetLayer.id });
+                    src[i] = newBuf[i];
+                }
+            }
+
+            if (diffs.length > 0) {
+                undoStack.push({ type: 'pixels', diffs });
+                redoStack.length = 0;
+                if (undoStack.length > MAX_HISTORY) undoStack.shift();
+                self.postMessage({
+                    type: 'HISTORY_CHANGED',
+                    payload: { canUndo: undoStack.length > 0, canRedo: false, action: 'push' }
+                });
+                composeAll();
+                generateLayerPreview(targetLayer.id);
+                notifyLayersState();
+                requestRender();
+                self.postMessage({
+                    type: 'SHOW_NOTICE',
+                    payload: { message: `Lienzo desplazado 50% (Offset Wrap)`, level: 'info' }
+                });
+            }
             break;
         }
 

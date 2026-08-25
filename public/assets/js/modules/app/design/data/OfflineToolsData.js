@@ -80,11 +80,22 @@ export const OfflineToolsConfig = {
     },
     moveArea: {
         id: 'moveArea',
-        nameKey: 'tooltip_move_area',
+        nameKey: 'tooltip_selection_tools',
         icon: 'crop_free',
         shortcut: 'M',
         action: 'toggleOfflineMoveArea',
-        ref: 'btn-offline-move-area'
+        ref: 'btn-offline-move-area',
+        subtoolbar: {
+            id: 'moveArea',
+            action: 'setSelectionMode',
+            dataAttr: 'data-selection-mode',
+            default: 'box',
+            options: [
+                { id: 'box',   icon: 'crop_free',     nameKey: 'tooltip_selection_box',   ref: 'btn-selection-mode-box' },
+                { id: 'lasso', icon: 'gesture',       nameKey: 'tooltip_selection_lasso', ref: 'btn-selection-mode-lasso' },
+                { id: 'wand',  icon: 'auto_fix_high', nameKey: 'tooltip_selection_wand',  ref: 'btn-selection-mode-wand' }
+            ]
+        }
     },
     bucket: {
         id: 'bucket',
@@ -259,6 +270,24 @@ export const OfflineToolsConfig = {
                 medium: [0, 8, 16, 32, 64],
                 large:  [0, 16, 32, 64, 128, 256]
             }
+        }
+    },
+    seamlessTile: {
+        id: 'seamlessTile',
+        nameKey: 'tooltip_seamless_tile',
+        icon: 'repeat',
+        shortcut: 'Shift+T',
+        action: 'toggleSeamlessTile',
+        ref: 'btn-offline-seamless-tile',
+        subtoolbar: {
+            id: 'seamlessTile',
+            action: 'setSeamlessTileOption',
+            dataAttr: 'data-seamless-action',
+            default: 'toggle',
+            options: [
+                { id: 'toggle',       icon: 'repeat',       nameKey: 'tooltip_seamless_toggle', action: 'toggleSeamlessTile', ref: 'btn-seamless-sub-toggle' },
+                { id: 'shift_offset', icon: 'dynamic_feed', nameKey: 'tooltip_seamless_offset', action: 'shiftTileOffset',    ref: 'btn-seamless-sub-offset' }
+            ]
         }
     }
 };
