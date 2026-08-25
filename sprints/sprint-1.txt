@@ -1,0 +1,280 @@
+Tengo un problema con el sistema actual de modales y quiero realizar una reestructuración a nivel de arquitectura UI/CSS.
+
+Actualmente tengo varios tipos de modales que técnicamente funcionan correctamente, pero presentan inconsistencias visuales y problemas de comportamiento responsive. La intención **no es cambiar innecesariamente el diseño o la funcionalidad existente**, sino unificar su comportamiento estructural y responsive para que todos utilicen las mismas reglas base, independientemente de su variante visual.
+
+Actualmente identifico, al menos, estas cuatro variantes de modal:
+
+### 1. Modal estático / estándar
+
+Es el modal convencional, compuesto por:
+
+* `component-modal-box`
+* `pill-container` / `drag-handle`
+* `component-modal-header`
+* `component-modal-body`
+* `component-modal-actions`
+
+Ejemplo conceptual:
+
+```html
+<div class="component-modal-box">
+    <div class="pill-container">
+        <div class="drag-handle"></div>
+    </div>
+
+    <div class="component-modal-header">
+        <h2 class="component-modal-title">Verificar Correo Electrónico</h2>
+        <p class="component-modal-desc">
+            Hemos enviado un código a <b>al20328051890088@gmail.com</b>.
+            Ingrésalo a continuación.
+        </p>
+    </div>
+
+    <div class="component-modal-body">
+        ...
+    </div>
+
+    <div class="component-modal-actions">
+        ...
+    </div>
+</div>
+```
+
+Este es el patrón base y debe servir como referencia estructural para los demás tipos.
+
+### 2. Modal de introducción / onboarding
+
+Tengo modales utilizados como introducción a determinadas secciones o funcionalidades.
+
+Estos tienen una estructura visual dividida en dos zonas:
+
+* **Top:** sección visual, normalmente con gradiente, ilustración u otro elemento gráfico.
+* **Bottom:** contenido principal, información, controles y acciones.
+
+Aunque visualmente son diferentes al modal estándar, deberían compartir el mismo comportamiento estructural, responsive, posicionamiento, scroll y sistema de cierre.
+
+### 3. Modal multietapa
+
+También tengo modales que contienen múltiples estados o pasos dentro del mismo modal.
+
+Por ejemplo, un modal puede tener:
+
+* Step 1: formulario/configuración.
+* Step 2: confirmación.
+* Step 3: resultado o información adicional.
+
+Los diferentes pasos se muestran/ocultan dinámicamente mediante clases como `active`, `disabled`, etc.
+
+Es importante que el sistema responsive del contenedor principal no dependa del contenido específico de cada step. Todos los pasos deben respetar las mismas dimensiones, límites, scroll y comportamiento del modal.
+
+### 4. Modal dividido Left / Right
+
+Finalmente, tengo modales divididos en dos columnas.
+
+Por ejemplo, en un modal de configuración de 2FA:
+
+* **Left:** formulario, encabezado, contenido y pasos.
+* **Right:** sección visual con gradiente, QR, ilustración, etc.
+
+Ejemplo estructural:
+
+```html
+<div class="component-modal-box component-modal-box--split">
+
+    <div class="pill-container">
+        <div class="drag-handle"></div>
+    </div>
+
+    <div class="component-modal-split-left">
+        <!-- Header, body, steps, actions, etc. -->
+    </div>
+
+    <div class="component-modal-split-right">
+        <!-- Gradient, QR, illustration, etc. -->
+    </div>
+
+</div>
+```
+
+## Problemas actuales
+
+El principal problema está en el comportamiento responsive, especialmente en los modales `component-modal-box--split`.
+
+Cuando el viewport se reduce hasta tamaños móviles, actualmente ocurre lo siguiente:
+
+1. El `component-modal-box--split` deja de ocupar correctamente el ancho disponible.
+2. En algunos casos quedan márgenes o espacios laterales que hacen que el modal ni siquiera llegue correctamente hasta los bordes del viewport.
+3. La sección con gradiente no llega correctamente hasta la parte superior del modal.
+4. El `pill-container` / `drag-handle`, que debería permanecer en la parte superior del modal, termina apareciendo en la parte inferior debido a determinadas reglas de layout/CSS.
+5. La transición entre desktop/tablet/mobile no mantiene una estructura coherente.
+6. Algunos elementos internos pueden afectar las dimensiones del contenedor principal de manera inesperada.
+7. Los distintos tipos de modal parecen tener reglas CSS independientes que generan comportamientos inconsistentes.
+
+## Objetivo
+
+Quiero que revises y reestructures el sistema de modales para establecer una **arquitectura base común**.
+
+Los cuatro tipos de modal pueden ser visualmente diferentes, pero deben compartir las mismas reglas fundamentales de comportamiento:
+
+* Posicionamiento.
+* Dimensiones máximas.
+* Ancho responsive.
+* Altura máxima.
+* Gestión del overflow.
+* Scroll interno.
+* Comportamiento en mobile.
+* Posicionamiento del `pill-container`.
+* Gestión del `drag-handle`.
+* Espaciado respecto al viewport.
+* Adaptación entre desktop, tablet y mobile.
+* Comportamiento cuando el contenido excede la altura disponible.
+* Prevención de overflow horizontal.
+* Consistencia del sistema de acciones/botones.
+
+### Requisito importante
+
+**No quiero solucionar los problemas agregando parches individuales para cada modal.**
+
+Quiero identificar la causa estructural de los problemas y corregirla desde la arquitectura CSS/layout.
+
+Por ejemplo, si el problema ocurre porque el `component-modal-box--split` utiliza un `display: grid`, `flex`, `position`, `height`, `max-height`, `overflow` o alguna combinación que entra en conflicto con el comportamiento mobile, quiero que se corrija la estructura de forma que la solución sea reutilizable.
+
+La idea es que las variantes:
+
+```text
+Modal estándar
+Modal de introducción
+Modal multietapa
+Modal split Left/Right
+```
+
+puedan tener diferentes layouts internos, pero compartan un **sistema base de modal**.
+
+## Comportamiento esperado en desktop
+
+En desktop:
+
+* El modal debe respetar sus dimensiones máximas.
+* Los modales split deben mantener correctamente sus dos columnas.
+* La sección visual/gradiente debe ocupar únicamente el área que le corresponde.
+* El contenido debe permanecer correctamente alineado.
+* El `pill-container` debe permanecer en la posición superior correspondiente.
+* El contenido que exceda la altura disponible debe gestionarse mediante scroll interno, no provocando que el modal rompa el viewport.
+* No debe existir overflow horizontal inesperado.
+
+## Comportamiento esperado en mobile
+
+En mobile quiero que el sistema se adapte correctamente al viewport.
+
+Especialmente para los modales split:
+
+* El modal debe ocupar correctamente el ancho disponible.
+* No debe quedar un espacio lateral inesperado.
+* El `component-modal-box` debe respetar correctamente los límites del viewport.
+* La estructura Left/Right debe poder transformarse en una disposición vertical cuando corresponda.
+* La sección visual/gradiente debe posicionarse correctamente respecto al contenido.
+* El gradiente debe poder ocupar completamente el ancho correspondiente.
+* El `pill-container` debe permanecer siempre en la parte superior del modal.
+* El contenido no debe desplazar accidentalmente el `pill-container`.
+* El modal no debe generar overflow horizontal.
+* La altura debe adaptarse al viewport disponible.
+* Si el contenido es demasiado grande, debe existir scroll interno correctamente controlado.
+* Los botones y acciones deben permanecer accesibles.
+
+## Arquitectura deseada
+
+Quiero que analices primero las reglas CSS existentes y determines:
+
+1. Qué reglas son realmente globales para todos los modales.
+2. Qué reglas deberían pertenecer exclusivamente a cada variante.
+3. Qué estilos están duplicados innecesariamente.
+4. Qué reglas están generando conflictos entre `flex`, `grid`, `position`, `overflow`, `height`, `max-height`, etc.
+5. Qué media queries están provocando comportamientos inconsistentes.
+6. Si existen reglas que deberían eliminarse en lugar de sobrescribirse.
+7. Si la estructura HTML actual necesita pequeños ajustes para conseguir un layout robusto.
+
+La solución debe priorizar:
+
+**una arquitectura limpia > múltiples overrides y parches.**
+
+No quiero terminar con algo como:
+
+```css
+.modal { ... }
+
+.modal--split { ... }
+
+@media (...) {
+    .modal--split { ... }
+}
+
+@media (...) {
+    .modal--split .x { ... }
+}
+
+@media (...) {
+    .modal--split .x .y { ... }
+}
+```
+
+si el problema puede solucionarse correctamente desde la estructura base.
+
+## Importante sobre el diseño existente
+
+No cambies arbitrariamente:
+
+* colores,
+* tipografías,
+* tamaños visuales,
+* estilos de botones,
+* contenido,
+* iconos,
+* animaciones,
+* comportamiento funcional,
+* clases utilizadas por JavaScript,
+* `data-ref`,
+* `data-action`,
+* `data-modal-action`.
+
+El objetivo principal es **corregir la arquitectura de layout y el comportamiento responsive**, manteniendo intacta la apariencia visual existente siempre que sea posible.
+
+Si necesitas modificar HTML, hazlo únicamente cuando sea necesario para conseguir una estructura más robusta y mantenible, y asegúrate de no romper los selectores o referencias utilizadas por JavaScript.
+
+## Resultado esperado
+
+Quiero que al finalizar exista un sistema de modales donde:
+
+```text
+                    MODAL SYSTEM
+                         │
+             ┌───────────┴───────────┐
+             │                       │
+       BASE MODAL                 VARIANTES
+             │                       │
+     ┌───────┼───────┐       ┌───────┼────────┐
+     │       │       │       │       │        │
+   Layout  Scroll  Mobile   Static Intro   Split
+                                 │       │
+                                 └── Multi-step
+```
+
+Las variantes pueden tener layouts visuales diferentes, pero todas deben comportarse de forma consistente como componentes del mismo sistema.
+
+Antes de modificar código, analiza las reglas actuales y determina cuál es la causa raíz de los problemas responsive. Después implementa la solución de manera estructural y reutilizable.
+
+Finalmente, verifica específicamente estos casos:
+
+* Desktop estándar.
+* Desktop split.
+* Tablet split.
+* Mobile estándar.
+* Mobile onboarding.
+* Mobile multietapa.
+* Mobile split.
+* Contenido que excede la altura del viewport.
+* Contenido que excede el ancho disponible.
+* Posición del `pill-container`.
+* Posición y dimensiones de las áreas con gradiente.
+* Ausencia de overflow horizontal.
+
+El criterio principal es que **todos los modales se comporten de manera consistente a nivel de sistema, aunque visualmente tengan layouts diferentes**.

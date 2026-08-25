@@ -167,7 +167,7 @@ export const ModalTemplates = {
     },
 
     welcomePremiumModal: {
-        fullScreen: true,
+        customBoxClass: 'component-modal-box--split',
         build: (data = {}) => ModalTemplates.purchaseSuccessModal.build({ ...data, item_type: 'subscription' })
     },
 
@@ -197,45 +197,97 @@ export const ModalTemplates = {
     },
 
     purchaseSuccessModal: {
-        fullScreen: true,
+        customBoxClass: 'component-modal-box--split',
         build: (data = {}) => {
             const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
-            let badgeIcon = 'stars';
-            let badgeText = '';
             
-            let tierName = data.tier_name || '';
-            if (!tierName && window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
+            let tierName = data.tier_name || data.subscription_name || data.name || data.item_name || '';
+            if (!tierName && data.tier !== undefined && window.APP_TIERS && Array.isArray(window.APP_TIERS)) {
                 const found = window.APP_TIERS.find(t => parseInt(t.tier_level, 10) === parseInt(data.tier, 10));
                 if (found && found.name) tierName = found.name;
             }
-            badgeText = `${__('subscription')} ${tierName}`;
+            if (!tierName) {
+                tierName = __('subscription') || 'Plan Premium';
+            }
 
-            const thanksTitle = __('thank_you_purchase');
-            const momentsDesc = __('in_few_moments_items');
-            const continueText = __('btn_continue');
+            const title = data.title || __('thank_you_purchase') || '¡Gracias por tu compra!';
+            const desc = data.desc || __('email_subscription_p2') || 'Puedes empezar a disfrutar de tus nuevos beneficios de inmediato.';
+            const continueText = data.confirmText || __('btn_continue') || 'Continuar';
+
+            let periodLabel = '';
+            if (data.billing_period === 'yearly' || data.billing_period === 'year' || data.billing_period === 'anual') {
+                periodLabel = __('period_yearly') || 'año';
+                if (periodLabel === 'period_yearly') periodLabel = 'año';
+            } else if (data.billing_period === 'monthly' || data.billing_period === 'month' || data.billing_period === 'mensual') {
+                periodLabel = __('period_monthly') || 'mes';
+                if (periodLabel === 'period_monthly') periodLabel = 'mes';
+            } else if (data.billing_period) {
+                periodLabel = data.billing_period;
+            }
+
+            let billingText = '';
+            if (data.amount) {
+                billingText = data.amount;
+                if (periodLabel) {
+                    billingText += ` / ${periodLabel}`;
+                }
+            } else if (periodLabel) {
+                billingText = `${__('lbl_billing') || 'Facturación'} ${periodLabel}`;
+            }
 
             return `
-                <div class="component-modal-fullscreen-container">
-                    <div class="component-modal-fullscreen-center">
-                        <div class="component-card__icon-container component-text-accent component-modal-hero-icon-wrapper">
-                            <span class="material-symbols-rounded">shopping_cart</span>
-                        </div>
+                <div class="pill-container"><div class="drag-handle"></div></div>
 
-                        <h1 class="component-modal-title--hero">${thanksTitle}</h1>
-                        <p class="component-modal-desc--hero">${momentsDesc}</p>
+                <!-- Left Column: Content & Actions -->
+                <div class="component-modal-split-left">
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">
+                            ${escapeHTML(title)}
+                        </h2>
+                        <p class="component-modal-desc">
+                            ${escapeHTML(desc)}
+                        </p>
+                    </div>
 
-                        <div class="component-hero-badge-container">
-                            <div class="component-badge">
-                                <span class="material-symbols-rounded">${badgeIcon}</span>
-                                <span>${badgeText}</span>
+                    <div class="component-modal-body">
+                        <div class="component-purchase-plan-summary">
+                            <div class="component-purchase-plan-meta">
+                                <div class="component-purchase-plan-icon">
+                                    <span class="material-symbols-rounded">stars</span>
+                                </div>
+                                <div class="component-purchase-plan-details">
+                                    <span class="component-purchase-plan-title">${escapeHTML(tierName)}</span>
+                                    ${billingText ? `<span class="component-purchase-plan-sub">${escapeHTML(billingText)}</span>` : ''}
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="component-modal-fullscreen-bottom-actions">
-                        <button class="component-button component-button--primary component-button--h45 component-button--pill component-button--wide" data-modal-action="confirm">
-                            ${continueText}
+                    <div class="component-modal-actions">
+                        <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="confirm">
+                            <span>${escapeHTML(continueText)}</span>
                         </button>
+                    </div>
+                </div>
+
+                <!-- Right Column: Banner Gradient & Vector Artwork -->
+                <div class="component-modal-split-right">
+                    <div class="component-modal-split-art-stage">
+                        <svg width="180" height="180" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="100" cy="100" r="88" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.2)" stroke-width="2" stroke-dasharray="6 6"/>
+                            <circle cx="100" cy="100" r="68" fill="rgba(255, 255, 255, 0.08)" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.5"/>
+                            <circle cx="100" cy="100" r="48" fill="rgba(255, 255, 255, 0.12)"/>
+                            
+                            <!-- Sparkles / Stars -->
+                            <path d="M42 55 L45 42 L48 55 L61 58 L48 61 L45 74 L42 61 L29 58 Z" fill="rgba(255, 255, 255, 0.75)"/>
+                            <path d="M152 145 L155 136 L158 145 L167 148 L158 151 L155 160 L152 151 L143 148 Z" fill="rgba(255, 255, 255, 0.6)"/>
+                            <circle cx="158" cy="52" r="3" fill="#ffffff" fill-opacity="0.85"/>
+                            <circle cx="48" cy="142" r="2.5" fill="#ffffff" fill-opacity="0.8"/>
+                            
+                            <!-- Premium Star / Diamond Emblem -->
+                            <path d="M100 48 L113 78 L145 82 L121 104 L128 136 L100 120 L72 136 L79 104 L55 82 L87 78 Z" fill="rgba(255, 255, 255, 0.25)" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
+                            <path d="M100 64 L108 84 L128 86 L113 100 L117 120 L100 110 L83 120 L87 100 L72 86 L92 84 Z" fill="#ffffff"/>
+                        </svg>
                     </div>
                 </div>
             `;

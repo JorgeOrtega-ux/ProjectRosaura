@@ -387,11 +387,13 @@ export const DesignTemplates = {
             card.setAttribute('data-tooltip', sticker.name);
             card.setAttribute('data-position', 'top');
 
-            const spriteEl = document.createElement('div');
-            spriteEl.className = `component-sticker-sprite ${sticker.spriteClass || ''}`;
-            spriteEl.setAttribute('aria-label', sticker.name);
+            const img = document.createElement('img');
+            img.className = 'component-library-card__image image-loaded';
+            img.src = sticker.dataUrl;
+            img.alt = sticker.name;
+            img.loading = 'lazy';
 
-            card.appendChild(spriteEl);
+            card.appendChild(img);
             container.appendChild(card);
         });
 
@@ -1161,6 +1163,8 @@ export const DesignTemplates = {
                             }
                         }, [bitmapClone]);
                     } catch (bmErr) {}
+                } else if (this.offscreenCtx && bitmapClone) {
+                    this.offscreenCtx.drawImage(bitmapClone, Math.round(tpl.x), Math.round(tpl.y), Math.round(tpl.w), Math.round(tpl.h));
                 }
 
                 if (typeof this.saveOfflineCanvasState === 'function') {

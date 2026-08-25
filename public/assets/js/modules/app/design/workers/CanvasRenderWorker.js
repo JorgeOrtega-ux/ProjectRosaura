@@ -630,6 +630,31 @@ function render() {
         }
         
         if (progress >= 1) {
+            if (injectAnimation.templatePixels && pixelBuffer) {
+                const ia = injectAnimation;
+                let finalFlush = false;
+                for (let iy = 0; iy < ia.h; iy++) {
+                    for (let ix = 0; ix < ia.w; ix++) {
+                        const absX = ia.x + ix;
+                        const absY = ia.y + iy;
+                        if (absX >= 0 && absX < boardWidth && absY >= 0 && absY < boardHeight) {
+                            const bufIdx = absY * boardWidth + absX;
+                            const tplIdx = iy * ia.w + ix;
+                            const color = ia.templatePixels[tplIdx];
+                            if ((color & 0xFF000000) !== 0) {
+                                if (pixelBuffer[bufIdx] !== color) {
+                                    pixelBuffer[bufIdx] = color;
+                                    markDirty(absX, absY);
+                                    finalFlush = true;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (finalFlush) {
+                    flushDirtyRect();
+                }
+            }
             if (pendingHydrateStateBase64) {
                 hydrateState(pendingHydrateStateBase64);
                 pendingHydrateStateBase64 = null;
@@ -1866,8 +1891,29 @@ self.onmessage = function (e) {
             break;
         }
 
-        case 'TRIGGER_INJECT_ANIMATION':
-            if (!injectAnimation) {
+        case 'TRIGGER_INJECT_ANIMATION': {
+            if (injectAnimation && injectAnimation.templatePixels && pixelBuffer) {
+                const ia = injectAnimation;
+                for (let iy = 0; iy < ia.h; iy++) {
+                    for (let ix = 0; ix < ia.w; ix++) {
+                        const absX = ia.x + ix;
+                        const absY = ia.y + iy;
+                        if (absX >= 0 && absX < boardWidth && absY >= 0 && absY < boardHeight) {
+                            const bufIdx = absY * boardWidth + absX;
+                            const tplIdx = iy * ia.w + ix;
+                            const color = ia.templatePixels[tplIdx];
+                            if ((color & 0xFF000000) !== 0) {
+                                pixelBuffer[bufIdx] = color;
+                                markDirty(absX, absY);
+                            }
+                        }
+                    }
+                }
+                flushDirtyRect();
+                injectAnimation = null;
+            }
+
+            {
                 let templatePixels = null;
                 const tc = payload.templateCoords;
                 if (payload.imageBitmap) {
@@ -1929,6 +1975,7 @@ self.onmessage = function (e) {
             }
             requestRender();
             break;
+        }
 
         case 'HYDRATE_STATE':
             if (payload.boardWidth && payload.boardHeight) {
@@ -1996,6 +2043,48 @@ self.onmessage = function (e) {
             break;
 
         case 'EXPORT_OFFLINE_STATE': {
+            // Completar animaciones pendientes antes de exportar para evitar race condition:
+            // si injectAnimation o eraserAnimations están activos, el pixelBuffer tiene
+            // estado parcial. Forzamos el commit completo al buffer antes del export.
+            if (injectAnimation && injectAnimation.templatePixels && pixelBuffer) {
+                const ia = injectAnimation;
+                for (let iy = 0; iy < ia.h; iy++) {
+                    for (let ix = 0; ix < ia.w; ix++) {
+                        const absX = ia.x + ix;
+                        const absY = ia.y + iy;
+                        if (absX >= 0 && absX < boardWidth && absY >= 0 && absY < boardHeight) {
+                            const bufIdx = absY * boardWidth + absX;
+                            const tplIdx = iy * ia.w + ix;
+                            const color = ia.templatePixels[tplIdx];
+                            if ((color & 0xFF000000) !== 0) {
+                                pixelBuffer[bufIdx] = color;
+                                markDirty(absX, absY);
+                            }
+                        }
+                    }
+                }
+                flushDirtyRect();
+                injectAnimation = null;
+            }
+
+            if (eraserAnimations && eraserAnimations.length > 0 && pixelBuffer) {
+                eraserAnimations.forEach(anim => {
+                    for (let ey = anim.y1; ey <= anim.y2; ey++) {
+                        for (let ex = anim.x1; ex <= anim.x2; ex++) {
+                            if (ex >= 0 && ex < boardWidth && ey >= 0 && ey < boardHeight) {
+                                const bufIdx = ey * boardWidth + ex;
+                                if (pixelBuffer[bufIdx] !== 0) {
+                                    pixelBuffer[bufIdx] = 0;
+                                    markDirty(ex, ey);
+                                }
+                            }
+                        }
+                    }
+                });
+                flushDirtyRect();
+                eraserAnimations = [];
+            }
+
             processPixelQueue();
             if (mainImageData && mainImageData.data) {
                 const bytes = mainImageData.data;
@@ -2031,6 +2120,7 @@ self.onmessage = function (e) {
             }
             break;
         }
+
 
         case 'FLOOD_FILL': {
             if (!pixelBuffer || !payload) break;

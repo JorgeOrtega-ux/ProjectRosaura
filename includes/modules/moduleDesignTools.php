@@ -201,17 +201,17 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
             </div>
             <div class="component-menu-section-body">
                 <div class="component-items-grid component-items-grid--5 active" data-ref="stickers-grid">
-                    <?php foreach ($presetStickers as $stk): 
-                        $stickerClass = 'sticker-sprite--' . str_replace('.svg', '', $stk['file']);
-                    ?>
+                    <?php foreach ($presetStickers as $stk): ?>
                     <div class="component-library-card" 
                          data-action="addStickerToCanvas" 
                          data-sticker-id="<?php echo htmlspecialchars($stk['id']); ?>" 
                          data-sticker-category="<?php echo htmlspecialchars($stk['category']); ?>"
                          data-tooltip="<?php echo htmlspecialchars($stk['name']); ?>" 
                          data-position="top">
-                        <div class="component-sticker-sprite <?php echo $stickerClass; ?>" 
-                             aria-label="<?php echo htmlspecialchars($stk['name']); ?>"></div>
+                        <img class="component-library-card__image image-loaded" 
+                             src="<?php echo ($basePath ?? '') . '/assets/img/stickers/' . htmlspecialchars($stk['file']); ?>" 
+                             alt="<?php echo htmlspecialchars($stk['name']); ?>"
+                             loading="lazy" />
                     </div>
                     <?php endforeach; ?>
                 </div>

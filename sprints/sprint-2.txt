@@ -1,0 +1,147 @@
+Actualmente mi aplicación cuenta con dos modalidades de lienzo: **offline** y **online**. Quiero llevar el editor de lienzos offline a un nivel superior y posicionar mi web como una de las plataformas más completas para la creación de **pixel art**, pero manteniendo una filosofía de diseño basada en una **UI limpia, minimalista y no saturada**.
+
+Actualmente ya cuento con algunas herramientas, entre ellas pinceles, modo espejo, borrador, spray, entre otras.
+
+He analizado diferentes editores de pixel art y quiero comparar sus funcionalidades para determinar:
+
+1. Qué herramientas ya existen en mi editor y cuáles podrían requerir mejoras o ampliaciones.
+2. Qué herramientas similares ofrecen otras plataformas y cuáles sería conveniente incorporar.
+3. Qué funcionalidades pueden combinarse para evitar duplicar herramientas y mantener una interfaz limpia.
+4. Qué herramientas deberían considerarse esenciales para un editor de pixel art avanzado.
+5. Qué funcionalidades avanzadas podrían diferenciar mi editor frente a otras plataformas.
+
+### Herramientas identificadas en Pixilart
+
+En Pixilart he identificado las siguientes herramientas:
+
+* **Pencil** — Dibujo libre.
+* **Eraser** — Borrado de píxeles.
+* **Brush** — Pincel con diferentes tamaños o patrones.
+* **Line** — Dibujo de líneas rectas.
+* **Square** — Dibujo de cuadrados y rectángulos.
+* **Circle** — Dibujo de círculos y elipses.
+* **Bucket** — Relleno de áreas delimitadas.
+* **Color Picker** — Selección de colores directamente desde el lienzo.
+* **Move** — Movimiento de contenido dentro del lienzo.
+* **Select** — Selección de áreas o contenido.
+* **Text** — Inserción de texto.
+* **Lighten/Darken** — Aclarado u oscurecimiento de píxeles.
+* **Dithering** — Aplicación de patrones de dithering.
+* **Stamp** — Reutilización o estampado de contenido.
+* **Spray Paint** — Pintura con efecto de aerosol.
+* **Gradient** — Aplicación de degradados.
+* **Hand** — Desplazamiento/panning del lienzo.
+* **Filter** — Aplicación de filtros y efectos.
+* **Crop / Resize** — Recorte y modificación de las dimensiones del lienzo.
+* **Contour Fill** — Relleno basado en contornos.
+* **Perspective** — Transformación mediante perspectiva.
+* **Mirror X** — Reflejo sobre el eje X.
+* **Mirror Y** — Reflejo sobre el eje Y.
+
+### Herramientas identificadas en otro editor de pixel art
+
+También he encontrado las siguientes:
+
+* **Pen** — Dibujo libre.
+* **Vertical Mirror Pen** — Dibujo con simetría mediante reflejo en uno o varios ejes.
+* **Paint Bucket** — Relleno de áreas.
+* **Color Swap** — Sustitución o pintado de todos los píxeles que comparten un determinado color.
+* **Eraser** — Borrado de píxeles.
+* **Stroke** — Dibujo de trazos y líneas rectas.
+* **Rectangle** — Dibujo de rectángulos y cuadrados.
+* **Circle** — Dibujo de círculos y elipses.
+* **Move** — Movimiento del contenido del lienzo.
+* **Shape Selection** — Selección de contenido mediante formas, con posibilidad de mover, copiar y pegar la selección.
+* **Rectangle Selection** — Selección mediante un área rectangular.
+* **Lasso Selection** — Selección de áreas de forma libre.
+* **Lighten** — Aclarado de píxeles, con posibilidad de invertir el comportamiento para oscurecerlos.
+* **Dithering** — Aplicación de patrones de dithering.
+* **Color Picker** — Selección de colores desde el lienzo.
+
+### Objetivo del análisis
+
+Quiero que compares ambos conjuntos de herramientas con las funcionalidades que ya existen actualmente en mi editor.
+
+No quiero simplemente añadir todas las herramientas disponibles. Quiero diseñar un **sistema de herramientas completo pero visualmente limpio**.
+
+Por ejemplo, si actualmente tengo una herramienta que ya cubre parcialmente una funcionalidad, determina si sería mejor:
+
+* Mantenerla tal como está.
+* Ampliar sus capacidades.
+* Fusionarla con otra herramienta.
+* Convertirla en una herramienta con modos secundarios.
+* Incorporar opciones configurables dentro de un panel contextual.
+* Crear una herramienta completamente independiente.
+
+También quiero identificar herramientas que parezcan diferentes pero que funcionalmente sean equivalentes, para evitar duplicación innecesaria.
+
+### Criterios para recomendar nuevas herramientas
+
+Prioriza las funcionalidades según:
+
+**1. Esenciales para pixel art**
+Herramientas que cualquier editor de pixel art avanzado debería proporcionar.
+
+**2. Productividad**
+Herramientas que permitan realizar tareas frecuentes considerablemente más rápido.
+
+**3. Precisión**
+Funciones orientadas a controlar píxeles, formas, simetría, selección y edición de manera precisa.
+
+**4. Funcionalidades avanzadas**
+Herramientas que aporten capacidades que normalmente no están disponibles en editores básicos.
+
+**5. Diferenciación**
+Funciones que puedan convertirse en ventajas competitivas de mi editor.
+
+**6. Complejidad de UI**
+La herramienta debe aportar suficiente valor como para justificar su incorporación sin convertir la interfaz en una barra de herramientas excesivamente grande o difícil de utilizar.
+
+### Filosofía de UI
+
+Este punto es especialmente importante:
+
+**No quiero sacrificar la limpieza de la interfaz por tener muchas herramientas.**
+
+El objetivo es tener muchas capacidades, pero no necesariamente mostrar todas las herramientas simultáneamente.
+
+Por ello, considera mecanismos como:
+
+* Herramientas agrupadas por categoría.
+* Subherramientas.
+* Modos secundarios.
+* Menús contextuales.
+* Toolbars expandibles.
+* Atajos de teclado.
+* Paneles de configuración específicos para cada herramienta.
+* Herramientas que compartan un mismo botón cuando sus funciones estén estrechamente relacionadas.
+
+Por ejemplo, en lugar de tener botones independientes para todas las variantes de selección, podría existir una herramienta **Selection** con diferentes modos:
+
+```text
+Selection
+├── Rectangle
+├── Ellipse
+├── Lasso
+└── Shape
+```
+
+De esta manera se pueden ofrecer muchas funcionalidades sin saturar visualmente la interfaz.
+
+### Resultado que quiero obtener
+
+Analiza las herramientas de ambas referencias y compáralas con las que ya tiene mi editor.
+
+Quiero que determines:
+
+* Qué herramientas ya tengo.
+* Qué herramientas ya tengo pero deberían evolucionar.
+* Qué herramientas de las referencias considero redundantes.
+* Qué herramientas nuevas debería incorporar.
+* Qué herramientas deberían combinarse.
+* Qué herramientas deberían convertirse en submodos.
+* Qué herramientas avanzadas adicionales recomendarías específicamente para un editor de pixel art.
+* Qué funcionalidades deberían tener mayor prioridad.
+* Cómo organizarías todo el sistema para mantener una UI limpia y escalable.
+
+El resultado final debería ser una propuesta de **toolset profesional para pixel art**, buscando un equilibrio entre **cantidad de funcionalidades, precisión, productividad y simplicidad de interfaz**.

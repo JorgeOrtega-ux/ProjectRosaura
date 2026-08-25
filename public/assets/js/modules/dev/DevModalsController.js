@@ -172,7 +172,7 @@ class DevModalsController {
             const tpl = templates[name] || {};
             const category = this.categorizeModal(name);
             const customBoxClass = tpl.customBoxClass || '';
-            const is2Column = customBoxClass.includes('2fa-setup') || name === 'setup2faModal' || name === 'recoveryCodesDisplayModal';
+            const is2Column = customBoxClass.includes('2fa-setup') || customBoxClass.includes('split') || name === 'setup2faModal' || name === 'recoveryCodesDisplayModal';
             
             return {
                 name,

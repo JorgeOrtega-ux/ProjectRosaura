@@ -1331,6 +1331,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    margin-top: auto;
 }
 
 .component-modal-split-left .component-button {
@@ -1425,6 +1426,63 @@
 
 .component-subtext--sm {
     font-size: 0.72rem;
+}
+
+.component-purchase-plan-summary {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    background: transparent;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 12px;
+    margin: 6px 0;
+    box-sizing: border-box;
+}
+
+.component-purchase-plan-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.component-purchase-plan-icon {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.component-purchase-plan-icon .material-symbols-rounded {
+    font-size: 26px;
+    color: var(--text-primary);
+}
+
+.component-purchase-plan-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.component-purchase-plan-title {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.component-purchase-plan-sub {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
 }
 
 @media (max-width: 768px) {

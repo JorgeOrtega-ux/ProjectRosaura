@@ -132,7 +132,11 @@
 }
 
 .canvas-design-toolbar .component-button--processing .component-spinner,
-.canvas-design-toolbar .component-spinner {
+.canvas-design-toolbar .component-spinner,
+.canvas-design-toolbar-vertical-right .component-button--processing .component-spinner,
+.canvas-design-toolbar-vertical-right .component-spinner,
+.canvas-design-toolbar-vertical .component-button--processing .component-spinner,
+.canvas-design-toolbar-vertical .component-spinner {
     border-color: rgba(255, 255, 255, 0.25) !important;
     border-top-color: #ffffff !important;
 }
