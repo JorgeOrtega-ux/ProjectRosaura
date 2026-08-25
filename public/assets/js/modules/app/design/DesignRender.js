@@ -195,6 +195,9 @@ export const DesignRender = {
                 if (typeof this.updateMoveAreaFloatingToolbar === 'function') {
                     this.updateMoveAreaFloatingToolbar();
                 }
+                if (typeof this.updateOwnerEraserFloatingToolbar === 'function') {
+                    this.updateOwnerEraserFloatingToolbar();
+                }
                 if (!this.renderWorker) return;
 
                 const selArray = this.selectedPixels ? Array.from(this.selectedPixels) : [];
@@ -539,6 +542,9 @@ export const DesignRender = {
         }
         if (typeof this.updateMoveAreaFloatingToolbar === 'function') {
             this.updateMoveAreaFloatingToolbar();
+        }
+        if (typeof this.updateOwnerEraserFloatingToolbar === 'function') {
+            this.updateOwnerEraserFloatingToolbar();
         }
 
         if (this.shapePreviewBox || (this.shapePreviewPixels && this.shapePreviewPixels.length > 0)) {

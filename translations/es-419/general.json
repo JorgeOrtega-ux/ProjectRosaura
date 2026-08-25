@@ -2372,5 +2372,8 @@
     "msg_pixel_perfect_off": "Modo Pixel-Perfect desactivado",
     "msg_color_swap_done": "Color reemplazado en la capa activa",
     "msg_symmetry_mode": "Modo de simetría: :mode",
-    "msg_quick_shapes_mode": "Primitivas: :shape"
+    "msg_quick_shapes_mode": "Primitivas: :shape",
+    "lbl_defining_zone": "Definiendo zona",
+    "btn_delete_selection": "Borrar selección",
+    "btn_transform_selection": "Transformar selección"
 }

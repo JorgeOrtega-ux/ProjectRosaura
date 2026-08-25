@@ -758,6 +758,27 @@ export const InteractionEvents = {
             return;
         }
 
+        const btnClearArea = e.target.closest('[data-action="executeOwnerClearArea"]');
+        if (btnClearArea) {
+            e.preventDefault();
+            this.executeOwnerClearArea();
+            return;
+        }
+
+        const btnCancelEraser = e.target.closest('[data-action="cancelOwnerEraser"]');
+        if (btnCancelEraser) {
+            e.preventDefault();
+            this.ownerEraserBox = null;
+            this.ownerEraserStep = 0;
+            this.ownerEraserStart = null;
+            this.updateSelectionUI();
+            if (typeof this.updateOwnerEraserFloatingToolbar === 'function') {
+                this.updateOwnerEraserFloatingToolbar();
+            }
+            this.requestRender();
+            return;
+        }
+
         const btnOfflineMoveArea = e.target.closest('[data-action="toggleOfflineMoveArea"]');
         if (btnOfflineMoveArea) {
             e.preventDefault();
@@ -765,7 +786,7 @@ export const InteractionEvents = {
             return;
         }
 
-        const btnConfirmMove = e.target.closest('[data-action="confirmMoveArea"]');
+        const btnConfirmMove = e.target.closest('[data-action="commitMoveArea"]') || e.target.closest('[data-action="confirmMoveArea"]');
         if (btnConfirmMove) {
             e.preventDefault();
             this.commitMoveArea();
@@ -776,6 +797,51 @@ export const InteractionEvents = {
         if (btnCancelMove) {
             e.preventDefault();
             this.cancelMoveArea();
+            return;
+        }
+
+        const btnFloatSelection = e.target.closest('[data-action="floatSelection"]');
+        if (btnFloatSelection) {
+            e.preventDefault();
+            if (typeof this.floatSelection === 'function') {
+                this.floatSelection(false);
+            }
+            return;
+        }
+
+        const btnCopySelection = e.target.closest('[data-action="copySelection"]');
+        if (btnCopySelection) {
+            e.preventDefault();
+            if (typeof this.copySelection === 'function') {
+                this.copySelection();
+            }
+            return;
+        }
+
+        const btnCutSelection = e.target.closest('[data-action="cutSelection"]');
+        if (btnCutSelection) {
+            e.preventDefault();
+            if (typeof this.cutSelection === 'function') {
+                this.cutSelection();
+            }
+            return;
+        }
+
+        const btnDeleteSelection = e.target.closest('[data-action="deleteSelection"]');
+        if (btnDeleteSelection) {
+            e.preventDefault();
+            if (typeof this.deleteSelection === 'function') {
+                this.deleteSelection();
+            }
+            return;
+        }
+
+        const btnClearSelection = e.target.closest('[data-action="clearSelection"]');
+        if (btnClearSelection) {
+            e.preventDefault();
+            if (typeof this.clearSelection === 'function') {
+                this.clearSelection();
+            }
             return;
         }
 

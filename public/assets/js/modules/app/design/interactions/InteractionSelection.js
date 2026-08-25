@@ -85,12 +85,25 @@ export const InteractionSelection = {
     },
 
     updateSelectionUI() {
+        if (typeof this.updateOwnerEraserFloatingToolbar === 'function') {
+            this.updateOwnerEraserFloatingToolbar();
+        }
+        if (typeof this.updateMoveAreaFloatingToolbar === 'function') {
+            this.updateMoveAreaFloatingToolbar();
+        }
+
         if (!this.btnPlacePixels || !this.txtPlacePixels) return;
 
+        const actionPill = this.btnPlacePixels.closest('.component-action-pill') || this.btnPlacePixels.parentElement;
+        const iconSpan = this.btnPlacePixels.querySelector('.material-symbols-rounded');
+
         if (this.interactionMode === 'owner_erasing' || this.interactionMode === 'owner_protecting') {
-                        this.btnPlacePixels.classList.replace('component-button--success', 'component-button--danger');
+            if (actionPill) actionPill.classList.remove('disabled');
+            this.btnPlacePixels.classList.remove('component-button--success');
+            this.btnPlacePixels.classList.add('component-button--danger');
             if (this.interactionMode === 'owner_protecting') {
-                this.btnPlacePixels.classList.replace('component-button--danger', 'component-button--success');
+                this.btnPlacePixels.classList.remove('component-button--danger');
+                this.btnPlacePixels.classList.add('component-button--success');
             }
             
             let areaSize = 0;
@@ -100,19 +113,27 @@ export const InteractionSelection = {
 
             if (this.ownerEraserBox && this.ownerEraserStep === 2) {
                 this.btnPlacePixels.classList.remove('disabled-interaction');
-                this.txtPlacePixels.textContent = this.interactionMode === 'owner_erasing' ? `Vaciar zona (${areaSize} px)` : `Modificar protecci├│n (${areaSize} px)`;
+                const label = this.interactionMode === 'owner_erasing' ? (window.__('btn_clear_area') || 'Vaciar zona') : 'Modificar protección';
+                this.txtPlacePixels.textContent = `${label} (${areaSize} px)`;
+                if (iconSpan) iconSpan.textContent = this.interactionMode === 'owner_erasing' ? 'delete' : 'admin_panel_settings';
             } else if (this.ownerEraserStep === 1) {
                 this.btnPlacePixels.classList.add('disabled-interaction');
-                this.txtPlacePixels.textContent = `Definiendo zona (${areaSize} px)...`;
+                const label = window.__('lbl_defining_zone') || 'Definiendo zona';
+                this.txtPlacePixels.textContent = `${label} (${areaSize} px)...`;
+                if (iconSpan) iconSpan.textContent = 'crop_free';
             } else {
                 this.btnPlacePixels.classList.add('disabled-interaction');
-                this.txtPlacePixels.textContent = 'Haz clic en el lienzo';
+                this.txtPlacePixels.textContent = window.__('lbl_click_on_canvas') || 'Haz clic en el lienzo';
+                if (iconSpan) iconSpan.textContent = 'touch_app';
             }
             return;
         }
 
         if (this.interactionMode === 'placing_mines') {
-                        this.btnPlacePixels.classList.replace('component-button--danger', 'component-button--success');
+            if (actionPill) actionPill.classList.remove('disabled');
+            this.btnPlacePixels.classList.remove('component-button--danger');
+            this.btnPlacePixels.classList.add('component-button--success');
+            if (iconSpan) iconSpan.textContent = 'bomb';
 
             const count = this.selectedPixels.size;
             if (count > 0 && count <= 10) {
@@ -120,18 +141,26 @@ export const InteractionSelection = {
                 this.txtPlacePixels.textContent = `Colocar minas (${count}/10)`;
             } else if (count > 10) {
                 this.btnPlacePixels.classList.add('disabled-interaction');
-                this.txtPlacePixels.textContent = `M├íx 10 minas`;
+                this.txtPlacePixels.textContent = `Máx 10 minas`;
             } else {
                 this.btnPlacePixels.classList.add('disabled-interaction');
-                this.txtPlacePixels.textContent = 'Selecciona p├¡xeles';
+                this.txtPlacePixels.textContent = 'Selecciona píxeles';
             }
             return;
         }
 
+        if (this.isOfflineMode) {
+            // In offline mode and not in special interaction (owner_erasing/mines), hide the placement action pill
+            if (actionPill) actionPill.classList.add('disabled');
+            return;
+        }
+
+        if (actionPill) actionPill.classList.remove('disabled');
         let maxBalance = this.getMaxBalance();
 
         this.btnPlacePixels.classList.remove('component-button--success');
         this.btnPlacePixels.classList.remove('component-button--danger');
+        if (iconSpan) iconSpan.textContent = 'touch_app';
 
         if (this.selectedPixels.size > 0 && this.selectedPixels.size <= maxBalance) {
             this.btnPlacePixels.classList.remove('disabled-interaction');

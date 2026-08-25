@@ -45,6 +45,9 @@ export const InteractionOwnerTools = {
         // We only use ownerEraserBox.
         this.ownerEraserBox = { x1: minX, y1: minY, x2: maxX, y2: maxY };
         this.updateSelectionUI();
+        if (typeof this.updateOwnerEraserFloatingToolbar === 'function') {
+            this.updateOwnerEraserFloatingToolbar();
+        }
         // Throttle render during drag to avoid lag on large canvases (4096+)
         if (!this._areaSelectRenderPending) {
             this._areaSelectRenderPending = true;
@@ -53,6 +56,39 @@ export const InteractionOwnerTools = {
                 this.requestRender();
             });
         }
+    },
+
+    updateOwnerEraserFloatingToolbar() {
+        const toolbarEl = document.querySelector('[data-ref="eraser-floating-toolbar"]');
+        if (!toolbarEl) return;
+
+        const isLockedState = !!(this.isSpectator || this.isResetLocked || this.isResizeLocked);
+
+        if (!this.ownerEraserBox || this.ownerEraserStep !== 2 || (this.interactionMode !== 'owner_erasing' && this.interactionMode !== 'owner_protecting') || isLockedState || this.isDragging || this.isZooming || !this.canvas || !this.transform) {
+            toolbarEl.classList.add('disabled');
+            toolbarEl.classList.remove('active');
+            return;
+        }
+
+        const box = this.ownerEraserBox;
+        const canvasRect = this.canvas.getBoundingClientRect();
+        const containerRect = this.canvas.parentNode ? this.canvas.parentNode.getBoundingClientRect() : canvasRect;
+
+        const centerX = (box.x1 + box.x2 + 1) / 2;
+        const topY = box.y1;
+
+        const screenX = canvasRect.left + (centerX * this.transform.scale) + this.transform.x;
+        const screenY = canvasRect.top + (topY * this.transform.scale) + this.transform.y;
+
+        const leftPx = screenX - containerRect.left;
+        const topPx = screenY - containerRect.top - 8;
+
+        toolbarEl.style.position = 'absolute';
+        toolbarEl.style.left = `${Math.round(leftPx)}px`;
+        toolbarEl.style.top = `${Math.round(topPx)}px`;
+        toolbarEl.style.transform = 'translate(-50%, -100%)';
+        toolbarEl.classList.remove('disabled');
+        toolbarEl.classList.add('active');
     },
 
     executeOwnerClearArea() {

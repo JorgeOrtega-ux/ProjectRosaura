@@ -278,13 +278,16 @@ export const InteractionPointer = {
                 } else if (this.ownerEraserStep === 1) {
                     this.ownerEraserStep = 2;
                     this.selectOwnerArea(this.ownerEraserStart.x, this.ownerEraserStart.y, coords.x, coords.y, false);
+                    if (typeof this.updateOwnerEraserFloatingToolbar === 'function') {
+                        this.updateOwnerEraserFloatingToolbar();
+                    }
                     if (typeof showMessage === 'function') {
                         let areaSize = 0;
                         if (this.ownerEraserBox) {
                             areaSize = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
                         }
-                        const actionWord = this.interactionMode === 'owner_erasing' ? 'Vaciar zona' : 'Bloquear zona';
-                        showMessage(`Zona fijada (${areaSize} px). Haz clic en '${actionWord}' abajo para confirmar.`, 'success');
+                        const actionWord = this.interactionMode === 'owner_erasing' ? (window.__('btn_clear_area') || 'Vaciar zona') : 'Bloquear zona';
+                        showMessage(`Zona fijada (${areaSize} px). Haz clic en '${actionWord}' o presiona Enter para confirmar.`, 'success');
                     }
                 }
                 return;
@@ -836,6 +839,22 @@ export const InteractionPointer = {
                     this.selectMoveArea(this.moveAreaBox.x1, this.moveAreaBox.y1, this.moveAreaBox.x2, this.moveAreaBox.y2, 0, 0, 2);
                 }
                 return;
+            }
+        }
+
+        if ((this.interactionMode === 'owner_erasing' || this.interactionMode === 'owner_protecting') && this.ownerEraserStep === 1 && this.ownerEraserStart && this.ownerEraserBox) {
+            const isDragged = (this.ownerEraserBox.x1 !== this.ownerEraserBox.x2 || this.ownerEraserBox.y1 !== this.ownerEraserBox.y2);
+            if (isDragged) {
+                this.ownerEraserStep = 2;
+                this.updateSelectionUI();
+                if (typeof this.updateOwnerEraserFloatingToolbar === 'function') {
+                    this.updateOwnerEraserFloatingToolbar();
+                }
+                let areaSize = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
+                const actionWord = this.interactionMode === 'owner_erasing' ? (window.__('btn_clear_area') || 'Vaciar zona') : 'Bloquear zona';
+                if (typeof showMessage === 'function') {
+                    showMessage(`Zona fijada (${areaSize} px). Haz clic en '${actionWord}' o presiona Enter para confirmar.`, 'success');
+                }
             }
         }
 
@@ -1593,6 +1612,22 @@ export const InteractionPointer = {
                     this.selectMoveArea(this.moveAreaBox.x1, this.moveAreaBox.y1, this.moveAreaBox.x2, this.moveAreaBox.y2, 0, 0, 2);
                 }
                 return;
+            }
+        }
+
+        if ((this.interactionMode === 'owner_erasing' || this.interactionMode === 'owner_protecting') && this.ownerEraserStep === 1 && this.ownerEraserStart && this.ownerEraserBox) {
+            const isDragged = (this.ownerEraserBox.x1 !== this.ownerEraserBox.x2 || this.ownerEraserBox.y1 !== this.ownerEraserBox.y2);
+            if (isDragged) {
+                this.ownerEraserStep = 2;
+                this.updateSelectionUI();
+                if (typeof this.updateOwnerEraserFloatingToolbar === 'function') {
+                    this.updateOwnerEraserFloatingToolbar();
+                }
+                let areaSize = (this.ownerEraserBox.x2 - this.ownerEraserBox.x1 + 1) * (this.ownerEraserBox.y2 - this.ownerEraserBox.y1 + 1);
+                const actionWord = this.interactionMode === 'owner_erasing' ? (window.__('btn_clear_area') || 'Vaciar zona') : 'Bloquear zona';
+                if (typeof showMessage === 'function') {
+                    showMessage(`Zona fijada (${areaSize} px). Haz clic en '${actionWord}' o presiona Enter para confirmar.`, 'success');
+                }
             }
         }
 

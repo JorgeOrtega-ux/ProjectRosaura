@@ -373,6 +373,36 @@ extract($designData);
                 </button>
             </div>
 
+            <div class="component-badge component-badge--dark component-badge--toolbar disabled" data-ref="eraser-floating-toolbar">
+                <button class="component-button component-button--icon component-button--h24 component-button--danger" data-action="executeOwnerClearArea" data-ref="btn-confirm-clear-area" data-tooltip="<?php echo __('btn_clear_area', 'Vaciar zona'); ?> [Enter / Supr]" data-position="top">
+                    <span class="material-symbols-rounded">delete</span>
+                </button>
+                <button class="component-button component-button--icon component-button--h24" data-action="cancelOwnerEraser" data-ref="btn-cancel-clear-area" data-tooltip="<?php echo __('btn_cancel', 'Cancelar'); ?> [Esc]" data-position="top">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+
+            <div class="component-badge component-badge--dark component-badge--toolbar disabled" data-ref="move-area-floating-toolbar">
+                <button class="component-button component-button--icon component-button--h24 component-button--success" data-action="commitMoveArea" data-tooltip="<?php echo __('btn_confirm_move', 'Aplicar movimiento'); ?> [Enter]" data-position="top">
+                    <span class="material-symbols-rounded">check</span>
+                </button>
+                <button class="component-button component-button--icon component-button--h24" data-action="floatSelection" data-tooltip="<?php echo __('btn_transform_selection', 'Transformar / Flotar selección'); ?>" data-position="top">
+                    <span class="material-symbols-rounded">open_with</span>
+                </button>
+                <button class="component-button component-button--icon component-button--h24" data-action="copySelection" data-tooltip="<?php echo __('btn_copy', 'Copiar'); ?> [Ctrl+C]" data-position="top">
+                    <span class="material-symbols-rounded">content_copy</span>
+                </button>
+                <button class="component-button component-button--icon component-button--h24" data-action="cutSelection" data-tooltip="<?php echo __('btn_cut', 'Cortar'); ?> [Ctrl+X]" data-position="top">
+                    <span class="material-symbols-rounded">content_cut</span>
+                </button>
+                <button class="component-button component-button--icon component-button--h24 component-button--danger" data-action="deleteSelection" data-tooltip="<?php echo __('btn_delete_selection', 'Borrar selección'); ?> [Supr]" data-position="top">
+                    <span class="material-symbols-rounded">delete</span>
+                </button>
+                <button class="component-button component-button--icon component-button--h24" data-action="cancelMoveArea" data-tooltip="<?php echo __('btn_cancel', 'Cancelar'); ?> [Esc]" data-position="top">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+
             <div class="canvas-badges-left" data-ref="badges-left">
                 
                 <div class="component-badge" data-badge-id="coords">
@@ -410,8 +440,8 @@ extract($designData);
             
             <div class="canvas-badges-right" data-ref="badges-right"></div>
             
-            <?php if (!$isSnapshot && !empty($isOnlineActive)): ?>
-            <div class="component-action-pill <?php echo ($isBlockedInit || $isSpectatorInit || $isSubscriptionLockedInit) ? 'disabled' : ''; ?>">
+            <?php if (!$isSnapshot): ?>
+            <div class="component-action-pill <?php echo ($isBlockedInit || $isSpectatorInit || $isSubscriptionLockedInit || empty($isOnlineActive)) ? 'disabled' : ''; ?>" data-ref="canvas-action-pill">
                 <button class="component-button component-button--h45 disabled-interaction" data-action="placePixels" data-ref="pixel-action-btn">
                     <span class="material-symbols-rounded">touch_app</span>
                     <span data-ref="pixel-action-text"><?php echo __('btn_select_pixels'); ?></span>

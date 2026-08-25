@@ -743,23 +743,55 @@ export const InteractionShapesText = {
         const tb = document.querySelector('[data-ref="move-area-floating-toolbar"]');
         if (!tb) return;
 
-        if (this.interactionMode === 'offline_moving_area' && this.moveAreaBox && this.moveAreaStep >= 2) {
+        const isLockedState = !!(this.isSpectator || this.isResetLocked || this.isResizeLocked);
+
+        const hasBox = this.moveAreaBox && this.moveAreaStep >= 2;
+        const hasActivePixels = this.activeSelectionPixels && this.activeSelectionPixels.length > 0;
+        const hasSelection = (this.interactionMode === 'offline_moving_area') && (hasBox || hasActivePixels);
+
+        if (!hasSelection || isLockedState || this.isDragging || this.isZooming || !this.canvas || !this.transform) {
+            tb.classList.add('disabled');
+            tb.classList.remove('active');
+            return;
+        }
+
+        let centerX = 0;
+        let topY = 0;
+
+        if (hasBox) {
             const box = this.moveAreaBox;
             const curX1 = Math.min(box.x1, box.x2) + (box.dx || 0);
             const curX2 = Math.max(box.x1, box.x2) + (box.dx || 0);
             const curY1 = Math.min(box.y1, box.y2) + (box.dy || 0);
-            const centerX = ((curX1 + curX2 + 1) / 2) * this.transform.scale + this.transform.x;
-            const topY = curY1 * this.transform.scale + this.transform.y - 44;
-
-            tb.style.position = 'absolute';
-            tb.style.left = '0px';
-            tb.style.top = '0px';
-            tb.style.transform = `translate3d(calc(${Math.round(centerX)}px - 50%), ${Math.round(topY)}px, 0)`;
-            tb.style.display = 'flex';
-            tb.style.zIndex = '60';
-        } else {
-            tb.style.display = 'none';
+            centerX = (curX1 + curX2 + 1) / 2;
+            topY = curY1;
+        } else if (hasActivePixels) {
+            let minX = Infinity, maxX = -Infinity, minY = Infinity;
+            for (let i = 0; i < this.activeSelectionPixels.length; i++) {
+                const p = this.activeSelectionPixels[i];
+                if (p.x < minX) minX = p.x;
+                if (p.x > maxX) maxX = p.x;
+                if (p.y < minY) minY = p.y;
+            }
+            centerX = (minX + maxX + 1) / 2;
+            topY = minY;
         }
+
+        const canvasRect = this.canvas.getBoundingClientRect();
+        const containerRect = this.canvas.parentNode ? this.canvas.parentNode.getBoundingClientRect() : canvasRect;
+
+        const screenX = canvasRect.left + (centerX * this.transform.scale) + this.transform.x;
+        const screenY = canvasRect.top + (topY * this.transform.scale) + this.transform.y;
+
+        const leftPx = screenX - containerRect.left;
+        const topPx = screenY - containerRect.top - 8;
+
+        tb.style.position = 'absolute';
+        tb.style.left = `${Math.round(leftPx)}px`;
+        tb.style.top = `${Math.round(topPx)}px`;
+        tb.style.transform = 'translate(-50%, -100%)';
+        tb.classList.remove('disabled');
+        tb.classList.add('active');
     },
 
     commitMoveArea() {
@@ -893,16 +925,57 @@ export const InteractionShapesText = {
     },
 
     deleteSelection() {
-        if (!this.activeSelectionPixels || this.activeSelectionPixels.length === 0) return;
-        if (this.renderWorker) {
-            this.renderWorker.postMessage({
-                type: 'CLEAR_SELECTION_PIXELS'
-            });
+        if (this.activeSelectionPixels && this.activeSelectionPixels.length > 0) {
+            if (this.renderWorker) {
+                this.renderWorker.postMessage({
+                    type: 'CLEAR_SELECTION_PIXELS'
+                });
+            }
+            this.clearSelection();
+            if (typeof this.saveOfflineCanvasState === 'function') {
+                this.saveOfflineCanvasState(false);
+            }
+            this.requestRender();
+            return;
         }
-        this.clearSelection();
+
+        if (this.moveAreaBox) {
+            const { x1, y1, x2, y2 } = this.moveAreaBox;
+            const minX = Math.min(x1, x2);
+            const maxX = Math.max(x1, x2);
+            const minY = Math.min(y1, y2);
+            const maxY = Math.max(y1, y2);
+            if (this.renderWorker) {
+                this.renderWorker.postMessage({
+                    type: 'CLEAR_AREA',
+                    payload: { x1: minX, y1: minY, x2: maxX, y2: maxY }
+                });
+            }
+            if (this.offscreenCtx) {
+                this.offscreenCtx.clearRect(minX, minY, maxX - minX + 1, maxY - minY + 1);
+            }
+            this.cancelMoveArea();
+            if (typeof this.saveOfflineCanvasState === 'function') {
+                this.saveOfflineCanvasState(false);
+            }
+            this.requestRender();
+        }
     },
 
     floatSelection(isCut = false) {
+        if ((!this.activeSelectionPixels || this.activeSelectionPixels.length === 0) && this.moveAreaBox) {
+            const pixels = [];
+            const minX = Math.min(this.moveAreaBox.x1, this.moveAreaBox.x2);
+            const maxX = Math.max(this.moveAreaBox.x1, this.moveAreaBox.x2);
+            const minY = Math.min(this.moveAreaBox.y1, this.moveAreaBox.y2);
+            const maxY = Math.max(this.moveAreaBox.y1, this.moveAreaBox.y2);
+            for (let y = minY; y <= maxY; y++) {
+                for (let x = minX; x <= maxX; x++) {
+                    pixels.push({ x, y });
+                }
+            }
+            this.activeSelectionPixels = pixels;
+        }
         if (!this.activeSelectionPixels || this.activeSelectionPixels.length === 0) return;
         if (this.renderWorker) {
             this.renderWorker.postMessage({
