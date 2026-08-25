@@ -440,6 +440,7 @@ class CanvasSettingsService {
 
             $emptyBinary = str_repeat("\x00\x00\x00\x00", $w * $h);
             $this->canvasRepository->saveSnapshot($canvasId, $emptyBinary);
+            $this->canvasRepository->deleteLayersData($canvasId);
 
             try {
                 if (class_exists(RedisCache::class)) {

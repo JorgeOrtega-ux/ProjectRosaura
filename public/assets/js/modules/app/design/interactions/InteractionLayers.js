@@ -4,6 +4,7 @@ export const InteractionLayers = {
     layers: [],
     activeLayerId: null,
     isLayersPanelOpen: false,
+    isLayersCarouselOpen: false,
 
     toggleLayersPanel() {
         if (!this.isOfflineMode) return;
@@ -26,11 +27,37 @@ export const InteractionLayers = {
         }
     },
 
+    toggleLayersCarousel() {
+        if (!this.isOfflineMode) return;
+        const carousel = document.querySelector('[data-ref="layers-bottom-carousel"]');
+        const btn = document.querySelector('[data-ref="btn-footer-toggle-layers"]');
+        if (!carousel) return;
+
+        const isCurrentlyOpen = !carousel.classList.contains('disabled');
+        if (isCurrentlyOpen) {
+            carousel.classList.add('disabled');
+            if (btn) btn.classList.remove('active');
+            this.isLayersCarouselOpen = false;
+        } else {
+            carousel.classList.remove('disabled');
+            if (btn) btn.classList.add('active');
+            this.isLayersCarouselOpen = true;
+            this.renderLayersCarouselUI();
+            if (this.renderWorker) {
+                this.renderWorker.postMessage({ type: 'GET_ALL_LAYER_PREVIEWS' });
+            }
+        }
+        if (typeof this.handleResize === 'function') {
+            this.handleResize();
+        }
+    },
+
     handleLayersStateChanged(payload) {
         if (!payload) return;
         this.layers = payload.layers || [];
         this.activeLayerId = payload.activeLayerId || null;
         this.renderLayersUI();
+        this.renderLayersCarouselUI();
 
         const activeLayer = this.layers.find(l => l.id === this.activeLayerId);
         const nameEl = document.querySelector('[data-ref="layer-active-name"]');
@@ -46,15 +73,27 @@ export const InteractionLayers = {
     handleLayerPreviewUpdated(payload) {
         if (!payload) return;
         const previewCanvas = document.querySelector('[data-ref="layer-preview-canvas"]');
-        if (!previewCanvas) return;
+        if (previewCanvas) {
+            const ctx = previewCanvas.getContext('2d');
+            if (ctx) {
+                ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                if (payload.imageBitmap) {
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.drawImage(payload.imageBitmap, 0, 0, previewCanvas.width, previewCanvas.height);
+                }
+            }
+        }
 
-        const ctx = previewCanvas.getContext('2d');
-        if (!ctx) return;
-
-        ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
         if (payload.imageBitmap) {
-            ctx.imageSmoothingEnabled = false;
-            ctx.drawImage(payload.imageBitmap, 0, 0, previewCanvas.width, previewCanvas.height);
+            const cardCanvases = document.querySelectorAll(`canvas[data-layer-preview-id="${payload.layerId}"]`);
+            cardCanvases.forEach(c => {
+                const cCtx = c.getContext('2d');
+                if (cCtx) {
+                    cCtx.clearRect(0, 0, c.width, c.height);
+                    cCtx.imageSmoothingEnabled = false;
+                    cCtx.drawImage(payload.imageBitmap, 0, 0, c.width, c.height);
+                }
+            });
         }
 
         const nameEl = document.querySelector('[data-ref="layer-active-name"]');
@@ -67,8 +106,156 @@ export const InteractionLayers = {
         }
     },
 
+    renderLayersCarouselUI() {
+        const track = document.querySelector('[data-ref="layers-carousel-track"]');
+        if (!track) return;
+
+        track.innerHTML = '';
+        if (!this.layers || this.layers.length === 0) return;
+
+        this.layers.forEach((layer, idx) => {
+            const isActive = layer.id === this.activeLayerId;
+            const isLocked = !!layer.locked;
+            const isVisible = layer.visible !== false;
+
+            const card = document.createElement('div');
+            card.className = `canvas-design-layer-card ${isActive ? 'active' : ''} ${isLocked ? 'locked' : ''} ${!isVisible ? 'hidden-layer' : ''}`;
+            card.setAttribute('data-layer-id', layer.id);
+            card.setAttribute('data-action', 'selectLayer');
+            card.setAttribute('data-tooltip', `${layer.name || 'Capa ' + (idx + 1)}${isLocked ? ' (Bloqueada)' : ''}${!isVisible ? ' (Oculta)' : ''}`);
+            card.setAttribute('data-position', 'top');
+            card.draggable = true;
+
+            // Drag & Drop events for horizontal reordering
+            card.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', layer.id);
+                e.dataTransfer.effectAllowed = 'move';
+                card.classList.add('is-dragging');
+            });
+
+            card.addEventListener('dragend', () => {
+                card.classList.remove('is-dragging');
+                track.querySelectorAll('.canvas-design-layer-card').forEach(el => el.classList.remove('drag-over-left', 'drag-over-right'));
+            });
+
+            card.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                const rect = card.getBoundingClientRect();
+                const midX = rect.left + rect.width / 2;
+                if (e.clientX < midX) {
+                    card.classList.add('drag-over-left');
+                    card.classList.remove('drag-over-right');
+                } else {
+                    card.classList.add('drag-over-right');
+                    card.classList.remove('drag-over-left');
+                }
+            });
+
+            card.addEventListener('dragleave', () => {
+                card.classList.remove('drag-over-left', 'drag-over-right');
+            });
+
+            card.addEventListener('drop', (e) => {
+                e.preventDefault();
+                card.classList.remove('drag-over-left', 'drag-over-right');
+                const draggedId = e.dataTransfer.getData('text/plain');
+                if (!draggedId || draggedId === layer.id) return;
+
+                const fromIdx = this.layers.findIndex(l => l.id === draggedId);
+                let toIdx = this.layers.findIndex(l => l.id === layer.id);
+                if (fromIdx < 0 || toIdx < 0) return;
+
+                const rect = card.getBoundingClientRect();
+                const midX = rect.left + rect.width / 2;
+                const isRight = e.clientX >= midX;
+
+                const newLayers = [...this.layers];
+                const [moved] = newLayers.splice(fromIdx, 1);
+
+                let targetInsertIdx = this.layers.findIndex(l => l.id === layer.id);
+                if (fromIdx < targetInsertIdx) targetInsertIdx--;
+                if (isRight) targetInsertIdx++;
+
+                targetInsertIdx = Math.max(0, Math.min(newLayers.length, targetInsertIdx));
+                newLayers.splice(targetInsertIdx, 0, moved);
+
+                this.layers = newLayers;
+                this.renderLayersUI();
+                this.renderLayersCarouselUI();
+
+                if (this.renderWorker) {
+                    this.renderWorker.postMessage({
+                        type: 'REORDER_LAYERS',
+                        payload: { order: this.layers.map(l => l.id) }
+                    });
+                }
+            });
+
+            // Thumbnail canvas
+            const canvas = document.createElement('canvas');
+            canvas.className = 'canvas-design-layer-card__canvas';
+            canvas.setAttribute('data-layer-preview-id', layer.id);
+            canvas.width = 96;
+            canvas.height = 96;
+            card.appendChild(canvas);
+
+            // Layer name badge
+            const badge = document.createElement('div');
+            badge.className = 'canvas-design-layer-card__badge';
+            badge.textContent = layer.name || `Capa ${idx + 1}`;
+            card.appendChild(badge);
+
+            // Action buttons (Lock & Visibility)
+            const actions = document.createElement('div');
+            actions.className = 'canvas-design-layer-card__actions';
+
+            // Lock button
+            const lockBtn = document.createElement('button');
+            lockBtn.type = 'button';
+            lockBtn.className = `canvas-design-layer-card__action-btn canvas-design-layer-card__action-btn--lock ${isLocked ? 'active' : ''}`;
+            lockBtn.setAttribute('data-action', 'toggleLayerLock');
+            lockBtn.setAttribute('data-layer-id', layer.id);
+            lockBtn.setAttribute('data-tooltip', isLocked ? (window.__('tooltip_layer_unlock') || 'Desbloquear') : (window.__('tooltip_layer_lock') || 'Bloquear'));
+            lockBtn.setAttribute('data-position', 'top');
+            lockBtn.innerHTML = `<span class="material-symbols-rounded">${isLocked ? 'lock' : 'lock_open'}</span>`;
+            actions.appendChild(lockBtn);
+
+            // Visibility / Eye button
+            const visBtn = document.createElement('button');
+            visBtn.type = 'button';
+            visBtn.className = `canvas-design-layer-card__action-btn canvas-design-layer-card__action-btn--vis ${!isVisible ? 'hidden-btn' : ''}`;
+            visBtn.setAttribute('data-action', 'toggleLayerVisibility');
+            visBtn.setAttribute('data-layer-id', layer.id);
+            visBtn.setAttribute('data-tooltip', isVisible ? (window.__('tooltip_layer_hide') || 'Ocultar capa (Alt+clic para aislar)') : (window.__('tooltip_layer_show') || 'Mostrar capa'));
+            visBtn.setAttribute('data-position', 'top');
+            visBtn.innerHTML = `<span class="material-symbols-rounded">${isVisible ? 'visibility' : 'visibility_off'}</span>`;
+            actions.appendChild(visBtn);
+
+            card.appendChild(actions);
+            track.appendChild(card);
+        });
+
+        // Add Layer Card button at the end
+        const addCard = document.createElement('div');
+        addCard.className = 'canvas-design-layer-card--add';
+        addCard.setAttribute('data-action', 'addLayer');
+        addCard.setAttribute('data-tooltip', window.__('tooltip_add_layer') || 'Nueva capa');
+        addCard.setAttribute('data-position', 'top');
+        addCard.innerHTML = '<span class="material-symbols-rounded">add</span>';
+        track.appendChild(addCard);
+    },
+
     renderLayersUI() {
         const container = document.querySelector('[data-ref="layers-list-scroll"]');
+        const footerCountEl = document.querySelector('[data-ref="footer-layers-count"]');
+        if (footerCountEl && this.layers) {
+            const total = this.layers.length || 1;
+            const activeIndex = this.layers.findIndex(l => l.id === this.activeLayerId);
+            const currentNum = activeIndex >= 0 ? (total - activeIndex) : 1;
+            footerCountEl.textContent = `${currentNum}/${total}`;
+        }
+
         if (!container) return;
 
         container.innerHTML = '';
@@ -288,6 +475,14 @@ export const InteractionLayers = {
         this.renderWorker.postMessage({
             type: 'TOGGLE_LAYER_VISIBILITY',
             payload: { layerId: targetId, visible }
+        });
+    },
+
+    isolateLayer(layerId) {
+        if (!this.isOfflineMode || !this.renderWorker || !layerId) return;
+        this.renderWorker.postMessage({
+            type: 'ISOLATE_LAYER',
+            payload: { layerId }
         });
     },
 

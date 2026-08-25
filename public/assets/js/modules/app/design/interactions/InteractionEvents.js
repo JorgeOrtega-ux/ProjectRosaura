@@ -127,6 +127,15 @@ export const InteractionEvents = {
             return;
         }
 
+        const btnToggleLayersCarousel = e.target.closest('[data-action="toggleLayersCarousel"]');
+        if (btnToggleLayersCarousel) {
+            e.preventDefault();
+            if (typeof this.toggleLayersCarousel === 'function') {
+                this.toggleLayersCarousel();
+            }
+            return;
+        }
+
         const btnAddLayer = e.target.closest('[data-action="addLayer"]');
         if (btnAddLayer) {
             e.preventDefault();
@@ -199,6 +208,7 @@ export const InteractionEvents = {
         const btnToggleLayerLock = e.target.closest('[data-action="toggleLayerLock"]');
         if (btnToggleLayerLock) {
             e.preventDefault();
+            e.stopPropagation();
             const layerId = btnToggleLayerLock.getAttribute('data-layer-id');
             if (typeof this.toggleLayerLock === 'function') {
                 this.toggleLayerLock(layerId);
@@ -208,15 +218,22 @@ export const InteractionEvents = {
 
         const inputToggleLayerVis = e.target.closest('[data-action="toggleLayerVisibility"]');
         if (inputToggleLayerVis) {
+            e.preventDefault();
+            e.stopPropagation();
             const layerId = inputToggleLayerVis.getAttribute('data-layer-id');
-            if (typeof this.toggleLayerVisibility === 'function') {
-                this.toggleLayerVisibility(layerId, inputToggleLayerVis.checked);
+            if (e.altKey && typeof this.isolateLayer === 'function') {
+                this.isolateLayer(layerId);
+            } else if (typeof this.toggleLayerVisibility === 'function') {
+                const isCheckbox = inputToggleLayerVis.tagName === 'INPUT' && inputToggleLayerVis.type === 'checkbox';
+                const visVal = isCheckbox ? inputToggleLayerVis.checked : undefined;
+                this.toggleLayerVisibility(layerId, visVal);
             }
             return;
         }
 
         const layerSelectTarget = e.target.closest('[data-action="selectLayer"]');
         if (layerSelectTarget) {
+            e.preventDefault();
             const layerId = layerSelectTarget.getAttribute('data-layer-id');
             if (layerId && typeof this.selectLayer === 'function') {
                 this.selectLayer(layerId);
@@ -256,6 +273,38 @@ export const InteractionEvents = {
             e.preventDefault();
             if (typeof this.cancelScheduledResize === 'function') {
                 this.cancelScheduledResize(btnCancelSchedResize);
+            }
+            return;
+        }
+
+        const btnZoomIn = e.target.closest('[data-action="zoomInStep"]');
+        if (btnZoomIn) {
+            e.preventDefault();
+            this.stepZoom(1.25);
+            return;
+        }
+
+        const btnZoomOut = e.target.closest('[data-action="zoomOutStep"]');
+        if (btnZoomOut) {
+            e.preventDefault();
+            this.stepZoom(0.8);
+            return;
+        }
+
+        const btnResetZoom = e.target.closest('[data-action="resetZoomFit"]');
+        if (btnResetZoom) {
+            e.preventDefault();
+            this.resetZoomToScale(1.0);
+            return;
+        }
+
+        const btnShortcuts = e.target.closest('[data-action="openShortcutsHelp"]');
+        if (btnShortcuts) {
+            e.preventDefault();
+            if (typeof this.openShortcutsHelpModal === 'function') {
+                this.openShortcutsHelpModal();
+            } else if (window.modalSystem) {
+                window.modalSystem.show('shortcutsModal', {});
             }
             return;
         }
@@ -1336,6 +1385,7 @@ export const InteractionEvents = {
         if (this.interactionMode === 'offline_text' && typeof this.updateFloatingTextPosition === 'function') {
             this.updateFloatingTextPosition();
         }
+        if (typeof this.updateZoomUI === 'function') this.updateZoomUI();
         this.requestRender();
 
         if (this.isProgressive && typeof this.updateVisibleChunks === 'function') {
@@ -1351,11 +1401,75 @@ export const InteractionEvents = {
         if (this.interactionMode === 'offline_text' && typeof this.updateFloatingTextPosition === 'function') {
             this.updateFloatingTextPosition();
         }
+        if (typeof this.updateZoomUI === 'function') this.updateZoomUI();
+        this.requestRender();
+    },
+
+    updateZoomUI() {
+        if (!this.transform) return;
+        const zoomPct = Math.round(this.transform.scale * 100);
+        const labelEl = document.querySelector('[data-ref="footer-zoom-label"]');
+        const sliderEl = document.querySelector('[data-ref="footer-zoom-slider"]');
+        if (labelEl) {
+            labelEl.textContent = `${zoomPct}%`;
+        }
+        if (sliderEl && document.activeElement !== sliderEl) {
+            sliderEl.value = Math.min(3000, Math.max(10, zoomPct));
+        }
+    },
+
+    stepZoom(factor) {
+        if (!this.transform || !this.canvas) return;
+        const rect = this.canvas.getBoundingClientRect();
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        let newScale = this.transform.scale * factor;
+        const minScale = 200 / Math.max(this.boardWidth || 1000, this.boardHeight || 1000);
+        newScale = Math.max(minScale, Math.min(newScale, 30));
+        this.transform.x = centerX - (centerX - this.transform.x) * (newScale / this.transform.scale);
+        this.transform.y = centerY - (centerY - this.transform.y) * (newScale / this.transform.scale);
+        this.transform.scale = newScale;
+        if (typeof this.limitBounds === 'function') this.limitBounds();
+        this.updateZoomUI();
+        this.requestRender();
+    },
+
+    resetZoomToScale(scale = 1.0) {
+        if (!this.transform || !this.canvas) return;
+        const rect = this.canvas.getBoundingClientRect();
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        this.transform.x = centerX - (this.boardWidth * scale) / 2;
+        this.transform.y = centerY - (this.boardHeight * scale) / 2;
+        this.transform.scale = scale;
+        if (typeof this.limitBounds === 'function') this.limitBounds();
+        this.updateZoomUI();
         this.requestRender();
     },
 
     handleInput(e) {
         if (!e.target) return;
+
+        const isZoomSlider = e.target.matches('[data-ref="footer-zoom-slider"]');
+        if (isZoomSlider) {
+            const val = parseFloat(e.target.value);
+            const newScale = val / 100;
+            if (newScale > 0 && this.transform && this.canvas) {
+                const rect = this.canvas.getBoundingClientRect();
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                this.transform.x = centerX - (centerX - this.transform.x) * (newScale / this.transform.scale);
+                this.transform.y = centerY - (centerY - this.transform.y) * (newScale / this.transform.scale);
+                this.transform.scale = newScale;
+                if (typeof this.limitBounds === 'function') this.limitBounds();
+                const labelEl = document.querySelector('[data-ref="footer-zoom-label"]');
+                if (labelEl) {
+                    labelEl.textContent = `${Math.round(val)}%`;
+                }
+                this.requestRender();
+            }
+            return;
+        }
 
         const isCustomHexInput = e.target.matches('[data-ref="customHexInput"]');
         if (isCustomHexInput) {

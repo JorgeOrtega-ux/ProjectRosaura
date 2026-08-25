@@ -410,6 +410,51 @@ extract($designData);
             </div>
             <?php endif; ?>
         </div>
+
+        <?php if (!$isOnlineModeActive): ?>
+        <div class="canvas-design-layers-carousel disabled" data-ref="layers-bottom-carousel">
+            <div class="canvas-design-layers-carousel__track" data-ref="layers-carousel-track"></div>
+        </div>
+        <?php endif; ?>
+
+        <div class="canvas-design-footer" data-ref="canvas-design-footer">
+            <div class="canvas-design-footer-left" data-ref="canvas-design-footer-left"></div>
+
+            <div class="canvas-design-footer-right" data-ref="canvas-design-footer-right">
+                <!-- 1. Controles de Zoom -->
+                <div class="canvas-design-footer-group">
+                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="zoomOutStep" data-tooltip="<?php echo __('lbl_zoom_out', 'Reducir zoom'); ?>" data-position="top">
+                        <span class="material-symbols-rounded">remove</span>
+                    </button>
+                    <div class="canvas-design-footer-slider-box">
+                        <input type="range" class="canvas-design-footer-slider" data-ref="footer-zoom-slider" min="10" max="3000" step="5" value="100" />
+                    </div>
+                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="zoomInStep" data-tooltip="<?php echo __('lbl_zoom_in', 'Aumentar zoom'); ?>" data-position="top">
+                        <span class="material-symbols-rounded">add</span>
+                    </button>
+                    <button type="button" class="canvas-design-footer-zoom-tag" data-action="resetZoomFit" data-ref="footer-zoom-label" data-tooltip="<?php echo __('lbl_reset_zoom', 'Restablecer zoom al 100%'); ?>" data-position="top">
+                        100%
+                    </button>
+                </div>
+
+                <?php if (!$isOnlineModeActive): ?>
+                <!-- 2. Botón y contador de Capas -->
+                <div class="canvas-design-footer-group">
+                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleLayersCarousel" data-ref="btn-footer-toggle-layers" data-tooltip="<?php echo __('tooltip_layers', 'Capas'); ?> [L]" data-position="top">
+                        <span class="material-symbols-rounded">layers</span>
+                    </button>
+                    <div class="canvas-design-footer-layers-badge" data-ref="footer-layers-count" data-tooltip="<?php echo __('lbl_active_layer_count', 'Capa activa / Total de capas'); ?>" data-position="top">
+                        1/1
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <!-- 3. Botón de Información / Ayuda a la derecha del todo -->
+                <button type="button" class="component-button component-button--icon component-button--h32" data-action="openShortcutsHelp" data-ref="btn-footer-help" data-tooltip="<?php echo __('tooltip_shortcuts', 'Atajos de teclado e información'); ?> [?]" data-position="top">
+                    <span class="material-symbols-rounded">info</span>
+                </button>
+            </div>
+        </div>
     </div>
 
     <?php if (!$isSnapshot): ?>

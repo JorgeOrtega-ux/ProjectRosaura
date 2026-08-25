@@ -299,7 +299,14 @@ function notifyLayersState() {
             boardHeight
         }
     });
-    generateLayerPreview(activeLayerId);
+    generateAllLayerPreviews();
+}
+
+function generateAllLayerPreviews() {
+    if (!layers || layers.length === 0) return;
+    layers.forEach(l => {
+        generateLayerPreview(l.id);
+    });
 }
 
 function generateLayerPreview(layerId = null) {
@@ -3174,6 +3181,11 @@ self.onmessage = function (e) {
             break;
         }
 
+        case 'GET_ALL_LAYER_PREVIEWS': {
+            generateAllLayerPreviews();
+            break;
+        }
+
         case 'ADD_LAYER': {
             if (layers.length >= 20) {
                 self.postMessage({
@@ -3258,6 +3270,23 @@ self.onmessage = function (e) {
                 composeAll();
                 notifyLayersState();
             }
+            break;
+        }
+
+        case 'ISOLATE_LAYER': {
+            const targetId = payload?.layerId || activeLayerId;
+            const otherLayers = layers.filter(l => l.id !== targetId);
+            const areOthersHidden = otherLayers.length > 0 && otherLayers.every(l => !l.visible);
+
+            if (areOthersHidden) {
+                layers.forEach(l => { l.visible = true; });
+            } else {
+                layers.forEach(l => {
+                    l.visible = (l.id === targetId);
+                });
+            }
+            composeAll();
+            notifyLayersState();
             break;
         }
 

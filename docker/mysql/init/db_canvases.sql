@@ -174,6 +174,16 @@ CREATE TABLE IF NOT EXISTS `canvas_snapshots` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 
+CREATE TABLE IF NOT EXISTS `canvas_layers` (
+  `canvas_id` int(11) NOT NULL,
+  `s3_key` varchar(255) DEFAULT NULL,
+  `layers_data` LONGBLOB DEFAULT NULL,
+  `last_updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`canvas_id`),
+  CONSTRAINT `fk_layers_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+
 CREATE TABLE IF NOT EXISTS `canvas_reset_settings` (
   `canvas_id` int(11) NOT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT 0,

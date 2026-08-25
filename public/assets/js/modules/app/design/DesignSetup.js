@@ -369,16 +369,23 @@ export const DesignSetup = {
         }
     },
 
-    async hydrateCanvasState(base64String, templateCoords = null) {
+    async hydrateCanvasState(base64String, templateCoords = null, serverLayersData = null) {
         try {
             let layersData = null;
             if (this.isOfflineMode && this.canvasIntId) {
-                try {
-                    const stored = localStorage.getItem(`rosaura_layers_${this.canvasIntId}`);
-                    if (stored) {
-                        layersData = JSON.parse(stored);
-                    }
-                } catch (e) {}
+                if (serverLayersData && typeof serverLayersData === 'object' && serverLayersData.layers) {
+                    layersData = serverLayersData;
+                    try {
+                        localStorage.setItem(`rosaura_layers_${this.canvasIntId}`, JSON.stringify(serverLayersData));
+                    } catch (e) {}
+                } else {
+                    try {
+                        const stored = localStorage.getItem(`rosaura_layers_${this.canvasIntId}`);
+                        if (stored) {
+                            layersData = JSON.parse(stored);
+                        }
+                    } catch (e) {}
+                }
             }
 
             if (this.renderWorker) {
@@ -438,7 +445,7 @@ export const DesignSetup = {
             }
             this.updateVisibleChunks();
         } else if (canvasData.state_base64) {
-            this.hydrateCanvasState(canvasData.state_base64);
+            this.hydrateCanvasState(canvasData.state_base64, null, canvasData.layers_data || null);
         }
 
         try {
@@ -638,6 +645,7 @@ export const DesignSetup = {
 
     setupCanvas() {
         this.updateCanvasDimensions();
+        if (typeof this.updateZoomUI === 'function') this.updateZoomUI();
         
         if (this.canvas && typeof this.canvas.transferControlToOffscreen === 'function' && typeof Worker !== 'undefined') {
             try {

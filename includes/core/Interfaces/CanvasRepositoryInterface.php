@@ -43,6 +43,9 @@ interface CanvasRepositoryInterface {
     public function trimMembersToLimit(int $canvasId, int $limit): bool;
     public function getSnapshot(int $canvasId): ?string;
     public function saveSnapshot(int $canvasId, string $snapshotData): bool;
+    public function getLayersData(int $canvasId): ?array;
+    public function saveLayersData(int $canvasId, array|string $layersData): bool;
+    public function deleteLayersData(int $canvasId): bool;
     public function clearCanvasData(int $canvasId): bool;
     public function getResetSettings(int $canvasId): ?array;
     public function updateResetSettings(int $canvasId, array $settings): bool;

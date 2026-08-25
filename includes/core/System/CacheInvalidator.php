@@ -89,6 +89,7 @@ class CacheInvalidator {
             $this->redis->del(CacheConstants::PREFIX_CANVAS_RESET_SETTINGS . $canvasId);
             $this->redis->del(CacheConstants::PREFIX_CANVAS_RESIZE_SETTINGS . $canvasId);
             $this->redis->del("canvas:{$canvasId}:config");
+            $this->redis->del("canvas:{$canvasId}:layers");
 
             $this->deleteByPattern(CacheConstants::PREFIX_CANVAS_DETAIL . 'uuid:*');
             $this->deleteByPattern("canvas:view_data:{$canvasId}:*");

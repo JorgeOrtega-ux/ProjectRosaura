@@ -1991,10 +1991,14 @@ export const DesignNetwork = {
                 }
 
                 if (base64Data) {
-                    const resp = await this.api.post(ApiRoutes.Canvases.SaveOfflineState, {
+                    const savePayload = {
                         canvas_id: this.canvasIntId,
                         state_base64: base64Data
-                    });
+                    };
+                    if (layersData) {
+                        savePayload.layers_data = layersData;
+                    }
+                    const resp = await this.api.post(ApiRoutes.Canvases.SaveOfflineState, savePayload);
                     if (resp && resp.success) {
                         return true;
                     } else {

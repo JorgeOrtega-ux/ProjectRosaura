@@ -1240,7 +1240,163 @@ class CanvasRepository implements CanvasRepositoryInterface {
         }
     }
 
+    public function getLayersData(int $canvasId): ?array {
+        $cacheKey = "canvas:{$canvasId}:layers";
+        if ($this->redisClient) {
+            try {
+                $cached = $this->redisClient->get($cacheKey);
+                if ($cached) {
+                    $decoded = json_decode($cached, true);
+                    if (is_array($decoded)) return $decoded;
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        try {
+            $sql = "SELECT s3_key, layers_data FROM " . DB::TBL_CANVAS_LAYERS . " WHERE canvas_id = :canvas_id LIMIT 1";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':canvas_id' => $canvasId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        if (!$row) {
+            return null;
+        }
+
+        $rawJson = null;
+        if (!empty($row['s3_key'])) {
+            try {
+                $s3 = \App\Core\Helpers\Utils::getS3Client();
+                $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+                $result = $s3->getObject([
+                    'Bucket' => $bucket,
+                    'Key'    => $row['s3_key']
+                ]);
+                $body = (string)$result['Body'];
+                if ($body) {
+                    $decompressed = @gzuncompress($body);
+                    if ($decompressed === false) $decompressed = @gzdecode($body);
+                    if ($decompressed === false) $decompressed = @gzinflate($body);
+                    $rawJson = ($decompressed !== false) ? $decompressed : $body;
+                }
+            } catch (\Throwable $e) {
+                Logger::error("Failed to fetch layers from S3 for canvas {$canvasId}: " . $e->getMessage());
+            }
+        }
+
+        if ($rawJson === null && !empty($row['layers_data'])) {
+            $raw = $row['layers_data'];
+            $decompressed = @gzuncompress($raw);
+            if ($decompressed === false) $decompressed = @gzdecode($raw);
+            if ($decompressed === false) $decompressed = @gzinflate($raw);
+            $rawJson = ($decompressed !== false) ? $decompressed : $raw;
+        }
+
+        if ($rawJson) {
+            $data = json_decode($rawJson, true);
+            if (is_array($data)) {
+                if ($this->redisClient) {
+                    try {
+                        $this->redisClient->setex($cacheKey, CacheConstants::TTL_THIRTY_DAYS, $rawJson);
+                    } catch (\Throwable $e) {}
+                }
+                return $data;
+            }
+        }
+
+        return null;
+    }
+
+    public function saveLayersData(int $canvasId, array|string $layersData): bool {
+        $jsonString = is_string($layersData) ? $layersData : json_encode($layersData);
+        if (!$jsonString) return false;
+
+        $compressed = gzcompress($jsonString);
+        $s3_key = "layers/canvas_{$canvasId}.json.gz";
+
+        $cacheKey = "canvas:{$canvasId}:layers";
+        if ($this->redisClient) {
+            try {
+                $this->redisClient->setex($cacheKey, CacheConstants::TTL_THIRTY_DAYS, $jsonString);
+            } catch (\Throwable $e) {}
+        }
+
+        // Auto-create table safeguard if not exists
+        try {
+            $this->db->exec("CREATE TABLE IF NOT EXISTS " . DB::TBL_CANVAS_LAYERS . " (
+                `canvas_id` int(11) NOT NULL,
+                `s3_key` varchar(255) DEFAULT NULL,
+                `layers_data` LONGBLOB DEFAULT NULL,
+                `last_updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+                PRIMARY KEY (`canvas_id`),
+                CONSTRAINT `fk_layers_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
+            ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci");
+        } catch (\Throwable $e) {}
+
+        try {
+            $s3 = \App\Core\Helpers\Utils::getS3Client();
+            $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+            $s3->putObject([
+                'Bucket' => $bucket,
+                'Key'    => $s3_key,
+                'Body'   => $compressed
+            ]);
+
+            $sql = "INSERT INTO " . DB::TBL_CANVAS_LAYERS . " (canvas_id, s3_key, layers_data) 
+                    VALUES (:canvas_id, :s3_key, NULL)
+                    ON DUPLICATE KEY UPDATE s3_key = :update_s3_key, layers_data = NULL, last_updated = CURRENT_TIMESTAMP";
+
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                ':canvas_id'     => $canvasId,
+                ':s3_key'        => $s3_key,
+                ':update_s3_key' => $s3_key
+            ]);
+        } catch (\Throwable $e) {
+            Logger::error("Failed to save layers to S3 for canvas {$canvasId}: " . $e->getMessage());
+
+            $sql = "INSERT INTO " . DB::TBL_CANVAS_LAYERS . " (canvas_id, s3_key, layers_data) 
+                    VALUES (:canvas_id, NULL, :data)
+                    ON DUPLICATE KEY UPDATE layers_data = :update_data, last_updated = CURRENT_TIMESTAMP";
+
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                ':canvas_id'   => $canvasId,
+                ':data'        => $compressed,
+                ':update_data' => $compressed
+            ]);
+        }
+    }
+
+    public function deleteLayersData(int $canvasId): bool {
+        $cacheKey = "canvas:{$canvasId}:layers";
+        if ($this->redisClient) {
+            try { $this->redisClient->del($cacheKey); } catch (\Throwable $e) {}
+        }
+
+        try {
+            $s3 = \App\Core\Helpers\Utils::getS3Client();
+            $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+            $s3_key = "layers/canvas_{$canvasId}.json.gz";
+            $s3->deleteObject([
+                'Bucket' => $bucket,
+                'Key'    => $s3_key
+            ]);
+        } catch (\Throwable $e) {}
+
+        try {
+            $sql = "DELETE FROM " . DB::TBL_CANVAS_LAYERS . " WHERE canvas_id = :canvas_id";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([':canvas_id' => $canvasId]);
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
     public function clearCanvasData(int $canvasId): bool {
+        $this->deleteLayersData($canvasId);
         $sql = "DELETE FROM " . DB::TBL_CANVAS_SNAPSHOTS . " WHERE canvas_id = :canvas_id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([':canvas_id' => $canvasId]);

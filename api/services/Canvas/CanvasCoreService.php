@@ -546,6 +546,12 @@ class CanvasCoreService {
                 }
 
                 $canvas['state_base64'] = base64_encode(gzencode($stateRaw, 6));
+                if (!$isOnline) {
+                    $layersData = $this->canvasRepository->getLayersData($canvasId);
+                    $canvas['layers_data'] = $layersData ?: null;
+                } else {
+                    $canvas['layers_data'] = null;
+                }
             } else {
                 $t1 = microtime(true);
                 $canvas['state_base64'] = null;
@@ -1601,7 +1607,7 @@ LUA;
         }
     }
 
-    public function saveOfflineState(int $userId, int $canvasId, string $stateBase64): array {
+    public function saveOfflineState(int $userId, int $canvasId, string $stateBase64, $layersData = null): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
             if (!$canvas) {
@@ -1659,6 +1665,10 @@ LUA;
 
             $this->canvasRepository->saveSnapshot($canvasId, $rawBinary);
 
+            if (!empty($layersData)) {
+                $this->canvasRepository->saveLayersData($canvasId, $layersData);
+            }
+
             $newSizeBytes = strlen($rawBinary);
             $oldSizeBytes = (int)($canvas['storage_bytes'] ?? 0);
             $diffBytes = $newSizeBytes - $oldSizeBytes;
@@ -1678,6 +1688,7 @@ LUA;
                 $redis = (new RedisCache())->getClient();
                 if ($redis) {
                     $redis->del("canvas:{$canvasId}:state");
+                    $redis->del("canvas:{$canvasId}:layers");
                     $redis->sAdd('canvases:pending_snapshots', (string)$canvasId);
                     (new \App\Core\System\CacheInvalidator($redis))->canvas($canvasId, $canvas['uuid'] ?? null);
                 }

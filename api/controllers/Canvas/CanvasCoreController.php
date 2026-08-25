@@ -432,10 +432,11 @@ class CanvasCoreController extends BaseController {
             $userId = $this->session->getActiveAccountId();
             $canvasId = (int)($input['canvas_id'] ?? $input['id'] ?? 0);
             $stateBase64 = $input['state_base64'] ?? '';
+            $layersData = $input['layers_data'] ?? null;
             if (!$canvasId || empty($stateBase64)) {
                 return $this->respond(['success' => false, 'message' => __('err_invalid_params')]);
             }
-            $result = $this->canvasServices->saveOfflineState($userId, $canvasId, $stateBase64);
+            $result = $this->canvasServices->saveOfflineState($userId, $canvasId, $stateBase64, $layersData);
             return $this->respond($result);
         } catch (\Throwable $e) {
             return $this->handleException($e, __FUNCTION__);

@@ -38,6 +38,7 @@ class DatabaseConstants {
     public const TBL_CANVAS_PERMISSIONS         = 'canvas_permissions';
     public const TBL_USER_TEMPLATES             = 'user_templates';
     public const TBL_CANVAS_SNAPSHOTS           = 'canvas_snapshots';
+    public const TBL_CANVAS_LAYERS              = 'canvas_layers';
     public const TBL_CANVAS_RESET_SETTINGS      = 'canvas_reset_settings';
     public const TBL_CANVAS_SNAPSHOTS_LIKES     = 'canvas_snapshots_likes';
     public const TBL_CANVAS_INVITES             = 'canvas_invites';
