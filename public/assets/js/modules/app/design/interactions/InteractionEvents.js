@@ -1,4 +1,4 @@
-import { showMessage, hexToHsv, hsvToHex, bindDragToScroll, initCarouselScroll } from '../../../../core/utils/uiUtils.js';
+import { showMessage, hexToHsv, hsvToHex, bindDragToScroll, initCarouselScroll, updateRangeFill, updateAllRangesFill } from '../../../../core/utils/uiUtils.js';
 
 export const InteractionEvents = {
     bindEvents() {
@@ -12,6 +12,9 @@ export const InteractionEvents = {
         document.addEventListener('input', this.handleInputBound);
         document.addEventListener('change', this.handleInputBound);
         window.addEventListener('resize', this.handleResizeBound);
+
+        // Initialize progress fill on all sliders
+        updateAllRangesFill(document);
 
         // Bind carousel scroll & navigation arrows for top property bar (horizontal)
         const topBarWrapper = document.querySelector('[data-ref="canvas-top-property-bar-wrapper"]');
@@ -86,11 +89,11 @@ export const InteractionEvents = {
         if (btnTogglePopover) {
             e.preventDefault();
             e.stopPropagation();
-            const wrapper = btnTogglePopover.closest('.property-bar-popover-wrapper');
-            const menu = wrapper ? wrapper.querySelector('.property-bar-popover-menu') : null;
+            const wrapper = btnTogglePopover.closest('.component-property-bar__popover');
+            const menu = wrapper ? wrapper.querySelector('.component-property-bar__popover-menu') : null;
             if (menu) {
                 const isOpen = !menu.classList.contains('disabled');
-                document.querySelectorAll('.property-bar-popover-menu').forEach(m => m.classList.add('disabled'));
+                document.querySelectorAll('.component-property-bar__popover-menu').forEach(m => m.classList.add('disabled'));
                 if (!isOpen) {
                     menu.classList.remove('disabled');
                 }
@@ -98,8 +101,8 @@ export const InteractionEvents = {
             return;
         }
 
-        if (!e.target.closest('.property-bar-popover-wrapper')) {
-            document.querySelectorAll('.property-bar-popover-menu').forEach(m => m.classList.add('disabled'));
+        if (!e.target.closest('.component-property-bar__popover')) {
+            document.querySelectorAll('.component-property-bar__popover-menu').forEach(m => m.classList.add('disabled'));
         }
 
         const btnApplyCustom = e.target.closest('[data-action="applyCustomColor"]');
@@ -1909,15 +1912,10 @@ export const InteractionEvents = {
                 e.preventDefault();
                 this.toggleOfflineSpray();
             }
-        } else if (keyUpper === 'D') {
+        } else if (keyUpper === 'K') {
             if (this.isOfflineMode && typeof this.toggleOfflineDither === 'function') {
                 e.preventDefault();
                 this.toggleOfflineDither();
-            }
-        } else if (keyUpper === 'L') {
-            if (this.isOfflineMode && typeof this.toggleLayersPanel === 'function') {
-                e.preventDefault();
-                this.toggleLayersPanel();
             }
         } else if (keyUpper === 'H') {
             if (this.activeTemplateId && typeof this.flipTemplateH === 'function') {
@@ -2014,7 +2012,7 @@ export const InteractionEvents = {
             return;
         }
 
-        const topBar = e.target.closest('.canvas-top-property-bar, .canvas-design-toolbar');
+        const topBar = e.target.closest('.component-property-bar, .component-toolbar');
         if (topBar) {
             e.preventDefault();
             topBar.scrollLeft += e.deltaY;
@@ -2101,6 +2099,7 @@ export const InteractionEvents = {
             const logRatio = Math.log(currentScale / minScale) / Math.log(maxScale / minScale);
             const sliderVal = Math.max(0, Math.min(1000, Math.round(logRatio * 1000)));
             sliderEl.value = sliderVal;
+            updateRangeFill(sliderEl);
         }
     },
 
@@ -2154,6 +2153,10 @@ export const InteractionEvents = {
     handleInput(e) {
         if (!e.target) return;
 
+        if (e.target.type === 'range') {
+            updateRangeFill(e.target);
+        }
+
         const isZoomSlider = e.target.matches('[data-ref="footer-zoom-slider"]');
         if (isZoomSlider) {
             const t = parseFloat(e.target.value);
@@ -2194,31 +2197,31 @@ export const InteractionEvents = {
             return;
         }
 
-        const isBrushSizeRange = e.target.matches('[data-action="setBrushSizeRange"]');
-        if (isBrushSizeRange) {
+        const isBrushSizeInput = e.target.matches('[data-action="setBrushSizeRange"], [data-action="setBrushSizeNumber"]');
+        if (isBrushSizeInput) {
             if (typeof this.setBrushSizeRange === 'function') {
                 this.setBrushSizeRange(e.target.value);
             }
             return;
         }
 
-        const isStabilizerRange = e.target.matches('[data-action="setStabilizerRange"]');
-        if (isStabilizerRange) {
+        const isStabilizerInput = e.target.matches('[data-action="setStabilizerRange"], [data-action="setStabilizerNumber"]');
+        if (isStabilizerInput) {
             if (typeof this.setStabilizerRange === 'function') {
                 this.setStabilizerRange(e.target.value);
             }
             return;
         }
 
-        const isSprayRange = e.target.matches('[data-action="setSpraySizeRange"]');
-        if (isSprayRange) {
+        const isSprayInput = e.target.matches('[data-action="setSpraySizeRange"], [data-action="setSpraySizeNumber"]');
+        if (isSprayInput) {
             if (typeof this.setSpraySizeRange === 'function') {
                 this.setSpraySizeRange(e.target.value);
             }
             return;
         }
 
-        const isLayerOpacity = e.target.matches('[data-action="setLayerOpacity"]');
+        const isLayerOpacity = e.target.matches('[data-action="setLayerOpacity"], [data-action="setLayerOpacityNumber"]');
         if (isLayerOpacity) {
             if (typeof this.setLayerOpacity === 'function') {
                 this.setLayerOpacity(e.target.value);

@@ -3884,7 +3884,6 @@ self.onmessage = async function (e) {
             if (target && payload?.opacity !== undefined) {
                 target.opacity = Math.max(0, Math.min(1, parseFloat(payload.opacity) || 1));
                 composeAll();
-                notifyLayersState();
             }
             break;
         }

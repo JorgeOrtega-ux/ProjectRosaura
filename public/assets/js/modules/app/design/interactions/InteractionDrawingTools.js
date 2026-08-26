@@ -1,4 +1,4 @@
-import { showMessage, hexToHsv, hsvToHex } from '../../../../core/utils/uiUtils.js';
+import { showMessage, hexToHsv, hsvToHex, updateRangeFill } from '../../../../core/utils/uiUtils.js';
 import { getCanvasTier, getToolSizes, getSprayRadii, getTileGridLevels } from '../data/OfflineToolsData.js';
 import { colorToAbgr, abgrToHex } from './InteractionHelpers.js';
 import { generateShapePixels } from '../utils/GeometricShapesUtils.js';
@@ -15,28 +15,25 @@ export const InteractionDrawingTools = {
                         this.selectAndAddCustomColor(result.sRGBHex);
                     }
                 }
-            } catch (e) {
-                // Cancelado por el usuario (Escape o clic fuera)
-            } finally {
+                document.querySelectorAll('[data-action="toggleEyedropper"]').forEach(btn => btn.classList.remove('active'));
+            } catch (err) {
                 document.querySelectorAll('[data-action="toggleEyedropper"]').forEach(btn => btn.classList.remove('active'));
             }
             return;
         }
 
-        // Modo fallback para navegadores sin API EyeDropper nativa
         if (this.interactionMode === 'offline_eyedropper') {
-            this.interactionMode = 'normal';
+            this.setInteractionMode('offline_brush');
             document.querySelectorAll('[data-action="toggleEyedropper"]').forEach(btn => btn.classList.remove('active'));
-            if (this.canvas) this.canvas.classList.remove('component-cursor-eyedropper');
         } else {
-            if (typeof this.cancelInteractionMode === 'function') {
-                this.cancelInteractionMode();
+            this.setInteractionMode('offline_eyedropper');
+            if (this.renderWorker) {
+                this.renderWorker.postMessage({
+                    type: 'SET_TOOL',
+                    payload: { tool: 'eyedropper' }
+                });
             }
-            this.interactionMode = 'offline_eyedropper';
             document.querySelectorAll('[data-action="toggleEyedropper"]').forEach(btn => btn.classList.add('active'));
-            if (this.canvas) this.canvas.classList.add('component-cursor-eyedropper');
-            if (typeof this.closeSubtoolbar === 'function') this.closeSubtoolbar();
-            if (typeof this.closeBrushSizeToolbar === 'function') this.closeBrushSizeToolbar();
         }
         if (typeof this.updateTopPropertyBar === 'function') this.updateTopPropertyBar();
         this.requestRender();
@@ -48,25 +45,25 @@ export const InteractionDrawingTools = {
         const titleEl = document.querySelector('[data-ref="prop-active-tool-title"]');
 
         const toolMeta = {
-            offline_brush: { title: 'Lápiz', icon: 'brush', context: 'offline_brush' },
-            offline_eraser: { title: 'Goma de borrar', icon: 'cleaning_services', context: 'offline_eraser' },
-            offline_quick_shapes: { title: 'Formas rápidas', icon: 'polyline', context: 'offline_quick_shapes' },
-            offline_eyedropper: { title: 'Cuentagotas', icon: 'colorize', context: null },
-            offline_moving_area: { title: 'Selección', icon: 'crop_free', context: 'offline_moving_area' },
-            offline_bucket: { title: 'Bote de pintura', icon: 'format_color_fill', context: 'offline_bucket' },
-            offline_spray: { title: 'Aerosol / Spray', icon: 'grain', context: 'offline_spray' },
-            offline_dither: { title: 'Tramado (Dither)', icon: 'texture', context: 'offline_dither' },
-            offline_shading: { title: 'Sombreado', icon: 'exposure', context: 'offline_shading' },
-            offline_text: { title: 'Texto Pixel', icon: 'title', context: null },
-            offline_seamless_tile: { title: 'Baldosa continua', icon: 'repeat', context: null },
-            normal: { title: 'Navegación', icon: 'pan_tool', context: null }
+            offline_brush: { title: window.__('lbl_pencil'), icon: 'brush', context: 'offline_brush' },
+            offline_eraser: { title: window.__('lbl_eraser'), icon: 'cleaning_services', context: 'offline_eraser' },
+            offline_quick_shapes: { title: window.__('lbl_shapes_title'), icon: 'polyline', context: 'offline_quick_shapes' },
+            offline_eyedropper: { title: window.__('lbl_eyedropper_title'), icon: 'colorize', context: null },
+            offline_moving_area: { title: window.__('lbl_move_title'), icon: 'crop_free', context: 'offline_moving_area' },
+            offline_bucket: { title: window.__('lbl_bucket_title'), icon: 'format_color_fill', context: 'offline_bucket' },
+            offline_spray: { title: window.__('lbl_spray_title'), icon: 'grain', context: 'offline_spray' },
+            offline_dither: { title: window.__('lbl_dither_title'), icon: 'texture', context: 'offline_dither' },
+            offline_shading: { title: window.__('lbl_shading_title'), icon: 'exposure', context: 'offline_shading' },
+            offline_text: { title: window.__('lbl_text_title'), icon: 'title', context: null },
+            offline_seamless_tile: { title: window.__('lbl_seamless_title'), icon: 'repeat', context: null },
+            normal: { title: window.__('lbl_nav_title'), icon: 'pan_tool', context: null }
         };
 
         const meta = toolMeta[currentMode] || toolMeta.normal;
         if (iconEl) iconEl.textContent = meta.icon;
         if (titleEl) titleEl.textContent = meta.title;
 
-        document.querySelectorAll('.property-bar-context-group').forEach(group => {
+        document.querySelectorAll('.component-property-bar__group').forEach(group => {
             const groupContext = group.getAttribute('data-tool-context');
             if (meta.context && groupContext === meta.context) {
                 group.classList.remove('disabled');
@@ -109,18 +106,18 @@ export const InteractionDrawingTools = {
     updateSidebarToolSettingsUI() {
         const currentMode = this.interactionMode || 'normal';
         const toolMeta = {
-            offline_brush: { title: 'Lápiz', icon: 'brush', desc: 'Dibuja píxeles directos en la capa activa', section: 'offline_brush' },
-            offline_eraser: { title: 'Goma de borrar', icon: 'cleaning_services', desc: 'Borra píxeles de la capa activa', section: 'offline_eraser' },
-            offline_quick_shapes: { title: 'Formas rápidas', icon: 'polyline', desc: 'Traza líneas, rectángulos y círculos', section: 'offline_quick_shapes' },
-            offline_eyedropper: { title: 'Cuentagotas', icon: 'colorize', desc: 'Selecciona colores del lienzo', section: null },
-            offline_moving_area: { title: 'Selección', icon: 'crop_free', desc: 'Selecciona y mueve áreas de píxeles', section: 'offline_moving_area' },
-            offline_bucket: { title: 'Bote de pintura', icon: 'format_color_fill', desc: 'Rellena áreas contiguas o reemplaza color', section: 'offline_bucket' },
-            offline_spray: { title: 'Aerosol / Spray', icon: 'grain', desc: 'Esparce partículas de color con densidad ajustable', section: 'offline_spray' },
-            offline_dither: { title: 'Tramado (Dither)', icon: 'texture', desc: 'Dibuja degradados con tramas ordenadas', section: 'offline_dither' },
-            offline_shading: { title: 'Sombreado', icon: 'exposure', desc: 'Aclara u oscurece píxeles proporcionalmente', section: 'offline_shading' },
-            offline_text: { title: 'Texto Pixel', icon: 'title', desc: 'Inserta texto rasterizado en el lienzo', section: null },
-            offline_seamless_tile: { title: 'Baldosa continua', icon: 'repeat', desc: 'Previsualiza repetición en patrón infinito', section: null },
-            normal: { title: 'Navegación', icon: 'pan_tool', desc: 'Desplaza y haz zoom por el lienzo', section: null }
+            offline_brush: { title: window.__('lbl_pencil'), icon: 'brush', desc: window.__('lbl_brush_desc'), section: 'offline_brush' },
+            offline_eraser: { title: window.__('lbl_eraser'), icon: 'cleaning_services', desc: window.__('lbl_eraser_desc'), section: 'offline_eraser' },
+            offline_quick_shapes: { title: window.__('lbl_shapes_title'), icon: 'polyline', desc: window.__('lbl_shapes_desc'), section: 'offline_quick_shapes' },
+            offline_eyedropper: { title: window.__('lbl_eyedropper_title'), icon: 'colorize', desc: window.__('lbl_eyedropper_desc'), section: null },
+            offline_moving_area: { title: window.__('lbl_move_title'), icon: 'crop_free', desc: window.__('lbl_move_desc'), section: 'offline_moving_area' },
+            offline_bucket: { title: window.__('lbl_bucket_title'), icon: 'format_color_fill', desc: window.__('lbl_bucket_desc'), section: 'offline_bucket' },
+            offline_spray: { title: window.__('lbl_spray_title'), icon: 'grain', desc: window.__('lbl_spray_desc'), section: 'offline_spray' },
+            offline_dither: { title: window.__('lbl_dither_title'), icon: 'texture', desc: window.__('lbl_dither_desc'), section: 'offline_dither' },
+            offline_shading: { title: window.__('lbl_shading_title'), icon: 'exposure', desc: window.__('lbl_shading_desc'), section: 'offline_shading' },
+            offline_text: { title: window.__('lbl_text_title'), icon: 'title', desc: window.__('lbl_text_desc'), section: null },
+            offline_seamless_tile: { title: window.__('lbl_seamless_title'), icon: 'repeat', desc: window.__('lbl_seamless_desc'), section: null },
+            normal: { title: window.__('lbl_nav_title'), icon: 'pan_tool', desc: window.__('lbl_nav_desc'), section: null }
         };
 
         const meta = toolMeta[currentMode] || toolMeta.normal;
@@ -131,7 +128,7 @@ export const InteractionDrawingTools = {
         if (titleEl) titleEl.textContent = meta.title;
         if (descEl) descEl.textContent = meta.desc;
 
-        document.querySelectorAll('.canvas-tool-settings-section').forEach(sec => {
+        document.querySelectorAll('.component-tool-settings-section').forEach(sec => {
             const secTool = sec.getAttribute('data-sidebar-tool-section');
             if (meta.section && secTool === meta.section) {
                 sec.classList.remove('disabled');
@@ -140,17 +137,20 @@ export const InteractionDrawingTools = {
             }
         });
 
-        // Sync brush size slider, value text, and chips
+        // Sync brush size slider & number input
         const bSlider = document.querySelector('[data-ref="sidebar-brush-size-slider"]');
+        const bNum = document.querySelector('[data-ref="sidebar-brush-size-number"]');
         const bVal = document.querySelector('[data-ref="sidebar-brush-size-val"]');
-        if (bSlider) bSlider.value = this.brushSize || 1;
-        if (bVal) bVal.textContent = `${this.brushSize || 1}px`;
-        document.querySelectorAll('.canvas-tool-chip[data-action="setBrushSize"]').forEach(chip => {
-            chip.classList.toggle('active', parseInt(chip.getAttribute('data-size'), 10) === (this.brushSize || 1));
-        });
+        const curSize = this.brushSize || 1;
+        if (bSlider) {
+            bSlider.value = curSize;
+            updateRangeFill(bSlider);
+        }
+        if (bNum) bNum.value = curSize;
+        if (bVal) bVal.textContent = `${curSize}px`;
 
         // Sync brush shape segmented buttons
-        document.querySelectorAll('.canvas-tool-segmented-btn[data-brush-shape]').forEach(btn => {
+        document.querySelectorAll('.component-tool-segmented-btn[data-brush-shape]').forEach(btn => {
             btn.classList.toggle('active', btn.getAttribute('data-brush-shape') === (this.brushShape || 'square'));
         });
 
@@ -158,11 +158,17 @@ export const InteractionDrawingTools = {
         const sPP = document.querySelector('[data-ref="sidebar-btn-pixel-perfect"]');
         if (sPP) sPP.classList.toggle('active', !!this.isPixelPerfect);
 
-        // Sync stabilizer slider and value text
+        // Sync stabilizer slider & number input
         const stabSlider = document.querySelector('[data-ref="sidebar-stabilizer-slider"]');
+        const stabNum = document.querySelector('[data-ref="sidebar-stabilizer-number"]');
         const stabVal = document.querySelector('[data-ref="sidebar-stabilizer-val"]');
-        if (stabSlider) stabSlider.value = this.stabilizer || 0;
-        if (stabVal) stabVal.textContent = `${this.stabilizer || 0}%`;
+        const curStab = this.stabilizer || 0;
+        if (stabSlider) {
+            stabSlider.value = curStab;
+            updateRangeFill(stabSlider);
+        }
+        if (stabNum) stabNum.value = curStab;
+        if (stabVal) stabVal.textContent = `${curStab}%`;
 
         // Sync mirror axes
         const mX = document.querySelector('[data-ref="sidebar-mirror-x"]');
@@ -170,15 +176,17 @@ export const InteractionDrawingTools = {
         if (mX) mX.classList.toggle('active', !!this.isMirrorX);
         if (mY) mY.classList.toggle('active', !!this.isMirrorY);
 
-        // Sync spray slider, value text, and chips
+        // Sync spray slider & number input
         const spraySlider = document.querySelector('[data-ref="sidebar-spray-slider"]');
+        const sprayNum = document.querySelector('[data-ref="sidebar-spray-number"]');
         const sprayVal = document.querySelector('[data-ref="sidebar-spray-val"]');
         const spSize = this.spraySize || 5;
-        if (spraySlider) spraySlider.value = spSize;
+        if (spraySlider) {
+            spraySlider.value = spSize;
+            updateRangeFill(spraySlider);
+        }
+        if (sprayNum) sprayNum.value = spSize;
         if (sprayVal) sprayVal.textContent = `${spSize}px`;
-        document.querySelectorAll('.canvas-tool-chip[data-action="setSpraySizeRange"]').forEach(chip => {
-            chip.classList.toggle('active', parseInt(chip.getAttribute('data-size'), 10) === spSize);
-        });
 
         if (typeof this.updateSegmentedGliders === 'function') {
             this.updateSegmentedGliders();
@@ -187,7 +195,7 @@ export const InteractionDrawingTools = {
 
     updateSegmentedGliders(root = document) {
         requestAnimationFrame(() => {
-            const containers = root.querySelectorAll ? root.querySelectorAll('.canvas-tool-segmented, .canvas-tool-quick-chips') : [];
+            const containers = root.querySelectorAll ? root.querySelectorAll('.component-tool-segmented, .component-tool-quick-chips') : [];
             containers.forEach(container => {
                 const activeBtn = container.querySelector('.active');
                 if (!activeBtn) {
@@ -212,8 +220,13 @@ export const InteractionDrawingTools = {
     setStabilizerRange(val) {
         this.stabilizer = Math.max(0, Math.min(100, parseInt(val, 10) || 0));
         const stabSlider = document.querySelector('[data-ref="sidebar-stabilizer-slider"]');
+        const stabNum = document.querySelector('[data-ref="sidebar-stabilizer-number"]');
         const stabVal = document.querySelector('[data-ref="sidebar-stabilizer-val"]');
-        if (stabSlider) stabSlider.value = this.stabilizer;
+        if (stabSlider) {
+            stabSlider.value = this.stabilizer;
+            updateRangeFill(stabSlider);
+        }
+        if (stabNum) stabNum.value = this.stabilizer;
         if (stabVal) stabVal.textContent = `${this.stabilizer}%`;
     },
 
@@ -224,12 +237,14 @@ export const InteractionDrawingTools = {
             this.setSpraySize(numSize);
         }
         const spraySlider = document.querySelector('[data-ref="sidebar-spray-slider"]');
+        const sprayNum = document.querySelector('[data-ref="sidebar-spray-number"]');
         const sprayVal = document.querySelector('[data-ref="sidebar-spray-val"]');
-        if (spraySlider) spraySlider.value = numSize;
+        if (spraySlider) {
+            spraySlider.value = numSize;
+            updateRangeFill(spraySlider);
+        }
+        if (sprayNum) sprayNum.value = numSize;
         if (sprayVal) sprayVal.textContent = `${numSize}px`;
-        document.querySelectorAll('.canvas-tool-chip[data-action="setSpraySizeRange"]').forEach(chip => {
-            chip.classList.toggle('active', parseInt(chip.getAttribute('data-size'), 10) === numSize);
-        });
         if (typeof this.updateSegmentedGliders === 'function') {
             this.updateSegmentedGliders();
         }
@@ -285,10 +300,6 @@ export const InteractionDrawingTools = {
         document.querySelectorAll('[data-action="setBrushShape"]').forEach(b => {
             b.classList.toggle('active', b.getAttribute('data-brush-shape') === shape);
         });
-        const shapeNames = { square: 'Cuadrado', circle: 'Redondo', slash: 'Diagonal' };
-        if (typeof showMessage === 'function') {
-            showMessage(`Forma de pincel: ${shapeNames[shape] || shape}`, 'info');
-        }
         if (typeof this.updateSegmentedGliders === 'function') {
             this.updateSegmentedGliders();
         }
@@ -303,19 +314,17 @@ export const InteractionDrawingTools = {
             btns.forEach(b => b.classList.toggle('active', parseInt(b.getAttribute('data-size'), 10) === this.brushSize));
         }
         const bSlider = document.querySelector('[data-ref="sidebar-brush-size-slider"]');
+        const bNum = document.querySelector('[data-ref="sidebar-brush-size-number"]');
         const bVal = document.querySelector('[data-ref="sidebar-brush-size-val"]');
-        if (bSlider) bSlider.value = this.brushSize;
+        if (bSlider) {
+            bSlider.value = this.brushSize;
+            updateRangeFill(bSlider);
+        }
+        if (bNum) bNum.value = this.brushSize;
         if (bVal) bVal.textContent = `${this.brushSize}px`;
-        document.querySelectorAll('.canvas-tool-chip[data-action="setBrushSize"]').forEach(chip => {
-            chip.classList.toggle('active', parseInt(chip.getAttribute('data-size'), 10) === this.brushSize);
-        });
 
         if (typeof this.updateSegmentedGliders === 'function') {
             this.updateSegmentedGliders();
-        }
-
-        if (typeof showMessage === 'function') {
-            showMessage(`Tamaño de pincel: ${this.brushSize}x${this.brushSize} px`, 'info');
         }
         this.requestRender();
     },
@@ -325,8 +334,8 @@ export const InteractionDrawingTools = {
         const btns = document.querySelectorAll('[data-ref="btn-brush-pixel-perfect"], [data-ref="prop-btn-pixel-perfect"], [data-action="togglePixelPerfect"]');
         btns.forEach(btn => btn.classList.toggle('active', !!this.isPixelPerfect));
         const msg = this.isPixelPerfect 
-            ? (window.__('msg_pixel_perfect_on') || 'Modo Pixel-Perfect activado')
-            : (window.__('msg_pixel_perfect_off') || 'Modo Pixel-Perfect desactivado');
+            ? window.__('msg_pixel_perfect_on')
+            : window.__('msg_pixel_perfect_off');
         if (typeof showMessage === 'function') showMessage(msg, 'info');
     },
 
@@ -405,12 +414,6 @@ export const InteractionDrawingTools = {
             if (btn) btn.classList.add('active');
             this.openSubtoolbar('quickShapes');
             this.openBrushSizeToolbar('quickShapes');
-
-            const typeNames = { line: 'Línea Recta', rectangle: 'Rectángulo', circle: 'Círculo' };
-            const shapeName = typeNames[this.quickShapeType] || this.quickShapeType;
-            if (typeof showMessage === 'function') {
-                showMessage(`Primitivas Rápidas: ${shapeName}. Arrastra en el lienzo (mantén Shift para bloquear ángulo/proporción).`, 'info');
-            }
         }
         this.requestRender();
     },
@@ -420,10 +423,6 @@ export const InteractionDrawingTools = {
         document.querySelectorAll('[data-action="setQuickShapeType"]').forEach(b => {
             b.classList.toggle('active', b.getAttribute('data-shape-type') === type);
         });
-        const typeNames = { line: 'Línea Recta', rectangle: 'Rectángulo', circle: 'Círculo' };
-        if (typeof showMessage === 'function') {
-            showMessage(`Primitiva seleccionada: ${typeNames[type] || type}`, 'info');
-        }
         if (typeof this.updateSegmentedGliders === 'function') {
             this.updateSegmentedGliders();
         }
@@ -435,10 +434,6 @@ export const InteractionDrawingTools = {
         document.querySelectorAll('[data-action="toggleQuickShapeFill"]').forEach(btn => {
             btn.classList.toggle('active', !!this.quickShapeFill);
         });
-        const label = this.quickShapeFill ? 'Rellena' : 'Solo Contorno';
-        if (typeof showMessage === 'function') {
-            showMessage(`Modo de figura: ${label}`, 'info');
-        }
         this.requestRender();
     },
 
@@ -448,9 +443,6 @@ export const InteractionDrawingTools = {
         if (toolbar) {
             const btns = toolbar.querySelectorAll('[data-action="setQuickShapeStroke"]');
             btns.forEach(b => b.classList.toggle('active', parseInt(b.getAttribute('data-size'), 10) === this.quickShapeStroke));
-        }
-        if (typeof showMessage === 'function') {
-            showMessage(`Grosor de línea: ${this.quickShapeStroke} px`, 'info');
         }
         this.requestRender();
     },
@@ -655,7 +647,7 @@ export const InteractionDrawingTools = {
             if (btnShading) btnShading.classList.add('active');
             this.openSubtoolbar('shading');
             this.openBrushSizeToolbar('shading');
-            showMessage(window.__('msg_shading_on') || 'Modo Sombreado activado. Pinta sobre p├¡xeles para dar luces o sombras.', 'info');
+            showMessage(window.__('msg_shading_on'), 'info');
         }
         this.requestRender();
     },
@@ -667,10 +659,6 @@ export const InteractionDrawingTools = {
             const btns = subtoolbar.querySelectorAll('[data-action="setShadingMode"]');
             btns.forEach(b => b.classList.toggle('active', b.getAttribute('data-shading-mode') === mode));
         }
-        const label = mode === 'highlight' ? 'Iluminar (+8%)' : 'Sombrear (-8%)';
-        if (typeof showMessage === 'function') {
-            showMessage(`Pincel de Sombreado: ${label}`, 'info');
-        }
     },
 
     setShadingSize(size = 1, targetEl = null) {
@@ -679,9 +667,6 @@ export const InteractionDrawingTools = {
         if (toolbar) {
             const btns = toolbar.querySelectorAll('[data-action="setShadingSize"]');
             btns.forEach(b => b.classList.toggle('active', parseInt(b.getAttribute('data-size'), 10) === this.shadingSize));
-        }
-        if (typeof showMessage === 'function') {
-            showMessage(`Pincel de Sombreado: ${this.shadingSize}x${this.shadingSize} px`, 'info');
         }
     },
 
@@ -716,9 +701,9 @@ export const InteractionDrawingTools = {
         }
 
         if (this.tileGridSize === 0) {
-            showMessage(window.__('msg_tile_grid_off') || 'Cuadr├¡cula de Tiles desactivada', 'info');
+            showMessage(window.__('msg_tile_grid_off'), 'info');
         } else {
-            const tpl = window.__('msg_tile_grid_on') || 'Cuadr├¡cula de Tiles: :size x :size px';
+            const tpl = window.__('msg_tile_grid_on');
             const msg = tpl.replace(/:size/g, this.tileGridSize);
             showMessage(msg, 'success');
         }
@@ -1128,8 +1113,8 @@ export const InteractionDrawingTools = {
         if (typeof showMessage === 'function') {
             showMessage(
                 this.isMirrorMode 
-                    ? (window.__('msg_mirror_mode_on') || 'Modo Espejo activado.')
-                    : (window.__('msg_mirror_mode_off') || 'Modo Espejo desactivado.'),
+                    ? window.__('msg_mirror_mode_on')
+                    : window.__('msg_mirror_mode_off'),
                 'info'
             );
         }
@@ -1150,9 +1135,6 @@ export const InteractionDrawingTools = {
                 payload: { isMirrorMode: !!this.isMirrorMode, mirrorAxis: this.mirrorAxis }
             });
         }
-        const axisNames = { x: 'Vertical (X)', y: 'Horizontal (Y)', quad: 'Cuádruple (Dual X+Y)' };
-        const msg = (window.__('msg_symmetry_mode') || 'Modo de simetría: :mode').replace(':mode', axisNames[axis] || axis);
-        if (typeof showMessage === 'function') showMessage(msg, 'info');
         this.requestRender();
     },
 
@@ -1404,9 +1386,6 @@ export const InteractionDrawingTools = {
                 btn.classList.toggle('active', s == this.brushEraserSize);
             });
         }
-        if (typeof showMessage === 'function') {
-            showMessage(`Tama├▒o de borrador: ${this.brushEraserSize}x${this.brushEraserSize} px`, 'info');
-        }
     },
 
     toggleOfflineEraser() {
@@ -1439,7 +1418,7 @@ export const InteractionDrawingTools = {
             if (btnEraser) btnEraser.classList.remove('active');
             this.closeSubtoolbar();
             this.closeBrushSizeToolbar();
-            if (typeof showMessage === 'function') showMessage(window.__('msg_eraser_mode_off') || 'Modo borrador desactivado.', 'info');
+            if (typeof showMessage === 'function') showMessage(window.__('msg_eraser_mode_off'), 'info');
         } else {
             const currentMode = this.offlineEraserMode || 'box';
             this.setOfflineEraserMode(currentMode);
@@ -1482,21 +1461,12 @@ export const InteractionDrawingTools = {
         if (mode === 'box') {
             this.interactionMode = 'owner_erasing';
             this.closeBrushSizeToolbar();
-            if (typeof showMessage === 'function') {
-                showMessage('Borrador de Selección / Área activado. Haz clic en la primera esquina para definir la zona.', 'info');
-            }
         } else if (mode === 'color') {
             this.interactionMode = 'offline_eraser_brush';
             this.openBrushSizeToolbar('eraser');
-            if (typeof showMessage === 'function') {
-                showMessage('Borrador de Color Selectivo activado. Pinta para borrar el color activo.', 'info');
-            }
         } else {
             this.interactionMode = 'offline_eraser_brush';
             this.openBrushSizeToolbar('eraser');
-            if (typeof showMessage === 'function') {
-                showMessage(`Borrador de Pincel Continuo (${this.brushEraserSize || 1}x${this.brushEraserSize || 1} px) activado. Haz clic y arrastra sobre el lienzo para borrar.`, 'info');
-            }
         }
 
         this.openSubtoolbar('eraser');
@@ -1575,7 +1545,7 @@ export const InteractionDrawingTools = {
             this.selectedPixels.clear();
             if (btnBucket) btnBucket.classList.remove('active');
             this.closeSubtoolbar();
-            if (typeof showMessage === 'function') showMessage(window.__('msg_bucket_mode_off') || 'Modo Bote de Pintura desactivado.', 'info');
+            if (typeof showMessage === 'function') showMessage(window.__('msg_bucket_mode_off'), 'info');
         } else {
             this.interactionMode = 'offline_bucket';
             if (!this.offlineBucketMode) this.offlineBucketMode = 'flood';
@@ -1590,8 +1560,6 @@ export const InteractionDrawingTools = {
                 const btns = subtoolbar.querySelectorAll('[data-action="setOfflineBucketMode"]');
                 btns.forEach(b => b.classList.toggle('active', b.getAttribute('data-bucket-mode') === (this.offlineBucketMode || 'flood')));
             }
-            const modeName = this.offlineBucketMode === 'swap' ? 'Color Swap (Reemplazo Global)' : 'Relleno Contiguo';
-            if (typeof showMessage === 'function') showMessage(`Modo Bote de Pintura (${modeName}) activado.`, 'info');
         }
         this.updateSelectionUI();
         if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
@@ -1605,8 +1573,6 @@ export const InteractionDrawingTools = {
             const btns = subtoolbar.querySelectorAll('[data-action="setOfflineBucketMode"]');
             btns.forEach(b => b.classList.toggle('active', b.getAttribute('data-bucket-mode') === mode));
         }
-        const label = mode === 'swap' ? 'Color Swap (Reemplazo Global)' : 'Relleno Contiguo (Flood Fill)';
-        if (typeof showMessage === 'function') showMessage(`Modo de Relleno: ${label}`, 'info');
         this.requestRender();
     },
 
@@ -1633,7 +1599,7 @@ export const InteractionDrawingTools = {
             this.selectedPixels.clear();
             if (btnSpray) btnSpray.classList.remove('active');
             this.closeSubtoolbar();
-            if (typeof showMessage === 'function') showMessage(window.__('msg_spray_mode_off') || 'Modo Spray desactivado.', 'info');
+            if (typeof showMessage === 'function') showMessage(window.__('msg_spray_mode_off'), 'info');
         } else {
             this.interactionMode = 'offline_spray';
             this.selectedPixels.clear();
@@ -1651,7 +1617,7 @@ export const InteractionDrawingTools = {
                     btn.classList.toggle('active', val == currentSpraySize);
                 });
             }
-            if (typeof showMessage === 'function') showMessage(window.__('msg_spray_mode_on') || 'Modo Spray activado. Mant├®n presionado y arrastra para pintar.', 'info');
+            if (typeof showMessage === 'function') showMessage(window.__('msg_spray_mode_on'), 'info');
         }
         this.updateSelectionUI();
         if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
@@ -1669,9 +1635,6 @@ export const InteractionDrawingTools = {
                 const val = btn.getAttribute('data-size');
                 btn.classList.toggle('active', val == s);
             });
-        }
-        if (typeof showMessage === 'function') {
-            showMessage(`Spray ajustado a radio de ${s} px`, 'info');
         }
     },
 
@@ -1699,7 +1662,7 @@ export const InteractionDrawingTools = {
             if (btnDither) btnDither.classList.remove('active');
             this.closeSubtoolbar();
             this.closeBrushSizeToolbar();
-            if (typeof showMessage === 'function') showMessage(window.__('msg_dither_mode_off') || 'Modo Dithering desactivado.', 'info');
+            if (typeof showMessage === 'function') showMessage(window.__('msg_dither_mode_off'), 'info');
         } else {
             this.interactionMode = 'offline_dither';
             this.selectedPixels.clear();
@@ -1716,7 +1679,7 @@ export const InteractionDrawingTools = {
             const currentPattern = this.ditherPattern || 'checker_50';
             this.setDitherPattern(currentPattern, false);
 
-            if (typeof showMessage === 'function') showMessage(window.__('msg_dither_mode_on') || 'Modo Dithering activado. Pinta sombras y texturas retro.', 'info');
+            if (typeof showMessage === 'function') showMessage(window.__('msg_dither_mode_on'), 'info');
         }
         this.updateSelectionUI();
         if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
@@ -1733,16 +1696,6 @@ export const InteractionDrawingTools = {
                 btn.classList.toggle('active', p === this.ditherPattern);
             });
         }
-        if (notify && typeof showMessage === 'function') {
-            const names = {
-                'checker_50': 'Ajedrez 50%',
-                'dots_25': 'Puntos 25%',
-                'dots_75': 'Densidad 75%',
-                'diag_lines': 'L├¡neas Diagonales',
-                'h_lines': 'Scanlines Horizontales'
-            };
-            showMessage(`Trama seleccionada: ${names[pattern] || pattern}`, 'info');
-        }
     },
 
     setDitherSize(size) {
@@ -1754,9 +1707,6 @@ export const InteractionDrawingTools = {
                 const s = btn.getAttribute('data-size');
                 btn.classList.toggle('active', s == this.ditherSize);
             });
-        }
-        if (typeof showMessage === 'function') {
-            showMessage(`Brocha de dithering: ${this.ditherSize}x${this.ditherSize} px`, 'info');
         }
     },
 
@@ -2124,8 +2074,8 @@ export const InteractionDrawingTools = {
         }
 
         const msg = this.isSeamlessTileMode
-            ? (window.__('msg_seamless_tile_on') || 'Modo Baldosa 3x3 (Seamless) activado')
-            : (window.__('msg_seamless_tile_off') || 'Modo Baldosa 3x3 desactivado');
+            ? window.__('msg_seamless_tile_on')
+            : window.__('msg_seamless_tile_off');
         if (typeof showMessage === 'function') showMessage(msg, 'info');
 
         this.requestRender();

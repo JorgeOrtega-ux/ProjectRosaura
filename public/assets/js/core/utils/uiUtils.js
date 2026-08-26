@@ -926,6 +926,21 @@ function updateFilterIndicator(buttonEl, isActive) {
     buttonEl.classList.toggle('has-active-filter', !!isActive);
 }
 
+function updateRangeFill(slider) {
+    if (!slider || slider.type !== 'range') return;
+    const min = parseFloat(slider.min !== '' ? slider.min : 0);
+    const max = parseFloat(slider.max !== '' ? slider.max : 100);
+    const val = parseFloat(slider.value !== '' ? slider.value : min);
+    const pct = max > min ? Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100)) : 0;
+    slider.style.background = `linear-gradient(to right, #ffffff 0%, #ffffff ${pct}%, rgba(255, 255, 255, 0.22) ${pct}%, rgba(255, 255, 255, 0.22) 100%)`;
+}
+
+function updateAllRangesFill(container = document) {
+    if (!container) return;
+    const sliders = container.querySelectorAll ? container.querySelectorAll('input[type="range"]') : [];
+    sliders.forEach(updateRangeFill);
+}
+
 export { 
     showMessage, 
     setButtonLoading, 
@@ -972,5 +987,7 @@ export {
     filterMenuList,
     handleNumberAdjustment,
     handleInlineNumberAdjustment,
-    updateFilterIndicator
+    updateFilterIndicator,
+    updateRangeFill,
+    updateAllRangesFill
 };

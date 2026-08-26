@@ -7,8 +7,8 @@
   background-color: currentColor;
   -webkit-mask-image: url('../../icons/sprite.svg');
   mask-image: url('../../icons/sprite.svg');
-  -webkit-mask-size: 1000% 4500%;
-  mask-size: 1000% 4500%;
+  -webkit-mask-size: 1000% 5000%;
+  mask-size: 1000% 5000%;
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   vertical-align: -0.125em;
@@ -16,1787 +16,2003 @@
   white-space: nowrap;
   text-indent: 100%;
 }
-.msr-123 {
+.msr-2d {
   -webkit-mask-position: 0.0000% 0.0000%;
   mask-position: 0.0000% 0.0000%;
 }
-.msr-2d {
+.msr-360 {
   -webkit-mask-position: 11.1111% 0.0000%;
   mask-position: 11.1111% 0.0000%;
 }
-.msr-360 {
+.msr-4k {
   -webkit-mask-position: 22.2222% 0.0000%;
   mask-position: 22.2222% 0.0000%;
 }
-.msr-4k {
+.msr-ac_unit {
   -webkit-mask-position: 33.3333% 0.0000%;
   mask-position: 33.3333% 0.0000%;
 }
-.msr-ac_unit {
+.msr-accessibility {
   -webkit-mask-position: 44.4444% 0.0000%;
   mask-position: 44.4444% 0.0000%;
 }
-.msr-accessibility {
+.msr-accessibility_new {
   -webkit-mask-position: 55.5556% 0.0000%;
   mask-position: 55.5556% 0.0000%;
 }
-.msr-accessibility_new {
+.msr-account_circle {
   -webkit-mask-position: 66.6667% 0.0000%;
   mask-position: 66.6667% 0.0000%;
 }
-.msr-account_circle {
+.msr-ad {
   -webkit-mask-position: 77.7778% 0.0000%;
   mask-position: 77.7778% 0.0000%;
 }
-.msr-ad {
+.msr-ad_units {
   -webkit-mask-position: 88.8889% 0.0000%;
   mask-position: 88.8889% 0.0000%;
 }
-.msr-ad_units {
+.msr-add {
   -webkit-mask-position: 100.0000% 0.0000%;
   mask-position: 100.0000% 0.0000%;
 }
-.msr-add {
-  -webkit-mask-position: 0.0000% 2.2727%;
-  mask-position: 0.0000% 2.2727%;
-}
 .msr-add_box {
-  -webkit-mask-position: 11.1111% 2.2727%;
-  mask-position: 11.1111% 2.2727%;
+  -webkit-mask-position: 0.0000% 2.0408%;
+  mask-position: 0.0000% 2.0408%;
 }
 .msr-add_circle {
-  -webkit-mask-position: 22.2222% 2.2727%;
-  mask-position: 22.2222% 2.2727%;
+  -webkit-mask-position: 11.1111% 2.0408%;
+  mask-position: 11.1111% 2.0408%;
 }
 .msr-add_link {
-  -webkit-mask-position: 33.3333% 2.2727%;
-  mask-position: 33.3333% 2.2727%;
+  -webkit-mask-position: 22.2222% 2.0408%;
+  mask-position: 22.2222% 2.0408%;
+}
+.msr-add_reaction {
+  -webkit-mask-position: 33.3333% 2.0408%;
+  mask-position: 33.3333% 2.0408%;
 }
 .msr-admin_panel_settings {
-  -webkit-mask-position: 44.4444% 2.2727%;
-  mask-position: 44.4444% 2.2727%;
+  -webkit-mask-position: 44.4444% 2.0408%;
+  mask-position: 44.4444% 2.0408%;
 }
 .msr-all_inclusive {
-  -webkit-mask-position: 55.5556% 2.2727%;
-  mask-position: 55.5556% 2.2727%;
+  -webkit-mask-position: 55.5556% 2.0408%;
+  mask-position: 55.5556% 2.0408%;
 }
 .msr-analytics {
-  -webkit-mask-position: 66.6667% 2.2727%;
-  mask-position: 66.6667% 2.2727%;
+  -webkit-mask-position: 66.6667% 2.0408%;
+  mask-position: 66.6667% 2.0408%;
 }
 .msr-anchor {
-  -webkit-mask-position: 77.7778% 2.2727%;
-  mask-position: 77.7778% 2.2727%;
+  -webkit-mask-position: 77.7778% 2.0408%;
+  mask-position: 77.7778% 2.0408%;
 }
 .msr-android {
-  -webkit-mask-position: 88.8889% 2.2727%;
-  mask-position: 88.8889% 2.2727%;
+  -webkit-mask-position: 88.8889% 2.0408%;
+  mask-position: 88.8889% 2.0408%;
 }
 .msr-animation {
-  -webkit-mask-position: 100.0000% 2.2727%;
-  mask-position: 100.0000% 2.2727%;
+  -webkit-mask-position: 100.0000% 2.0408%;
+  mask-position: 100.0000% 2.0408%;
 }
 .msr-api {
-  -webkit-mask-position: 0.0000% 4.5455%;
-  mask-position: 0.0000% 4.5455%;
+  -webkit-mask-position: 0.0000% 4.0816%;
+  mask-position: 0.0000% 4.0816%;
 }
 .msr-approval {
-  -webkit-mask-position: 11.1111% 4.5455%;
-  mask-position: 11.1111% 4.5455%;
+  -webkit-mask-position: 11.1111% 4.0816%;
+  mask-position: 11.1111% 4.0816%;
 }
 .msr-arrow_back {
-  -webkit-mask-position: 22.2222% 4.5455%;
-  mask-position: 22.2222% 4.5455%;
+  -webkit-mask-position: 22.2222% 4.0816%;
+  mask-position: 22.2222% 4.0816%;
+}
+.msr-arrow_downward {
+  -webkit-mask-position: 33.3333% 4.0816%;
+  mask-position: 33.3333% 4.0816%;
+}
+.msr-arrow_forward {
+  -webkit-mask-position: 44.4444% 4.0816%;
+  mask-position: 44.4444% 4.0816%;
+}
+.msr-arrow_left {
+  -webkit-mask-position: 55.5556% 4.0816%;
+  mask-position: 55.5556% 4.0816%;
+}
+.msr-arrow_right {
+  -webkit-mask-position: 66.6667% 4.0816%;
+  mask-position: 66.6667% 4.0816%;
+}
+.msr-arrow_upward {
+  -webkit-mask-position: 77.7778% 4.0816%;
+  mask-position: 77.7778% 4.0816%;
+}
+.msr-article {
+  -webkit-mask-position: 88.8889% 4.0816%;
+  mask-position: 88.8889% 4.0816%;
 }
 .msr-artist {
-  -webkit-mask-position: 33.3333% 4.5455%;
-  mask-position: 33.3333% 4.5455%;
+  -webkit-mask-position: 100.0000% 4.0816%;
+  mask-position: 100.0000% 4.0816%;
 }
 .msr-aspect_ratio {
-  -webkit-mask-position: 44.4444% 4.5455%;
-  mask-position: 44.4444% 4.5455%;
+  -webkit-mask-position: 0.0000% 6.1224%;
+  mask-position: 0.0000% 6.1224%;
 }
 .msr-assessment {
-  -webkit-mask-position: 55.5556% 4.5455%;
-  mask-position: 55.5556% 4.5455%;
+  -webkit-mask-position: 11.1111% 6.1224%;
+  mask-position: 11.1111% 6.1224%;
 }
 .msr-assignment {
-  -webkit-mask-position: 66.6667% 4.5455%;
-  mask-position: 66.6667% 4.5455%;
+  -webkit-mask-position: 22.2222% 6.1224%;
+  mask-position: 22.2222% 6.1224%;
 }
 .msr-attach_file {
-  -webkit-mask-position: 77.7778% 4.5455%;
-  mask-position: 77.7778% 4.5455%;
+  -webkit-mask-position: 33.3333% 6.1224%;
+  mask-position: 33.3333% 6.1224%;
 }
 .msr-attachment {
-  -webkit-mask-position: 88.8889% 4.5455%;
-  mask-position: 88.8889% 4.5455%;
+  -webkit-mask-position: 44.4444% 6.1224%;
+  mask-position: 44.4444% 6.1224%;
 }
 .msr-auto_awesome {
-  -webkit-mask-position: 100.0000% 4.5455%;
-  mask-position: 100.0000% 4.5455%;
+  -webkit-mask-position: 55.5556% 6.1224%;
+  mask-position: 55.5556% 6.1224%;
 }
 .msr-auto_delete {
-  -webkit-mask-position: 0.0000% 6.8182%;
-  mask-position: 0.0000% 6.8182%;
+  -webkit-mask-position: 66.6667% 6.1224%;
+  mask-position: 66.6667% 6.1224%;
 }
 .msr-auto_fix_high {
-  -webkit-mask-position: 11.1111% 6.8182%;
-  mask-position: 11.1111% 6.8182%;
+  -webkit-mask-position: 77.7778% 6.1224%;
+  mask-position: 77.7778% 6.1224%;
 }
-.msr-auto_mode {
-  -webkit-mask-position: 22.2222% 6.8182%;
-  mask-position: 22.2222% 6.8182%;
+.msr-auto_fix_normal {
+  -webkit-mask-position: 88.8889% 6.1224%;
+  mask-position: 88.8889% 6.1224%;
 }
 .msr-automation {
-  -webkit-mask-position: 33.3333% 6.8182%;
-  mask-position: 33.3333% 6.8182%;
+  -webkit-mask-position: 100.0000% 6.1224%;
+  mask-position: 100.0000% 6.1224%;
 }
 .msr-autorenew {
-  -webkit-mask-position: 44.4444% 6.8182%;
-  mask-position: 44.4444% 6.8182%;
+  -webkit-mask-position: 0.0000% 8.1633%;
+  mask-position: 0.0000% 8.1633%;
 }
 .msr-backup {
-  -webkit-mask-position: 55.5556% 6.8182%;
-  mask-position: 55.5556% 6.8182%;
+  -webkit-mask-position: 11.1111% 8.1633%;
+  mask-position: 11.1111% 8.1633%;
 }
 .msr-badge {
-  -webkit-mask-position: 66.6667% 6.8182%;
-  mask-position: 66.6667% 6.8182%;
+  -webkit-mask-position: 22.2222% 8.1633%;
+  mask-position: 22.2222% 8.1633%;
 }
 .msr-balance {
-  -webkit-mask-position: 77.7778% 6.8182%;
-  mask-position: 77.7778% 6.8182%;
+  -webkit-mask-position: 33.3333% 8.1633%;
+  mask-position: 33.3333% 8.1633%;
 }
 .msr-bar_chart {
-  -webkit-mask-position: 88.8889% 6.8182%;
-  mask-position: 88.8889% 6.8182%;
+  -webkit-mask-position: 44.4444% 8.1633%;
+  mask-position: 44.4444% 8.1633%;
+}
+.msr-bedtime {
+  -webkit-mask-position: 55.5556% 8.1633%;
+  mask-position: 55.5556% 8.1633%;
 }
 .msr-block {
-  -webkit-mask-position: 100.0000% 6.8182%;
-  mask-position: 100.0000% 6.8182%;
+  -webkit-mask-position: 66.6667% 8.1633%;
+  mask-position: 66.6667% 8.1633%;
 }
 .msr-blur_on {
-  -webkit-mask-position: 0.0000% 9.0909%;
-  mask-position: 0.0000% 9.0909%;
+  -webkit-mask-position: 77.7778% 8.1633%;
+  mask-position: 77.7778% 8.1633%;
 }
 .msr-bolt {
-  -webkit-mask-position: 11.1111% 9.0909%;
-  mask-position: 11.1111% 9.0909%;
+  -webkit-mask-position: 88.8889% 8.1633%;
+  mask-position: 88.8889% 8.1633%;
 }
 .msr-bomb {
-  -webkit-mask-position: 22.2222% 9.0909%;
-  mask-position: 22.2222% 9.0909%;
-}
-.msr-bookmark {
-  -webkit-mask-position: 33.3333% 9.0909%;
-  mask-position: 33.3333% 9.0909%;
+  -webkit-mask-position: 100.0000% 8.1633%;
+  mask-position: 100.0000% 8.1633%;
 }
 .msr-border_outer {
-  -webkit-mask-position: 44.4444% 9.0909%;
-  mask-position: 44.4444% 9.0909%;
+  -webkit-mask-position: 0.0000% 10.2041%;
+  mask-position: 0.0000% 10.2041%;
 }
 .msr-box {
-  -webkit-mask-position: 55.5556% 9.0909%;
-  mask-position: 55.5556% 9.0909%;
+  -webkit-mask-position: 11.1111% 10.2041%;
+  mask-position: 11.1111% 10.2041%;
 }
 .msr-brightness_auto {
-  -webkit-mask-position: 66.6667% 9.0909%;
-  mask-position: 66.6667% 9.0909%;
+  -webkit-mask-position: 22.2222% 10.2041%;
+  mask-position: 22.2222% 10.2041%;
+}
+.msr-brightness_high {
+  -webkit-mask-position: 33.3333% 10.2041%;
+  mask-position: 33.3333% 10.2041%;
+}
+.msr-brightness_low {
+  -webkit-mask-position: 44.4444% 10.2041%;
+  mask-position: 44.4444% 10.2041%;
 }
 .msr-brush {
-  -webkit-mask-position: 77.7778% 9.0909%;
-  mask-position: 77.7778% 9.0909%;
+  -webkit-mask-position: 55.5556% 10.2041%;
+  mask-position: 55.5556% 10.2041%;
 }
 .msr-bubble {
-  -webkit-mask-position: 88.8889% 9.0909%;
-  mask-position: 88.8889% 9.0909%;
+  -webkit-mask-position: 66.6667% 10.2041%;
+  mask-position: 66.6667% 10.2041%;
 }
 .msr-build {
-  -webkit-mask-position: 100.0000% 9.0909%;
-  mask-position: 100.0000% 9.0909%;
+  -webkit-mask-position: 77.7778% 10.2041%;
+  mask-position: 77.7778% 10.2041%;
 }
 .msr-build_circle {
-  -webkit-mask-position: 0.0000% 11.3636%;
-  mask-position: 0.0000% 11.3636%;
+  -webkit-mask-position: 88.8889% 10.2041%;
+  mask-position: 88.8889% 10.2041%;
 }
 .msr-business {
-  -webkit-mask-position: 11.1111% 11.3636%;
-  mask-position: 11.1111% 11.3636%;
+  -webkit-mask-position: 100.0000% 10.2041%;
+  mask-position: 100.0000% 10.2041%;
 }
 .msr-cached {
-  -webkit-mask-position: 22.2222% 11.3636%;
-  mask-position: 22.2222% 11.3636%;
+  -webkit-mask-position: 0.0000% 12.2449%;
+  mask-position: 0.0000% 12.2449%;
 }
 .msr-calculate {
-  -webkit-mask-position: 33.3333% 11.3636%;
-  mask-position: 33.3333% 11.3636%;
+  -webkit-mask-position: 11.1111% 12.2449%;
+  mask-position: 11.1111% 12.2449%;
 }
 .msr-calendar_add_on {
-  -webkit-mask-position: 44.4444% 11.3636%;
-  mask-position: 44.4444% 11.3636%;
+  -webkit-mask-position: 22.2222% 12.2449%;
+  mask-position: 22.2222% 12.2449%;
 }
 .msr-calendar_month {
-  -webkit-mask-position: 55.5556% 11.3636%;
-  mask-position: 55.5556% 11.3636%;
+  -webkit-mask-position: 33.3333% 12.2449%;
+  mask-position: 33.3333% 12.2449%;
 }
 .msr-calendar_today {
-  -webkit-mask-position: 66.6667% 11.3636%;
-  mask-position: 66.6667% 11.3636%;
+  -webkit-mask-position: 44.4444% 12.2449%;
+  mask-position: 44.4444% 12.2449%;
 }
 .msr-call {
-  -webkit-mask-position: 77.7778% 11.3636%;
-  mask-position: 77.7778% 11.3636%;
+  -webkit-mask-position: 55.5556% 12.2449%;
+  mask-position: 55.5556% 12.2449%;
 }
 .msr-campaign {
-  -webkit-mask-position: 88.8889% 11.3636%;
-  mask-position: 88.8889% 11.3636%;
+  -webkit-mask-position: 66.6667% 12.2449%;
+  mask-position: 66.6667% 12.2449%;
 }
 .msr-cancel {
-  -webkit-mask-position: 100.0000% 11.3636%;
-  mask-position: 100.0000% 11.3636%;
+  -webkit-mask-position: 77.7778% 12.2449%;
+  mask-position: 77.7778% 12.2449%;
 }
 .msr-capture {
-  -webkit-mask-position: 0.0000% 13.6364%;
-  mask-position: 0.0000% 13.6364%;
+  -webkit-mask-position: 88.8889% 12.2449%;
+  mask-position: 88.8889% 12.2449%;
 }
 .msr-cards {
-  -webkit-mask-position: 11.1111% 13.6364%;
-  mask-position: 11.1111% 13.6364%;
+  -webkit-mask-position: 100.0000% 12.2449%;
+  mask-position: 100.0000% 12.2449%;
 }
 .msr-category {
-  -webkit-mask-position: 22.2222% 13.6364%;
-  mask-position: 22.2222% 13.6364%;
+  -webkit-mask-position: 0.0000% 14.2857%;
+  mask-position: 0.0000% 14.2857%;
+}
+.msr-change_circle {
+  -webkit-mask-position: 11.1111% 14.2857%;
+  mask-position: 11.1111% 14.2857%;
 }
 .msr-chat {
-  -webkit-mask-position: 33.3333% 13.6364%;
-  mask-position: 33.3333% 13.6364%;
+  -webkit-mask-position: 22.2222% 14.2857%;
+  mask-position: 22.2222% 14.2857%;
+}
+.msr-chat_bubble {
+  -webkit-mask-position: 33.3333% 14.2857%;
+  mask-position: 33.3333% 14.2857%;
 }
 .msr-chat_bubble_outline {
-  -webkit-mask-position: 44.4444% 13.6364%;
-  mask-position: 44.4444% 13.6364%;
+  -webkit-mask-position: 44.4444% 14.2857%;
+  mask-position: 44.4444% 14.2857%;
 }
 .msr-check {
-  -webkit-mask-position: 55.5556% 13.6364%;
-  mask-position: 55.5556% 13.6364%;
+  -webkit-mask-position: 55.5556% 14.2857%;
+  mask-position: 55.5556% 14.2857%;
 }
 .msr-check_box {
-  -webkit-mask-position: 66.6667% 13.6364%;
-  mask-position: 66.6667% 13.6364%;
+  -webkit-mask-position: 66.6667% 14.2857%;
+  mask-position: 66.6667% 14.2857%;
 }
 .msr-check_box_outline_blank {
-  -webkit-mask-position: 77.7778% 13.6364%;
-  mask-position: 77.7778% 13.6364%;
+  -webkit-mask-position: 77.7778% 14.2857%;
+  mask-position: 77.7778% 14.2857%;
 }
 .msr-check_circle {
-  -webkit-mask-position: 88.8889% 13.6364%;
-  mask-position: 88.8889% 13.6364%;
+  -webkit-mask-position: 88.8889% 14.2857%;
+  mask-position: 88.8889% 14.2857%;
 }
 .msr-checklist {
-  -webkit-mask-position: 100.0000% 13.6364%;
-  mask-position: 100.0000% 13.6364%;
+  -webkit-mask-position: 100.0000% 14.2857%;
+  mask-position: 100.0000% 14.2857%;
 }
 .msr-chevron_left {
-  -webkit-mask-position: 0.0000% 15.9091%;
-  mask-position: 0.0000% 15.9091%;
+  -webkit-mask-position: 0.0000% 16.3265%;
+  mask-position: 0.0000% 16.3265%;
 }
 .msr-chevron_right {
-  -webkit-mask-position: 11.1111% 15.9091%;
-  mask-position: 11.1111% 15.9091%;
+  -webkit-mask-position: 11.1111% 16.3265%;
+  mask-position: 11.1111% 16.3265%;
+}
+.msr-chips {
+  -webkit-mask-position: 22.2222% 16.3265%;
+  mask-position: 22.2222% 16.3265%;
 }
 .msr-circle {
-  -webkit-mask-position: 22.2222% 15.9091%;
-  mask-position: 22.2222% 15.9091%;
+  -webkit-mask-position: 33.3333% 16.3265%;
+  mask-position: 33.3333% 16.3265%;
 }
 .msr-class {
-  -webkit-mask-position: 33.3333% 15.9091%;
-  mask-position: 33.3333% 15.9091%;
+  -webkit-mask-position: 44.4444% 16.3265%;
+  mask-position: 44.4444% 16.3265%;
 }
 .msr-cleaning_services {
-  -webkit-mask-position: 44.4444% 15.9091%;
-  mask-position: 44.4444% 15.9091%;
+  -webkit-mask-position: 55.5556% 16.3265%;
+  mask-position: 55.5556% 16.3265%;
 }
 .msr-clear {
-  -webkit-mask-position: 55.5556% 15.9091%;
-  mask-position: 55.5556% 15.9091%;
+  -webkit-mask-position: 66.6667% 16.3265%;
+  mask-position: 66.6667% 16.3265%;
 }
 .msr-close {
-  -webkit-mask-position: 66.6667% 15.9091%;
-  mask-position: 66.6667% 15.9091%;
+  -webkit-mask-position: 77.7778% 16.3265%;
+  mask-position: 77.7778% 16.3265%;
 }
 .msr-cloud {
-  -webkit-mask-position: 77.7778% 15.9091%;
-  mask-position: 77.7778% 15.9091%;
+  -webkit-mask-position: 88.8889% 16.3265%;
+  mask-position: 88.8889% 16.3265%;
 }
 .msr-cloud_off {
-  -webkit-mask-position: 88.8889% 15.9091%;
-  mask-position: 88.8889% 15.9091%;
+  -webkit-mask-position: 100.0000% 16.3265%;
+  mask-position: 100.0000% 16.3265%;
 }
 .msr-cloud_upload {
-  -webkit-mask-position: 100.0000% 15.9091%;
-  mask-position: 100.0000% 15.9091%;
+  -webkit-mask-position: 0.0000% 18.3673%;
+  mask-position: 0.0000% 18.3673%;
 }
 .msr-code {
-  -webkit-mask-position: 0.0000% 18.1818%;
-  mask-position: 0.0000% 18.1818%;
+  -webkit-mask-position: 11.1111% 18.3673%;
+  mask-position: 11.1111% 18.3673%;
 }
 .msr-collections {
-  -webkit-mask-position: 11.1111% 18.1818%;
-  mask-position: 11.1111% 18.1818%;
+  -webkit-mask-position: 22.2222% 18.3673%;
+  mask-position: 22.2222% 18.3673%;
 }
 .msr-collections_bookmark {
-  -webkit-mask-position: 22.2222% 18.1818%;
-  mask-position: 22.2222% 18.1818%;
+  -webkit-mask-position: 33.3333% 18.3673%;
+  mask-position: 33.3333% 18.3673%;
 }
 .msr-color_lens {
-  -webkit-mask-position: 33.3333% 18.1818%;
-  mask-position: 33.3333% 18.1818%;
+  -webkit-mask-position: 44.4444% 18.3673%;
+  mask-position: 44.4444% 18.3673%;
 }
 .msr-colorize {
-  -webkit-mask-position: 44.4444% 18.1818%;
-  mask-position: 44.4444% 18.1818%;
+  -webkit-mask-position: 55.5556% 18.3673%;
+  mask-position: 55.5556% 18.3673%;
 }
 .msr-colors {
-  -webkit-mask-position: 55.5556% 18.1818%;
-  mask-position: 55.5556% 18.1818%;
+  -webkit-mask-position: 66.6667% 18.3673%;
+  mask-position: 66.6667% 18.3673%;
 }
 .msr-commit {
-  -webkit-mask-position: 66.6667% 18.1818%;
-  mask-position: 66.6667% 18.1818%;
-}
-.msr-compress {
-  -webkit-mask-position: 77.7778% 18.1818%;
-  mask-position: 77.7778% 18.1818%;
+  -webkit-mask-position: 77.7778% 18.3673%;
+  mask-position: 77.7778% 18.3673%;
 }
 .msr-conditions {
-  -webkit-mask-position: 88.8889% 18.1818%;
-  mask-position: 88.8889% 18.1818%;
+  -webkit-mask-position: 88.8889% 18.3673%;
+  mask-position: 88.8889% 18.3673%;
 }
 .msr-construction {
-  -webkit-mask-position: 100.0000% 18.1818%;
-  mask-position: 100.0000% 18.1818%;
+  -webkit-mask-position: 100.0000% 18.3673%;
+  mask-position: 100.0000% 18.3673%;
 }
 .msr-content_copy {
-  -webkit-mask-position: 0.0000% 20.4545%;
-  mask-position: 0.0000% 20.4545%;
+  -webkit-mask-position: 0.0000% 20.4082%;
+  mask-position: 0.0000% 20.4082%;
+}
+.msr-content_cut {
+  -webkit-mask-position: 11.1111% 20.4082%;
+  mask-position: 11.1111% 20.4082%;
+}
+.msr-contrast {
+  -webkit-mask-position: 22.2222% 20.4082%;
+  mask-position: 22.2222% 20.4082%;
+}
+.msr-control_camera {
+  -webkit-mask-position: 33.3333% 20.4082%;
+  mask-position: 33.3333% 20.4082%;
 }
 .msr-cookie {
-  -webkit-mask-position: 11.1111% 20.4545%;
-  mask-position: 11.1111% 20.4545%;
+  -webkit-mask-position: 44.4444% 20.4082%;
+  mask-position: 44.4444% 20.4082%;
 }
 .msr-copyright {
-  -webkit-mask-position: 22.2222% 20.4545%;
-  mask-position: 22.2222% 20.4545%;
+  -webkit-mask-position: 55.5556% 20.4082%;
+  mask-position: 55.5556% 20.4082%;
 }
 .msr-corporate_fare {
-  -webkit-mask-position: 33.3333% 20.4545%;
-  mask-position: 33.3333% 20.4545%;
+  -webkit-mask-position: 66.6667% 20.4082%;
+  mask-position: 66.6667% 20.4082%;
 }
 .msr-create {
-  -webkit-mask-position: 44.4444% 20.4545%;
-  mask-position: 44.4444% 20.4545%;
+  -webkit-mask-position: 77.7778% 20.4082%;
+  mask-position: 77.7778% 20.4082%;
 }
 .msr-credit_card {
-  -webkit-mask-position: 55.5556% 20.4545%;
-  mask-position: 55.5556% 20.4545%;
+  -webkit-mask-position: 88.8889% 20.4082%;
+  mask-position: 88.8889% 20.4082%;
 }
 .msr-credit_card_off {
-  -webkit-mask-position: 66.6667% 20.4545%;
-  mask-position: 66.6667% 20.4545%;
+  -webkit-mask-position: 100.0000% 20.4082%;
+  mask-position: 100.0000% 20.4082%;
 }
-.msr-crisis_alert {
-  -webkit-mask-position: 77.7778% 20.4545%;
-  mask-position: 77.7778% 20.4545%;
+.msr-crop {
+  -webkit-mask-position: 0.0000% 22.4490%;
+  mask-position: 0.0000% 22.4490%;
 }
 .msr-crop_din {
-  -webkit-mask-position: 88.8889% 20.4545%;
-  mask-position: 88.8889% 20.4545%;
+  -webkit-mask-position: 11.1111% 22.4490%;
+  mask-position: 11.1111% 22.4490%;
 }
 .msr-crop_free {
-  -webkit-mask-position: 100.0000% 20.4545%;
-  mask-position: 100.0000% 20.4545%;
+  -webkit-mask-position: 22.2222% 22.4490%;
+  mask-position: 22.2222% 22.4490%;
 }
 .msr-crop_square {
-  -webkit-mask-position: 0.0000% 22.7273%;
-  mask-position: 0.0000% 22.7273%;
+  -webkit-mask-position: 33.3333% 22.4490%;
+  mask-position: 33.3333% 22.4490%;
 }
 .msr-crown {
-  -webkit-mask-position: 11.1111% 22.7273%;
-  mask-position: 11.1111% 22.7273%;
+  -webkit-mask-position: 44.4444% 22.4490%;
+  mask-position: 44.4444% 22.4490%;
 }
 .msr-css {
-  -webkit-mask-position: 22.2222% 22.7273%;
-  mask-position: 22.2222% 22.7273%;
+  -webkit-mask-position: 55.5556% 22.4490%;
+  mask-position: 55.5556% 22.4490%;
 }
 .msr-currency_exchange {
-  -webkit-mask-position: 33.3333% 22.7273%;
-  mask-position: 33.3333% 22.7273%;
+  -webkit-mask-position: 66.6667% 22.4490%;
+  mask-position: 66.6667% 22.4490%;
 }
 .msr-cut {
-  -webkit-mask-position: 44.4444% 22.7273%;
-  mask-position: 44.4444% 22.7273%;
+  -webkit-mask-position: 77.7778% 22.4490%;
+  mask-position: 77.7778% 22.4490%;
 }
 .msr-cycle {
-  -webkit-mask-position: 55.5556% 22.7273%;
-  mask-position: 55.5556% 22.7273%;
+  -webkit-mask-position: 88.8889% 22.4490%;
+  mask-position: 88.8889% 22.4490%;
 }
 .msr-dangerous {
-  -webkit-mask-position: 66.6667% 22.7273%;
-  mask-position: 66.6667% 22.7273%;
+  -webkit-mask-position: 100.0000% 22.4490%;
+  mask-position: 100.0000% 22.4490%;
 }
 .msr-dark_mode {
-  -webkit-mask-position: 77.7778% 22.7273%;
-  mask-position: 77.7778% 22.7273%;
+  -webkit-mask-position: 0.0000% 24.4898%;
+  mask-position: 0.0000% 24.4898%;
 }
 .msr-dashboard {
-  -webkit-mask-position: 88.8889% 22.7273%;
-  mask-position: 88.8889% 22.7273%;
+  -webkit-mask-position: 11.1111% 24.4898%;
+  mask-position: 11.1111% 24.4898%;
 }
 .msr-dashboard_customize {
-  -webkit-mask-position: 100.0000% 22.7273%;
-  mask-position: 100.0000% 22.7273%;
+  -webkit-mask-position: 22.2222% 24.4898%;
+  mask-position: 22.2222% 24.4898%;
+}
+.msr-data_object {
+  -webkit-mask-position: 33.3333% 24.4898%;
+  mask-position: 33.3333% 24.4898%;
 }
 .msr-database {
-  -webkit-mask-position: 0.0000% 25.0000%;
-  mask-position: 0.0000% 25.0000%;
+  -webkit-mask-position: 44.4444% 24.4898%;
+  mask-position: 44.4444% 24.4898%;
 }
 .msr-dataset {
-  -webkit-mask-position: 11.1111% 25.0000%;
-  mask-position: 11.1111% 25.0000%;
+  -webkit-mask-position: 55.5556% 24.4898%;
+  mask-position: 55.5556% 24.4898%;
 }
 .msr-date_range {
-  -webkit-mask-position: 22.2222% 25.0000%;
-  mask-position: 22.2222% 25.0000%;
+  -webkit-mask-position: 66.6667% 24.4898%;
+  mask-position: 66.6667% 24.4898%;
 }
 .msr-delete {
-  -webkit-mask-position: 33.3333% 25.0000%;
-  mask-position: 33.3333% 25.0000%;
+  -webkit-mask-position: 77.7778% 24.4898%;
+  mask-position: 77.7778% 24.4898%;
 }
 .msr-delete_forever {
-  -webkit-mask-position: 44.4444% 25.0000%;
-  mask-position: 44.4444% 25.0000%;
+  -webkit-mask-position: 88.8889% 24.4898%;
+  mask-position: 88.8889% 24.4898%;
 }
 .msr-delete_outline {
-  -webkit-mask-position: 55.5556% 25.0000%;
-  mask-position: 55.5556% 25.0000%;
+  -webkit-mask-position: 100.0000% 24.4898%;
+  mask-position: 100.0000% 24.4898%;
+}
+.msr-delete_sweep {
+  -webkit-mask-position: 0.0000% 26.5306%;
+  mask-position: 0.0000% 26.5306%;
 }
 .msr-description {
-  -webkit-mask-position: 66.6667% 25.0000%;
-  mask-position: 66.6667% 25.0000%;
+  -webkit-mask-position: 11.1111% 26.5306%;
+  mask-position: 11.1111% 26.5306%;
 }
 .msr-details {
-  -webkit-mask-position: 77.7778% 25.0000%;
-  mask-position: 77.7778% 25.0000%;
+  -webkit-mask-position: 22.2222% 26.5306%;
+  mask-position: 22.2222% 26.5306%;
 }
 .msr-devices {
-  -webkit-mask-position: 88.8889% 25.0000%;
-  mask-position: 88.8889% 25.0000%;
+  -webkit-mask-position: 33.3333% 26.5306%;
+  mask-position: 33.3333% 26.5306%;
+}
+.msr-dialogs {
+  -webkit-mask-position: 44.4444% 26.5306%;
+  mask-position: 44.4444% 26.5306%;
 }
 .msr-diamond {
-  -webkit-mask-position: 100.0000% 25.0000%;
-  mask-position: 100.0000% 25.0000%;
+  -webkit-mask-position: 55.5556% 26.5306%;
+  mask-position: 55.5556% 26.5306%;
 }
 .msr-dictionary {
-  -webkit-mask-position: 0.0000% 27.2727%;
-  mask-position: 0.0000% 27.2727%;
+  -webkit-mask-position: 66.6667% 26.5306%;
+  mask-position: 66.6667% 26.5306%;
 }
 .msr-distance {
-  -webkit-mask-position: 11.1111% 27.2727%;
-  mask-position: 11.1111% 27.2727%;
+  -webkit-mask-position: 77.7778% 26.5306%;
+  mask-position: 77.7778% 26.5306%;
 }
 .msr-dns {
-  -webkit-mask-position: 22.2222% 27.2727%;
-  mask-position: 22.2222% 27.2727%;
+  -webkit-mask-position: 88.8889% 26.5306%;
+  mask-position: 88.8889% 26.5306%;
+}
+.msr-dock {
+  -webkit-mask-position: 100.0000% 26.5306%;
+  mask-position: 100.0000% 26.5306%;
 }
 .msr-domain {
-  -webkit-mask-position: 33.3333% 27.2727%;
-  mask-position: 33.3333% 27.2727%;
+  -webkit-mask-position: 0.0000% 28.5714%;
+  mask-position: 0.0000% 28.5714%;
 }
 .msr-done_all {
-  -webkit-mask-position: 44.4444% 27.2727%;
-  mask-position: 44.4444% 27.2727%;
+  -webkit-mask-position: 11.1111% 28.5714%;
+  mask-position: 11.1111% 28.5714%;
 }
 .msr-download {
-  -webkit-mask-position: 55.5556% 27.2727%;
-  mask-position: 55.5556% 27.2727%;
+  -webkit-mask-position: 22.2222% 28.5714%;
+  mask-position: 22.2222% 28.5714%;
 }
 .msr-draft {
-  -webkit-mask-position: 66.6667% 27.2727%;
-  mask-position: 66.6667% 27.2727%;
+  -webkit-mask-position: 33.3333% 28.5714%;
+  mask-position: 33.3333% 28.5714%;
 }
 .msr-drag_indicator {
-  -webkit-mask-position: 77.7778% 27.2727%;
-  mask-position: 77.7778% 27.2727%;
+  -webkit-mask-position: 44.4444% 28.5714%;
+  mask-position: 44.4444% 28.5714%;
 }
 .msr-draw {
-  -webkit-mask-position: 88.8889% 27.2727%;
-  mask-position: 88.8889% 27.2727%;
+  -webkit-mask-position: 55.5556% 28.5714%;
+  mask-position: 55.5556% 28.5714%;
 }
 .msr-dropdown {
-  -webkit-mask-position: 100.0000% 27.2727%;
-  mask-position: 100.0000% 27.2727%;
+  -webkit-mask-position: 66.6667% 28.5714%;
+  mask-position: 66.6667% 28.5714%;
+}
+.msr-dynamic_feed {
+  -webkit-mask-position: 77.7778% 28.5714%;
+  mask-position: 77.7778% 28.5714%;
 }
 .msr-east {
-  -webkit-mask-position: 0.0000% 29.5455%;
-  mask-position: 0.0000% 29.5455%;
+  -webkit-mask-position: 88.8889% 28.5714%;
+  mask-position: 88.8889% 28.5714%;
 }
 .msr-edit {
-  -webkit-mask-position: 11.1111% 29.5455%;
-  mask-position: 11.1111% 29.5455%;
+  -webkit-mask-position: 100.0000% 28.5714%;
+  mask-position: 100.0000% 28.5714%;
 }
 .msr-edit_calendar {
-  -webkit-mask-position: 22.2222% 29.5455%;
-  mask-position: 22.2222% 29.5455%;
+  -webkit-mask-position: 0.0000% 30.6122%;
+  mask-position: 0.0000% 30.6122%;
 }
 .msr-email {
-  -webkit-mask-position: 33.3333% 29.5455%;
-  mask-position: 33.3333% 29.5455%;
+  -webkit-mask-position: 11.1111% 30.6122%;
+  mask-position: 11.1111% 30.6122%;
 }
 .msr-emergency {
-  -webkit-mask-position: 44.4444% 29.5455%;
-  mask-position: 44.4444% 29.5455%;
+  -webkit-mask-position: 22.2222% 30.6122%;
+  mask-position: 22.2222% 30.6122%;
+}
+.msr-enterprise {
+  -webkit-mask-position: 33.3333% 30.6122%;
+  mask-position: 33.3333% 30.6122%;
 }
 .msr-equal {
-  -webkit-mask-position: 55.5556% 29.5455%;
-  mask-position: 55.5556% 29.5455%;
+  -webkit-mask-position: 44.4444% 30.6122%;
+  mask-position: 44.4444% 30.6122%;
 }
 .msr-error {
-  -webkit-mask-position: 66.6667% 29.5455%;
-  mask-position: 66.6667% 29.5455%;
+  -webkit-mask-position: 55.5556% 30.6122%;
+  mask-position: 55.5556% 30.6122%;
 }
 .msr-error_outline {
-  -webkit-mask-position: 77.7778% 29.5455%;
-  mask-position: 77.7778% 29.5455%;
+  -webkit-mask-position: 66.6667% 30.6122%;
+  mask-position: 66.6667% 30.6122%;
 }
 .msr-event {
-  -webkit-mask-position: 88.8889% 29.5455%;
-  mask-position: 88.8889% 29.5455%;
+  -webkit-mask-position: 77.7778% 30.6122%;
+  mask-position: 77.7778% 30.6122%;
 }
 .msr-event_repeat {
-  -webkit-mask-position: 100.0000% 29.5455%;
-  mask-position: 100.0000% 29.5455%;
+  -webkit-mask-position: 88.8889% 30.6122%;
+  mask-position: 88.8889% 30.6122%;
 }
 .msr-expand {
-  -webkit-mask-position: 0.0000% 31.8182%;
-  mask-position: 0.0000% 31.8182%;
+  -webkit-mask-position: 100.0000% 30.6122%;
+  mask-position: 100.0000% 30.6122%;
 }
 .msr-expand_more {
-  -webkit-mask-position: 11.1111% 31.8182%;
-  mask-position: 11.1111% 31.8182%;
+  -webkit-mask-position: 0.0000% 32.6531%;
+  mask-position: 0.0000% 32.6531%;
 }
 .msr-explore {
-  -webkit-mask-position: 22.2222% 31.8182%;
-  mask-position: 22.2222% 31.8182%;
+  -webkit-mask-position: 11.1111% 32.6531%;
+  mask-position: 11.1111% 32.6531%;
 }
 .msr-explosion {
-  -webkit-mask-position: 33.3333% 31.8182%;
-  mask-position: 33.3333% 31.8182%;
+  -webkit-mask-position: 22.2222% 32.6531%;
+  mask-position: 22.2222% 32.6531%;
+}
+.msr-exposure {
+  -webkit-mask-position: 33.3333% 32.6531%;
+  mask-position: 33.3333% 32.6531%;
 }
 .msr-extension {
-  -webkit-mask-position: 44.4444% 31.8182%;
-  mask-position: 44.4444% 31.8182%;
-}
-.msr-fact_check {
-  -webkit-mask-position: 55.5556% 31.8182%;
-  mask-position: 55.5556% 31.8182%;
+  -webkit-mask-position: 44.4444% 32.6531%;
+  mask-position: 44.4444% 32.6531%;
 }
 .msr-factory {
-  -webkit-mask-position: 66.6667% 31.8182%;
-  mask-position: 66.6667% 31.8182%;
+  -webkit-mask-position: 55.5556% 32.6531%;
+  mask-position: 55.5556% 32.6531%;
 }
 .msr-falling {
-  -webkit-mask-position: 77.7778% 31.8182%;
-  mask-position: 77.7778% 31.8182%;
+  -webkit-mask-position: 66.6667% 32.6531%;
+  mask-position: 66.6667% 32.6531%;
 }
 .msr-favorite {
-  -webkit-mask-position: 88.8889% 31.8182%;
-  mask-position: 88.8889% 31.8182%;
+  -webkit-mask-position: 77.7778% 32.6531%;
+  mask-position: 77.7778% 32.6531%;
 }
 .msr-feed {
-  -webkit-mask-position: 100.0000% 31.8182%;
-  mask-position: 100.0000% 31.8182%;
+  -webkit-mask-position: 88.8889% 32.6531%;
+  mask-position: 88.8889% 32.6531%;
 }
 .msr-feedback {
-  -webkit-mask-position: 0.0000% 34.0909%;
-  mask-position: 0.0000% 34.0909%;
+  -webkit-mask-position: 100.0000% 32.6531%;
+  mask-position: 100.0000% 32.6531%;
+}
+.msr-file_download {
+  -webkit-mask-position: 0.0000% 34.6939%;
+  mask-position: 0.0000% 34.6939%;
 }
 .msr-files {
-  -webkit-mask-position: 11.1111% 34.0909%;
-  mask-position: 11.1111% 34.0909%;
+  -webkit-mask-position: 11.1111% 34.6939%;
+  mask-position: 11.1111% 34.6939%;
 }
 .msr-filter {
-  -webkit-mask-position: 22.2222% 34.0909%;
-  mask-position: 22.2222% 34.0909%;
+  -webkit-mask-position: 22.2222% 34.6939%;
+  mask-position: 22.2222% 34.6939%;
 }
-.msr-filter_alt_off {
-  -webkit-mask-position: 33.3333% 34.0909%;
-  mask-position: 33.3333% 34.0909%;
+.msr-filter_list {
+  -webkit-mask-position: 33.3333% 34.6939%;
+  mask-position: 33.3333% 34.6939%;
 }
 .msr-finance {
-  -webkit-mask-position: 44.4444% 34.0909%;
-  mask-position: 44.4444% 34.0909%;
+  -webkit-mask-position: 44.4444% 34.6939%;
+  mask-position: 44.4444% 34.6939%;
+}
+.msr-find_replace {
+  -webkit-mask-position: 55.5556% 34.6939%;
+  mask-position: 55.5556% 34.6939%;
 }
 .msr-fingerprint {
-  -webkit-mask-position: 55.5556% 34.0909%;
-  mask-position: 55.5556% 34.0909%;
+  -webkit-mask-position: 66.6667% 34.6939%;
+  mask-position: 66.6667% 34.6939%;
 }
 .msr-flag {
-  -webkit-mask-position: 66.6667% 34.0909%;
-  mask-position: 66.6667% 34.0909%;
+  -webkit-mask-position: 77.7778% 34.6939%;
+  mask-position: 77.7778% 34.6939%;
 }
 .msr-flash_on {
-  -webkit-mask-position: 77.7778% 34.0909%;
-  mask-position: 77.7778% 34.0909%;
+  -webkit-mask-position: 88.8889% 34.6939%;
+  mask-position: 88.8889% 34.6939%;
 }
 .msr-flip {
-  -webkit-mask-position: 88.8889% 34.0909%;
-  mask-position: 88.8889% 34.0909%;
+  -webkit-mask-position: 100.0000% 34.6939%;
+  mask-position: 100.0000% 34.6939%;
+}
+.msr-flood {
+  -webkit-mask-position: 0.0000% 36.7347%;
+  mask-position: 0.0000% 36.7347%;
 }
 .msr-floor {
-  -webkit-mask-position: 100.0000% 34.0909%;
-  mask-position: 100.0000% 34.0909%;
+  -webkit-mask-position: 11.1111% 36.7347%;
+  mask-position: 11.1111% 36.7347%;
+}
+.msr-flowchart {
+  -webkit-mask-position: 22.2222% 36.7347%;
+  mask-position: 22.2222% 36.7347%;
 }
 .msr-folder_off {
-  -webkit-mask-position: 0.0000% 36.3636%;
-  mask-position: 0.0000% 36.3636%;
+  -webkit-mask-position: 33.3333% 36.7347%;
+  mask-position: 33.3333% 36.7347%;
 }
 .msr-folder_open {
-  -webkit-mask-position: 11.1111% 36.3636%;
-  mask-position: 11.1111% 36.3636%;
+  -webkit-mask-position: 44.4444% 36.7347%;
+  mask-position: 44.4444% 36.7347%;
 }
 .msr-font_download {
-  -webkit-mask-position: 22.2222% 36.3636%;
-  mask-position: 22.2222% 36.3636%;
+  -webkit-mask-position: 55.5556% 36.7347%;
+  mask-position: 55.5556% 36.7347%;
+}
+.msr-forest {
+  -webkit-mask-position: 66.6667% 36.7347%;
+  mask-position: 66.6667% 36.7347%;
 }
 .msr-format_color_fill {
-  -webkit-mask-position: 33.3333% 36.3636%;
-  mask-position: 33.3333% 36.3636%;
+  -webkit-mask-position: 77.7778% 36.7347%;
+  mask-position: 77.7778% 36.7347%;
 }
 .msr-format_list_bulleted {
-  -webkit-mask-position: 44.4444% 36.3636%;
-  mask-position: 44.4444% 36.3636%;
+  -webkit-mask-position: 88.8889% 36.7347%;
+  mask-position: 88.8889% 36.7347%;
+}
+.msr-format_paint {
+  -webkit-mask-position: 100.0000% 36.7347%;
+  mask-position: 100.0000% 36.7347%;
+}
+.msr-forum {
+  -webkit-mask-position: 0.0000% 38.7755%;
+  mask-position: 0.0000% 38.7755%;
 }
 .msr-front_hand {
-  -webkit-mask-position: 55.5556% 36.3636%;
-  mask-position: 55.5556% 36.3636%;
+  -webkit-mask-position: 11.1111% 38.7755%;
+  mask-position: 11.1111% 38.7755%;
 }
 .msr-fullscreen {
-  -webkit-mask-position: 66.6667% 36.3636%;
-  mask-position: 66.6667% 36.3636%;
+  -webkit-mask-position: 22.2222% 38.7755%;
+  mask-position: 22.2222% 38.7755%;
 }
 .msr-function {
-  -webkit-mask-position: 77.7778% 36.3636%;
-  mask-position: 77.7778% 36.3636%;
+  -webkit-mask-position: 33.3333% 38.7755%;
+  mask-position: 33.3333% 38.7755%;
 }
 .msr-gamepad {
-  -webkit-mask-position: 88.8889% 36.3636%;
-  mask-position: 88.8889% 36.3636%;
+  -webkit-mask-position: 44.4444% 38.7755%;
+  mask-position: 44.4444% 38.7755%;
 }
 .msr-gavel {
-  -webkit-mask-position: 100.0000% 36.3636%;
-  mask-position: 100.0000% 36.3636%;
+  -webkit-mask-position: 55.5556% 38.7755%;
+  mask-position: 55.5556% 38.7755%;
+}
+.msr-gesture {
+  -webkit-mask-position: 66.6667% 38.7755%;
+  mask-position: 66.6667% 38.7755%;
 }
 .msr-gif {
-  -webkit-mask-position: 0.0000% 38.6364%;
-  mask-position: 0.0000% 38.6364%;
+  -webkit-mask-position: 77.7778% 38.7755%;
+  mask-position: 77.7778% 38.7755%;
 }
 .msr-glyphs {
-  -webkit-mask-position: 11.1111% 38.6364%;
-  mask-position: 11.1111% 38.6364%;
+  -webkit-mask-position: 88.8889% 38.7755%;
+  mask-position: 88.8889% 38.7755%;
 }
 .msr-gpp_bad {
-  -webkit-mask-position: 22.2222% 38.6364%;
-  mask-position: 22.2222% 38.6364%;
+  -webkit-mask-position: 100.0000% 38.7755%;
+  mask-position: 100.0000% 38.7755%;
 }
 .msr-gradient {
-  -webkit-mask-position: 33.3333% 38.6364%;
-  mask-position: 33.3333% 38.6364%;
+  -webkit-mask-position: 0.0000% 40.8163%;
+  mask-position: 0.0000% 40.8163%;
 }
 .msr-grain {
-  -webkit-mask-position: 44.4444% 38.6364%;
-  mask-position: 44.4444% 38.6364%;
+  -webkit-mask-position: 11.1111% 40.8163%;
+  mask-position: 11.1111% 40.8163%;
+}
+.msr-grid_4x4 {
+  -webkit-mask-position: 22.2222% 40.8163%;
+  mask-position: 22.2222% 40.8163%;
+}
+.msr-grid_off {
+  -webkit-mask-position: 33.3333% 40.8163%;
+  mask-position: 33.3333% 40.8163%;
 }
 .msr-grid_on {
-  -webkit-mask-position: 55.5556% 38.6364%;
-  mask-position: 55.5556% 38.6364%;
+  -webkit-mask-position: 44.4444% 40.8163%;
+  mask-position: 44.4444% 40.8163%;
 }
 .msr-grid_view {
-  -webkit-mask-position: 66.6667% 38.6364%;
-  mask-position: 66.6667% 38.6364%;
+  -webkit-mask-position: 55.5556% 40.8163%;
+  mask-position: 55.5556% 40.8163%;
 }
 .msr-group {
-  -webkit-mask-position: 77.7778% 38.6364%;
-  mask-position: 77.7778% 38.6364%;
+  -webkit-mask-position: 66.6667% 40.8163%;
+  mask-position: 66.6667% 40.8163%;
 }
 .msr-group_add {
-  -webkit-mask-position: 88.8889% 38.6364%;
-  mask-position: 88.8889% 38.6364%;
+  -webkit-mask-position: 77.7778% 40.8163%;
+  mask-position: 77.7778% 40.8163%;
 }
 .msr-group_off {
-  -webkit-mask-position: 100.0000% 38.6364%;
-  mask-position: 100.0000% 38.6364%;
+  -webkit-mask-position: 88.8889% 40.8163%;
+  mask-position: 88.8889% 40.8163%;
 }
 .msr-groups {
-  -webkit-mask-position: 0.0000% 40.9091%;
-  mask-position: 0.0000% 40.9091%;
+  -webkit-mask-position: 100.0000% 40.8163%;
+  mask-position: 100.0000% 40.8163%;
 }
 .msr-hard_drive {
-  -webkit-mask-position: 11.1111% 40.9091%;
-  mask-position: 11.1111% 40.9091%;
+  -webkit-mask-position: 0.0000% 42.8571%;
+  mask-position: 0.0000% 42.8571%;
 }
 .msr-hd {
-  -webkit-mask-position: 22.2222% 40.9091%;
-  mask-position: 22.2222% 40.9091%;
+  -webkit-mask-position: 11.1111% 42.8571%;
+  mask-position: 11.1111% 42.8571%;
 }
 .msr-heart_broken {
-  -webkit-mask-position: 33.3333% 40.9091%;
-  mask-position: 33.3333% 40.9091%;
+  -webkit-mask-position: 22.2222% 42.8571%;
+  mask-position: 22.2222% 42.8571%;
 }
 .msr-height {
-  -webkit-mask-position: 44.4444% 40.9091%;
-  mask-position: 44.4444% 40.9091%;
+  -webkit-mask-position: 33.3333% 42.8571%;
+  mask-position: 33.3333% 42.8571%;
 }
 .msr-help {
-  -webkit-mask-position: 55.5556% 40.9091%;
-  mask-position: 55.5556% 40.9091%;
+  -webkit-mask-position: 44.4444% 42.8571%;
+  mask-position: 44.4444% 42.8571%;
+}
+.msr-hexagon {
+  -webkit-mask-position: 55.5556% 42.8571%;
+  mask-position: 55.5556% 42.8571%;
 }
 .msr-hide {
-  -webkit-mask-position: 66.6667% 40.9091%;
-  mask-position: 66.6667% 40.9091%;
+  -webkit-mask-position: 66.6667% 42.8571%;
+  mask-position: 66.6667% 42.8571%;
 }
 .msr-hide_image {
-  -webkit-mask-position: 77.7778% 40.9091%;
-  mask-position: 77.7778% 40.9091%;
+  -webkit-mask-position: 77.7778% 42.8571%;
+  mask-position: 77.7778% 42.8571%;
 }
 .msr-high_quality {
-  -webkit-mask-position: 88.8889% 40.9091%;
-  mask-position: 88.8889% 40.9091%;
+  -webkit-mask-position: 88.8889% 42.8571%;
+  mask-position: 88.8889% 42.8571%;
 }
 .msr-highlight {
-  -webkit-mask-position: 100.0000% 40.9091%;
-  mask-position: 100.0000% 40.9091%;
+  -webkit-mask-position: 100.0000% 42.8571%;
+  mask-position: 100.0000% 42.8571%;
 }
 .msr-highlight_alt {
-  -webkit-mask-position: 0.0000% 43.1818%;
-  mask-position: 0.0000% 43.1818%;
+  -webkit-mask-position: 0.0000% 44.8980%;
+  mask-position: 0.0000% 44.8980%;
 }
 .msr-history {
-  -webkit-mask-position: 11.1111% 43.1818%;
-  mask-position: 11.1111% 43.1818%;
+  -webkit-mask-position: 11.1111% 44.8980%;
+  mask-position: 11.1111% 44.8980%;
 }
 .msr-history_edu {
-  -webkit-mask-position: 22.2222% 43.1818%;
-  mask-position: 22.2222% 43.1818%;
+  -webkit-mask-position: 22.2222% 44.8980%;
+  mask-position: 22.2222% 44.8980%;
 }
 .msr-home {
-  -webkit-mask-position: 33.3333% 43.1818%;
-  mask-position: 33.3333% 43.1818%;
+  -webkit-mask-position: 33.3333% 44.8980%;
+  mask-position: 33.3333% 44.8980%;
 }
 .msr-host {
-  -webkit-mask-position: 44.4444% 43.1818%;
-  mask-position: 44.4444% 43.1818%;
+  -webkit-mask-position: 44.4444% 44.8980%;
+  mask-position: 44.4444% 44.8980%;
 }
 .msr-hourglass_bottom {
-  -webkit-mask-position: 55.5556% 43.1818%;
-  mask-position: 55.5556% 43.1818%;
+  -webkit-mask-position: 55.5556% 44.8980%;
+  mask-position: 55.5556% 44.8980%;
 }
 .msr-hourglass_empty {
-  -webkit-mask-position: 66.6667% 43.1818%;
-  mask-position: 66.6667% 43.1818%;
+  -webkit-mask-position: 66.6667% 44.8980%;
+  mask-position: 66.6667% 44.8980%;
 }
 .msr-hourglass_top {
-  -webkit-mask-position: 77.7778% 43.1818%;
-  mask-position: 77.7778% 43.1818%;
+  -webkit-mask-position: 77.7778% 44.8980%;
+  mask-position: 77.7778% 44.8980%;
 }
 .msr-house {
-  -webkit-mask-position: 88.8889% 43.1818%;
-  mask-position: 88.8889% 43.1818%;
+  -webkit-mask-position: 88.8889% 44.8980%;
+  mask-position: 88.8889% 44.8980%;
 }
 .msr-html {
-  -webkit-mask-position: 100.0000% 43.1818%;
-  mask-position: 100.0000% 43.1818%;
+  -webkit-mask-position: 100.0000% 44.8980%;
+  mask-position: 100.0000% 44.8980%;
 }
 .msr-http {
-  -webkit-mask-position: 0.0000% 45.4545%;
-  mask-position: 0.0000% 45.4545%;
+  -webkit-mask-position: 0.0000% 46.9388%;
+  mask-position: 0.0000% 46.9388%;
 }
 .msr-https {
-  -webkit-mask-position: 11.1111% 45.4545%;
-  mask-position: 11.1111% 45.4545%;
+  -webkit-mask-position: 11.1111% 46.9388%;
+  mask-position: 11.1111% 46.9388%;
 }
 .msr-hub {
-  -webkit-mask-position: 22.2222% 45.4545%;
-  mask-position: 22.2222% 45.4545%;
+  -webkit-mask-position: 22.2222% 46.9388%;
+  mask-position: 22.2222% 46.9388%;
+}
+.msr-iframe {
+  -webkit-mask-position: 33.3333% 46.9388%;
+  mask-position: 33.3333% 46.9388%;
 }
 .msr-image {
-  -webkit-mask-position: 33.3333% 45.4545%;
-  mask-position: 33.3333% 45.4545%;
+  -webkit-mask-position: 44.4444% 46.9388%;
+  mask-position: 44.4444% 46.9388%;
 }
 .msr-inbox {
-  -webkit-mask-position: 44.4444% 45.4545%;
-  mask-position: 44.4444% 45.4545%;
+  -webkit-mask-position: 55.5556% 46.9388%;
+  mask-position: 55.5556% 46.9388%;
 }
 .msr-info {
-  -webkit-mask-position: 55.5556% 45.4545%;
-  mask-position: 55.5556% 45.4545%;
+  -webkit-mask-position: 66.6667% 46.9388%;
+  mask-position: 66.6667% 46.9388%;
 }
 .msr-input {
-  -webkit-mask-position: 66.6667% 45.4545%;
-  mask-position: 66.6667% 45.4545%;
+  -webkit-mask-position: 77.7778% 46.9388%;
+  mask-position: 77.7778% 46.9388%;
 }
 .msr-interests {
-  -webkit-mask-position: 77.7778% 45.4545%;
-  mask-position: 77.7778% 45.4545%;
+  -webkit-mask-position: 88.8889% 46.9388%;
+  mask-position: 88.8889% 46.9388%;
 }
 .msr-inventory_2 {
-  -webkit-mask-position: 88.8889% 45.4545%;
-  mask-position: 88.8889% 45.4545%;
+  -webkit-mask-position: 100.0000% 46.9388%;
+  mask-position: 100.0000% 46.9388%;
 }
 .msr-iso {
-  -webkit-mask-position: 100.0000% 45.4545%;
-  mask-position: 100.0000% 45.4545%;
+  -webkit-mask-position: 0.0000% 48.9796%;
+  mask-position: 0.0000% 48.9796%;
 }
 .msr-javascript {
-  -webkit-mask-position: 0.0000% 47.7273%;
-  mask-position: 0.0000% 47.7273%;
+  -webkit-mask-position: 11.1111% 48.9796%;
+  mask-position: 11.1111% 48.9796%;
 }
 .msr-join {
-  -webkit-mask-position: 11.1111% 47.7273%;
-  mask-position: 11.1111% 47.7273%;
+  -webkit-mask-position: 22.2222% 48.9796%;
+  mask-position: 22.2222% 48.9796%;
 }
 .msr-keep {
-  -webkit-mask-position: 22.2222% 47.7273%;
-  mask-position: 22.2222% 47.7273%;
+  -webkit-mask-position: 33.3333% 48.9796%;
+  mask-position: 33.3333% 48.9796%;
 }
 .msr-key {
-  -webkit-mask-position: 33.3333% 47.7273%;
-  mask-position: 33.3333% 47.7273%;
+  -webkit-mask-position: 44.4444% 48.9796%;
+  mask-position: 44.4444% 48.9796%;
 }
 .msr-key_off {
-  -webkit-mask-position: 44.4444% 47.7273%;
-  mask-position: 44.4444% 47.7273%;
+  -webkit-mask-position: 55.5556% 48.9796%;
+  mask-position: 55.5556% 48.9796%;
 }
 .msr-keyboard {
-  -webkit-mask-position: 55.5556% 47.7273%;
-  mask-position: 55.5556% 47.7273%;
+  -webkit-mask-position: 66.6667% 48.9796%;
+  mask-position: 66.6667% 48.9796%;
+}
+.msr-keyboard_arrow_down {
+  -webkit-mask-position: 77.7778% 48.9796%;
+  mask-position: 77.7778% 48.9796%;
+}
+.msr-keyboard_arrow_up {
+  -webkit-mask-position: 88.8889% 48.9796%;
+  mask-position: 88.8889% 48.9796%;
 }
 .msr-keyboard_double_arrow_left {
-  -webkit-mask-position: 66.6667% 47.7273%;
-  mask-position: 66.6667% 47.7273%;
+  -webkit-mask-position: 100.0000% 48.9796%;
+  mask-position: 100.0000% 48.9796%;
 }
 .msr-keyboard_double_arrow_right {
-  -webkit-mask-position: 77.7778% 47.7273%;
-  mask-position: 77.7778% 47.7273%;
+  -webkit-mask-position: 0.0000% 51.0204%;
+  mask-position: 0.0000% 51.0204%;
 }
 .msr-label {
-  -webkit-mask-position: 88.8889% 47.7273%;
-  mask-position: 88.8889% 47.7273%;
+  -webkit-mask-position: 11.1111% 51.0204%;
+  mask-position: 11.1111% 51.0204%;
 }
 .msr-language {
-  -webkit-mask-position: 100.0000% 47.7273%;
-  mask-position: 100.0000% 47.7273%;
+  -webkit-mask-position: 22.2222% 51.0204%;
+  mask-position: 22.2222% 51.0204%;
 }
 .msr-layers {
-  -webkit-mask-position: 0.0000% 50.0000%;
-  mask-position: 0.0000% 50.0000%;
+  -webkit-mask-position: 33.3333% 51.0204%;
+  mask-position: 33.3333% 51.0204%;
+}
+.msr-lens {
+  -webkit-mask-position: 44.4444% 51.0204%;
+  mask-position: 44.4444% 51.0204%;
 }
 .msr-light {
-  -webkit-mask-position: 11.1111% 50.0000%;
-  mask-position: 11.1111% 50.0000%;
+  -webkit-mask-position: 55.5556% 51.0204%;
+  mask-position: 55.5556% 51.0204%;
 }
 .msr-light_mode {
-  -webkit-mask-position: 22.2222% 50.0000%;
-  mask-position: 22.2222% 50.0000%;
+  -webkit-mask-position: 66.6667% 51.0204%;
+  mask-position: 66.6667% 51.0204%;
 }
 .msr-line_axis {
-  -webkit-mask-position: 33.3333% 50.0000%;
-  mask-position: 33.3333% 50.0000%;
+  -webkit-mask-position: 77.7778% 51.0204%;
+  mask-position: 77.7778% 51.0204%;
 }
 .msr-link {
-  -webkit-mask-position: 44.4444% 50.0000%;
-  mask-position: 44.4444% 50.0000%;
+  -webkit-mask-position: 88.8889% 51.0204%;
+  mask-position: 88.8889% 51.0204%;
 }
 .msr-link_off {
-  -webkit-mask-position: 55.5556% 50.0000%;
-  mask-position: 55.5556% 50.0000%;
+  -webkit-mask-position: 100.0000% 51.0204%;
+  mask-position: 100.0000% 51.0204%;
 }
 .msr-list {
-  -webkit-mask-position: 66.6667% 50.0000%;
-  mask-position: 66.6667% 50.0000%;
+  -webkit-mask-position: 0.0000% 53.0612%;
+  mask-position: 0.0000% 53.0612%;
+}
+.msr-local_florist {
+  -webkit-mask-position: 11.1111% 53.0612%;
+  mask-position: 11.1111% 53.0612%;
 }
 .msr-local_police {
-  -webkit-mask-position: 77.7778% 50.0000%;
-  mask-position: 77.7778% 50.0000%;
+  -webkit-mask-position: 22.2222% 53.0612%;
+  mask-position: 22.2222% 53.0612%;
 }
 .msr-lock {
-  -webkit-mask-position: 88.8889% 50.0000%;
-  mask-position: 88.8889% 50.0000%;
+  -webkit-mask-position: 33.3333% 53.0612%;
+  mask-position: 33.3333% 53.0612%;
 }
 .msr-lock_clock {
-  -webkit-mask-position: 100.0000% 50.0000%;
-  mask-position: 100.0000% 50.0000%;
+  -webkit-mask-position: 44.4444% 53.0612%;
+  mask-position: 44.4444% 53.0612%;
 }
 .msr-lock_open {
-  -webkit-mask-position: 0.0000% 52.2727%;
-  mask-position: 0.0000% 52.2727%;
+  -webkit-mask-position: 55.5556% 53.0612%;
+  mask-position: 55.5556% 53.0612%;
 }
 .msr-login {
-  -webkit-mask-position: 11.1111% 52.2727%;
-  mask-position: 11.1111% 52.2727%;
+  -webkit-mask-position: 66.6667% 53.0612%;
+  mask-position: 66.6667% 53.0612%;
 }
 .msr-logout {
-  -webkit-mask-position: 22.2222% 52.2727%;
-  mask-position: 22.2222% 52.2727%;
+  -webkit-mask-position: 77.7778% 53.0612%;
+  mask-position: 77.7778% 53.0612%;
 }
 .msr-loop {
-  -webkit-mask-position: 33.3333% 52.2727%;
-  mask-position: 33.3333% 52.2727%;
+  -webkit-mask-position: 88.8889% 53.0612%;
+  mask-position: 88.8889% 53.0612%;
+}
+.msr-loupe {
+  -webkit-mask-position: 100.0000% 53.0612%;
+  mask-position: 100.0000% 53.0612%;
 }
 .msr-mail {
-  -webkit-mask-position: 44.4444% 52.2727%;
-  mask-position: 44.4444% 52.2727%;
+  -webkit-mask-position: 0.0000% 55.1020%;
+  mask-position: 0.0000% 55.1020%;
 }
 .msr-manage_accounts {
-  -webkit-mask-position: 55.5556% 52.2727%;
-  mask-position: 55.5556% 52.2727%;
+  -webkit-mask-position: 11.1111% 55.1020%;
+  mask-position: 11.1111% 55.1020%;
 }
 .msr-map {
-  -webkit-mask-position: 66.6667% 52.2727%;
-  mask-position: 66.6667% 52.2727%;
+  -webkit-mask-position: 22.2222% 55.1020%;
+  mask-position: 22.2222% 55.1020%;
 }
 .msr-margin {
-  -webkit-mask-position: 77.7778% 52.2727%;
-  mask-position: 77.7778% 52.2727%;
+  -webkit-mask-position: 33.3333% 55.1020%;
+  mask-position: 33.3333% 55.1020%;
 }
 .msr-memory {
-  -webkit-mask-position: 88.8889% 52.2727%;
-  mask-position: 88.8889% 52.2727%;
+  -webkit-mask-position: 44.4444% 55.1020%;
+  mask-position: 44.4444% 55.1020%;
 }
 .msr-menu {
-  -webkit-mask-position: 100.0000% 52.2727%;
-  mask-position: 100.0000% 52.2727%;
+  -webkit-mask-position: 55.5556% 55.1020%;
+  mask-position: 55.5556% 55.1020%;
 }
 .msr-message {
-  -webkit-mask-position: 0.0000% 54.5455%;
-  mask-position: 0.0000% 54.5455%;
+  -webkit-mask-position: 66.6667% 55.1020%;
+  mask-position: 66.6667% 55.1020%;
 }
 .msr-mobile {
-  -webkit-mask-position: 11.1111% 54.5455%;
-  mask-position: 11.1111% 54.5455%;
+  -webkit-mask-position: 77.7778% 55.1020%;
+  mask-position: 77.7778% 55.1020%;
 }
 .msr-mode {
-  -webkit-mask-position: 22.2222% 54.5455%;
-  mask-position: 22.2222% 54.5455%;
+  -webkit-mask-position: 88.8889% 55.1020%;
+  mask-position: 88.8889% 55.1020%;
 }
 .msr-money_off {
-  -webkit-mask-position: 33.3333% 54.5455%;
-  mask-position: 33.3333% 54.5455%;
+  -webkit-mask-position: 100.0000% 55.1020%;
+  mask-position: 100.0000% 55.1020%;
 }
 .msr-monitoring {
-  -webkit-mask-position: 44.4444% 54.5455%;
-  mask-position: 44.4444% 54.5455%;
+  -webkit-mask-position: 0.0000% 57.1429%;
+  mask-position: 0.0000% 57.1429%;
 }
 .msr-mood {
-  -webkit-mask-position: 55.5556% 54.5455%;
-  mask-position: 55.5556% 54.5455%;
+  -webkit-mask-position: 11.1111% 57.1429%;
+  mask-position: 11.1111% 57.1429%;
 }
 .msr-more {
-  -webkit-mask-position: 66.6667% 54.5455%;
-  mask-position: 66.6667% 54.5455%;
+  -webkit-mask-position: 22.2222% 57.1429%;
+  mask-position: 22.2222% 57.1429%;
 }
 .msr-more_vert {
-  -webkit-mask-position: 77.7778% 54.5455%;
-  mask-position: 77.7778% 54.5455%;
+  -webkit-mask-position: 33.3333% 57.1429%;
+  mask-position: 33.3333% 57.1429%;
 }
 .msr-mouse {
-  -webkit-mask-position: 88.8889% 54.5455%;
-  mask-position: 88.8889% 54.5455%;
+  -webkit-mask-position: 44.4444% 57.1429%;
+  mask-position: 44.4444% 57.1429%;
 }
 .msr-move {
-  -webkit-mask-position: 100.0000% 54.5455%;
-  mask-position: 100.0000% 54.5455%;
+  -webkit-mask-position: 55.5556% 57.1429%;
+  mask-position: 55.5556% 57.1429%;
 }
 .msr-movie {
-  -webkit-mask-position: 0.0000% 56.8182%;
-  mask-position: 0.0000% 56.8182%;
+  -webkit-mask-position: 66.6667% 57.1429%;
+  mask-position: 66.6667% 57.1429%;
 }
 .msr-moving {
-  -webkit-mask-position: 11.1111% 56.8182%;
-  mask-position: 11.1111% 56.8182%;
+  -webkit-mask-position: 77.7778% 57.1429%;
+  mask-position: 77.7778% 57.1429%;
 }
 .msr-music_note {
-  -webkit-mask-position: 22.2222% 56.8182%;
-  mask-position: 22.2222% 56.8182%;
+  -webkit-mask-position: 88.8889% 57.1429%;
+  mask-position: 88.8889% 57.1429%;
 }
 .msr-my_location {
-  -webkit-mask-position: 33.3333% 56.8182%;
-  mask-position: 33.3333% 56.8182%;
+  -webkit-mask-position: 100.0000% 57.1429%;
+  mask-position: 100.0000% 57.1429%;
 }
 .msr-nature {
-  -webkit-mask-position: 44.4444% 56.8182%;
-  mask-position: 44.4444% 56.8182%;
+  -webkit-mask-position: 0.0000% 59.1837%;
+  mask-position: 0.0000% 59.1837%;
 }
 .msr-navigate_next {
-  -webkit-mask-position: 55.5556% 56.8182%;
-  mask-position: 55.5556% 56.8182%;
+  -webkit-mask-position: 11.1111% 59.1837%;
+  mask-position: 11.1111% 59.1837%;
 }
 .msr-navigation {
-  -webkit-mask-position: 66.6667% 56.8182%;
-  mask-position: 66.6667% 56.8182%;
+  -webkit-mask-position: 22.2222% 59.1837%;
+  mask-position: 22.2222% 59.1837%;
 }
 .msr-no_accounts {
-  -webkit-mask-position: 77.7778% 56.8182%;
-  mask-position: 77.7778% 56.8182%;
+  -webkit-mask-position: 33.3333% 59.1837%;
+  mask-position: 33.3333% 59.1837%;
 }
 .msr-north {
-  -webkit-mask-position: 88.8889% 56.8182%;
-  mask-position: 88.8889% 56.8182%;
+  -webkit-mask-position: 44.4444% 59.1837%;
+  mask-position: 44.4444% 59.1837%;
 }
 .msr-north_east {
-  -webkit-mask-position: 100.0000% 56.8182%;
-  mask-position: 100.0000% 56.8182%;
+  -webkit-mask-position: 55.5556% 59.1837%;
+  mask-position: 55.5556% 59.1837%;
 }
 .msr-north_west {
-  -webkit-mask-position: 0.0000% 59.0909%;
-  mask-position: 0.0000% 59.0909%;
+  -webkit-mask-position: 66.6667% 59.1837%;
+  mask-position: 66.6667% 59.1837%;
 }
 .msr-numbers {
-  -webkit-mask-position: 11.1111% 59.0909%;
-  mask-position: 11.1111% 59.0909%;
+  -webkit-mask-position: 77.7778% 59.1837%;
+  mask-position: 77.7778% 59.1837%;
 }
 .msr-opacity {
-  -webkit-mask-position: 22.2222% 59.0909%;
-  mask-position: 22.2222% 59.0909%;
+  -webkit-mask-position: 88.8889% 59.1837%;
+  mask-position: 88.8889% 59.1837%;
 }
 .msr-open_in_new {
-  -webkit-mask-position: 33.3333% 59.0909%;
-  mask-position: 33.3333% 59.0909%;
+  -webkit-mask-position: 100.0000% 59.1837%;
+  mask-position: 100.0000% 59.1837%;
+}
+.msr-open_with {
+  -webkit-mask-position: 0.0000% 61.2245%;
+  mask-position: 0.0000% 61.2245%;
 }
 .msr-outbox {
-  -webkit-mask-position: 44.4444% 59.0909%;
-  mask-position: 44.4444% 59.0909%;
+  -webkit-mask-position: 11.1111% 61.2245%;
+  mask-position: 11.1111% 61.2245%;
 }
 .msr-outlet {
-  -webkit-mask-position: 55.5556% 59.0909%;
-  mask-position: 55.5556% 59.0909%;
+  -webkit-mask-position: 22.2222% 61.2245%;
+  mask-position: 22.2222% 61.2245%;
 }
 .msr-output {
-  -webkit-mask-position: 66.6667% 59.0909%;
-  mask-position: 66.6667% 59.0909%;
+  -webkit-mask-position: 33.3333% 61.2245%;
+  mask-position: 33.3333% 61.2245%;
 }
 .msr-package {
-  -webkit-mask-position: 77.7778% 59.0909%;
-  mask-position: 77.7778% 59.0909%;
+  -webkit-mask-position: 44.4444% 61.2245%;
+  mask-position: 44.4444% 61.2245%;
 }
 .msr-padding {
-  -webkit-mask-position: 88.8889% 59.0909%;
-  mask-position: 88.8889% 59.0909%;
+  -webkit-mask-position: 55.5556% 61.2245%;
+  mask-position: 55.5556% 61.2245%;
 }
 .msr-pages {
-  -webkit-mask-position: 100.0000% 59.0909%;
-  mask-position: 100.0000% 59.0909%;
+  -webkit-mask-position: 66.6667% 61.2245%;
+  mask-position: 66.6667% 61.2245%;
 }
 .msr-pageview {
-  -webkit-mask-position: 0.0000% 61.3636%;
-  mask-position: 0.0000% 61.3636%;
+  -webkit-mask-position: 77.7778% 61.2245%;
+  mask-position: 77.7778% 61.2245%;
 }
 .msr-paid {
-  -webkit-mask-position: 11.1111% 61.3636%;
-  mask-position: 11.1111% 61.3636%;
+  -webkit-mask-position: 88.8889% 61.2245%;
+  mask-position: 88.8889% 61.2245%;
 }
 .msr-palette {
-  -webkit-mask-position: 22.2222% 61.3636%;
-  mask-position: 22.2222% 61.3636%;
+  -webkit-mask-position: 100.0000% 61.2245%;
+  mask-position: 100.0000% 61.2245%;
+}
+.msr-pan_tool {
+  -webkit-mask-position: 0.0000% 63.2653%;
+  mask-position: 0.0000% 63.2653%;
 }
 .msr-password {
-  -webkit-mask-position: 33.3333% 61.3636%;
-  mask-position: 33.3333% 61.3636%;
+  -webkit-mask-position: 11.1111% 63.2653%;
+  mask-position: 11.1111% 63.2653%;
 }
 .msr-pattern {
-  -webkit-mask-position: 44.4444% 61.3636%;
-  mask-position: 44.4444% 61.3636%;
+  -webkit-mask-position: 22.2222% 63.2653%;
+  mask-position: 22.2222% 63.2653%;
 }
 .msr-pause {
-  -webkit-mask-position: 55.5556% 61.3636%;
-  mask-position: 55.5556% 61.3636%;
+  -webkit-mask-position: 33.3333% 63.2653%;
+  mask-position: 33.3333% 63.2653%;
 }
 .msr-payment {
-  -webkit-mask-position: 66.6667% 61.3636%;
-  mask-position: 66.6667% 61.3636%;
+  -webkit-mask-position: 44.4444% 63.2653%;
+  mask-position: 44.4444% 63.2653%;
 }
 .msr-payments {
-  -webkit-mask-position: 77.7778% 61.3636%;
-  mask-position: 77.7778% 61.3636%;
+  -webkit-mask-position: 55.5556% 63.2653%;
+  mask-position: 55.5556% 63.2653%;
 }
 .msr-pending {
-  -webkit-mask-position: 88.8889% 61.3636%;
-  mask-position: 88.8889% 61.3636%;
+  -webkit-mask-position: 66.6667% 63.2653%;
+  mask-position: 66.6667% 63.2653%;
+}
+.msr-pentagon {
+  -webkit-mask-position: 77.7778% 63.2653%;
+  mask-position: 77.7778% 63.2653%;
+}
+.msr-people {
+  -webkit-mask-position: 88.8889% 63.2653%;
+  mask-position: 88.8889% 63.2653%;
 }
 .msr-percent {
-  -webkit-mask-position: 100.0000% 61.3636%;
-  mask-position: 100.0000% 61.3636%;
+  -webkit-mask-position: 100.0000% 63.2653%;
+  mask-position: 100.0000% 63.2653%;
 }
 .msr-perm_media {
-  -webkit-mask-position: 0.0000% 63.6364%;
-  mask-position: 0.0000% 63.6364%;
+  -webkit-mask-position: 0.0000% 65.3061%;
+  mask-position: 0.0000% 65.3061%;
 }
 .msr-person {
-  -webkit-mask-position: 11.1111% 63.6364%;
-  mask-position: 11.1111% 63.6364%;
+  -webkit-mask-position: 11.1111% 65.3061%;
+  mask-position: 11.1111% 65.3061%;
 }
 .msr-person_add {
-  -webkit-mask-position: 22.2222% 63.6364%;
-  mask-position: 22.2222% 63.6364%;
+  -webkit-mask-position: 22.2222% 65.3061%;
+  mask-position: 22.2222% 65.3061%;
 }
 .msr-person_off {
-  -webkit-mask-position: 33.3333% 63.6364%;
-  mask-position: 33.3333% 63.6364%;
+  -webkit-mask-position: 33.3333% 65.3061%;
+  mask-position: 33.3333% 65.3061%;
 }
 .msr-person_remove {
-  -webkit-mask-position: 44.4444% 63.6364%;
-  mask-position: 44.4444% 63.6364%;
+  -webkit-mask-position: 44.4444% 65.3061%;
+  mask-position: 44.4444% 65.3061%;
 }
 .msr-photo {
-  -webkit-mask-position: 55.5556% 63.6364%;
-  mask-position: 55.5556% 63.6364%;
+  -webkit-mask-position: 55.5556% 65.3061%;
+  mask-position: 55.5556% 65.3061%;
 }
 .msr-photo_camera {
-  -webkit-mask-position: 66.6667% 63.6364%;
-  mask-position: 66.6667% 63.6364%;
+  -webkit-mask-position: 66.6667% 65.3061%;
+  mask-position: 66.6667% 65.3061%;
 }
 .msr-photo_library {
-  -webkit-mask-position: 77.7778% 63.6364%;
-  mask-position: 77.7778% 63.6364%;
+  -webkit-mask-position: 77.7778% 65.3061%;
+  mask-position: 77.7778% 65.3061%;
 }
 .msr-php {
-  -webkit-mask-position: 88.8889% 63.6364%;
-  mask-position: 88.8889% 63.6364%;
+  -webkit-mask-position: 88.8889% 65.3061%;
+  mask-position: 88.8889% 65.3061%;
 }
 .msr-picture_as_pdf {
-  -webkit-mask-position: 100.0000% 63.6364%;
-  mask-position: 100.0000% 63.6364%;
+  -webkit-mask-position: 100.0000% 65.3061%;
+  mask-position: 100.0000% 65.3061%;
 }
 .msr-pie_chart {
-  -webkit-mask-position: 0.0000% 65.9091%;
-  mask-position: 0.0000% 65.9091%;
+  -webkit-mask-position: 0.0000% 67.3469%;
+  mask-position: 0.0000% 67.3469%;
 }
 .msr-pill {
-  -webkit-mask-position: 11.1111% 65.9091%;
-  mask-position: 11.1111% 65.9091%;
+  -webkit-mask-position: 11.1111% 67.3469%;
+  mask-position: 11.1111% 67.3469%;
 }
 .msr-play_arrow {
-  -webkit-mask-position: 22.2222% 65.9091%;
-  mask-position: 22.2222% 65.9091%;
+  -webkit-mask-position: 22.2222% 67.3469%;
+  mask-position: 22.2222% 67.3469%;
 }
 .msr-policy {
-  -webkit-mask-position: 33.3333% 65.9091%;
-  mask-position: 33.3333% 65.9091%;
+  -webkit-mask-position: 33.3333% 67.3469%;
+  mask-position: 33.3333% 67.3469%;
 }
 .msr-polyline {
-  -webkit-mask-position: 44.4444% 65.9091%;
-  mask-position: 44.4444% 65.9091%;
+  -webkit-mask-position: 44.4444% 67.3469%;
+  mask-position: 44.4444% 67.3469%;
 }
 .msr-pool {
-  -webkit-mask-position: 55.5556% 65.9091%;
-  mask-position: 55.5556% 65.9091%;
+  -webkit-mask-position: 55.5556% 67.3469%;
+  mask-position: 55.5556% 67.3469%;
 }
 .msr-post {
-  -webkit-mask-position: 66.6667% 65.9091%;
-  mask-position: 66.6667% 65.9091%;
+  -webkit-mask-position: 66.6667% 67.3469%;
+  mask-position: 66.6667% 67.3469%;
 }
 .msr-power_settings_new {
-  -webkit-mask-position: 77.7778% 65.9091%;
-  mask-position: 77.7778% 65.9091%;
+  -webkit-mask-position: 77.7778% 67.3469%;
+  mask-position: 77.7778% 67.3469%;
 }
 .msr-preview {
-  -webkit-mask-position: 88.8889% 65.9091%;
-  mask-position: 88.8889% 65.9091%;
+  -webkit-mask-position: 88.8889% 67.3469%;
+  mask-position: 88.8889% 67.3469%;
 }
 .msr-priority {
-  -webkit-mask-position: 100.0000% 65.9091%;
-  mask-position: 100.0000% 65.9091%;
+  -webkit-mask-position: 100.0000% 67.3469%;
+  mask-position: 100.0000% 67.3469%;
 }
 .msr-privacy {
-  -webkit-mask-position: 0.0000% 68.1818%;
-  mask-position: 0.0000% 68.1818%;
+  -webkit-mask-position: 0.0000% 69.3878%;
+  mask-position: 0.0000% 69.3878%;
 }
 .msr-privacy_tip {
-  -webkit-mask-position: 11.1111% 68.1818%;
-  mask-position: 11.1111% 68.1818%;
+  -webkit-mask-position: 11.1111% 69.3878%;
+  mask-position: 11.1111% 69.3878%;
 }
 .msr-public {
-  -webkit-mask-position: 22.2222% 68.1818%;
-  mask-position: 22.2222% 68.1818%;
+  -webkit-mask-position: 22.2222% 69.3878%;
+  mask-position: 22.2222% 69.3878%;
 }
 .msr-public_off {
-  -webkit-mask-position: 33.3333% 68.1818%;
-  mask-position: 33.3333% 68.1818%;
+  -webkit-mask-position: 33.3333% 69.3878%;
+  mask-position: 33.3333% 69.3878%;
 }
 .msr-publish {
-  -webkit-mask-position: 44.4444% 68.1818%;
-  mask-position: 44.4444% 68.1818%;
+  -webkit-mask-position: 44.4444% 69.3878%;
+  mask-position: 44.4444% 69.3878%;
 }
 .msr-qr_code_2 {
-  -webkit-mask-position: 55.5556% 68.1818%;
-  mask-position: 55.5556% 68.1818%;
-}
-.msr-qr_code_scanner {
-  -webkit-mask-position: 66.6667% 68.1818%;
-  mask-position: 66.6667% 68.1818%;
+  -webkit-mask-position: 55.5556% 69.3878%;
+  mask-position: 55.5556% 69.3878%;
 }
 .msr-queue {
-  -webkit-mask-position: 77.7778% 68.1818%;
-  mask-position: 77.7778% 68.1818%;
-}
-.msr-radar {
-  -webkit-mask-position: 88.8889% 68.1818%;
-  mask-position: 88.8889% 68.1818%;
+  -webkit-mask-position: 66.6667% 69.3878%;
+  mask-position: 66.6667% 69.3878%;
 }
 .msr-radio {
-  -webkit-mask-position: 100.0000% 68.1818%;
-  mask-position: 100.0000% 68.1818%;
+  -webkit-mask-position: 77.7778% 69.3878%;
+  mask-position: 77.7778% 69.3878%;
+}
+.msr-radio_button_unchecked {
+  -webkit-mask-position: 88.8889% 69.3878%;
+  mask-position: 88.8889% 69.3878%;
 }
 .msr-receipt {
-  -webkit-mask-position: 0.0000% 70.4545%;
-  mask-position: 0.0000% 70.4545%;
+  -webkit-mask-position: 100.0000% 69.3878%;
+  mask-position: 100.0000% 69.3878%;
 }
 .msr-receipt_long {
-  -webkit-mask-position: 11.1111% 70.4545%;
-  mask-position: 11.1111% 70.4545%;
+  -webkit-mask-position: 0.0000% 71.4286%;
+  mask-position: 0.0000% 71.4286%;
 }
 .msr-rectangle {
-  -webkit-mask-position: 22.2222% 70.4545%;
-  mask-position: 22.2222% 70.4545%;
+  -webkit-mask-position: 11.1111% 71.4286%;
+  mask-position: 11.1111% 71.4286%;
 }
 .msr-redo {
-  -webkit-mask-position: 33.3333% 70.4545%;
-  mask-position: 33.3333% 70.4545%;
+  -webkit-mask-position: 22.2222% 71.4286%;
+  mask-position: 22.2222% 71.4286%;
 }
 .msr-refresh {
-  -webkit-mask-position: 44.4444% 70.4545%;
-  mask-position: 44.4444% 70.4545%;
+  -webkit-mask-position: 33.3333% 71.4286%;
+  mask-position: 33.3333% 71.4286%;
 }
 .msr-remove {
-  -webkit-mask-position: 55.5556% 70.4545%;
-  mask-position: 55.5556% 70.4545%;
+  -webkit-mask-position: 44.4444% 71.4286%;
+  mask-position: 44.4444% 71.4286%;
 }
 .msr-reorder {
-  -webkit-mask-position: 66.6667% 70.4545%;
-  mask-position: 66.6667% 70.4545%;
+  -webkit-mask-position: 55.5556% 71.4286%;
+  mask-position: 55.5556% 71.4286%;
 }
 .msr-repeat {
-  -webkit-mask-position: 77.7778% 70.4545%;
-  mask-position: 77.7778% 70.4545%;
+  -webkit-mask-position: 66.6667% 71.4286%;
+  mask-position: 66.6667% 71.4286%;
 }
 .msr-reply {
-  -webkit-mask-position: 88.8889% 70.4545%;
-  mask-position: 88.8889% 70.4545%;
+  -webkit-mask-position: 77.7778% 71.4286%;
+  mask-position: 77.7778% 71.4286%;
 }
 .msr-report {
-  -webkit-mask-position: 100.0000% 70.4545%;
-  mask-position: 100.0000% 70.4545%;
+  -webkit-mask-position: 88.8889% 71.4286%;
+  mask-position: 88.8889% 71.4286%;
 }
 .msr-reset_settings {
-  -webkit-mask-position: 0.0000% 72.7273%;
-  mask-position: 0.0000% 72.7273%;
+  -webkit-mask-position: 100.0000% 71.4286%;
+  mask-position: 100.0000% 71.4286%;
 }
 .msr-resize {
-  -webkit-mask-position: 11.1111% 72.7273%;
-  mask-position: 11.1111% 72.7273%;
+  -webkit-mask-position: 0.0000% 73.4694%;
+  mask-position: 0.0000% 73.4694%;
 }
 .msr-restart_alt {
-  -webkit-mask-position: 22.2222% 72.7273%;
-  mask-position: 22.2222% 72.7273%;
+  -webkit-mask-position: 11.1111% 73.4694%;
+  mask-position: 11.1111% 73.4694%;
 }
 .msr-restore {
-  -webkit-mask-position: 33.3333% 72.7273%;
-  mask-position: 33.3333% 72.7273%;
+  -webkit-mask-position: 22.2222% 73.4694%;
+  mask-position: 22.2222% 73.4694%;
 }
 .msr-restore_from_trash {
-  -webkit-mask-position: 44.4444% 72.7273%;
-  mask-position: 44.4444% 72.7273%;
-}
-.msr-resume {
-  -webkit-mask-position: 55.5556% 72.7273%;
-  mask-position: 55.5556% 72.7273%;
+  -webkit-mask-position: 33.3333% 73.4694%;
+  mask-position: 33.3333% 73.4694%;
 }
 .msr-rocket_launch {
-  -webkit-mask-position: 66.6667% 72.7273%;
-  mask-position: 66.6667% 72.7273%;
+  -webkit-mask-position: 44.4444% 73.4694%;
+  mask-position: 44.4444% 73.4694%;
 }
 .msr-rotate_right {
-  -webkit-mask-position: 77.7778% 72.7273%;
-  mask-position: 77.7778% 72.7273%;
+  -webkit-mask-position: 55.5556% 73.4694%;
+  mask-position: 55.5556% 73.4694%;
 }
 .msr-route {
-  -webkit-mask-position: 88.8889% 72.7273%;
-  mask-position: 88.8889% 72.7273%;
+  -webkit-mask-position: 66.6667% 73.4694%;
+  mask-position: 66.6667% 73.4694%;
 }
 .msr-router {
-  -webkit-mask-position: 100.0000% 72.7273%;
-  mask-position: 100.0000% 72.7273%;
+  -webkit-mask-position: 77.7778% 73.4694%;
+  mask-position: 77.7778% 73.4694%;
 }
 .msr-rule {
-  -webkit-mask-position: 0.0000% 75.0000%;
-  mask-position: 0.0000% 75.0000%;
+  -webkit-mask-position: 88.8889% 73.4694%;
+  mask-position: 88.8889% 73.4694%;
 }
 .msr-save {
-  -webkit-mask-position: 11.1111% 75.0000%;
-  mask-position: 11.1111% 75.0000%;
+  -webkit-mask-position: 100.0000% 73.4694%;
+  mask-position: 100.0000% 73.4694%;
 }
 .msr-scale {
-  -webkit-mask-position: 22.2222% 75.0000%;
-  mask-position: 22.2222% 75.0000%;
+  -webkit-mask-position: 0.0000% 75.5102%;
+  mask-position: 0.0000% 75.5102%;
 }
 .msr-scan {
-  -webkit-mask-position: 33.3333% 75.0000%;
-  mask-position: 33.3333% 75.0000%;
+  -webkit-mask-position: 11.1111% 75.5102%;
+  mask-position: 11.1111% 75.5102%;
 }
 .msr-schedule {
-  -webkit-mask-position: 44.4444% 75.0000%;
-  mask-position: 44.4444% 75.0000%;
+  -webkit-mask-position: 22.2222% 75.5102%;
+  mask-position: 22.2222% 75.5102%;
 }
 .msr-schema {
-  -webkit-mask-position: 55.5556% 75.0000%;
-  mask-position: 55.5556% 75.0000%;
+  -webkit-mask-position: 33.3333% 75.5102%;
+  mask-position: 33.3333% 75.5102%;
+}
+.msr-score {
+  -webkit-mask-position: 44.4444% 75.5102%;
+  mask-position: 44.4444% 75.5102%;
 }
 .msr-script {
-  -webkit-mask-position: 66.6667% 75.0000%;
-  mask-position: 66.6667% 75.0000%;
-}
-.msr-sd {
-  -webkit-mask-position: 77.7778% 75.0000%;
-  mask-position: 77.7778% 75.0000%;
+  -webkit-mask-position: 55.5556% 75.5102%;
+  mask-position: 55.5556% 75.5102%;
 }
 .msr-search {
-  -webkit-mask-position: 88.8889% 75.0000%;
-  mask-position: 88.8889% 75.0000%;
+  -webkit-mask-position: 66.6667% 75.5102%;
+  mask-position: 66.6667% 75.5102%;
 }
 .msr-search_off {
-  -webkit-mask-position: 100.0000% 75.0000%;
-  mask-position: 100.0000% 75.0000%;
+  -webkit-mask-position: 77.7778% 75.5102%;
+  mask-position: 77.7778% 75.5102%;
 }
 .msr-security {
-  -webkit-mask-position: 0.0000% 77.2727%;
-  mask-position: 0.0000% 77.2727%;
+  -webkit-mask-position: 88.8889% 75.5102%;
+  mask-position: 88.8889% 75.5102%;
 }
 .msr-segment {
-  -webkit-mask-position: 11.1111% 77.2727%;
-  mask-position: 11.1111% 77.2727%;
+  -webkit-mask-position: 100.0000% 75.5102%;
+  mask-position: 100.0000% 75.5102%;
 }
 .msr-select {
-  -webkit-mask-position: 22.2222% 77.2727%;
-  mask-position: 22.2222% 77.2727%;
+  -webkit-mask-position: 0.0000% 77.5510%;
+  mask-position: 0.0000% 77.5510%;
 }
 .msr-send {
-  -webkit-mask-position: 33.3333% 77.2727%;
-  mask-position: 33.3333% 77.2727%;
+  -webkit-mask-position: 11.1111% 77.5510%;
+  mask-position: 11.1111% 77.5510%;
 }
 .msr-sensors {
-  -webkit-mask-position: 44.4444% 77.2727%;
-  mask-position: 44.4444% 77.2727%;
+  -webkit-mask-position: 22.2222% 77.5510%;
+  mask-position: 22.2222% 77.5510%;
 }
 .msr-sensors_off {
-  -webkit-mask-position: 55.5556% 77.2727%;
-  mask-position: 55.5556% 77.2727%;
+  -webkit-mask-position: 33.3333% 77.5510%;
+  mask-position: 33.3333% 77.5510%;
+}
+.msr-sentiment_satisfied {
+  -webkit-mask-position: 44.4444% 77.5510%;
+  mask-position: 44.4444% 77.5510%;
 }
 .msr-serif {
-  -webkit-mask-position: 66.6667% 77.2727%;
-  mask-position: 66.6667% 77.2727%;
+  -webkit-mask-position: 55.5556% 77.5510%;
+  mask-position: 55.5556% 77.5510%;
 }
 .msr-settings {
-  -webkit-mask-position: 77.7778% 77.2727%;
-  mask-position: 77.7778% 77.2727%;
+  -webkit-mask-position: 66.6667% 77.5510%;
+  mask-position: 66.6667% 77.5510%;
 }
 .msr-settings_backup_restore {
-  -webkit-mask-position: 88.8889% 77.2727%;
-  mask-position: 88.8889% 77.2727%;
+  -webkit-mask-position: 77.7778% 77.5510%;
+  mask-position: 77.7778% 77.5510%;
 }
 .msr-shadow {
-  -webkit-mask-position: 100.0000% 77.2727%;
-  mask-position: 100.0000% 77.2727%;
+  -webkit-mask-position: 88.8889% 77.5510%;
+  mask-position: 88.8889% 77.5510%;
 }
 .msr-shape_line {
-  -webkit-mask-position: 0.0000% 79.5455%;
-  mask-position: 0.0000% 79.5455%;
+  -webkit-mask-position: 100.0000% 77.5510%;
+  mask-position: 100.0000% 77.5510%;
 }
 .msr-shapes {
-  -webkit-mask-position: 11.1111% 79.5455%;
-  mask-position: 11.1111% 79.5455%;
+  -webkit-mask-position: 0.0000% 79.5918%;
+  mask-position: 0.0000% 79.5918%;
 }
 .msr-share {
-  -webkit-mask-position: 22.2222% 79.5455%;
-  mask-position: 22.2222% 79.5455%;
+  -webkit-mask-position: 11.1111% 79.5918%;
+  mask-position: 11.1111% 79.5918%;
 }
 .msr-shield {
-  -webkit-mask-position: 33.3333% 79.5455%;
-  mask-position: 33.3333% 79.5455%;
+  -webkit-mask-position: 22.2222% 79.5918%;
+  mask-position: 22.2222% 79.5918%;
 }
 .msr-shield_lock {
-  -webkit-mask-position: 44.4444% 79.5455%;
-  mask-position: 44.4444% 79.5455%;
+  -webkit-mask-position: 33.3333% 79.5918%;
+  mask-position: 33.3333% 79.5918%;
 }
 .msr-shield_person {
-  -webkit-mask-position: 55.5556% 79.5455%;
-  mask-position: 55.5556% 79.5455%;
+  -webkit-mask-position: 44.4444% 79.5918%;
+  mask-position: 44.4444% 79.5918%;
 }
 .msr-shift {
-  -webkit-mask-position: 66.6667% 79.5455%;
-  mask-position: 66.6667% 79.5455%;
+  -webkit-mask-position: 55.5556% 79.5918%;
+  mask-position: 55.5556% 79.5918%;
 }
 .msr-shopping_bag {
-  -webkit-mask-position: 77.7778% 79.5455%;
-  mask-position: 77.7778% 79.5455%;
+  -webkit-mask-position: 66.6667% 79.5918%;
+  mask-position: 66.6667% 79.5918%;
 }
-.msr-shopping_cart {
-  -webkit-mask-position: 88.8889% 79.5455%;
-  mask-position: 88.8889% 79.5455%;
+.msr-shortcut {
+  -webkit-mask-position: 77.7778% 79.5918%;
+  mask-position: 77.7778% 79.5918%;
+}
+.msr-show_chart {
+  -webkit-mask-position: 88.8889% 79.5918%;
+  mask-position: 88.8889% 79.5918%;
 }
 .msr-signature {
-  -webkit-mask-position: 100.0000% 79.5455%;
-  mask-position: 100.0000% 79.5455%;
+  -webkit-mask-position: 100.0000% 79.5918%;
+  mask-position: 100.0000% 79.5918%;
 }
 .msr-skeleton {
-  -webkit-mask-position: 0.0000% 81.8182%;
-  mask-position: 0.0000% 81.8182%;
+  -webkit-mask-position: 0.0000% 81.6327%;
+  mask-position: 0.0000% 81.6327%;
 }
 .msr-skip_next {
-  -webkit-mask-position: 11.1111% 81.8182%;
-  mask-position: 11.1111% 81.8182%;
+  -webkit-mask-position: 11.1111% 81.6327%;
+  mask-position: 11.1111% 81.6327%;
 }
 .msr-skip_previous {
-  -webkit-mask-position: 22.2222% 81.8182%;
-  mask-position: 22.2222% 81.8182%;
+  -webkit-mask-position: 22.2222% 81.6327%;
+  mask-position: 22.2222% 81.6327%;
 }
 .msr-skull {
-  -webkit-mask-position: 33.3333% 81.8182%;
-  mask-position: 33.3333% 81.8182%;
+  -webkit-mask-position: 33.3333% 81.6327%;
+  mask-position: 33.3333% 81.6327%;
+}
+.msr-sliders {
+  -webkit-mask-position: 44.4444% 81.6327%;
+  mask-position: 44.4444% 81.6327%;
 }
 .msr-smart_toy {
-  -webkit-mask-position: 44.4444% 81.8182%;
-  mask-position: 44.4444% 81.8182%;
+  -webkit-mask-position: 55.5556% 81.6327%;
+  mask-position: 55.5556% 81.6327%;
+}
+.msr-sms {
+  -webkit-mask-position: 66.6667% 81.6327%;
+  mask-position: 66.6667% 81.6327%;
 }
 .msr-sort {
-  -webkit-mask-position: 55.5556% 81.8182%;
-  mask-position: 55.5556% 81.8182%;
+  -webkit-mask-position: 77.7778% 81.6327%;
+  mask-position: 77.7778% 81.6327%;
 }
 .msr-source {
-  -webkit-mask-position: 66.6667% 81.8182%;
-  mask-position: 66.6667% 81.8182%;
+  -webkit-mask-position: 88.8889% 81.6327%;
+  mask-position: 88.8889% 81.6327%;
 }
 .msr-south {
-  -webkit-mask-position: 77.7778% 81.8182%;
-  mask-position: 77.7778% 81.8182%;
+  -webkit-mask-position: 100.0000% 81.6327%;
+  mask-position: 100.0000% 81.6327%;
 }
 .msr-south_east {
-  -webkit-mask-position: 88.8889% 81.8182%;
-  mask-position: 88.8889% 81.8182%;
+  -webkit-mask-position: 0.0000% 83.6735%;
+  mask-position: 0.0000% 83.6735%;
 }
 .msr-south_west {
-  -webkit-mask-position: 100.0000% 81.8182%;
-  mask-position: 100.0000% 81.8182%;
+  -webkit-mask-position: 11.1111% 83.6735%;
+  mask-position: 11.1111% 83.6735%;
 }
 .msr-speaker_notes_off {
-  -webkit-mask-position: 0.0000% 84.0909%;
-  mask-position: 0.0000% 84.0909%;
+  -webkit-mask-position: 22.2222% 83.6735%;
+  mask-position: 22.2222% 83.6735%;
 }
 .msr-speed {
-  -webkit-mask-position: 11.1111% 84.0909%;
-  mask-position: 11.1111% 84.0909%;
+  -webkit-mask-position: 33.3333% 83.6735%;
+  mask-position: 33.3333% 83.6735%;
 }
 .msr-spellcheck {
-  -webkit-mask-position: 22.2222% 84.0909%;
-  mask-position: 22.2222% 84.0909%;
+  -webkit-mask-position: 44.4444% 83.6735%;
+  mask-position: 44.4444% 83.6735%;
 }
 .msr-sports {
-  -webkit-mask-position: 33.3333% 84.0909%;
-  mask-position: 33.3333% 84.0909%;
+  -webkit-mask-position: 55.5556% 83.6735%;
+  mask-position: 55.5556% 83.6735%;
 }
 .msr-sports_esports {
-  -webkit-mask-position: 44.4444% 84.0909%;
-  mask-position: 44.4444% 84.0909%;
+  -webkit-mask-position: 66.6667% 83.6735%;
+  mask-position: 66.6667% 83.6735%;
 }
 .msr-sports_soccer {
-  -webkit-mask-position: 55.5556% 84.0909%;
-  mask-position: 55.5556% 84.0909%;
+  -webkit-mask-position: 77.7778% 83.6735%;
+  mask-position: 77.7778% 83.6735%;
 }
 .msr-sql {
-  -webkit-mask-position: 66.6667% 84.0909%;
-  mask-position: 66.6667% 84.0909%;
+  -webkit-mask-position: 88.8889% 83.6735%;
+  mask-position: 88.8889% 83.6735%;
 }
 .msr-square {
-  -webkit-mask-position: 77.7778% 84.0909%;
-  mask-position: 77.7778% 84.0909%;
+  -webkit-mask-position: 100.0000% 83.6735%;
+  mask-position: 100.0000% 83.6735%;
+}
+.msr-stack {
+  -webkit-mask-position: 0.0000% 85.7143%;
+  mask-position: 0.0000% 85.7143%;
 }
 .msr-star {
-  -webkit-mask-position: 88.8889% 84.0909%;
-  mask-position: 88.8889% 84.0909%;
+  -webkit-mask-position: 11.1111% 85.7143%;
+  mask-position: 11.1111% 85.7143%;
 }
 .msr-stars {
-  -webkit-mask-position: 100.0000% 84.0909%;
-  mask-position: 100.0000% 84.0909%;
+  -webkit-mask-position: 22.2222% 85.7143%;
+  mask-position: 22.2222% 85.7143%;
 }
 .msr-start {
-  -webkit-mask-position: 0.0000% 86.3636%;
-  mask-position: 0.0000% 86.3636%;
+  -webkit-mask-position: 33.3333% 85.7143%;
+  mask-position: 33.3333% 85.7143%;
 }
 .msr-step {
-  -webkit-mask-position: 11.1111% 86.3636%;
-  mask-position: 11.1111% 86.3636%;
+  -webkit-mask-position: 44.4444% 85.7143%;
+  mask-position: 44.4444% 85.7143%;
 }
 .msr-steps {
-  -webkit-mask-position: 22.2222% 86.3636%;
-  mask-position: 22.2222% 86.3636%;
+  -webkit-mask-position: 55.5556% 85.7143%;
+  mask-position: 55.5556% 85.7143%;
 }
 .msr-sticker {
-  -webkit-mask-position: 33.3333% 86.3636%;
-  mask-position: 33.3333% 86.3636%;
+  -webkit-mask-position: 66.6667% 85.7143%;
+  mask-position: 66.6667% 85.7143%;
 }
 .msr-stop {
-  -webkit-mask-position: 44.4444% 86.3636%;
-  mask-position: 44.4444% 86.3636%;
+  -webkit-mask-position: 77.7778% 85.7143%;
+  mask-position: 77.7778% 85.7143%;
 }
 .msr-storage {
-  -webkit-mask-position: 55.5556% 86.3636%;
-  mask-position: 55.5556% 86.3636%;
+  -webkit-mask-position: 88.8889% 85.7143%;
+  mask-position: 88.8889% 85.7143%;
 }
 .msr-store {
-  -webkit-mask-position: 66.6667% 86.3636%;
-  mask-position: 66.6667% 86.3636%;
+  -webkit-mask-position: 100.0000% 85.7143%;
+  mask-position: 100.0000% 85.7143%;
 }
 .msr-storefront {
-  -webkit-mask-position: 77.7778% 86.3636%;
-  mask-position: 77.7778% 86.3636%;
+  -webkit-mask-position: 0.0000% 87.7551%;
+  mask-position: 0.0000% 87.7551%;
 }
 .msr-strategy {
-  -webkit-mask-position: 88.8889% 86.3636%;
-  mask-position: 88.8889% 86.3636%;
+  -webkit-mask-position: 11.1111% 87.7551%;
+  mask-position: 11.1111% 87.7551%;
 }
 .msr-stream {
-  -webkit-mask-position: 100.0000% 86.3636%;
-  mask-position: 100.0000% 86.3636%;
+  -webkit-mask-position: 22.2222% 87.7551%;
+  mask-position: 22.2222% 87.7551%;
 }
 .msr-style {
-  -webkit-mask-position: 0.0000% 88.6364%;
-  mask-position: 0.0000% 88.6364%;
+  -webkit-mask-position: 33.3333% 87.7551%;
+  mask-position: 33.3333% 87.7551%;
 }
 .msr-subject {
-  -webkit-mask-position: 11.1111% 88.6364%;
-  mask-position: 11.1111% 88.6364%;
+  -webkit-mask-position: 44.4444% 87.7551%;
+  mask-position: 44.4444% 87.7551%;
 }
 .msr-subscriptions {
-  -webkit-mask-position: 22.2222% 88.6364%;
-  mask-position: 22.2222% 88.6364%;
+  -webkit-mask-position: 55.5556% 87.7551%;
+  mask-position: 55.5556% 87.7551%;
+}
+.msr-swap_horiz {
+  -webkit-mask-position: 66.6667% 87.7551%;
+  mask-position: 66.6667% 87.7551%;
+}
+.msr-swap_vert {
+  -webkit-mask-position: 77.7778% 87.7551%;
+  mask-position: 77.7778% 87.7551%;
 }
 .msr-switch {
-  -webkit-mask-position: 33.3333% 88.6364%;
-  mask-position: 33.3333% 88.6364%;
+  -webkit-mask-position: 88.8889% 87.7551%;
+  mask-position: 88.8889% 87.7551%;
 }
 .msr-switch_account {
-  -webkit-mask-position: 44.4444% 88.6364%;
-  mask-position: 44.4444% 88.6364%;
+  -webkit-mask-position: 100.0000% 87.7551%;
+  mask-position: 100.0000% 87.7551%;
 }
 .msr-sync {
-  -webkit-mask-position: 55.5556% 88.6364%;
-  mask-position: 55.5556% 88.6364%;
+  -webkit-mask-position: 0.0000% 89.7959%;
+  mask-position: 0.0000% 89.7959%;
 }
 .msr-tab {
-  -webkit-mask-position: 66.6667% 88.6364%;
-  mask-position: 66.6667% 88.6364%;
+  -webkit-mask-position: 11.1111% 89.7959%;
+  mask-position: 11.1111% 89.7959%;
 }
 .msr-table {
-  -webkit-mask-position: 77.7778% 88.6364%;
-  mask-position: 77.7778% 88.6364%;
+  -webkit-mask-position: 22.2222% 89.7959%;
+  mask-position: 22.2222% 89.7959%;
 }
 .msr-table_rows {
-  -webkit-mask-position: 88.8889% 88.6364%;
-  mask-position: 88.8889% 88.6364%;
+  -webkit-mask-position: 33.3333% 89.7959%;
+  mask-position: 33.3333% 89.7959%;
 }
 .msr-tablet {
-  -webkit-mask-position: 100.0000% 88.6364%;
-  mask-position: 100.0000% 88.6364%;
+  -webkit-mask-position: 44.4444% 89.7959%;
+  mask-position: 44.4444% 89.7959%;
 }
 .msr-tabs {
-  -webkit-mask-position: 0.0000% 90.9091%;
-  mask-position: 0.0000% 90.9091%;
+  -webkit-mask-position: 55.5556% 89.7959%;
+  mask-position: 55.5556% 89.7959%;
 }
 .msr-tag {
-  -webkit-mask-position: 11.1111% 90.9091%;
-  mask-position: 11.1111% 90.9091%;
+  -webkit-mask-position: 66.6667% 89.7959%;
+  mask-position: 66.6667% 89.7959%;
 }
 .msr-target {
-  -webkit-mask-position: 22.2222% 90.9091%;
-  mask-position: 22.2222% 90.9091%;
-}
-.msr-terminal {
-  -webkit-mask-position: 33.3333% 90.9091%;
-  mask-position: 33.3333% 90.9091%;
+  -webkit-mask-position: 77.7778% 89.7959%;
+  mask-position: 77.7778% 89.7959%;
 }
 .msr-texture {
-  -webkit-mask-position: 44.4444% 90.9091%;
-  mask-position: 44.4444% 90.9091%;
+  -webkit-mask-position: 88.8889% 89.7959%;
+  mask-position: 88.8889% 89.7959%;
 }
 .msr-timelapse {
-  -webkit-mask-position: 55.5556% 90.9091%;
-  mask-position: 55.5556% 90.9091%;
+  -webkit-mask-position: 100.0000% 89.7959%;
+  mask-position: 100.0000% 89.7959%;
+}
+.msr-timeline {
+  -webkit-mask-position: 0.0000% 91.8367%;
+  mask-position: 0.0000% 91.8367%;
 }
 .msr-timer {
-  -webkit-mask-position: 66.6667% 90.9091%;
-  mask-position: 66.6667% 90.9091%;
+  -webkit-mask-position: 11.1111% 91.8367%;
+  mask-position: 11.1111% 91.8367%;
+}
+.msr-timer_off {
+  -webkit-mask-position: 22.2222% 91.8367%;
+  mask-position: 22.2222% 91.8367%;
 }
 .msr-title {
-  -webkit-mask-position: 77.7778% 90.9091%;
-  mask-position: 77.7778% 90.9091%;
+  -webkit-mask-position: 33.3333% 91.8367%;
+  mask-position: 33.3333% 91.8367%;
 }
 .msr-toast {
-  -webkit-mask-position: 88.8889% 90.9091%;
-  mask-position: 88.8889% 90.9091%;
+  -webkit-mask-position: 44.4444% 91.8367%;
+  mask-position: 44.4444% 91.8367%;
 }
 .msr-today {
-  -webkit-mask-position: 100.0000% 90.9091%;
-  mask-position: 100.0000% 90.9091%;
+  -webkit-mask-position: 55.5556% 91.8367%;
+  mask-position: 55.5556% 91.8367%;
 }
 .msr-token {
-  -webkit-mask-position: 0.0000% 93.1818%;
-  mask-position: 0.0000% 93.1818%;
+  -webkit-mask-position: 66.6667% 91.8367%;
+  mask-position: 66.6667% 91.8367%;
 }
 .msr-toll {
-  -webkit-mask-position: 11.1111% 93.1818%;
-  mask-position: 11.1111% 93.1818%;
+  -webkit-mask-position: 77.7778% 91.8367%;
+  mask-position: 77.7778% 91.8367%;
 }
 .msr-toolbar {
-  -webkit-mask-position: 22.2222% 93.1818%;
-  mask-position: 22.2222% 93.1818%;
+  -webkit-mask-position: 88.8889% 91.8367%;
+  mask-position: 88.8889% 91.8367%;
 }
 .msr-tooltip {
-  -webkit-mask-position: 33.3333% 93.1818%;
-  mask-position: 33.3333% 93.1818%;
+  -webkit-mask-position: 100.0000% 91.8367%;
+  mask-position: 100.0000% 91.8367%;
 }
 .msr-touch_app {
-  -webkit-mask-position: 44.4444% 93.1818%;
-  mask-position: 44.4444% 93.1818%;
+  -webkit-mask-position: 0.0000% 93.8776%;
+  mask-position: 0.0000% 93.8776%;
 }
 .msr-tour {
-  -webkit-mask-position: 55.5556% 93.1818%;
-  mask-position: 55.5556% 93.1818%;
+  -webkit-mask-position: 11.1111% 93.8776%;
+  mask-position: 11.1111% 93.8776%;
 }
 .msr-transform {
-  -webkit-mask-position: 66.6667% 93.1818%;
-  mask-position: 66.6667% 93.1818%;
+  -webkit-mask-position: 22.2222% 93.8776%;
+  mask-position: 22.2222% 93.8776%;
 }
 .msr-translate {
-  -webkit-mask-position: 77.7778% 93.1818%;
-  mask-position: 77.7778% 93.1818%;
+  -webkit-mask-position: 33.3333% 93.8776%;
+  mask-position: 33.3333% 93.8776%;
+}
+.msr-travel {
+  -webkit-mask-position: 44.4444% 93.8776%;
+  mask-position: 44.4444% 93.8776%;
 }
 .msr-travel_explore {
-  -webkit-mask-position: 88.8889% 93.1818%;
-  mask-position: 88.8889% 93.1818%;
+  -webkit-mask-position: 55.5556% 93.8776%;
+  mask-position: 55.5556% 93.8776%;
 }
 .msr-trophy {
-  -webkit-mask-position: 100.0000% 93.1818%;
-  mask-position: 100.0000% 93.1818%;
+  -webkit-mask-position: 66.6667% 93.8776%;
+  mask-position: 66.6667% 93.8776%;
 }
 .msr-try {
-  -webkit-mask-position: 0.0000% 95.4545%;
-  mask-position: 0.0000% 95.4545%;
+  -webkit-mask-position: 77.7778% 93.8776%;
+  mask-position: 77.7778% 93.8776%;
 }
 .msr-tune {
-  -webkit-mask-position: 11.1111% 95.4545%;
-  mask-position: 11.1111% 95.4545%;
+  -webkit-mask-position: 88.8889% 93.8776%;
+  mask-position: 88.8889% 93.8776%;
 }
 .msr-undo {
-  -webkit-mask-position: 22.2222% 95.4545%;
-  mask-position: 22.2222% 95.4545%;
+  -webkit-mask-position: 100.0000% 93.8776%;
+  mask-position: 100.0000% 93.8776%;
 }
 .msr-upcoming {
-  -webkit-mask-position: 33.3333% 95.4545%;
-  mask-position: 33.3333% 95.4545%;
+  -webkit-mask-position: 0.0000% 95.9184%;
+  mask-position: 0.0000% 95.9184%;
 }
 .msr-update {
-  -webkit-mask-position: 44.4444% 95.4545%;
-  mask-position: 44.4444% 95.4545%;
+  -webkit-mask-position: 11.1111% 95.9184%;
+  mask-position: 11.1111% 95.9184%;
 }
 .msr-upgrade {
-  -webkit-mask-position: 55.5556% 95.4545%;
-  mask-position: 55.5556% 95.4545%;
+  -webkit-mask-position: 22.2222% 95.9184%;
+  mask-position: 22.2222% 95.9184%;
 }
 .msr-upload {
-  -webkit-mask-position: 66.6667% 95.4545%;
-  mask-position: 66.6667% 95.4545%;
+  -webkit-mask-position: 33.3333% 95.9184%;
+  mask-position: 33.3333% 95.9184%;
+}
+.msr-upload_file {
+  -webkit-mask-position: 44.4444% 95.9184%;
+  mask-position: 44.4444% 95.9184%;
+}
+.msr-uppercase {
+  -webkit-mask-position: 55.5556% 95.9184%;
+  mask-position: 55.5556% 95.9184%;
 }
 .msr-variables {
-  -webkit-mask-position: 77.7778% 95.4545%;
-  mask-position: 77.7778% 95.4545%;
+  -webkit-mask-position: 66.6667% 95.9184%;
+  mask-position: 66.6667% 95.9184%;
 }
 .msr-verified {
-  -webkit-mask-position: 88.8889% 95.4545%;
-  mask-position: 88.8889% 95.4545%;
+  -webkit-mask-position: 77.7778% 95.9184%;
+  mask-position: 77.7778% 95.9184%;
 }
-.msr-verified_user {
-  -webkit-mask-position: 100.0000% 95.4545%;
-  mask-position: 100.0000% 95.4545%;
+.msr-vertical_align_bottom {
+  -webkit-mask-position: 88.8889% 95.9184%;
+  mask-position: 88.8889% 95.9184%;
+}
+.msr-vertical_align_top {
+  -webkit-mask-position: 100.0000% 95.9184%;
+  mask-position: 100.0000% 95.9184%;
 }
 .msr-video_file {
-  -webkit-mask-position: 0.0000% 97.7273%;
-  mask-position: 0.0000% 97.7273%;
+  -webkit-mask-position: 0.0000% 97.9592%;
+  mask-position: 0.0000% 97.9592%;
 }
-.msr-videogame_asset {
-  -webkit-mask-position: 11.1111% 97.7273%;
-  mask-position: 11.1111% 97.7273%;
+.msr-videocam {
+  -webkit-mask-position: 11.1111% 97.9592%;
+  mask-position: 11.1111% 97.9592%;
 }
 .msr-view_carousel {
-  -webkit-mask-position: 22.2222% 97.7273%;
-  mask-position: 22.2222% 97.7273%;
+  -webkit-mask-position: 22.2222% 97.9592%;
+  mask-position: 22.2222% 97.9592%;
+}
+.msr-view_sidebar {
+  -webkit-mask-position: 33.3333% 97.9592%;
+  mask-position: 33.3333% 97.9592%;
 }
 .msr-visibility {
-  -webkit-mask-position: 33.3333% 97.7273%;
-  mask-position: 33.3333% 97.7273%;
+  -webkit-mask-position: 44.4444% 97.9592%;
+  mask-position: 44.4444% 97.9592%;
 }
 .msr-visibility_off {
-  -webkit-mask-position: 44.4444% 97.7273%;
-  mask-position: 44.4444% 97.7273%;
+  -webkit-mask-position: 55.5556% 97.9592%;
+  mask-position: 55.5556% 97.9592%;
 }
 .msr-volume_off {
-  -webkit-mask-position: 55.5556% 97.7273%;
-  mask-position: 55.5556% 97.7273%;
+  -webkit-mask-position: 66.6667% 97.9592%;
+  mask-position: 66.6667% 97.9592%;
 }
 .msr-warning {
-  -webkit-mask-position: 66.6667% 97.7273%;
-  mask-position: 66.6667% 97.7273%;
+  -webkit-mask-position: 77.7778% 97.9592%;
+  mask-position: 77.7778% 97.9592%;
+}
+.msr-water_drop {
+  -webkit-mask-position: 88.8889% 97.9592%;
+  mask-position: 88.8889% 97.9592%;
+}
+.msr-wb_sunny {
+  -webkit-mask-position: 100.0000% 97.9592%;
+  mask-position: 100.0000% 97.9592%;
 }
 .msr-web {
-  -webkit-mask-position: 77.7778% 97.7273%;
-  mask-position: 77.7778% 97.7273%;
-}
-.msr-web_stories {
-  -webkit-mask-position: 88.8889% 97.7273%;
-  mask-position: 88.8889% 97.7273%;
-}
-.msr-webhook {
-  -webkit-mask-position: 100.0000% 97.7273%;
-  mask-position: 100.0000% 97.7273%;
-}
-.msr-weight {
   -webkit-mask-position: 0.0000% 100.0000%;
   mask-position: 0.0000% 100.0000%;
 }
-.msr-west {
+.msr-web_stories {
   -webkit-mask-position: 11.1111% 100.0000%;
   mask-position: 11.1111% 100.0000%;
 }
-.msr-width {
+.msr-webhook {
   -webkit-mask-position: 22.2222% 100.0000%;
   mask-position: 22.2222% 100.0000%;
 }
-.msr-wifi_off {
+.msr-weight {
   -webkit-mask-position: 33.3333% 100.0000%;
   mask-position: 33.3333% 100.0000%;
 }
-.msr-window {
+.msr-west {
   -webkit-mask-position: 44.4444% 100.0000%;
   mask-position: 44.4444% 100.0000%;
 }
-.msr-workspace_premium {
+.msr-widgets {
   -webkit-mask-position: 55.5556% 100.0000%;
   mask-position: 55.5556% 100.0000%;
+}
+.msr-width {
+  -webkit-mask-position: 66.6667% 100.0000%;
+  mask-position: 66.6667% 100.0000%;
+}
+.msr-wifi_off {
+  -webkit-mask-position: 77.7778% 100.0000%;
+  mask-position: 77.7778% 100.0000%;
+}
+.msr-window {
+  -webkit-mask-position: 88.8889% 100.0000%;
+  mask-position: 88.8889% 100.0000%;
+}
+.msr-workspace_premium {
+  -webkit-mask-position: 100.0000% 100.0000%;
+  mask-position: 100.0000% 100.0000%;
 }

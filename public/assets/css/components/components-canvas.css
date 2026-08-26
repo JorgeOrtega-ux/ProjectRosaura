@@ -41,6 +41,7 @@
     gap: 8px;
 }
 
+.component-canvas-badges--left,
 .canvas-badges-left {
     position: absolute;
     top: 16px;
@@ -52,6 +53,7 @@
     pointer-events: none;
 }
 
+.component-canvas-badges--right,
 .canvas-badges-right {
     position: absolute;
     top: 16px;
@@ -63,6 +65,8 @@
     pointer-events: none;
 }
 
+.component-canvas-badges--left .component-badge,
+.component-canvas-badges--right .component-badge,
 .canvas-badges-left .component-badge,
 .canvas-badges-right .component-badge {
     background-color: var(--bg-surface);
@@ -81,6 +85,14 @@
    UNIFIED CANVAS TOOLBAR BUTTON SYSTEM (SCOPED MONOCHROME THEME)
    ========================================================================== */
 
+.component-property-bar .component-button,
+.component-toolbar .component-button,
+.component-toolbar--horizontal .component-button,
+.component-toolbar--vertical .component-button,
+.component-toolbar--vertical-right .component-button,
+.component-toolbar--sub .component-button,
+.component-canvas-footer .component-button,
+.component-sidebar .component-button,
 .canvas-top-property-bar .component-button,
 .canvas-design-toolbar .component-button,
 .canvas-design-toolbar-horizontal .component-button,
@@ -101,6 +113,14 @@
     transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
 }
 
+.component-property-bar .component-button:hover,
+.component-toolbar .component-button:hover,
+.component-toolbar--horizontal .component-button:hover,
+.component-toolbar--vertical .component-button:hover,
+.component-toolbar--vertical-right .component-button:hover,
+.component-toolbar--sub .component-button:hover,
+.component-canvas-footer .component-button:hover,
+.component-sidebar .component-button:hover,
 .canvas-top-property-bar .component-button:hover,
 .canvas-design-toolbar .component-button:hover,
 .canvas-design-toolbar-horizontal .component-button:hover,
@@ -116,6 +136,22 @@
     color: #ffffff;
 }
 
+.component-property-bar .component-button.active,
+.component-property-bar .component-button:active,
+.component-toolbar .component-button.active,
+.component-toolbar .component-button:active,
+.component-toolbar--horizontal .component-button.active,
+.component-toolbar--horizontal .component-button:active,
+.component-toolbar--vertical .component-button.active,
+.component-toolbar--vertical .component-button:active,
+.component-toolbar--vertical-right .component-button.active,
+.component-toolbar--vertical-right .component-button:active,
+.component-toolbar--sub .component-button.active,
+.component-toolbar--sub .component-button:active,
+.component-canvas-footer .component-button.active,
+.component-canvas-footer .component-button:active,
+.component-sidebar .component-button.active,
+.component-sidebar .component-button:active,
 .canvas-top-property-bar .component-button.active,
 .canvas-top-property-bar .component-button:active,
 .canvas-design-toolbar .component-button.active,
@@ -141,6 +177,14 @@
     color: #ffffff;
 }
 
+.component-property-bar .component-button--icon,
+.component-toolbar .component-button--icon,
+.component-toolbar--horizontal .component-button--icon,
+.component-toolbar--vertical .component-button--icon,
+.component-toolbar--vertical-right .component-button--icon,
+.component-toolbar--sub .component-button--icon,
+.component-canvas-footer .component-button--icon,
+.component-sidebar .component-button--icon,
 .canvas-top-property-bar .component-button--icon,
 .canvas-design-toolbar .component-button--icon,
 .canvas-design-toolbar-horizontal .component-button--icon,
@@ -155,6 +199,14 @@
     padding: 0;
 }
 
+.component-property-bar .material-symbols-rounded,
+.component-toolbar .material-symbols-rounded,
+.component-toolbar--horizontal .material-symbols-rounded,
+.component-toolbar--vertical .material-symbols-rounded,
+.component-toolbar--vertical-right .material-symbols-rounded,
+.component-toolbar--sub .material-symbols-rounded,
+.component-canvas-footer .material-symbols-rounded,
+.component-sidebar .material-symbols-rounded,
 .canvas-top-property-bar .material-symbols-rounded,
 .canvas-design-toolbar .material-symbols-rounded,
 .canvas-design-toolbar-horizontal .material-symbols-rounded,
@@ -171,6 +223,7 @@
 
 /* ── Canvas Toolbar Carousel Wrappers & Nav Buttons ── */
 
+.component-property-bar-wrapper,
 .canvas-top-property-bar-wrapper {
     position: absolute;
     top: 12px;
@@ -183,6 +236,7 @@
     pointer-events: none;
 }
 
+.component-vertical-toolbar-wrapper,
 .canvas-vertical-toolbar-wrapper {
     position: absolute;
     top: 50%;
@@ -197,15 +251,18 @@
 }
 
 @media (max-width: 768px) {
+    .component-property-bar-wrapper,
     .canvas-top-property-bar-wrapper {
         top: 8px;
         max-width: calc(100vw - 20px);
     }
+    .component-vertical-toolbar-wrapper,
     .canvas-vertical-toolbar-wrapper {
         left: 8px;
     }
 }
 
+.component-property-bar-wrapper .component-property-bar,
 .canvas-top-property-bar-wrapper .canvas-top-property-bar {
     position: relative;
     top: auto;
@@ -355,6 +412,7 @@
 }
 
 /* ── Canvas Design Bottom Dock (Dynamic Flex Stack for Floating Tools, Layers Carousel & Footer) ── */
+.component-canvas-bottom-dock,
 .canvas-design-bottom-dock {
     position: absolute;
     bottom: 0;
@@ -369,11 +427,13 @@
     max-width: 100vw;
 }
 
+.component-canvas-bottom-dock > *,
 .canvas-design-bottom-dock > * {
     pointer-events: auto;
 }
 
 /* ── Floating Horizontal Tools Toolbar (Procreate / iPad Style Capsule) ── */
+.component-tools-wrapper--horizontal,
 .canvas-horizontal-tools-wrapper {
     display: flex;
     align-items: center;
@@ -384,6 +444,7 @@
     transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
 }
 
+.component-tools-wrapper--horizontal .component-toolbar--horizontal,
 .canvas-horizontal-tools-wrapper .canvas-design-toolbar-horizontal {
     position: relative;
     top: auto;
@@ -395,6 +456,7 @@
     flex-shrink: 1;
 }
 
+.component-toolbar--horizontal,
 .canvas-design-toolbar-horizontal {
     display: flex;
     align-items: center;
@@ -414,20 +476,24 @@
     user-select: none;
 }
 
+.component-toolbar--horizontal::-webkit-scrollbar,
 .canvas-design-toolbar-horizontal::-webkit-scrollbar {
     display: none;
 }
 
+.component-toolbar--horizontal.disabled,
 .canvas-design-toolbar-horizontal.disabled {
     display: none !important;
 }
 
 /* Primary & Secondary Color Slot Buttons (Uniform 32px Round Buttons) */
+.component-color-slot-btn,
 .canvas-color-slot-btn {
     position: relative;
     padding: 0 !important;
 }
 
+.component-color-slot-indicator,
 .canvas-color-slot-indicator {
     width: 16px;
     height: 16px;
@@ -440,12 +506,14 @@
     pointer-events: none;
 }
 
+.component-color-slot-btn.active,
 .canvas-color-slot-btn.active {
     background-color: rgba(255, 255, 255, 0.22) !important;
     border-color: #ffffff !important;
     box-shadow: 0 0 8px rgba(255, 255, 255, 0.35) !important;
 }
 
+.component-color-slot-btn.active .component-color-slot-indicator,
 .canvas-color-slot-btn.active .canvas-color-slot-indicator {
     border-color: #ffffff;
     box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
@@ -453,6 +521,7 @@
 }
 
 /* ── Canvas Design Toolbar Vertical Right (Right-center floating pill for offline workspace tools: resize & reset) ── */
+.component-toolbar--vertical-right,
 .canvas-design-toolbar-vertical-right {
     position: absolute;
     top: 50%;
@@ -469,23 +538,29 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
     pointer-events: auto;
     color: #ffffff;
+    z-index: 40;
 }
 
+.component-toolbar--vertical-right.active,
 .canvas-design-toolbar-vertical-right.active {
     display: flex;
 }
 
+.component-toolbar--vertical-right.disabled,
 .canvas-design-toolbar-vertical-right.disabled {
     display: none !important;
 }
 
 @media (max-width: 768px) {
+    .component-toolbar--vertical-right,
     .canvas-design-toolbar-vertical-right {
         right: 8px;
     }
 }
 
 /* ── Canvas Design Subtoolbar Vertical (Appears to the right of main vertical toolbar) ── */
+.component-toolbar--sub,
+.component-subtoolbar-vertical,
 .canvas-design-subtoolbar-vertical {
     position: absolute;
     top: 50%;
@@ -504,18 +579,24 @@
     color: #ffffff;
     opacity: 0;
     transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 45;
 }
 
+.component-toolbar--sub.active,
+.component-subtoolbar-vertical.active,
 .canvas-design-subtoolbar-vertical.active {
     display: flex;
     opacity: 1;
     transform: translateY(-50%) translateX(0);
 }
 
+.component-toolbar--sub.disabled,
+.component-subtoolbar-vertical.disabled,
 .canvas-design-subtoolbar-vertical.disabled {
     display: none !important;
 }
 
+.component-subtoolbar-group,
 .canvas-design-subtoolbar-group {
     display: flex;
     flex-direction: column;
@@ -523,10 +604,13 @@
     gap: 4px;
 }
 
+.component-subtoolbar-group.disabled,
 .canvas-design-subtoolbar-group.disabled {
     display: none !important;
 }
 
+.component-toolbar--sub .component-button--icon,
+.component-subtoolbar-vertical .component-button--icon,
 .canvas-design-subtoolbar-vertical .component-button--icon {
     width: 32px;
     height: 32px;
@@ -541,29 +625,38 @@
     transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
+.component-toolbar--sub .component-button--icon:hover,
+.component-subtoolbar-vertical .component-button--icon:hover,
 .canvas-design-subtoolbar-vertical .component-button--icon:hover {
     background: rgba(255, 255, 255, 0.12);
     border-color: rgba(255, 255, 255, 0.45);
 }
 
+.component-toolbar--sub .component-button--icon.active,
+.component-subtoolbar-vertical .component-button--icon.active,
 .canvas-design-subtoolbar-vertical .component-button--icon.active {
     background: rgba(239, 68, 68, 0.25);
     border-color: var(--color-danger, #ef4444);
     color: var(--color-danger, #ef4444);
 }
 
+.component-toolbar--sub .material-symbols-rounded,
+.component-subtoolbar-vertical .material-symbols-rounded,
 .canvas-design-subtoolbar-vertical .material-symbols-rounded {
     font-size: 1.1rem;
     color: inherit;
 }
 
 @media (max-width: 768px) {
+    .component-toolbar--sub,
+    .component-subtoolbar-vertical,
     .canvas-design-subtoolbar-vertical {
         left: 52px;
     }
 }
 
 /* ── Canvas Design Sizes Subtoolbar Vertical (Appears to the right of 1st subtoolbar) ── */
+.component-sizes-subtoolbar-vertical,
 .canvas-design-sizes-subtoolbar-vertical {
     position: absolute;
     top: 50%;
@@ -582,18 +675,22 @@
     color: #ffffff;
     opacity: 0;
     transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 45;
 }
 
+.component-sizes-subtoolbar-vertical.active,
 .canvas-design-sizes-subtoolbar-vertical.active {
     display: flex;
     opacity: 1;
     transform: translateY(-50%) translateX(0);
 }
 
+.component-sizes-subtoolbar-vertical.disabled,
 .canvas-design-sizes-subtoolbar-vertical.disabled {
     display: none !important;
 }
 
+.component-sizes-group,
 .canvas-design-sizes-group {
     display: flex;
     flex-direction: column;
@@ -601,10 +698,12 @@
     gap: 4px;
 }
 
+.component-sizes-group.disabled,
 .canvas-design-sizes-group.disabled {
     display: none !important;
 }
 
+.component-sizes-subtoolbar-vertical .component-button--icon,
 .canvas-design-sizes-subtoolbar-vertical .component-button--icon {
     width: 32px;
     height: 32px;
@@ -619,6 +718,7 @@
     transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
+.component-sizes-subtoolbar-vertical .component-button--icon:hover,
 .canvas-design-sizes-subtoolbar-vertical .component-button--icon:hover {
     background: rgba(255, 255, 255, 0.12);
     border-color: rgba(255, 255, 255, 0.45);
@@ -1925,7 +2025,7 @@
     overflow-y: auto;
     padding: 6px 8px;
     display: flex;
-    flex-direction: column-reverse;
+    flex-direction: column;
     gap: 4px;
     background: #0d0d10;
 }
@@ -2124,6 +2224,7 @@
 }
 
 /* ── Canvas Design Layers Bottom Carousel (Horizontal Bar) ── */
+.component-layers-carousel,
 .canvas-design-layers-carousel {
     position: relative;
     width: 100%;
@@ -2148,10 +2249,12 @@
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.component-layers-carousel.disabled,
 .canvas-design-layers-carousel.disabled {
     display: none !important;
 }
 
+.component-layers-carousel__track,
 .canvas-design-layers-carousel__track {
     display: flex;
     align-items: center;
@@ -2161,6 +2264,7 @@
     padding: 6px 0;
 }
 
+.component-layer-card,
 .canvas-design-layer-card {
     width: 112px;
     height: 72px;
@@ -2185,6 +2289,7 @@
     overflow: hidden;
 }
 
+.component-layer-card:hover,
 .canvas-design-layer-card:hover {
     border-color: rgba(255, 255, 255, 0.45);
     background-color: #22222c;
@@ -2192,6 +2297,7 @@
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
+.component-layer-card.active,
 .canvas-design-layer-card.active {
     border: 2px solid #ffffff;
     background-color: #282834;
@@ -2199,31 +2305,37 @@
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.4);
 }
 
+.component-layer-card.locked,
 .canvas-design-layer-card.locked {
     opacity: 0.9;
 }
 
+.component-layer-card.hidden-layer,
 .canvas-design-layer-card.hidden-layer {
     opacity: 0.45;
     filter: grayscale(0.5);
 }
 
+.component-layer-card.is-dragging,
 .canvas-design-layer-card.is-dragging {
     opacity: 0.35;
     transform: scale(0.94);
     cursor: grabbing !important;
 }
 
+.component-layer-card.drag-over-left,
 .canvas-design-layer-card.drag-over-left {
     border-left: 3px solid #ffffff !important;
     box-shadow: -4px 0 14px rgba(255, 255, 255, 0.5);
 }
 
+.component-layer-card.drag-over-right,
 .canvas-design-layer-card.drag-over-right {
     border-right: 3px solid #ffffff !important;
     box-shadow: 4px 0 14px rgba(255, 255, 255, 0.5);
 }
 
+.component-layer-card__canvas,
 .canvas-design-layer-card__canvas {
     width: 100%;
     height: 100%;
@@ -2232,6 +2344,7 @@
     pointer-events: none;
 }
 
+.component-layer-card__badge,
 .canvas-design-layer-card__badge {
     position: absolute;
     bottom: 4px;
@@ -2252,6 +2365,7 @@
     border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
+.component-layer-card__actions,
 .canvas-design-layer-card__actions {
     position: absolute;
     top: 4px;
@@ -2261,6 +2375,7 @@
     z-index: 2;
 }
 
+.component-layer-card__action-btn,
 .canvas-design-layer-card__action-btn {
     width: 22px;
     height: 22px;
@@ -2277,6 +2392,7 @@
     transition: all 0.15s ease;
 }
 
+.component-layer-card__action-btn:hover,
 .canvas-design-layer-card__action-btn:hover {
     background: rgba(255, 255, 255, 0.25);
     border-color: rgba(255, 255, 255, 0.45);
@@ -2284,22 +2400,26 @@
     transform: scale(1.08);
 }
 
+.component-layer-card__action-btn--vis.hidden-btn,
 .canvas-design-layer-card__action-btn--vis.hidden-btn {
     color: #ff6b6b !important;
     background: rgba(255, 80, 80, 0.25) !important;
     border-color: rgba(255, 80, 80, 0.5) !important;
 }
 
+.component-layer-card__action-btn--lock.active,
 .canvas-design-layer-card__action-btn--lock.active {
     color: #ffd166 !important;
     background: rgba(255, 209, 102, 0.25) !important;
     border-color: rgba(255, 209, 102, 0.5) !important;
 }
 
+.component-layer-card__action-btn .material-symbols-rounded,
 .canvas-design-layer-card__action-btn .material-symbols-rounded {
     font-size: 0.82rem;
 }
 
+.component-layer-card--add,
 .canvas-design-layer-card--add {
     width: 112px;
     height: 72px;
@@ -2317,6 +2437,7 @@
     box-sizing: border-box;
 }
 
+.component-layer-card--add:hover,
 .canvas-design-layer-card--add:hover {
     border-color: #ffffff;
     color: #ffffff;
@@ -2325,11 +2446,13 @@
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
 }
 
+.component-layer-card--add .material-symbols-rounded,
 .canvas-design-layer-card--add .material-symbols-rounded {
     font-size: 1.6rem;
 }
 
 /* ── Canvas Design Footer (Bottom Bar) ── */
+.component-canvas-footer,
 .canvas-design-footer {
     width: 100%;
     height: 40px;
@@ -2348,6 +2471,8 @@
     user-select: none;
 }
 
+.component-canvas-footer-left,
+.component-canvas-footer-right,
 .canvas-design-footer-left,
 .canvas-design-footer-right {
     display: flex;
@@ -2355,14 +2480,14 @@
     gap: 12px;
 }
 
+.component-canvas-footer-group,
 .canvas-design-footer-group {
     display: flex;
     align-items: center;
     gap: 4px;
 }
 
-
-
+.component-canvas-footer-layers-badge,
 .canvas-design-footer-layers-badge {
     font-size: 0.72rem;
     font-weight: 600;
@@ -2381,6 +2506,7 @@
     letter-spacing: 0.5px;
 }
 
+.component-canvas-footer-slider-box,
 .canvas-design-footer-slider-box {
     display: flex;
     align-items: center;
@@ -2388,6 +2514,8 @@
     padding: 0 4px;
 }
 
+.component-canvas-footer-slider,
+.component-range--zoom,
 .canvas-design-footer-slider {
     -webkit-appearance: none;
     appearance: none;
@@ -2402,10 +2530,14 @@
     padding: 0;
 }
 
+.component-canvas-footer-slider:hover,
+.component-range--zoom:hover,
 .canvas-design-footer-slider:hover {
     background: rgba(255, 255, 255, 0.4);
 }
 
+.component-canvas-footer-slider::-webkit-slider-thumb,
+.component-range--zoom::-webkit-slider-thumb,
 .canvas-design-footer-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -2418,10 +2550,14 @@
     transition: transform 0.15s ease;
 }
 
+.component-canvas-footer-slider::-webkit-slider-thumb:hover,
+.component-range--zoom::-webkit-slider-thumb:hover,
 .canvas-design-footer-slider::-webkit-slider-thumb:hover {
     transform: scale(1.25);
 }
 
+.component-canvas-footer-slider::-moz-range-thumb,
+.component-range--zoom::-moz-range-thumb,
 .canvas-design-footer-slider::-moz-range-thumb {
     width: 12px;
     height: 12px;
@@ -2432,6 +2568,7 @@
     box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
 }
 
+.component-canvas-footer-zoom-tag,
 .canvas-design-footer-zoom-tag {
     font-size: 0.72rem;
     font-weight: 600;
@@ -2451,12 +2588,14 @@
     transition: background 0.15s ease, border-color 0.15s ease;
 }
 
+.component-canvas-footer-zoom-tag:hover,
 .canvas-design-footer-zoom-tag:hover {
     background: rgba(255, 255, 255, 0.12);
     border-color: rgba(255, 255, 255, 0.45);
 }
 
 /* ── Footer Mode Tabs (Capas / Animación) ── */
+.component-canvas-footer-tabs,
 .canvas-design-footer-tabs {
     display: inline-grid;
     grid-template-columns: 1fr 1fr;
@@ -2470,6 +2609,7 @@
     user-select: none;
 }
 
+.component-canvas-footer-tabs-glider,
 .canvas-design-footer-tabs-glider {
     position: absolute;
     top: 2px;
@@ -2484,14 +2624,17 @@
     pointer-events: none;
 }
 
+.component-canvas-footer-tabs[data-mode="layers"] .component-canvas-footer-tabs-glider,
 .canvas-design-footer-tabs[data-mode="layers"] .canvas-design-footer-tabs-glider {
     transform: translateX(0);
 }
 
+.component-canvas-footer-tabs[data-mode="timeline"] .component-canvas-footer-tabs-glider,
 .canvas-design-footer-tabs[data-mode="timeline"] .canvas-design-footer-tabs-glider {
     transform: translateX(calc(100% + 2px));
 }
 
+.component-canvas-footer-tab-btn,
 .canvas-design-footer-tab-btn {
     position: relative;
     z-index: 2;
@@ -2517,6 +2660,7 @@
     line-height: 1;
 }
 
+.component-canvas-footer-tab-btn .material-symbols-rounded,
 .canvas-design-footer-tab-btn .material-symbols-rounded {
     font-size: 16px;
     line-height: 1;
@@ -2525,16 +2669,19 @@
     justify-content: center;
 }
 
+.component-canvas-footer-tab-btn .component-canvas-footer-tab-text,
 .canvas-design-footer-tab-btn .canvas-design-footer-tab-text {
     line-height: 1;
     display: inline-flex;
     align-items: center;
 }
 
+.component-canvas-footer-tab-btn:hover,
 .canvas-design-footer-tab-btn:hover {
     color: #ffffff;
 }
 
+.component-canvas-footer-tab-btn.active,
 .canvas-design-footer-tab-btn.active {
     color: #ffffff;
     font-weight: 600;
@@ -2587,6 +2734,7 @@
    TOP PROPERTY BAR (DYNAMIC CONTEXTUAL TOOLBAR)
    ========================================================================== */
 
+.component-property-bar,
 .canvas-top-property-bar {
     position: absolute;
     top: 12px;
@@ -2616,29 +2764,36 @@
     touch-action: pan-x;
 }
 
+.component-property-bar::-webkit-scrollbar,
 .canvas-top-property-bar::-webkit-scrollbar {
     display: none;
 }
 
+.component-property-bar.is-dragging,
 .canvas-top-property-bar.is-dragging {
     scroll-behavior: auto;
     cursor: grabbing;
     user-select: none;
 }
 
+.component-property-bar.is-dragging .component-button,
+.component-property-bar.is-dragging input,
 .canvas-top-property-bar.is-dragging .component-button,
 .canvas-top-property-bar.is-dragging input {
     pointer-events: none;
 }
 
+.component-property-bar.active,
 .canvas-top-property-bar.active {
     display: flex;
 }
 
+.component-property-bar.disabled,
 .canvas-top-property-bar.disabled {
     display: none !important;
 }
 
+.component-property-bar__section,
 .property-bar-left-section {
     display: flex;
     align-items: center;
@@ -2646,6 +2801,7 @@
     flex-shrink: 0;
 }
 
+.component-property-bar__badge,
 .property-bar-tool-badge {
     display: inline-flex;
     align-items: center;
@@ -2662,6 +2818,7 @@
     flex-shrink: 0;
 }
 
+.component-property-bar__coords,
 .property-bar-coords-badge {
     display: inline-flex;
     align-items: center;
@@ -2680,6 +2837,7 @@
     flex-shrink: 0;
 }
 
+.component-property-bar__coords-text,
 .property-bar-coords-text {
     font-family: var(--sl-font-mono, monospace);
     font-variant-numeric: tabular-nums;
@@ -2690,12 +2848,15 @@
     white-space: nowrap;
 }
 
+.component-property-bar__badge .material-symbols-rounded,
+.component-property-bar__coords .material-symbols-rounded,
 .property-bar-tool-badge .material-symbols-rounded,
 .property-bar-coords-badge .material-symbols-rounded {
     font-size: 1.1rem;
     color: #ffffff;
 }
 
+.component-property-bar__divider,
 .property-bar-divider {
     width: 1px;
     height: 24px;
@@ -2704,6 +2865,7 @@
     flex-shrink: 0;
 }
 
+.component-property-bar__context,
 .property-bar-context-container {
     display: flex;
     align-items: center;
@@ -2711,6 +2873,7 @@
     flex-shrink: 0;
 }
 
+.component-property-bar__group,
 .property-bar-context-group {
     display: none;
     align-items: center;
@@ -2718,14 +2881,17 @@
     flex-shrink: 0;
 }
 
+.component-property-bar__group.active,
 .property-bar-context-group.active {
     display: flex;
 }
 
+.component-property-bar__group.disabled,
 .property-bar-context-group.disabled {
     display: none !important;
 }
 
+.component-property-bar__item,
 .property-bar-item {
     display: flex;
     align-items: center;
@@ -2735,12 +2901,14 @@
     flex-shrink: 0;
 }
 
+.component-property-bar__label,
 .property-bar-label {
     font-size: 0.75rem;
     color: rgba(255, 255, 255, 0.6);
     user-select: none;
 }
 
+.component-property-bar__val,
 .property-bar-val {
     font-size: 0.75rem;
     font-family: var(--sl-font-mono, monospace);
@@ -2750,6 +2918,7 @@
 }
 
 /* ── Popover dropdowns for compact top bar controls ── */
+.component-property-bar__popover,
 .property-bar-popover-wrapper {
     position: relative;
     display: inline-flex;
@@ -2757,22 +2926,26 @@
     flex-shrink: 0;
 }
 
+.component-property-bar__compact-btn,
 .property-bar-compact-val-btn {
     padding: 0 10px !important;
     gap: 5px !important;
     font-size: 0.75rem !important;
 }
 
+.component-property-bar__compact-btn .material-symbols-rounded,
 .property-bar-compact-val-btn .material-symbols-rounded {
     font-size: 1.05rem !important;
 }
 
+.component-property-bar__compact-btn .msr-arrow_drop_down,
 .property-bar-compact-val-btn .msr-arrow_drop_down {
     font-size: 1.15rem !important;
     margin-left: -3px;
     opacity: 0.75;
 }
 
+.component-property-bar__popover-menu,
 .property-bar-popover-menu {
     position: absolute;
     top: calc(100% + 8px);
@@ -2791,10 +2964,12 @@
     pointer-events: auto;
 }
 
+.component-property-bar__popover-menu.disabled,
 .property-bar-popover-menu.disabled {
     display: none !important;
 }
 
+.component-property-bar__popover-header,
 .property-bar-popover-header {
     display: flex;
     align-items: center;
@@ -2804,6 +2979,7 @@
     color: rgba(255, 255, 255, 0.85);
 }
 
+.component-property-bar__quick-sizes,
 .property-bar-quick-sizes {
     display: flex;
     align-items: center;
@@ -2813,6 +2989,7 @@
     border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
+.component-property-bar__range,
 .property-bar-range {
     -webkit-appearance: none;
     appearance: none;
@@ -2825,14 +3002,17 @@
     transition: background 0.2s ease;
 }
 
+.component-property-bar__range--full,
 .property-bar-range--full {
     width: 100%;
 }
 
+.component-property-bar__range:hover,
 .property-bar-range:hover {
     background: rgba(255, 255, 255, 0.4);
 }
 
+.component-property-bar__range::-webkit-slider-thumb,
 .property-bar-range::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -2845,10 +3025,12 @@
     transition: transform 0.15s ease;
 }
 
+.component-property-bar__range::-webkit-slider-thumb:hover,
 .property-bar-range::-webkit-slider-thumb:hover {
     transform: scale(1.25);
 }
 
+.component-property-bar__range::-moz-range-thumb,
 .property-bar-range::-moz-range-thumb {
     width: 12px;
     height: 12px;
@@ -2858,12 +3040,14 @@
     box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
 }
 
+.component-property-bar__btn-group,
 .property-bar-btn-group {
     display: flex;
     align-items: center;
     gap: 4px;
 }
 
+.component-property-bar__actions,
 .property-bar-right-actions {
     display: flex;
     align-items: center;
@@ -2875,6 +3059,7 @@
    DUAL COLOR SELECTOR (PRIMARY / SECONDARY SWATCHES)
    ========================================================================== */
 
+.component-dual-color-wrapper,
 .canvas-dual-color-wrapper {
     margin-top: 6px;
     padding-top: 6px;
@@ -2885,12 +3070,14 @@
     gap: 6px;
 }
 
+.component-dual-color-box,
 .canvas-dual-color-box {
     position: relative;
     width: 32px;
     height: 32px;
 }
 
+.component-dual-color-swatch,
 .canvas-dual-color-swatch {
     position: absolute;
     width: 22px;
@@ -2902,6 +3089,7 @@
     transition: transform 0.15s ease, border-color 0.15s ease, z-index 0.15s ease;
 }
 
+.component-dual-color-swatch--primary,
 .canvas-dual-color-swatch--primary {
     top: 0;
     left: 0;
@@ -2909,6 +3097,7 @@
     background-color: #000000;
 }
 
+.component-dual-color-swatch--secondary,
 .canvas-dual-color-swatch--secondary {
     bottom: 0;
     right: 0;
@@ -2916,6 +3105,7 @@
     background-color: #ffffff;
 }
 
+.component-dual-color-swatch.active,
 .canvas-dual-color-swatch.active {
     border-color: #ffffff;
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.8), 0 2px 8px rgba(0, 0, 0, 0.6);
@@ -2923,12 +3113,14 @@
     transform: scale(1.08);
 }
 
+.component-dual-color-actions,
 .canvas-dual-color-actions {
     display: flex;
     align-items: center;
     gap: 2px;
 }
 
+.component-dual-color-btn,
 .canvas-dual-color-btn {
     width: 16px;
     height: 16px;
@@ -2944,19 +3136,22 @@
     transition: color 0.15s ease, background-color 0.15s ease;
 }
 
+.component-dual-color-btn:hover,
 .canvas-dual-color-btn:hover {
     color: #ffffff;
     background: rgba(255, 255, 255, 0.1);
 }
 
+.component-dual-color-btn .material-symbols-rounded,
 .canvas-dual-color-btn .material-symbols-rounded {
     font-size: 0.95rem;
 }
 
 /* ==========================================================================
-   UNIFIED RIGHT SIDEBAR WITH TABS (CAPAS, MINIMAPA)
+   UNIFIED RIGHT SIDEBAR WITH TABS (CAPAS, MINIMAPA, HERRAMIENTAS)
    ========================================================================== */
 
+.component-sidebar--right,
 .canvas-right-unified-sidebar {
     position: absolute;
     top: 50%;
@@ -2981,6 +3176,7 @@
     overflow: hidden;
 }
 
+.component-sidebar--right.disabled,
 .canvas-right-unified-sidebar.disabled {
     opacity: 0 !important;
     visibility: hidden !important;
@@ -2989,6 +3185,7 @@
     display: none !important;
 }
 
+.component-sidebar__tabs,
 .canvas-sidebar-tabs {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -3001,6 +3198,7 @@
     user-select: none;
 }
 
+.component-sidebar__tabs-glider,
 .canvas-sidebar-tabs-glider {
     position: absolute;
     top: 3px;
@@ -3016,18 +3214,22 @@
     pointer-events: none;
 }
 
+.component-sidebar__tabs[data-active-tab="layers"] .component-sidebar__tabs-glider,
 .canvas-sidebar-tabs[data-active-tab="layers"] .canvas-sidebar-tabs-glider {
     transform: translateX(0);
 }
 
+.component-sidebar__tabs[data-active-tab="minimap"] .component-sidebar__tabs-glider,
 .canvas-sidebar-tabs[data-active-tab="minimap"] .canvas-sidebar-tabs-glider {
     transform: translateX(calc(100% + 3px));
 }
 
+.component-sidebar__tabs[data-active-tab="tool"] .component-sidebar__tabs-glider,
 .canvas-sidebar-tabs[data-active-tab="tool"] .canvas-sidebar-tabs-glider {
     transform: translateX(calc(200% + 6px));
 }
 
+.component-sidebar__tab-btn,
 .canvas-sidebar-tab-btn {
     position: relative;
     z-index: 2;
@@ -3049,19 +3251,23 @@
     box-shadow: none !important;
 }
 
+.component-sidebar__tab-btn .material-symbols-rounded,
 .canvas-sidebar-tab-btn .material-symbols-rounded {
     font-size: 1.15rem;
 }
 
+.component-sidebar__tab-btn:hover,
 .canvas-sidebar-tab-btn:hover {
     color: #ffffff;
 }
 
+.component-sidebar__tab-btn.active,
 .canvas-sidebar-tab-btn.active {
     color: #ffffff;
     font-weight: 600;
 }
 
+.component-sidebar__body,
 .canvas-sidebar-body {
     flex: 1;
     overflow-y: auto;
@@ -3069,17 +3275,20 @@
     flex-direction: column;
 }
 
+.component-sidebar__tab-content,
 .canvas-sidebar-tab-content {
     display: flex;
     flex-direction: column;
     flex: 1;
 }
 
+.component-sidebar__tab-content.disabled,
 .canvas-sidebar-tab-content.disabled {
     display: none !important;
 }
 
 /* ── Sidebar: Tool Settings Panel ── */
+.component-tool-settings-panel,
 .canvas-tool-settings-panel {
     padding: 12px;
     display: flex;
@@ -3087,6 +3296,7 @@
     gap: 14px;
 }
 
+.component-tool-settings-header,
 .canvas-tool-settings-header {
     display: flex;
     align-items: center;
@@ -3095,6 +3305,7 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.component-tool-settings-badge,
 .canvas-tool-settings-badge {
     width: 36px;
     height: 36px;
@@ -3108,10 +3319,12 @@
     flex-shrink: 0;
 }
 
+.component-tool-settings-badge .material-symbols-rounded,
 .canvas-tool-settings-badge .material-symbols-rounded {
     font-size: 1.25rem;
 }
 
+.component-tool-settings-meta,
 .canvas-tool-settings-meta {
     display: flex;
     flex-direction: column;
@@ -3119,12 +3332,14 @@
     overflow: hidden;
 }
 
+.component-tool-settings-title,
 .canvas-tool-settings-title {
     font-size: 0.85rem;
     font-weight: 600;
     color: #ffffff;
 }
 
+.component-tool-settings-desc,
 .canvas-tool-settings-desc {
     font-size: 0.72rem;
     color: rgba(255, 255, 255, 0.55);
@@ -3133,34 +3348,40 @@
     text-overflow: ellipsis;
 }
 
+.component-tool-settings-section,
 .canvas-tool-settings-section {
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
+.component-tool-settings-section.disabled,
 .canvas-tool-settings-section.disabled {
     display: none !important;
 }
 
+.component-tool-field,
 .canvas-tool-field {
     display: flex;
     flex-direction: column;
     gap: 6px;
 }
 
+.component-tool-field__header,
 .canvas-tool-field-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 
+.component-tool-field__label,
 .canvas-tool-field-label {
     font-size: 0.75rem;
     font-weight: 500;
     color: rgba(255, 255, 255, 0.8);
 }
 
+.component-tool-field__val,
 .canvas-tool-field-val {
     font-size: 0.75rem;
     font-family: var(--sl-font-mono, monospace);
@@ -3169,11 +3390,13 @@
     font-weight: 600;
 }
 
+.component-tool-field__sub,
 .canvas-tool-field-sub {
     font-size: 0.68rem;
     color: rgba(255, 255, 255, 0.45);
 }
 
+.component-tool-field__toggle,
 .canvas-tool-field-toggle {
     display: flex;
     align-items: center;
@@ -3184,6 +3407,128 @@
     border-radius: 8px;
 }
 
+/* ── Tool Slider & Number Input Controls (Universal Slider System) ── */
+.component-tool-slider-box,
+.canvas-tool-slider-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 2px 0;
+}
+
+.component-range,
+.component-tool-slider,
+.canvas-tool-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    flex: 1;
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.22);
+    border-radius: 9999px;
+    outline: none;
+    cursor: pointer;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.component-range:hover,
+.component-tool-slider:hover,
+.canvas-tool-slider:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.component-range::-webkit-slider-thumb,
+.component-tool-slider::-webkit-slider-thumb,
+.canvas-tool-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ffffff;
+    cursor: pointer;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.6);
+    transition: transform 0.15s ease, background-color 0.15s ease;
+    border: none;
+}
+
+.component-range::-webkit-slider-thumb:hover,
+.component-tool-slider::-webkit-slider-thumb:hover,
+.canvas-tool-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+.component-range::-moz-range-thumb,
+.component-tool-slider::-moz-range-thumb,
+.canvas-tool-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.6);
+}
+
+.component-range::-moz-range-track,
+.component-tool-slider::-moz-range-track,
+.canvas-tool-slider::-moz-range-track {
+    background: rgba(255, 255, 255, 0.22);
+    height: 6px;
+    border-radius: 9999px;
+    border: none;
+}
+
+.component-range--zoom {
+    width: 90px;
+    flex: none;
+}
+
+.component-range--opacity {
+    width: 100%;
+}
+
+.component-tool-input-number,
+.canvas-tool-input-number {
+    width: 44px;
+    min-width: 44px;
+    height: 26px;
+    padding: 0 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-family: var(--sl-font-mono, monospace);
+    font-weight: 600;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    -moz-appearance: textfield;
+    box-sizing: border-box;
+}
+
+.component-tool-input-number::-webkit-outer-spin-button,
+.component-tool-input-number::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.component-tool-input-number:hover {
+    border-color: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.component-tool-input-number:focus {
+    border-color: #ffffff;
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.2);
+}
+
+.component-tool-quick-chips,
 .canvas-tool-quick-chips {
     display: flex;
     position: relative;
@@ -3197,6 +3542,7 @@
     user-select: none;
 }
 
+.component-tool-chips-glider,
 .canvas-tool-chips-glider {
     position: absolute;
     top: 2px;
@@ -3213,6 +3559,7 @@
     opacity: var(--glider-opacity, 1);
 }
 
+.component-tool-chip,
 .canvas-tool-chip {
     position: relative;
     z-index: 2;
@@ -3236,15 +3583,18 @@
     padding: 0;
 }
 
+.component-tool-chip:hover,
 .canvas-tool-chip:hover {
     color: #ffffff;
 }
 
+.component-tool-chip.active,
 .canvas-tool-chip.active {
     color: #000000 !important;
     font-weight: 700;
 }
 
+.component-tool-segmented,
 .canvas-tool-segmented {
     display: flex;
     position: relative;
@@ -3257,6 +3607,7 @@
     user-select: none;
 }
 
+.component-tool-segmented-glider,
 .canvas-tool-segmented-glider {
     position: absolute;
     top: 2px;
@@ -3274,6 +3625,7 @@
     opacity: var(--glider-opacity, 1);
 }
 
+.component-tool-segmented-btn,
 .canvas-tool-segmented-btn {
     position: relative;
     z-index: 2;
@@ -3297,6 +3649,7 @@
     line-height: 1;
 }
 
+.component-tool-segmented-btn .material-symbols-rounded,
 .canvas-tool-segmented-btn .material-symbols-rounded {
     font-size: 1.05rem;
     line-height: 1;
@@ -3305,16 +3658,19 @@
     justify-content: center;
 }
 
+.component-tool-segmented-btn span,
 .canvas-tool-segmented-btn span {
     line-height: 1;
     display: inline-flex;
     align-items: center;
 }
 
+.component-tool-segmented-btn:hover,
 .canvas-tool-segmented-btn:hover {
     color: #ffffff;
 }
 
+.component-tool-segmented-btn.active,
 .canvas-tool-segmented-btn.active {
     color: #ffffff;
     font-weight: 600;
@@ -3378,54 +3734,35 @@
     flex-shrink: 0;
 }
 
-.component-layer-opacity-slider {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 100%;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 2px;
-    outline: none;
-    cursor: pointer;
-}
-
-.component-layer-opacity-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #ffffff;
-    cursor: pointer;
-    box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
-    transition: transform 0.15s ease;
-}
-
-.component-layer-opacity-slider::-webkit-slider-thumb:hover {
-    transform: scale(1.25);
-}
-
-.component-layer-opacity-slider::-moz-range-thumb {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #ffffff;
-    cursor: pointer;
-    box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
-}
-
 .component-layers-actions-footer {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
     gap: 4px;
     padding: 6px 8px;
     background: rgba(0, 0, 0, 0.25);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    flex-wrap: wrap;
+}
+
+.component-layers-actions-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+}
+
+.component-canvas-bottom-dock .component-action-pill {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    transform: none;
+    margin-bottom: 8px;
+    z-index: 46;
 }
 
 /* Minimap Tab in Sidebar */
+.component-minimap-panel,
 .canvas-minimap-panel {
     padding: 12px;
     display: flex;
@@ -3434,6 +3771,7 @@
     gap: 10px;
 }
 
+.component-minimap-canvas-wrapper,
 .canvas-minimap-canvas-wrapper {
     position: relative;
     width: 200px;
@@ -3451,6 +3789,7 @@
     cursor: crosshair;
 }
 
+.component-minimap-canvas,
 .canvas-minimap-canvas {
     width: 100%;
     height: 100%;
@@ -3458,6 +3797,7 @@
     display: block;
 }
 
+.component-minimap-viewport-box,
 .canvas-minimap-viewport-box {
     position: absolute;
     top: 0;
@@ -3470,6 +3810,7 @@
     box-sizing: border-box;
 }
 
+.component-minimap-controls,
 .canvas-minimap-controls {
     display: flex;
     align-items: center;
@@ -3478,6 +3819,7 @@
     justify-content: center;
 }
 
+.component-minimap-stats,
 .canvas-minimap-stats {
     display: flex;
     align-items: center;
@@ -3491,18 +3833,21 @@
     color: rgba(255, 255, 255, 0.7);
 }
 
+.component-minimap-stat-item,
 .canvas-minimap-stat-item {
     display: flex;
     align-items: center;
     gap: 4px;
 }
 
+.component-minimap-stat-item .material-symbols-rounded,
 .canvas-minimap-stat-item .material-symbols-rounded {
     font-size: 0.95rem;
 }
 
 /* Mobile Responsive Toolbar Optimizations */
 @media (max-width: 768px) {
+    .component-property-bar,
     .canvas-top-property-bar {
         top: 8px;
         max-width: calc(100% - 24px);
@@ -3510,10 +3855,13 @@
         gap: 4px;
     }
 
+    .component-property-bar__section,
     .property-bar-left-section {
         gap: 4px;
     }
 
+    .component-property-bar__badge,
+    .component-property-bar__coords,
     .property-bar-tool-badge,
     .property-bar-coords-badge {
         height: 30px;
@@ -3521,6 +3869,7 @@
         font-size: 0.72rem;
     }
 
+    .component-property-bar__divider,
     .property-bar-divider {
         height: 20px;
         margin: 0 1px;

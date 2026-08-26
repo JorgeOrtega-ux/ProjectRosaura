@@ -1,4 +1,4 @@
-import { showMessage, setButtonLoading, restoreButton, closeDropdown } from '../../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, closeDropdown, updateRangeFill } from '../../../../core/utils/uiUtils.js';
 import { AnimationExporter } from '../../../../core/utils/AnimationExporter.js';
 
 export const InteractionLayers = {
@@ -62,11 +62,11 @@ export const InteractionLayers = {
             tabsContainer.setAttribute('data-active-tab', tabName);
         }
 
-        document.querySelectorAll('.canvas-sidebar-tab-btn[data-tab]').forEach(btn => {
+        document.querySelectorAll('.component-sidebar__tab-btn[data-tab]').forEach(btn => {
             btn.classList.toggle('active', btn.getAttribute('data-tab') === tabName);
         });
 
-        document.querySelectorAll('.canvas-sidebar-tab-content').forEach(content => {
+        document.querySelectorAll('.component-sidebar__tab-content').forEach(content => {
             const isTarget = content.getAttribute('data-sidebar-tab') === tabName;
             content.classList.toggle('active', isTarget);
             content.classList.toggle('disabled', !isTarget);
@@ -80,19 +80,104 @@ export const InteractionLayers = {
             if (this.renderWorker) {
                 this.renderWorker.postMessage({ type: 'GET_LAYERS_STATE' });
             }
-        } else if (tabName === 'color') {
-            if (typeof this.renderCustomPickedColors === 'function') this.renderCustomPickedColors();
-            if (typeof this.updateDualColorSwatchesUI === 'function') this.updateDualColorSwatchesUI();
-            if (typeof this.renderShadingRamps === 'function') this.renderShadingRamps(this.currentColor);
         } else if (tabName === 'minimap') {
-            this.updateMinimap();
+            if (typeof this.updateMinimap === 'function') {
+                this.updateMinimap();
+            }
         }
     },
 
+    toggleLayersCarousel() {
+        const carousel = document.querySelector('[data-ref="layers-bottom-carousel"]');
+        if (!carousel) return;
+        this.isLayersCarouselOpen = !this.isLayersCarouselOpen;
+        carousel.classList.toggle('disabled', !this.isLayersCarouselOpen);
+        if (this.isLayersCarouselOpen) {
+            this.renderBottomCarousel();
+        }
+        const btnToggle = document.querySelector('[data-ref="btn-footer-layers-carousel"]');
+        if (btnToggle) {
+            btnToggle.classList.toggle('active', this.isLayersCarouselOpen);
+        }
+    },
+
+    toggleAnimationCarousel() {
+        this.carouselMode = 'animation';
+        const carousel = document.querySelector('[data-ref="layers-bottom-carousel"]');
+        if (!carousel) return;
+        this.isLayersCarouselOpen = true;
+        carousel.classList.remove('disabled');
+        this.renderBottomCarousel();
+        const btnToggle = document.querySelector('[data-ref="btn-footer-layers-carousel"]');
+        if (btnToggle) {
+            btnToggle.classList.add('active');
+        }
+    },
+
+    toggleLayerModeCarousel() {
+        this.carouselMode = 'layers';
+        const carousel = document.querySelector('[data-ref="layers-bottom-carousel"]');
+        if (!carousel) return;
+        this.isLayersCarouselOpen = true;
+        carousel.classList.remove('disabled');
+        this.renderBottomCarousel();
+        const btnToggle = document.querySelector('[data-ref="btn-footer-layers-carousel"]');
+        if (btnToggle) {
+            btnToggle.classList.add('active');
+        }
+    },
+
+    togglePlayAnimation() {
+        this.isPlayingAnimation = !this.isPlayingAnimation;
+        const playBtns = document.querySelectorAll('[data-action="togglePlayAnimation"]');
+        playBtns.forEach(btn => {
+            btn.classList.toggle('active', this.isPlayingAnimation);
+            btn.innerHTML = `<span class="material-symbols-rounded">${this.isPlayingAnimation ? 'pause' : 'play_arrow'}</span>`;
+        });
+
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({
+                type: 'SET_ANIMATION_PLAYING',
+                payload: { isPlaying: this.isPlayingAnimation, fps: this.animationFps || 12 }
+            });
+        }
+    },
+
+    toggleOnionSkin() {
+        this.showOnionSkin = !this.showOnionSkin;
+        const onionBtns = document.querySelectorAll('[data-action="toggleOnionSkin"]');
+        onionBtns.forEach(btn => {
+            btn.classList.toggle('active', this.showOnionSkin);
+        });
+
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({
+                type: 'SET_ONION_SKIN',
+                payload: { enabled: this.showOnionSkin }
+            });
+        }
+        this.requestRender();
+    },
+
     setLayerOpacity(val) {
-        const num = Math.max(0, Math.min(100, parseInt(val, 10) || 100));
+        const num = Math.max(0, Math.min(100, parseInt(val, 10) || 0));
         const valEl = document.querySelector('[data-ref="layer-opacity-val"]');
         if (valEl) valEl.textContent = `${num}%`;
+
+        const slider = document.querySelector('[data-ref="layer-opacity-slider"]');
+        const numInput = document.querySelector('[data-ref="layer-opacity-number"]');
+        if (slider) {
+            if (document.activeElement !== slider) slider.value = num;
+            updateRangeFill(slider);
+        }
+        if (numInput && document.activeElement !== numInput) {
+            numInput.value = num;
+        }
+
+        const previewCanvas = document.querySelector('[data-ref="layer-preview-canvas"]');
+        if (previewCanvas) {
+            previewCanvas.style.opacity = (num / 100).toString();
+        }
 
         const activeLayer = this.layers ? this.layers.find(l => l.id === this.activeLayerId) : null;
         if (activeLayer) {
@@ -379,15 +464,30 @@ export const InteractionLayers = {
 
     handleLayerPreviewUpdated(payload) {
         if (!payload) return;
-        const previewCanvas = document.querySelector('[data-ref="layer-preview-canvas"]');
-        if (previewCanvas) {
-            const ctx = previewCanvas.getContext('2d');
-            if (ctx) {
-                ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-                if (payload.imageBitmap) {
-                    ctx.imageSmoothingEnabled = false;
-                    ctx.drawImage(payload.imageBitmap, 0, 0, previewCanvas.width, previewCanvas.height);
+
+        if (payload.layerId === this.activeLayerId) {
+            const previewCanvas = document.querySelector('[data-ref="layer-preview-canvas"]');
+            if (previewCanvas) {
+                const ctx = previewCanvas.getContext('2d');
+                if (ctx) {
+                    ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                    if (payload.imageBitmap) {
+                        ctx.imageSmoothingEnabled = false;
+                        ctx.drawImage(payload.imageBitmap, 0, 0, previewCanvas.width, previewCanvas.height);
+                    }
                 }
+                const activeLayer = this.layers ? this.layers.find(l => l.id === this.activeLayerId) : null;
+                const op = activeLayer && activeLayer.opacity !== undefined ? activeLayer.opacity : 1;
+                previewCanvas.style.opacity = op.toString();
+            }
+
+            const nameEl = document.querySelector('[data-ref="layer-active-name"]');
+            if (nameEl && payload.layerName) {
+                nameEl.textContent = payload.layerName;
+            }
+            const dimEl = document.querySelector('[data-ref="layer-active-dimensions"]');
+            if (dimEl && payload.boardWidth && payload.boardHeight) {
+                dimEl.textContent = `${payload.boardWidth}x${payload.boardHeight} px`;
             }
         }
 
@@ -401,15 +501,6 @@ export const InteractionLayers = {
                     cCtx.drawImage(payload.imageBitmap, 0, 0, c.width, c.height);
                 }
             });
-        }
-
-        const nameEl = document.querySelector('[data-ref="layer-active-name"]');
-        if (nameEl && payload.layerName) {
-            nameEl.textContent = payload.layerName;
-        }
-        const dimEl = document.querySelector('[data-ref="layer-active-dimensions"]');
-        if (dimEl && payload.boardWidth && payload.boardHeight) {
-            dimEl.textContent = `${payload.boardWidth}x${payload.boardHeight} px`;
         }
     },
 
@@ -687,7 +778,7 @@ export const InteractionLayers = {
             lockBtn.className = `canvas-design-layer-card__action-btn canvas-design-layer-card__action-btn--lock ${isLocked ? 'active' : ''}`;
             lockBtn.setAttribute('data-action', 'toggleLayerLock');
             lockBtn.setAttribute('data-layer-id', layer.id);
-            lockBtn.setAttribute('data-tooltip', isLocked ? (window.__('tooltip_layer_unlock') || 'Desbloquear') : (window.__('tooltip_layer_lock') || 'Bloquear'));
+            lockBtn.setAttribute('data-tooltip', isLocked ? window.__('tooltip_layer_unlock') : window.__('tooltip_layer_lock'));
             lockBtn.setAttribute('data-position', 'top');
             lockBtn.innerHTML = `<span class="material-symbols-rounded">${isLocked ? 'lock' : 'lock_open'}</span>`;
             actions.appendChild(lockBtn);
@@ -698,7 +789,7 @@ export const InteractionLayers = {
             visBtn.className = `canvas-design-layer-card__action-btn canvas-design-layer-card__action-btn--vis ${!isVisible ? 'hidden-btn' : ''}`;
             visBtn.setAttribute('data-action', 'toggleLayerVisibility');
             visBtn.setAttribute('data-layer-id', layer.id);
-            visBtn.setAttribute('data-tooltip', isVisible ? (window.__('tooltip_layer_hide') || 'Ocultar capa (Alt+clic para aislar)') : (window.__('tooltip_layer_show') || 'Mostrar capa'));
+            visBtn.setAttribute('data-tooltip', isVisible ? window.__('tooltip_layer_hide') : window.__('tooltip_layer_show'));
             visBtn.setAttribute('data-position', 'top');
             visBtn.innerHTML = `<span class="material-symbols-rounded">${isVisible ? 'visibility' : 'visibility_off'}</span>`;
             actions.appendChild(visBtn);
@@ -711,7 +802,7 @@ export const InteractionLayers = {
         const addCard = document.createElement('div');
         addCard.className = 'canvas-design-layer-card--add';
         addCard.setAttribute('data-action', 'addLayer');
-        addCard.setAttribute('data-tooltip', window.__('tooltip_add_layer') || 'Nueva capa');
+        addCard.setAttribute('data-tooltip', window.__('tooltip_add_layer'));
         addCard.setAttribute('data-position', 'top');
         addCard.innerHTML = '<span class="material-symbols-rounded">add</span>';
         track.appendChild(addCard);
@@ -723,7 +814,7 @@ export const InteractionLayers = {
         if (footerCountEl && this.layers) {
             const total = this.layers.length || 1;
             const activeIndex = this.layers.findIndex(l => l.id === this.activeLayerId);
-            const currentNum = activeIndex >= 0 ? (total - activeIndex) : 1;
+            const currentNum = activeIndex >= 0 ? (activeIndex + 1) : 1;
             footerCountEl.textContent = `${currentNum}/${total}`;
         }
 
@@ -737,9 +828,18 @@ export const InteractionLayers = {
         if (activeLayer) {
             const opVal = Math.round((activeLayer.opacity !== undefined ? activeLayer.opacity : 1) * 100);
             const slider = document.querySelector('[data-ref="layer-opacity-slider"]');
+            const numInput = document.querySelector('[data-ref="layer-opacity-number"]');
             const opValEl = document.querySelector('[data-ref="layer-opacity-val"]');
-            if (slider) slider.value = opVal;
+            const previewCanvas = document.querySelector('[data-ref="layer-preview-canvas"]');
+            if (slider) {
+                if (document.activeElement !== slider) slider.value = opVal;
+                updateRangeFill(slider);
+            }
+            if (numInput && document.activeElement !== numInput) {
+                numInput.value = opVal;
+            }
             if (opValEl) opValEl.textContent = `${opVal}%`;
+            if (previewCanvas) previewCanvas.style.opacity = (opVal / 100).toString();
 
             const blendNames = {
                 normal: 'Normal',
@@ -764,7 +864,9 @@ export const InteractionLayers = {
             }
         }
 
-        this.layers.forEach((layer) => {
+        // Render layers in descending stack order (top layer first in DOM)
+        const reversedLayers = [...this.layers].reverse();
+        reversedLayers.forEach((layer) => {
             const isActive = layer.id === this.activeLayerId;
             const isLocked = !!layer.locked;
             const isVisible = layer.visible !== false;
@@ -816,25 +918,29 @@ export const InteractionLayers = {
                 if (!draggedId || draggedId === layer.id) return;
 
                 const fromIdx = this.layers.findIndex(l => l.id === draggedId);
-                let toIdx = this.layers.findIndex(l => l.id === layer.id);
+                const toIdx = this.layers.findIndex(l => l.id === layer.id);
                 if (fromIdx < 0 || toIdx < 0) return;
 
                 const rect = item.getBoundingClientRect();
                 const midY = rect.top + rect.height / 2;
-                const isBelow = e.clientY >= midY;
+                const isAboveInVisualList = e.clientY < midY;
 
                 const newLayers = [...this.layers];
                 const [moved] = newLayers.splice(fromIdx, 1);
-                
-                let targetInsertIdx = this.layers.findIndex(l => l.id === layer.id);
-                if (fromIdx < targetInsertIdx) targetInsertIdx--;
-                if (isBelow) targetInsertIdx++;
-                
-                targetInsertIdx = Math.max(0, Math.min(newLayers.length, targetInsertIdx));
-                newLayers.splice(targetInsertIdx, 0, moved);
+
+                // In stack array (0=bottom, N-1=top):
+                // Dropping above in visual list means higher stack index
+                let insertIdx = newLayers.findIndex(l => l.id === layer.id);
+                if (isAboveInVisualList) {
+                    insertIdx++;
+                }
+
+                insertIdx = Math.max(0, Math.min(newLayers.length, insertIdx));
+                newLayers.splice(insertIdx, 0, moved);
 
                 this.layers = newLayers;
                 this.renderLayersUI();
+                this.renderLayersCarouselUI();
 
                 if (this.renderWorker) {
                     this.renderWorker.postMessage({
@@ -847,7 +953,7 @@ export const InteractionLayers = {
             // Visibility toggle
             const visLabel = document.createElement('label');
             visLabel.className = 'component-layer-item__visibility';
-            visLabel.setAttribute('data-tooltip', isVisible ? window.__('tooltip_layer_visibility') : window.__('tooltip_layer_visibility'));
+            visLabel.setAttribute('data-tooltip', window.__('tooltip_layer_visibility'));
             visLabel.setAttribute('data-position', 'top');
 
             const visInput = document.createElement('input');
@@ -941,7 +1047,7 @@ export const InteractionLayers = {
     addLayer() {
         if (!this.isOfflineMode || !this.renderWorker) return;
         const count = (this.layers ? this.layers.length : 0) + 1;
-        const defaultName = `${window.__('lbl_default_layer_name') || 'Capa'} ${count}`;
+        const defaultName = `${window.__('lbl_default_layer_name')} ${count}`;
         this.renderWorker.postMessage({
             type: 'ADD_LAYER',
             payload: { name: defaultName }
@@ -952,7 +1058,7 @@ export const InteractionLayers = {
         if (!this.isOfflineMode || !this.renderWorker) return;
         const targetId = layerId || this.activeLayerId;
         if (this.layers && this.layers.length <= 1) {
-            showMessage(window.__('msg_layer_cannot_delete_last') || 'No se puede eliminar la única capa.', 'warning');
+            showMessage(window.__('msg_layer_cannot_delete_last'), 'warning');
             return;
         }
         this.renderWorker.postMessage({
@@ -1246,7 +1352,7 @@ export const InteractionLayers = {
 
         const label = document.querySelector('[data-ref="export-download-label"]');
         if (label) {
-            label.textContent = format === 'spritesheet' ? (window.__('btn_download_spritesheet') || 'Descargar Sprite Sheet') : (window.__('btn_download_gif') || 'Descargar GIF');
+            label.textContent = format === 'spritesheet' ? window.__('btn_download_spritesheet') : window.__('btn_download_gif');
         }
 
         this.startExportPreviewLoop();
@@ -1435,7 +1541,7 @@ export const InteractionLayers = {
                 });
                 if (gifBlob) {
                     AnimationExporter.downloadBlob(gifBlob, `${canvasName}_${scale}x.gif`);
-                    showMessage(window.__('msg_gif_exported_success') || 'GIF animado exportado con éxito', 'success');
+                    showMessage(window.__('msg_gif_exported_success'), 'success');
                 }
             } else if (format === 'spritesheet') {
                 const result = AnimationExporter.exportToSpriteSheet(frameCanvases, {
@@ -1456,7 +1562,7 @@ export const InteractionLayers = {
                         const jsonBlob = new Blob([JSON.stringify(result.jsonMetadata, null, 2)], { type: 'application/json' });
                         AnimationExporter.downloadBlob(jsonBlob, `spritesheet_${canvasName}_${scale}x.json`);
                     }
-                    showMessage(window.__('msg_spritesheet_exported_success') || 'Sprite Sheet exportado con éxito', 'success');
+                    showMessage(window.__('msg_spritesheet_exported_success'), 'success');
                 }
             }
 
@@ -1464,7 +1570,7 @@ export const InteractionLayers = {
                 window.modalSystem.closeCurrent(true);
             }
         } catch (e) {
-            showMessage(window.__('err_export_animation') || 'Error al exportar la animación', 'error');
+            showMessage(window.__('err_export_animation'), 'error');
         } finally {
             if (btn) restoreButton(btn);
         }

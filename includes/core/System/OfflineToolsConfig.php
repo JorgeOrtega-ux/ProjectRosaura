@@ -188,7 +188,7 @@ class OfflineToolsConfig {
                 'id'          => 'dither',
                 'name_key'    => 'tooltip_dither',
                 'icon'        => 'texture',
-                'shortcut'    => 'D',
+                'shortcut'    => 'K',
                 'action'      => 'toggleOfflineDither',
                 'ref'         => 'btn-offline-dither',
                 'subtoolbar'  => [
