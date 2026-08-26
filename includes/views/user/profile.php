@@ -212,10 +212,11 @@ $subBg = $user['subscription_color'] ?? 'var(--text-muted)';
                 <?php endforeach; ?>
             </div>
         <?php else: ?>
-            <div class="component-empty-state" style="padding: 60px 20px; text-align: center;">
-                <span class="material-symbols-rounded" style="font-size: 48px; color: var(--text-muted);">palette</span>
-                <p class="component-page-description" style="margin-top: 12px;"><?php echo __('profile.no_publications'); ?></p>
-            </div>
+            <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                'type' => 'palette',
+                'title' => __('profile.no_publications_title'),
+                'message' => __('profile.no_publications')
+            ]); ?>
         <?php endif; ?>
     </div>
 
@@ -293,10 +294,11 @@ $subBg = $user['subscription_color'] ?? 'var(--text-muted)';
                 <?php endforeach; ?>
             </div>
         <?php else: ?>
-            <div class="component-empty-state" style="padding: 60px 20px; text-align: center;">
-                <span class="material-symbols-rounded" style="font-size: 48px; color: var(--text-muted);">draw</span>
-                <p class="component-page-description" style="margin-top: 12px;"><?php echo __('profile.no_canvases'); ?></p>
-            </div>
+            <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                'type' => 'canvas',
+                'title' => __('profile.no_canvases_title'),
+                'message' => __('profile.no_canvases')
+            ]); ?>
         <?php endif; ?>
     </div>
 </div>

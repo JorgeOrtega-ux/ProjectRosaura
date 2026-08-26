@@ -14,10 +14,12 @@ $rowsToCompare = $upgradeData['rowsToCompare'];
         <div class="component-viewport">
             <div class="component-wrapper component-wrapper--full">
                 <div class="component-bottom" data-ref="dynamic-content-area">
-                    <div class="component-empty-state" data-ref="empty-state-rendered">
-                        <span class="material-symbols-rounded component-empty-state-icon">dashboard_customize</span>
-                        <p class="component-empty-state-text"><?php echo __('upgrade_empty_plans'); ?></p>
-                    </div>
+                    <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                        'type' => 'subscriptions',
+                        'title' => __('upgrade_page_title'),
+                        'message' => __('upgrade_empty_plans'),
+                        'ref' => 'empty-state-rendered'
+                    ]); ?>
                 </div>
             </div>
         </div>

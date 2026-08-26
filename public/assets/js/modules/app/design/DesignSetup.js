@@ -199,7 +199,7 @@ export const DesignSetup = {
                 const btnBrush = document.querySelector('[data-action="toggleOfflineBrush"]');
                 if (btnBrush) btnBrush.classList.add('active');
             } else {
-                this.interactionMode = 'default';
+                this.interactionMode = 'normal';
                 document.querySelectorAll('[data-action^="toggleOffline"]').forEach(btn => btn.classList.remove('active'));
             }
             if (typeof this.updateTopPropertyBar === 'function') this.updateTopPropertyBar(this.interactionMode);

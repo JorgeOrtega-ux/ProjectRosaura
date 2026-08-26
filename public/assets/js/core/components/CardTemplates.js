@@ -406,7 +406,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                 </svg>
             `;
         }
-        if (type === 'snapshots' || type === 'gallery') {
+        if (type === 'snapshots' || type === 'gallery' || type === 'templates' || type === 'template' || type === 'library') {
             return `
                 <svg class="component-empty-state-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <defs>
@@ -540,7 +540,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                 </svg>
             `;
         }
-        if (type === 'messages' || type === 'chat') {
+        if (type === 'messages' || type === 'chat' || type === 'comments') {
             return `
                 <svg class="component-empty-state-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <defs>
@@ -641,7 +641,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                 </svg>
             `;
         }
-        if (type === 'subscriptions' || type === 'billing' || type === 'receipt') {
+        if (type === 'subscriptions' || type === 'billing' || type === 'receipt' || type === 'payment') {
             return `
                 <svg class="component-empty-state-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <defs>
@@ -790,17 +790,17 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         if (!detectedType) {
             if (opts.icon === 'search_off' || opts.icon === 'search') detectedType = 'search';
             else if (opts.icon === 'delete_outline' || opts.icon === 'restore_from_trash' || opts.icon === 'delete_forever') detectedType = 'trash';
-            else if (opts.icon === 'palette' || opts.icon === 'dashboard_customize' || opts.icon === 'dashboard') detectedType = 'canvas';
-            else if (opts.icon === 'history' || opts.icon === 'collections' || opts.icon === 'photo_library') detectedType = 'snapshots';
+            else if (opts.icon === 'palette' || opts.icon === 'dashboard_customize' || opts.icon === 'dashboard' || opts.icon === 'draw' || opts.icon === 'brush') detectedType = 'canvas';
+            else if (opts.icon === 'history' || opts.icon === 'collections' || opts.icon === 'photo_library' || opts.icon === 'image' || opts.icon === 'collections_bookmark') detectedType = 'snapshots';
             else if (opts.icon === 'explore' || opts.icon === 'public') detectedType = 'explore';
             else if (opts.icon === 'error' || opts.icon === 'wifi_off') detectedType = 'error';
             else if (opts.icon === 'group' || opts.icon === 'group_off' || opts.icon === 'person' || opts.icon === 'people') detectedType = 'users';
             else if (opts.icon === 'admin_panel_settings' || opts.icon === 'shield' || opts.icon === 'lock') detectedType = 'roles';
-            else if (opts.icon === 'chat' || opts.icon === 'sms' || opts.icon === 'forum') detectedType = 'messages';
+            else if (opts.icon === 'chat' || opts.icon === 'sms' || opts.icon === 'forum' || opts.icon === 'chat_bubble' || opts.icon === 'chat_bubble_outline' || opts.icon === 'comment') detectedType = 'messages';
             else if (opts.icon === 'cloud_off' || opts.icon === 'backup' || opts.icon === 'cloud') detectedType = 'backups';
             else if (opts.icon === 'folder_off' || opts.icon === 'article' || opts.icon === 'description') detectedType = 'logs';
             else if (opts.icon === 'campaign' || opts.icon === 'ad_units') detectedType = 'advertisements';
-            else if (opts.icon === 'credit_card' || opts.icon === 'receipt_long' || opts.icon === 'workspace_premium' || opts.icon === 'credit_card_off') detectedType = 'subscriptions';
+            else if (opts.icon === 'credit_card' || opts.icon === 'receipt_long' || opts.icon === 'workspace_premium' || opts.icon === 'credit_card_off' || opts.icon === 'payment') detectedType = 'subscriptions';
             else if (opts.icon === 'check_circle' || opts.icon === 'verified') detectedType = 'reports';
             else if (opts.icon === 'link_off' || opts.icon === 'inbox' || opts.icon === 'send') detectedType = 'invites';
             else if (opts.icon === 'gavel' || opts.icon === 'shield_person') detectedType = 'sanctions';
@@ -808,6 +808,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         }
 
         const refAttr = opts.ref ? `data-ref="${escapeHTML(opts.ref)}"` : 'data-ref="empty-state-rendered"';
+        const extraClass = (opts.class || opts.className) ? ` ${escapeHTML(opts.class || opts.className)}` : '';
 
         let graphicHtml = '';
         const svgContent = CardTemplates.getEmptyGraphicSvg(detectedType);
@@ -822,7 +823,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         const actionsHtml = (typeof opts.actions === 'string' && opts.actions) ? `<div class="component-empty-state-actions">${opts.actions}</div>` : '';
 
         return `
-            <div class="component-empty-state" ${refAttr}>
+            <div class="component-empty-state${extraClass}" ${refAttr}>
                 ${graphicHtml}
                 ${titleHtml}
                 ${descHtml}

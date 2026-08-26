@@ -2454,11 +2454,11 @@ export class DesignChat {
 
             if (response && response.success && Array.isArray(response.photos)) {
                 if (response.photos.length === 0) {
-                    grid.innerHTML = `
-                        <div class="chat-info-gallery-empty">
-                            ${window.__('lbl_no_photos') || 'No hay fotos enviadas'}
-                        </div>
-                    `;
+                    grid.innerHTML = CardTemplates.emptyState({
+                        type: 'snapshots',
+                        title: window.__('lbl_no_photos_title') || 'Sin fotos enviadas',
+                        message: window.__('lbl_no_photos_desc') || window.__('lbl_no_photos') || 'No se han compartido imágenes en el chat aún.'
+                    });
                 } else {
                     grid.innerHTML = '';
                     response.photos.forEach((photoUrl, pIdx) => {

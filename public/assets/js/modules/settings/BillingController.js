@@ -232,12 +232,20 @@ export class BillingController {
                 this.paymentMethodsArea.innerHTML = html;
             } else {
                 const emptyMsg = window.__('empty_billing_methods');
-                this.paymentMethodsArea.innerHTML = CardTemplates.emptyState(emptyMsg, 'credit_card_off');
+                this.paymentMethodsArea.innerHTML = CardTemplates.emptyState({
+                    type: 'subscriptions',
+                    title: window.__('billing_methods_empty_title') || 'Sin métodos de pago',
+                    message: emptyMsg
+                });
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
                 const emptyMsg = window.__('error_fetching_payment_methods');
-                this.paymentMethodsArea.innerHTML = CardTemplates.emptyState(emptyMsg, 'error');
+                this.paymentMethodsArea.innerHTML = CardTemplates.emptyState({
+                    type: 'error',
+                    title: window.__('error_title') || 'Error al cargar',
+                    message: emptyMsg
+                });
             }
         } finally {
             const pmAccordion = document.querySelector('[data-ref="payment-methods-accordion"]');

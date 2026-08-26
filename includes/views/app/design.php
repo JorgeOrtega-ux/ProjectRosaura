@@ -152,6 +152,7 @@ if (!isset($showDesignTools)) {
                         <span class="material-symbols-rounded">chevron_left</span>
                     </button>
 
+                    <?php if (!$isOnlineModeActive): ?>
                     <div class="component-property-bar__context">
                         <!-- Tool settings icon shortcut -->
                         <button type="button" class="component-button component-button--icon component-button--h32" data-action="openToolSettings" data-ref="prop-btn-tool-settings" data-tooltip="<?php echo __('tooltip_tool_settings'); ?>" data-position="bottom">
@@ -288,6 +289,7 @@ if (!isset($showDesignTools)) {
                     </div>
 
                     <div class="component-property-bar__divider"></div>
+                    <?php endif; ?>
 
                     <div class="component-property-bar__actions" data-ref="design-tools-actions">
                         <?php if ($isOnlineModeActive): ?>
@@ -328,6 +330,7 @@ if (!isset($showDesignTools)) {
                         <div class="component-property-bar__divider"></div>
                         <?php endif; ?>
 
+                        <?php if (!$isOnlineModeActive): ?>
                         <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleTileGrid" data-tooltip="<?php echo __('tooltip_tile_grid'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded msr-grid_on">grid_on</span>
                         </button>
@@ -337,12 +340,15 @@ if (!isset($showDesignTools)) {
                         <button type="button" class="component-button component-button--icon component-button--h32" data-action="redo" data-tooltip="<?php echo __('tooltip_redo'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded msr-redo">redo</span>
                         </button>
+                        <?php endif; ?>
                         <button type="button" class="component-button component-button--icon component-button--h32" data-action="openPublishModal" data-ref="btn-publish-artwork" data-tooltip="<?php echo __('publications.btn_publish'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded msr-rocket_launch component-text-accent">rocket_launch</span>
                         </button>
+                        <?php if (!$isOnlineModeActive): ?>
                         <button type="button" class="component-button component-button--icon component-button--h32 property-bar-btn--sidebar-toggle" data-action="toggleUnifiedSidebar" data-ref="btn-top-sidebar-toggle" data-tooltip="<?php echo __('tooltip_toggle_sidebar'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded msr-view_sidebar">view_sidebar</span>
                         </button>
+                        <?php endif; ?>
                     </div>
 
                     <button type="button" class="component-button component-button--icon component-button--h32 component-toolbar__nav-btn component-toolbar__nav-btn--right disabled" data-action="scrollCanvasToolbarRight" data-tooltip="<?php echo __('btn_scroll_right'); ?>" data-position="bottom">

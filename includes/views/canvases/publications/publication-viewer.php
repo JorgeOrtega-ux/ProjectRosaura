@@ -20,17 +20,12 @@ if (!$pubData):
 ?>
 <div class="view-content">
     <div class="component-wrapper">
-        <div class="component-empty-state" style="padding: 80px 20px; text-align: center;">
-            <span class="material-symbols-rounded" style="font-size: 64px; color: var(--text-muted);">broken_image</span>
-            <h2 class="component-page-title" style="margin-top: 16px;"><?php echo __('publications.not_found'); ?></h2>
-            <p class="component-page-description">La publicación que buscas no existe o ha sido eliminada.</p>
-            <div style="margin-top: 24px;">
-                <button type="button" class="component-button component-button--primary component-button--h38" data-nav="/">
-                    <span class="material-symbols-rounded">home</span>
-                    <span><?php echo __('home'); ?></span>
-                </button>
-            </div>
-        </div>
+        <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+            'type' => 'search',
+            'title' => __('publications.not_found'),
+            'message' => 'La publicación que buscas no existe o ha sido eliminada.',
+            'actions' => '<button type="button" class="component-button component-button--primary component-button--h38" data-nav="/"><span class="material-symbols-rounded">home</span><span>' . __('home') . '</span></button>'
+        ]); ?>
     </div>
 </div>
 <?php

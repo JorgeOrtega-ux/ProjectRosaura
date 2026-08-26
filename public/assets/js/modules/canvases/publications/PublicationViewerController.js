@@ -480,11 +480,11 @@ export class PublicationViewerController {
             if (loader) loader.classList.add('disabled');
             const listEl = document.querySelector('[data-ref="comments-list"]');
             if (listEl) {
-                listEl.innerHTML = `
-                    <div class="component-empty-state" style="padding: 30px 20px; text-align: center;">
-                        <p class="component-text-danger">Error al cargar los comentarios.</p>
-                    </div>
-                `;
+                listEl.innerHTML = CardTemplates.emptyState({
+                    type: 'error',
+                    title: window.__('error_loading_comments_title') || 'Error al cargar comentarios',
+                    message: window.__('error_loading_comments') || 'No se pudieron cargar los comentarios.'
+                });
             }
         }
     }

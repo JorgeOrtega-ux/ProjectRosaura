@@ -22,10 +22,13 @@ $commentsCount = $pubData['comments_count'] ?? 0;
         
         <div class="component-menu-section-parent component-menu-section-parent--chat chat-active-only">
             <div class="component-menu-center component-chat-messages" data-ref="comments-list">
-                <div class="component-empty-state disabled" data-ref="comments-empty-state">
-                    <span class="material-symbols-rounded component-empty-state-icon">chat_bubble_outline</span>
-                    <p class="component-empty-state-text"><?php echo __('publications.no_comments'); ?></p>
-                </div>
+                <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                    'type' => 'messages',
+                    'title' => __('publications.no_comments_title'),
+                    'message' => __('publications.no_comments'),
+                    'class' => 'disabled',
+                    'ref' => 'comments-empty-state'
+                ]); ?>
                 <div class="component-loader-center component-loader-center--compact component-loader-center--chat disabled" data-ref="comments-loader"></div>
             </div>
             

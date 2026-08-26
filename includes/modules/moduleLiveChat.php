@@ -50,10 +50,13 @@ $maxMB = $maxUploadMB ?? 10;
         
         <div class="component-menu-section-parent component-menu-section-parent--chat chat-active-only">
             <div class="component-menu-center component-chat-messages" data-ref="chat-messages-container">
-                <div class="component-empty-state disabled" data-ref="empty-state-rendered">
-                    <span class="material-symbols-rounded component-empty-state-icon">error</span>
-                    <p class="component-empty-state-text"><?php echo __('chat_no_messages'); ?></p>
-                </div>
+                <?php echo \App\Core\Helpers\Utils::renderEmptyState([
+                    'type' => 'chat',
+                    'title' => __('chat_no_messages_title'),
+                    'message' => __('chat_no_messages_desc'),
+                    'class' => 'disabled',
+                    'ref' => 'empty-state-rendered'
+                ]); ?>
                 <div class="component-loader-center component-loader-center--compact component-loader-center--chat" data-ref="chat-loader"></div>
             </div>
             
@@ -109,19 +112,15 @@ $maxMB = $maxUploadMB ?? 10;
         </div>
         
         <div class="component-menu-section-parent chat-disabled-only">
-            <div class="component-chat-disabled-panel">
-                <span class="material-symbols-rounded component-chat-disabled-icon">chat_off</span>
-                <h3 class="component-chat-disabled-title"><?php echo __('chat_deactivated_title'); ?></h3>
-                <p class="component-chat-disabled-desc">
-                    <?php echo __('chat_deactivated_desc'); ?>
-                </p>
-                <?php if (isset($isOwner) && $isOwner): ?>
-                <button class="component-button component-button--h40" data-action="activateChatFromPanel">
-                    <span class="material-symbols-rounded">chat</span>
-                    <span><?php echo __('btn_activate_chat'); ?></span>
-                </button>
-                <?php endif; ?>
-            </div>
+            <?php 
+            $activateBtn = (isset($isOwner) && $isOwner) ? '<button type="button" class="component-button component-button--h40" data-action="activateChatFromPanel"><span class="material-symbols-rounded">chat</span><span>' . __('btn_activate_chat') . '</span></button>' : '';
+            echo \App\Core\Helpers\Utils::renderEmptyState([
+                'type' => 'chat',
+                'title' => __('chat_deactivated_title'),
+                'message' => __('chat_deactivated_desc'),
+                'actions' => $activateBtn
+            ]); 
+            ?>
         </div>
     </div>
 

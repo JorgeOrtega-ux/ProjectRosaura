@@ -429,6 +429,30 @@ html.dark-theme .component-top.shadow {
     flex-wrap: wrap;
 }
 
+.component-menu .component-empty-state,
+.component-chat-messages .component-empty-state,
+.component-menu-section-body .component-empty-state {
+    min-height: 200px;
+    padding: 24px 16px;
+}
+
+.component-menu .component-empty-state-graphic,
+.component-chat-messages .component-empty-state-graphic,
+.component-menu-section-body .component-empty-state-graphic {
+    width: 100px;
+    height: 100px;
+}
+
+.component-menu .component-empty-state-title,
+.component-chat-messages .component-empty-state-title {
+    font-size: 0.9375rem;
+}
+
+.component-menu .component-empty-state-desc,
+.component-chat-messages .component-empty-state-desc {
+    font-size: 0.75rem;
+}
+
 .component-empty-table-cell {
     padding: 0;
     width: 100%;

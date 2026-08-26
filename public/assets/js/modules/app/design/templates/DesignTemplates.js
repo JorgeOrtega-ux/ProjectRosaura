@@ -300,15 +300,19 @@ export const DesignTemplates = {
             container.classList.remove('active'); container.classList.add('disabled');
             if (emptyState) {
                 emptyState.classList.remove('disabled'); emptyState.classList.add('active');
-                const emptyText = emptyState.querySelector('.component-empty-state-text');
-                if (emptyText) emptyText.innerText = window.__('no_saved_templates');
+                const emptyTitle = emptyState.querySelector('.component-empty-state-title');
+                if (emptyTitle) emptyTitle.innerText = window.__('no_saved_templates_title') || 'Sin plantillas guardadas';
+                const emptyDesc = emptyState.querySelector('.component-empty-state-desc, .component-empty-state-text');
+                if (emptyDesc) emptyDesc.innerText = window.__('no_saved_templates_desc') || window.__('no_saved_templates');
             }
             this.updateTemplateUI();
             return;
         }
 
         container.classList.remove('disabled'); container.classList.add('active');
-        if (emptyState) emptyState.classList.remove('active'); emptyState.classList.add('disabled');
+        if (emptyState) {
+            emptyState.classList.remove('active'); emptyState.classList.add('disabled');
+        }
 
         templates.forEach(tpl => {
             const card = document.createElement('div');

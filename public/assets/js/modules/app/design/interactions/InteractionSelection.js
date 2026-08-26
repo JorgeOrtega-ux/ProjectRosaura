@@ -369,10 +369,10 @@ export const InteractionSelection = {
             return;
         }
 
-        if (this.interactionMode === 'normal') {
-            this.cooldownBalance -= validPixels.length;
+        if (!this.isOfflineMode && (this.interactionMode === 'normal' || this.interactionMode === 'default')) {
+            this.cooldownBalance = Math.max(0, (this.cooldownBalance !== undefined ? this.cooldownBalance : this.cooldownMax) - validPixels.length);
             
-            if (this.cooldownBalance < this.cooldownMax && this.cooldownNextIn <= 0) {
+            if (this.cooldownBalance < this.cooldownMax && (this.cooldownNextIn <= 0 || !this.lastSyncTime)) {
                 this.cooldownNextIn = this.cooldownSec;
                 this.lastSyncTime = Date.now();
             }

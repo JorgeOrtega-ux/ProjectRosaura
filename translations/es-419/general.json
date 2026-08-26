@@ -2586,5 +2586,20 @@
     "profile.stats_views": "Vistas",
     "profile.live_active": "En vivo ahora",
     "profile.join_live": "Unirse al lienzo",
-    "filter_publications": "Publicaciones"
+    "filter_publications": "Publicaciones",
+    "publications.no_comments_title": "Sin comentarios",
+    "profile.no_publications_title": "Sin publicaciones",
+    "profile.no_canvases_title": "Sin lienzos públicos",
+    "no_saved_templates_title": "Sin plantillas guardadas",
+    "no_saved_templates_desc": "Sube imágenes para usarlas como guía de trazado o inspiración.",
+    "chat_no_messages_title": "Sin mensajes aún",
+    "chat_no_messages_desc": "Sé el primero en enviar un mensaje en este lienzo.",
+    "lbl_no_photos_title": "Sin fotos enviadas",
+    "lbl_no_photos_desc": "No se han compartido imágenes en el chat aún.",
+    "lbl_no_images_title": "Sin imágenes",
+    "lbl_no_images_desc": "No hay imágenes disponibles.",
+    "billing_methods_empty_title": "Sin métodos de pago",
+    "no_colors_title": "Sin colores disponibles",
+    "error_loading_comments_title": "Error al cargar comentarios",
+    "error_loading_comments": "No se pudieron cargar los comentarios."
 }

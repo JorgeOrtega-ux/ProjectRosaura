@@ -923,6 +923,9 @@ class Utils {
 
             case 'snapshots':
             case 'gallery':
+            case 'templates':
+            case 'template':
+            case 'library':
                 return '<svg class="component-empty-state-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <defs>
                         <linearGradient id="photoGrad" x1="0" y1="0" x2="1" y2="1">
@@ -1053,6 +1056,7 @@ class Utils {
 
             case 'messages':
             case 'chat':
+            case 'comments':
                 return '<svg class="component-empty-state-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <defs>
                         <linearGradient id="chatBubble1" x1="20" y1="25" x2="90" y2="85" gradientUnits="userSpaceOnUse">
@@ -1151,6 +1155,7 @@ class Utils {
             case 'subscriptions':
             case 'billing':
             case 'receipt':
+            case 'payment':
                 return '<svg class="component-empty-state-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <defs>
                         <linearGradient id="cardGradSub" x1="25" y1="35" x2="115" y2="95" gradientUnits="userSpaceOnUse">
@@ -1280,10 +1285,11 @@ class Utils {
         $message = $options['message'] ?? ($options['desc'] ?? '');
         $actions = $options['actions'] ?? '';
         $ref = !empty($options['ref']) ? ' data-ref="' . htmlspecialchars($options['ref']) . '"' : '';
+        $extraClass = !empty($options['class']) ? ' ' . htmlspecialchars($options['class']) : '';
 
         $svg = self::getEmptyGraphicSvg($type);
 
-        $html = '<div class="component-empty-state"' . $ref . '>';
+        $html = '<div class="component-empty-state' . $extraClass . '"' . $ref . '>';
         $html .= '<div class="component-empty-state-graphic">' . $svg . '</div>';
         if (!empty($title)) {
             $html .= '<h2 class="component-empty-state-title">' . htmlspecialchars($title) . '</h2>';
