@@ -1,4 +1,4 @@
-import { showMessage, hexToHsv, hsvToHex } from '../../../../core/utils/uiUtils.js';
+import { showMessage, hexToHsv, hsvToHex, bindDragToScroll, initCarouselScroll } from '../../../../core/utils/uiUtils.js';
 
 export const InteractionEvents = {
     bindEvents() {
@@ -12,6 +12,45 @@ export const InteractionEvents = {
         document.addEventListener('input', this.handleInputBound);
         document.addEventListener('change', this.handleInputBound);
         window.addEventListener('resize', this.handleResizeBound);
+
+        // Bind carousel scroll & navigation arrows for top property bar (horizontal)
+        const topBarWrapper = document.querySelector('[data-ref="canvas-top-property-bar-wrapper"]');
+        if (topBarWrapper) {
+            this.topBarCarouselController = initCarouselScroll(topBarWrapper, false);
+        } else {
+            const topPropertyBar = document.querySelector('[data-ref="canvas-top-property-bar"]');
+            if (topPropertyBar) {
+                bindDragToScroll(topPropertyBar, false);
+                topPropertyBar.addEventListener('wheel', (e) => {
+                    if (e.deltaY !== 0) {
+                        e.preventDefault();
+                        topPropertyBar.scrollLeft += e.deltaY;
+                    }
+                }, { passive: false });
+            }
+        }
+
+        // Bind carousel scroll & navigation arrows for bottom horizontal tools toolbar (horizontal)
+        const horizontalToolsWrapper = document.querySelector('[data-ref="canvas-horizontal-tools-wrapper"]');
+        if (horizontalToolsWrapper) {
+            this.horizontalToolsCarouselController = initCarouselScroll(horizontalToolsWrapper, false);
+        } else {
+            const horizontalToolsToolbar = document.querySelector('.canvas-design-toolbar-horizontal');
+            if (horizontalToolsToolbar) {
+                bindDragToScroll(horizontalToolsToolbar, false);
+            }
+        }
+
+        const topDesignToolbar = document.querySelector('.canvas-design-toolbar');
+        if (topDesignToolbar) {
+            bindDragToScroll(topDesignToolbar, false);
+            topDesignToolbar.addEventListener('wheel', (e) => {
+                if (e.deltaY !== 0) {
+                    e.preventDefault();
+                    topDesignToolbar.scrollLeft += e.deltaY;
+                }
+            }, { passive: false });
+        }
 
         if (this.canvas && this.canvas.parentElement && typeof ResizeObserver !== 'undefined') {
             this.resizeObserver = new ResizeObserver(() => {
@@ -43,6 +82,26 @@ export const InteractionEvents = {
     },
 
     handleClick(e) {
+        const btnTogglePopover = e.target.closest('[data-action="togglePropertyPopover"]');
+        if (btnTogglePopover) {
+            e.preventDefault();
+            e.stopPropagation();
+            const wrapper = btnTogglePopover.closest('.property-bar-popover-wrapper');
+            const menu = wrapper ? wrapper.querySelector('.property-bar-popover-menu') : null;
+            if (menu) {
+                const isOpen = !menu.classList.contains('disabled');
+                document.querySelectorAll('.property-bar-popover-menu').forEach(m => m.classList.add('disabled'));
+                if (!isOpen) {
+                    menu.classList.remove('disabled');
+                }
+            }
+            return;
+        }
+
+        if (!e.target.closest('.property-bar-popover-wrapper')) {
+            document.querySelectorAll('.property-bar-popover-menu').forEach(m => m.classList.add('disabled'));
+        }
+
         const btnApplyCustom = e.target.closest('[data-action="applyCustomColor"]');
         if (btnApplyCustom) {
             e.preventDefault();
@@ -84,6 +143,16 @@ export const InteractionEvents = {
                 this.manualSaveOffline(btnSaveOffline);
             } else if (typeof this.saveOfflineCanvasState === 'function') {
                 this.saveOfflineCanvasState(true);
+            }
+            return;
+        }
+
+        const btnSelectBlend = e.target.closest('[data-action="selectLayerBlendMode"]');
+        if (btnSelectBlend) {
+            e.preventDefault();
+            const mode = btnSelectBlend.getAttribute('data-blend') || 'normal';
+            if (typeof this.setLayerBlendMode === 'function') {
+                this.setLayerBlendMode(mode);
             }
             return;
         }
@@ -868,6 +937,26 @@ export const InteractionEvents = {
             return;
         }
 
+        const btnStabilizerPreset = e.target.closest('[data-action="setStabilizerPreset"]');
+        if (btnStabilizerPreset) {
+            e.preventDefault();
+            const stab = parseInt(btnStabilizerPreset.getAttribute('data-stabilizer'), 10) || 0;
+            if (typeof this.setStabilizerRange === 'function') {
+                this.setStabilizerRange(stab);
+            }
+            return;
+        }
+
+        const btnSpraySize = e.target.closest('[data-action="setSpraySizeRange"]');
+        if (btnSpraySize) {
+            e.preventDefault();
+            const size = parseInt(btnSpraySize.getAttribute('data-size'), 10) || 5;
+            if (typeof this.setSpraySizeRange === 'function') {
+                this.setSpraySizeRange(size);
+            }
+            return;
+        }
+
         const btnPixelPerfect = e.target.closest('[data-action="togglePixelPerfect"]');
         if (btnPixelPerfect) {
             e.preventDefault();
@@ -1393,16 +1482,127 @@ export const InteractionEvents = {
             return;
         }
 
+        const btnSwapColors = e.target.closest('[data-action="swapPrimarySecondaryColors"]');
+        if (btnSwapColors) {
+            e.preventDefault();
+            this.swapPrimarySecondaryColors();
+            return;
+        }
+
+        const btnResetColors = e.target.closest('[data-action="resetDefaultColors"]');
+        if (btnResetColors) {
+            e.preventDefault();
+            this.resetDefaultColors();
+            return;
+        }
+
+        const btnSelectSlot = e.target.closest('[data-action="selectActiveColorSlot"]');
+        if (btnSelectSlot) {
+            e.preventDefault();
+            const slot = btnSelectSlot.getAttribute('data-slot') || 'primary';
+            this.selectActiveColorSlot(slot);
+            return;
+        }
+
+        const btnOpenToolSettings = e.target.closest('[data-action="openToolSettings"]');
+        if (btnOpenToolSettings) {
+            e.preventDefault();
+            this.openSidebarTab('tool');
+            return;
+        }
+
+        const btnOpenLayersTab = e.target.closest('[data-action="openLayersTab"]');
+        if (btnOpenLayersTab) {
+            e.preventDefault();
+            this.openSidebarTab('layers');
+            return;
+        }
+
+        const btnOpenMinimapTab = e.target.closest('[data-action="openMinimapTab"]');
+        if (btnOpenMinimapTab) {
+            e.preventDefault();
+            this.openSidebarTab('minimap');
+            return;
+        }
+
+        const btnToggleSidebar = e.target.closest('[data-action="toggleUnifiedSidebar"]');
+        if (btnToggleSidebar) {
+            e.preventDefault();
+            this.toggleUnifiedSidebar();
+            return;
+        }
+
+        const btnSwitchTab = e.target.closest('[data-action="switchSidebarTab"]');
+        if (btnSwitchTab) {
+            e.preventDefault();
+            const tab = btnSwitchTab.getAttribute('data-tab') || 'layers';
+            this.switchUnifiedSidebarTab(tab);
+            return;
+        }
+
+        const btnScrollToolsLeft = e.target.closest('[data-action="scrollToolsLeft"]');
+        if (btnScrollToolsLeft) {
+            e.preventDefault();
+            const toolbar = document.querySelector('[data-ref="offline-tools-horizontal"]');
+            if (toolbar) toolbar.scrollBy({ left: -160, behavior: 'smooth' });
+            return;
+        }
+
+        const btnScrollToolsRight = e.target.closest('[data-action="scrollToolsRight"]');
+        if (btnScrollToolsRight) {
+            e.preventDefault();
+            const toolbar = document.querySelector('[data-ref="offline-tools-horizontal"]');
+            if (toolbar) toolbar.scrollBy({ left: 160, behavior: 'smooth' });
+            return;
+        }
+
+        const btnAlphaLock = e.target.closest('[data-action="toggleAlphaLock"]');
+        if (btnAlphaLock) {
+            e.preventDefault();
+            this.toggleAlphaLock();
+            return;
+        }
+
+        const btnMirrorAxis = e.target.closest('[data-action="toggleOfflineMirrorAxis"]');
+        if (btnMirrorAxis) {
+            e.preventDefault();
+            const axis = btnMirrorAxis.getAttribute('data-axis') || 'x';
+            this.toggleOfflineMirrorAxis(axis);
+            return;
+        }
+
+        const btnTriggerRefUpload = e.target.closest('[data-action="triggerReferenceUpload"]');
+        if (btnTriggerRefUpload) {
+            e.preventDefault();
+            const fileInput = document.querySelector('[data-ref="reference-file-input"]');
+            if (fileInput) fileInput.click();
+            return;
+        }
+
+        const btnClearRef = e.target.closest('[data-action="clearReferenceImage"]');
+        if (btnClearRef) {
+            e.preventDefault();
+            this.clearReferenceImage();
+            return;
+        }
+
         const btnColor = e.target.closest('[data-action="selectColor"]');
         if (btnColor) {
             e.preventDefault();
-            this.currentColor = btnColor.getAttribute('data-color') || '#000000';
+            const hex = (btnColor.getAttribute('data-color') || '#000000').toUpperCase();
+            if (this.activeColorSlot === 'secondary') {
+                this.secondaryColor = hex;
+            } else {
+                this.primaryColor = hex;
+            }
+            this.currentColor = hex;
             
             if (this.btnColorPalette) {
                 this.btnColorPalette.style.setProperty('--active-color', this.currentColor);
                 this.applyColorBorderStyle(this.btnColorPalette, this.currentColor);
             }
             
+            this.updateDualColorSwatchesUI();
             this.updateActiveColorPreview();
             this.syncActiveColorHighlight();
             if (typeof this.renderShadingRamps === 'function') {
@@ -1600,9 +1800,19 @@ export const InteractionEvents = {
         const keyUpper = e.key.toUpperCase();
 
         if (keyUpper === 'X') {
-            if (this.isOfflineMode && typeof this.toggleOfflineMirror === 'function') {
+            if (this.isOfflineMode && typeof this.swapPrimarySecondaryColors === 'function') {
                 e.preventDefault();
-                this.toggleOfflineMirror();
+                this.swapPrimarySecondaryColors();
+            }
+        } else if (keyUpper === 'D') {
+            if (this.isOfflineMode && typeof this.resetDefaultColors === 'function') {
+                e.preventDefault();
+                this.resetDefaultColors();
+            }
+        } else if (keyUpper === 'L') {
+            if (this.isOfflineMode && typeof this.toggleUnifiedSidebar === 'function') {
+                e.preventDefault();
+                this.toggleUnifiedSidebar();
             }
         } else if (keyUpper === 'M') {
             if (this.isOfflineMode && typeof this.toggleOfflineMoveArea === 'function') {
@@ -1794,6 +2004,26 @@ export const InteractionEvents = {
     },
 
     handleWheel(e) {
+        const horizToolsToolbar = e.target.closest('.canvas-design-toolbar-horizontal');
+        if (horizToolsToolbar) {
+            e.preventDefault();
+            horizToolsToolbar.scrollLeft += e.deltaY;
+            if (this.horizontalToolsCarouselController) {
+                this.horizontalToolsCarouselController.updateButtons();
+            }
+            return;
+        }
+
+        const topBar = e.target.closest('.canvas-top-property-bar, .canvas-design-toolbar');
+        if (topBar) {
+            e.preventDefault();
+            topBar.scrollLeft += e.deltaY;
+            if (this.topBarCarouselController) {
+                this.topBarCarouselController.updateButtons();
+            }
+            return;
+        }
+
         const target = e.target.closest('[data-ref="design-canvas"]');
         if (!target) return;
         
@@ -1960,6 +2190,62 @@ export const InteractionEvents = {
                     picker.dataset.v = hsv.v;
                     this.updateCustomPickerUI(picker);
                 }
+            }
+            return;
+        }
+
+        const isBrushSizeRange = e.target.matches('[data-action="setBrushSizeRange"]');
+        if (isBrushSizeRange) {
+            if (typeof this.setBrushSizeRange === 'function') {
+                this.setBrushSizeRange(e.target.value);
+            }
+            return;
+        }
+
+        const isStabilizerRange = e.target.matches('[data-action="setStabilizerRange"]');
+        if (isStabilizerRange) {
+            if (typeof this.setStabilizerRange === 'function') {
+                this.setStabilizerRange(e.target.value);
+            }
+            return;
+        }
+
+        const isSprayRange = e.target.matches('[data-action="setSpraySizeRange"]');
+        if (isSprayRange) {
+            if (typeof this.setSpraySizeRange === 'function') {
+                this.setSpraySizeRange(e.target.value);
+            }
+            return;
+        }
+
+        const isLayerOpacity = e.target.matches('[data-action="setLayerOpacity"]');
+        if (isLayerOpacity) {
+            if (typeof this.setLayerOpacity === 'function') {
+                this.setLayerOpacity(e.target.value);
+            }
+            return;
+        }
+
+        const isLayerBlend = e.target.matches('[data-action="setLayerBlendMode"]');
+        if (isLayerBlend) {
+            if (typeof this.setLayerBlendMode === 'function') {
+                this.setLayerBlendMode(e.target.value);
+            }
+            return;
+        }
+
+        const isRefOpacity = e.target.matches('[data-action="setReferenceOpacity"]');
+        if (isRefOpacity) {
+            if (typeof this.setReferenceOpacity === 'function') {
+                this.setReferenceOpacity(e.target.value);
+            }
+            return;
+        }
+
+        const isRefFileInput = e.target.matches('[data-ref="reference-file-input"]');
+        if (isRefFileInput && e.target.files && e.target.files[0]) {
+            if (typeof this.handleReferenceImageUpload === 'function') {
+                this.handleReferenceImageUpload(e.target.files[0]);
             }
             return;
         }

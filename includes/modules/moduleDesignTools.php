@@ -115,7 +115,7 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
             </div>
             
             <div class="component-menu-section-body">
-                <div class="component-color-ramp-container" data-ref="color-ramp-swatches-container"></div>
+                <div class="component-items-grid" data-ref="color-ramp-swatches-container"></div>
             </div>
         </div>
 

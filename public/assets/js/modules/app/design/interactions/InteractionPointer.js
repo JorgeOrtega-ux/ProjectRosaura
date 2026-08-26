@@ -38,6 +38,11 @@ export const InteractionPointer = {
 
         const isOperationalLocked = !!(this.isResetLocked || this.isResizeLocked || this.isInjectLocked || this.isClearLocked || (this.isFrozen && !this.isOwner));
 
+        if (e.button === 2 && this.isOfflineMode) {
+            this._drawingWithSecondary = true;
+            this.currentColor = this.secondaryColor || '#FFFFFF';
+        }
+
         if (this.interactionMode === 'offline_eyedropper' && !this.isSpectator && !isOperationalLocked) {
             e.preventDefault();
             const bx = Math.floor(exact.x);
@@ -794,6 +799,11 @@ export const InteractionPointer = {
     handleMouseUp(e) {
         if (this.isDraggingCustomPicker) {
             this.isDraggingCustomPicker = false;
+        }
+
+        if (this._drawingWithSecondary) {
+            this._drawingWithSecondary = false;
+            this.currentColor = (this.activeColorSlot === 'secondary') ? (this.secondaryColor || '#FFFFFF') : (this.primaryColor || '#000000');
         }
 
         if (this.interactionMode === 'offline_text' && this.isTextDragging) {

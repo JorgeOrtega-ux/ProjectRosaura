@@ -853,13 +853,10 @@ export const InteractionShapesText = {
         } else if (typeof this.openSubtoolbar === 'function') {
             this.openSubtoolbar('moveArea');
         }
-        const subtoolbar = document.querySelector('[data-subtoolbar="moveArea"]');
-        if (subtoolbar) {
-            subtoolbar.querySelectorAll('.component-button').forEach(btn => {
-                const actMode = btn.getAttribute('data-selection-mode');
-                btn.classList.toggle('active', actMode === mode);
-            });
-        }
+        document.querySelectorAll('[data-action="setSelectionMode"]').forEach(btn => {
+            const actMode = btn.getAttribute('data-selection-mode');
+            btn.classList.toggle('active', actMode === mode);
+        });
         const msgs = {
             box: 'Modo Selección Rectangular [M]',
             lasso: 'Modo Lazo a mano alzada [Q]',

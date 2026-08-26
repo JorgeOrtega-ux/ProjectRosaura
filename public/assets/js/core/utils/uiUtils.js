@@ -426,30 +426,43 @@ function isDarkMode() {
    4. CAROUSEL & SCROLL COORDINATION
    ========================================================================== */
 
-function updateNavButtons(carousel, leftBtn, rightBtn) {
+function updateNavButtons(carousel, leftBtn, rightBtn, isVertical = false) {
     if (!carousel) return;
-    if (leftBtn) {
-        leftBtn.classList.toggle('disabled', carousel.scrollLeft <= 5);
-    }
-    if (rightBtn) {
-        const canScrollRight = carousel.scrollWidth > carousel.clientWidth && 
-                               Math.ceil(carousel.scrollLeft + carousel.clientWidth) < carousel.scrollWidth - 5;
-        rightBtn.classList.toggle('disabled', !canScrollRight);
+    if (isVertical) {
+        if (leftBtn) {
+            leftBtn.classList.toggle('disabled', carousel.scrollTop <= 5);
+        }
+        if (rightBtn) {
+            const canScrollDown = carousel.scrollHeight > carousel.clientHeight && 
+                                   Math.ceil(carousel.scrollTop + carousel.clientHeight) < carousel.scrollHeight - 5;
+            rightBtn.classList.toggle('disabled', !canScrollDown);
+        }
+    } else {
+        if (leftBtn) {
+            leftBtn.classList.toggle('disabled', carousel.scrollLeft <= 5);
+        }
+        if (rightBtn) {
+            const canScrollRight = carousel.scrollWidth > carousel.clientWidth && 
+                                   Math.ceil(carousel.scrollLeft + carousel.clientWidth) < carousel.scrollWidth - 5;
+            rightBtn.classList.toggle('disabled', !canScrollRight);
+        }
     }
 }
 
-function bindDragToScroll(carousel) {
+function bindDragToScroll(carousel, isVertical = false) {
     let isDown = false;
-    let startX;
-    let scrollLeft;
+    let startX, startY;
+    let scrollLeft, scrollTop;
     let isDragging = false;
 
     carousel.addEventListener('mousedown', (e) => {
-        if (e.target.closest('button, a, input, select, .component-tab-close')) return;
+        if (e.target.closest('button, a, input, select, .component-tab-close, .canvas-dual-color-box')) return;
         isDown = true;
         isDragging = false;
         startX = e.pageX - carousel.offsetLeft;
+        startY = e.pageY - carousel.offsetTop;
         scrollLeft = carousel.scrollLeft;
+        scrollTop = carousel.scrollTop;
     });
 
     carousel.addEventListener('mouseleave', () => {
@@ -467,13 +480,20 @@ function bindDragToScroll(carousel) {
         if (!isDown) return;
         e.preventDefault();
         const x = e.pageX - carousel.offsetLeft;
-        const walk = (x - startX) * 2;
-        if (Math.abs(walk) > 5) {
+        const y = e.pageY - carousel.offsetTop;
+        const walkX = (x - startX) * 2;
+        const walkY = (y - startY) * 2;
+        
+        if (Math.abs(walkX) > 5 || Math.abs(walkY) > 5) {
             isDragging = true;
             carousel.classList.add('is-dragging');
         }
         if (isDragging) {
-            carousel.scrollLeft = scrollLeft - walk;
+            if (isVertical) {
+                carousel.scrollTop = scrollTop - walkY;
+            } else {
+                carousel.scrollLeft = scrollLeft - walkX;
+            }
         }
     });
 
@@ -485,22 +505,26 @@ function bindDragToScroll(carousel) {
     }, { capture: true });
 }
 
-function initCarouselScroll(wrapper) {
+function initCarouselScroll(wrapper, isVertical = false) {
     if (!wrapper) return null;
 
-    const carousel = wrapper.querySelector('.component-tags-carousel, .component-tabs-header');
-    const leftBtn = wrapper.querySelector('.component-tag-nav-left, [data-action$="Left"]');
-    const rightBtn = wrapper.querySelector('.component-tag-nav-right, [data-action$="Right"]');
+    const carousel = wrapper.querySelector('.component-tags-carousel, .component-tabs-header, .canvas-top-property-bar, .canvas-design-toolbar, .canvas-design-toolbar-horizontal, .canvas-design-toolbar-vertical');
+    const leftBtn = wrapper.querySelector('.component-tag-nav-left, .canvas-nav-btn--left, .canvas-nav-btn--up, [data-action$="Left"], [data-action$="Up"]');
+    const rightBtn = wrapper.querySelector('.component-tag-nav-right, .canvas-nav-btn--right, .canvas-nav-btn--down, [data-action$="Right"], [data-action$="Down"]');
 
     if (!carousel) return null;
 
-    const updateButtons = () => updateNavButtons(carousel, leftBtn, rightBtn);
+    const updateButtons = () => updateNavButtons(carousel, leftBtn, rightBtn, isVertical);
 
     if (leftBtn && !leftBtn.hasAttribute('data-carousel-bound')) {
         leftBtn.setAttribute('data-carousel-bound', 'true');
         leftBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            carousel.scrollBy({ left: -220, behavior: 'smooth' });
+            if (isVertical) {
+                carousel.scrollBy({ top: -160, behavior: 'smooth' });
+            } else {
+                carousel.scrollBy({ left: -220, behavior: 'smooth' });
+            }
             setTimeout(updateButtons, 300);
         });
     }
@@ -509,7 +533,11 @@ function initCarouselScroll(wrapper) {
         rightBtn.setAttribute('data-carousel-bound', 'true');
         rightBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            carousel.scrollBy({ left: 220, behavior: 'smooth' });
+            if (isVertical) {
+                carousel.scrollBy({ top: 160, behavior: 'smooth' });
+            } else {
+                carousel.scrollBy({ left: 220, behavior: 'smooth' });
+            }
             setTimeout(updateButtons, 300);
         });
     }
@@ -518,7 +546,7 @@ function initCarouselScroll(wrapper) {
         carousel.setAttribute('data-carousel-bound', 'true');
         carousel.addEventListener('scroll', updateButtons);
         window.addEventListener('resize', updateButtons);
-        bindDragToScroll(carousel);
+        bindDragToScroll(carousel, isVertical);
     }
 
     setTimeout(updateButtons, 100);
@@ -924,6 +952,7 @@ export {
     getScheduledTimeDetails,
     isDarkMode,
     initCarouselScroll,
+    bindDragToScroll,
     appendInfiniteScrollSkeletons,
     removeInfiniteScrollSkeletons,
     renderVirtualGridItems,

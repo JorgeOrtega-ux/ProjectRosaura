@@ -376,7 +376,9 @@ function notifyLayersState() {
         name: l.name,
         visible: l.visible,
         locked: l.locked,
-        opacity: l.opacity
+        opacity: l.opacity !== undefined ? l.opacity : 1.0,
+        blendMode: l.blendMode || 'normal',
+        alphaLocked: !!l.alphaLocked
     }));
     self.postMessage({
         type: 'LAYERS_STATE_CHANGED',
@@ -3871,6 +3873,38 @@ self.onmessage = async function (e) {
             const target = layers.find(l => l.id === targetId);
             if (target) {
                 target.locked = (payload?.locked !== undefined) ? !!payload.locked : !target.locked;
+                notifyLayersState();
+            }
+            break;
+        }
+
+        case 'SET_LAYER_OPACITY': {
+            const targetId = payload?.layerId || activeLayerId;
+            const target = layers.find(l => l.id === targetId);
+            if (target && payload?.opacity !== undefined) {
+                target.opacity = Math.max(0, Math.min(1, parseFloat(payload.opacity) || 1));
+                composeAll();
+                notifyLayersState();
+            }
+            break;
+        }
+
+        case 'SET_LAYER_BLEND_MODE': {
+            const targetId = payload?.layerId || activeLayerId;
+            const target = layers.find(l => l.id === targetId);
+            if (target && payload?.blendMode) {
+                target.blendMode = payload.blendMode;
+                composeAll();
+                notifyLayersState();
+            }
+            break;
+        }
+
+        case 'SET_LAYER_ALPHA_LOCK': {
+            const targetId = payload?.layerId || activeLayerId;
+            const target = layers.find(l => l.id === targetId);
+            if (target) {
+                target.alphaLocked = !!payload.alphaLocked;
                 notifyLayersState();
             }
             break;

@@ -486,7 +486,9 @@ export class ModalSystem {
             const stepContainer = stepTargetBtn.closest('.step-modal-content') || (this.activeBox ? this.activeBox.querySelector('.step-modal-content') : document);
             if (stepContainer) {
                 stepContainer.querySelectorAll('.step-modal-step').forEach(step => step.classList.remove('active'));
-                const targetStep = stepContainer.querySelector(`#${targetStepId}`);
+                // Try id first (legacy), then data-ref (onboarding tour steps)
+                const targetStep = stepContainer.querySelector(`#${targetStepId}`)
+                    || stepContainer.querySelector(`[data-ref="${targetStepId}"]`);
                 if (targetStep) targetStep.classList.add('active');
             }
             return;

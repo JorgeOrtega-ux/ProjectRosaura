@@ -61,7 +61,17 @@ class DesignController {
         this.templateInteraction = null;
 
         this.currentColor = '#000000';
+        this.primaryColor = '#000000';
+        this.secondaryColor = '#ffffff';
+        this.activeColorSlot = 'primary';
         this.customPickedColors = [];
+        this.activeSidebarTab = 'layers';
+        this.isUnifiedSidebarOpen = false;
+        this.referenceImage = null;
+        this.referenceOpacity = 0.5;
+        this.stabilizer = 0;
+        this.isMirrorX = false;
+        this.isMirrorY = false;
 
         this.offscreenCanvas = null;
         this.offscreenCtx = null;
@@ -128,23 +138,26 @@ class DesignController {
     }
 
     setCanvasBadge(id, icon, text, position = 'left') {
-        const container = document.querySelector(`[data-ref="badges-${position}"]`);
-        if (!container) return;
-
-        let badge = container.querySelector(`[data-badge-id="${id}"]`);
+        let badge = document.querySelector(`[data-badge-id="${id}"]`);
         if (!badge) {
-            badge = document.createElement('div');
-            badge.className = 'component-badge';
-            badge.setAttribute('data-badge-id', id);
-            container.appendChild(badge);
+            const container = document.querySelector(`[data-ref="badges-${position}"]`);
+            if (!container) return;
+
+            badge = container.querySelector(`[data-badge-id="${id}"]`);
+            if (!badge) {
+                badge = document.createElement('div');
+                badge.className = 'component-badge';
+                badge.setAttribute('data-badge-id', id);
+                container.appendChild(badge);
+            }
         }
 
-        const iconClass = icon.includes('spin') ? 'icon-spin-slow' : '';
-        const iconName = icon.replace('icon-spin-slow', '').trim();
+        const iconClass = icon && icon.includes('spin') ? 'icon-spin-slow' : '';
+        const iconName = icon ? icon.replace('icon-spin-slow', '').trim() : 'my_location';
 
         badge.innerHTML = `
             <span class="material-symbols-rounded ${iconClass}">${iconName}</span>
-            <span>${text}</span>
+            <span>${text || '- , -'}</span>
         `;
     }
 

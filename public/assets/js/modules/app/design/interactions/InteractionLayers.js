@@ -13,25 +13,238 @@ export const InteractionLayers = {
     isLayersPanelOpen: false,
     isLayersCarouselOpen: false,
 
-    toggleLayersPanel() {
+    toggleUnifiedSidebar(forceState = null) {
         if (!this.isOfflineMode) return;
-        const panel = document.querySelector('[data-ref="layers-floating-panel"]');
-        const btn = document.querySelector('[data-ref="btn-toggle-layers"]');
-        if (!panel) return;
+        const sidebar = document.querySelector('[data-ref="canvas-right-unified-sidebar"]');
+        const btnToggleLayers = document.querySelector('[data-ref="btn-toggle-layers"]');
+        const btnTopToggle = document.querySelector('[data-ref="btn-top-sidebar-toggle"]');
+        if (!sidebar) return;
 
-        const isCurrentlyOpen = !panel.classList.contains('disabled');
-        if (isCurrentlyOpen) {
-            panel.classList.add('disabled');
-            if (btn) btn.classList.remove('active');
-            this.isLayersPanelOpen = false;
+        const shouldOpen = forceState !== null ? forceState : sidebar.classList.contains('disabled');
+        if (shouldOpen) {
+            sidebar.classList.remove('disabled');
+            if (btnToggleLayers) btnToggleLayers.classList.add('active');
+            if (btnTopToggle) btnTopToggle.classList.add('active');
+            this.isUnifiedSidebarOpen = true;
+            this.switchUnifiedSidebarTab(this.activeSidebarTab || 'layers');
         } else {
-            panel.classList.remove('disabled');
-            if (btn) btn.classList.add('active');
-            this.isLayersPanelOpen = true;
+            sidebar.classList.add('disabled');
+            if (btnToggleLayers) btnToggleLayers.classList.remove('active');
+            if (btnTopToggle) btnTopToggle.classList.remove('active');
+            this.isUnifiedSidebarOpen = false;
+        }
+    },
+
+    toggleLayersPanel() {
+        this.openSidebarTab('layers');
+    },
+
+    openSidebarTab(tabName = 'tool') {
+        const sidebar = document.querySelector('[data-ref="canvas-right-unified-sidebar"]');
+        if (!sidebar) return;
+
+        if (!this.isUnifiedSidebarOpen || sidebar.classList.contains('disabled')) {
+            sidebar.classList.remove('disabled');
+            this.isUnifiedSidebarOpen = true;
+            this.switchUnifiedSidebarTab(tabName);
+        } else if (this.activeSidebarTab === tabName) {
+            sidebar.classList.add('disabled');
+            this.isUnifiedSidebarOpen = false;
+        } else {
+            this.switchUnifiedSidebarTab(tabName);
+        }
+    },
+
+    switchUnifiedSidebarTab(tabName = 'layers') {
+        this.activeSidebarTab = tabName;
+        const tabsContainer = document.querySelector('[data-ref="sidebar-tabs"]');
+        if (tabsContainer) {
+            tabsContainer.setAttribute('data-active-tab', tabName);
+        }
+
+        document.querySelectorAll('.canvas-sidebar-tab-btn[data-tab]').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-tab') === tabName);
+        });
+
+        document.querySelectorAll('.canvas-sidebar-tab-content').forEach(content => {
+            const isTarget = content.getAttribute('data-sidebar-tab') === tabName;
+            content.classList.toggle('active', isTarget);
+            content.classList.toggle('disabled', !isTarget);
+        });
+
+        if (tabName === 'tool') {
+            if (typeof this.updateSidebarToolSettingsUI === 'function') {
+                this.updateSidebarToolSettingsUI();
+            }
+        } else if (tabName === 'layers') {
             if (this.renderWorker) {
                 this.renderWorker.postMessage({ type: 'GET_LAYERS_STATE' });
             }
+        } else if (tabName === 'color') {
+            if (typeof this.renderCustomPickedColors === 'function') this.renderCustomPickedColors();
+            if (typeof this.updateDualColorSwatchesUI === 'function') this.updateDualColorSwatchesUI();
+            if (typeof this.renderShadingRamps === 'function') this.renderShadingRamps(this.currentColor);
+        } else if (tabName === 'minimap') {
+            this.updateMinimap();
         }
+    },
+
+    setLayerOpacity(val) {
+        const num = Math.max(0, Math.min(100, parseInt(val, 10) || 100));
+        const valEl = document.querySelector('[data-ref="layer-opacity-val"]');
+        if (valEl) valEl.textContent = `${num}%`;
+
+        const activeLayer = this.layers ? this.layers.find(l => l.id === this.activeLayerId) : null;
+        if (activeLayer) {
+            activeLayer.opacity = num / 100;
+        }
+
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({
+                type: 'SET_LAYER_OPACITY',
+                payload: { layerId: this.activeLayerId, opacity: num / 100 }
+            });
+        }
+        this.requestRender();
+    },
+
+    setLayerBlendMode(mode = 'normal') {
+        const activeLayer = this.layers ? this.layers.find(l => l.id === this.activeLayerId) : null;
+        if (activeLayer) {
+            activeLayer.blendMode = mode;
+        }
+
+        const blendNames = {
+            normal: 'Normal',
+            multiply: 'Multiplicar',
+            screen: 'Pantalla',
+            overlay: 'Superponer',
+            darken: 'Oscurecer',
+            lighten: 'Aclarar',
+            'color-dodge': 'Sobreexponer'
+        };
+
+        const textEl = document.querySelector('[data-ref="layer-blend-text"]');
+        if (textEl) {
+            textEl.textContent = blendNames[mode] || mode;
+        }
+
+        document.querySelectorAll('[data-action="selectLayerBlendMode"]').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-blend') === mode);
+        });
+
+        if (window.appInstance && window.appInstance.moduleManager) {
+            window.appInstance.moduleManager.closeModule('moduleLayerBlendModes');
+        }
+
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({
+                type: 'SET_LAYER_BLEND_MODE',
+                payload: { layerId: this.activeLayerId, blendMode: mode }
+            });
+        }
+        this.requestRender();
+    },
+
+    toggleAlphaLock() {
+        const activeLayer = this.layers ? this.layers.find(l => l.id === this.activeLayerId) : null;
+        if (!activeLayer) return;
+
+        activeLayer.alphaLocked = !activeLayer.alphaLocked;
+        const btnLock = document.querySelector('[data-ref="btn-alpha-lock"]');
+        if (btnLock) {
+            btnLock.classList.toggle('active', !!activeLayer.alphaLocked);
+            btnLock.innerHTML = `<span class="material-symbols-rounded">${activeLayer.alphaLocked ? 'lock' : 'lock_open'}</span>`;
+        }
+
+        if (this.renderWorker) {
+            this.renderWorker.postMessage({
+                type: 'SET_LAYER_ALPHA_LOCK',
+                payload: { layerId: this.activeLayerId, alphaLocked: !!activeLayer.alphaLocked }
+            });
+        }
+
+        const msg = activeLayer.alphaLocked ? 'Bloqueo Alfa activado' : 'Bloqueo Alfa desactivado';
+        if (typeof showMessage === 'function') showMessage(msg, 'info');
+    },
+
+    updateMinimap() {
+        const minimapCanvas = document.querySelector('[data-ref="minimap-canvas"]');
+        const viewportBox = document.querySelector('[data-ref="minimap-viewport-box"]');
+        const resText = document.querySelector('[data-ref="minimap-res-text"]');
+        if (!minimapCanvas) return;
+
+        if (resText) {
+            resText.textContent = `${this.boardWidth || 64}x${this.boardHeight || 64} px`;
+        }
+
+        const mCtx = minimapCanvas.getContext('2d');
+        if (mCtx && this.canvas) {
+            mCtx.clearRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+            mCtx.imageSmoothingEnabled = false;
+            mCtx.drawImage(this.canvas, 0, 0, minimapCanvas.width, minimapCanvas.height);
+        }
+
+        if (viewportBox && this.transform && this.canvas) {
+            const scale = this.transform.scale || 1;
+            const viewW = (this.canvas.width / (this.boardWidth * scale)) * 100;
+            const viewH = (this.canvas.height / (this.boardHeight * scale)) * 100;
+            const leftPct = ((-this.transform.x) / (this.boardWidth * scale)) * 100;
+            const topPct = ((-this.transform.y) / (this.boardHeight * scale)) * 100;
+
+            viewportBox.style.width = `${Math.min(100, Math.max(10, viewW))}%`;
+            viewportBox.style.height = `${Math.min(100, Math.max(10, viewH))}%`;
+            viewportBox.style.left = `${Math.max(0, Math.min(100 - parseFloat(viewportBox.style.width), leftPct))}%`;
+            viewportBox.style.top = `${Math.max(0, Math.min(100 - parseFloat(viewportBox.style.height), topPct))}%`;
+        }
+    },
+
+    handleReferenceImageUpload(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                this.referenceImage = img;
+                const previewImg = document.querySelector('[data-ref="reference-preview-img"]');
+                const previewBox = document.querySelector('[data-ref="reference-preview-box"]');
+                const emptyState = document.querySelector('[data-ref="reference-empty-state"]');
+                const controls = document.querySelector('[data-ref="reference-controls"]');
+
+                if (previewImg) previewImg.src = e.target.result;
+                if (previewBox) previewBox.classList.remove('disabled');
+                if (emptyState) emptyState.classList.add('disabled');
+                if (controls) controls.classList.remove('disabled');
+
+                if (typeof showMessage === 'function') showMessage('Imagen de referencia cargada', 'success');
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    },
+
+    setReferenceOpacity(val) {
+        const num = Math.max(0, Math.min(100, parseInt(val, 10) || 50));
+        this.referenceOpacity = num / 100;
+        const previewImg = document.querySelector('[data-ref="reference-preview-img"]');
+        const valEl = document.querySelector('[data-ref="reference-opacity-val"]');
+        if (previewImg) previewImg.style.opacity = this.referenceOpacity;
+        if (valEl) valEl.textContent = `${num}%`;
+    },
+
+    clearReferenceImage() {
+        this.referenceImage = null;
+        const previewBox = document.querySelector('[data-ref="reference-preview-box"]');
+        const emptyState = document.querySelector('[data-ref="reference-empty-state"]');
+        const controls = document.querySelector('[data-ref="reference-controls"]');
+        const fileInput = document.querySelector('[data-ref="reference-file-input"]');
+
+        if (previewBox) previewBox.classList.add('disabled');
+        if (emptyState) emptyState.classList.remove('disabled');
+        if (controls) controls.classList.add('disabled');
+        if (fileInput) fileInput.value = '';
+
+        if (typeof showMessage === 'function') showMessage('Imagen de referencia eliminada', 'info');
     },
 
     toggleLayersCarousel() {
@@ -62,6 +275,10 @@ export const InteractionLayers = {
 
     setCarouselMode(mode = 'layers') {
         this.carouselMode = mode;
+        const footerTabs = document.querySelector('[data-ref="footer-carousel-tabs"]');
+        if (footerTabs) {
+            footerTabs.setAttribute('data-mode', mode);
+        }
         const tabLayers = document.querySelector('[data-action="setCarouselModeLayers"]');
         const tabTimeline = document.querySelector('[data-action="setCarouselModeTimeline"]');
         if (tabLayers) tabLayers.classList.toggle('active', mode === 'layers');
@@ -515,6 +732,37 @@ export const InteractionLayers = {
         container.innerHTML = '';
 
         if (!this.layers || this.layers.length === 0) return;
+
+        const activeLayer = this.layers.find(l => l.id === this.activeLayerId);
+        if (activeLayer) {
+            const opVal = Math.round((activeLayer.opacity !== undefined ? activeLayer.opacity : 1) * 100);
+            const slider = document.querySelector('[data-ref="layer-opacity-slider"]');
+            const opValEl = document.querySelector('[data-ref="layer-opacity-val"]');
+            if (slider) slider.value = opVal;
+            if (opValEl) opValEl.textContent = `${opVal}%`;
+
+            const blendNames = {
+                normal: 'Normal',
+                multiply: 'Multiplicar',
+                screen: 'Pantalla',
+                overlay: 'Superponer',
+                darken: 'Oscurecer',
+                lighten: 'Aclarar',
+                'color-dodge': 'Sobreexponer'
+            };
+            const curBlend = activeLayer.blendMode || 'normal';
+            const blendText = document.querySelector('[data-ref="layer-blend-text"]');
+            if (blendText) blendText.textContent = blendNames[curBlend] || curBlend;
+            document.querySelectorAll('[data-action="selectLayerBlendMode"]').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-blend') === curBlend);
+            });
+
+            const btnLock = document.querySelector('[data-ref="btn-alpha-lock"]');
+            if (btnLock) {
+                btnLock.classList.toggle('active', !!activeLayer.alphaLocked);
+                btnLock.innerHTML = `<span class="material-symbols-rounded">${activeLayer.alphaLocked ? 'lock' : 'lock_open'}</span>`;
+            }
+        }
 
         this.layers.forEach((layer) => {
             const isActive = layer.id === this.activeLayerId;

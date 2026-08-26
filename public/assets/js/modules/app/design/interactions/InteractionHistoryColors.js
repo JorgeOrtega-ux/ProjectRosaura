@@ -117,6 +117,97 @@ export const InteractionHistoryColors = {
         }
     },
 
+    swapPrimarySecondaryColors() {
+        const temp = this.primaryColor || '#000000';
+        this.primaryColor = this.secondaryColor || '#FFFFFF';
+        this.secondaryColor = temp;
+
+        this.currentColor = (this.activeColorSlot === 'secondary') ? this.secondaryColor : this.primaryColor;
+
+        if (this.btnColorPalette) {
+            this.btnColorPalette.style.setProperty('--active-color', this.currentColor);
+            this.applyColorBorderStyle(this.btnColorPalette, this.currentColor);
+        }
+
+        this.updateDualColorSwatchesUI();
+        this.updateActiveColorPreview();
+        this.syncActiveColorHighlight();
+        if (typeof this.renderShadingRamps === 'function') {
+            this.renderShadingRamps(this.currentColor);
+        }
+        this.requestRender();
+
+        if (typeof showMessage === 'function') {
+            showMessage(`Colores intercambiados: ${this.currentColor}`, 'info');
+        }
+    },
+
+    resetDefaultColors() {
+        this.primaryColor = '#000000';
+        this.secondaryColor = '#FFFFFF';
+        this.currentColor = (this.activeColorSlot === 'secondary') ? this.secondaryColor : this.primaryColor;
+
+        if (this.btnColorPalette) {
+            this.btnColorPalette.style.setProperty('--active-color', this.currentColor);
+            this.applyColorBorderStyle(this.btnColorPalette, this.currentColor);
+        }
+
+        this.updateDualColorSwatchesUI();
+        this.updateActiveColorPreview();
+        this.syncActiveColorHighlight();
+        if (typeof this.renderShadingRamps === 'function') {
+            this.renderShadingRamps(this.currentColor);
+        }
+        this.requestRender();
+
+        if (typeof showMessage === 'function') {
+            showMessage('Colores restablecidos (Negro / Blanco)', 'info');
+        }
+    },
+
+    selectActiveColorSlot(slot = 'primary') {
+        this.activeColorSlot = slot;
+        this.currentColor = (slot === 'secondary') ? (this.secondaryColor || '#FFFFFF') : (this.primaryColor || '#000000');
+
+        if (this.btnColorPalette) {
+            this.btnColorPalette.style.setProperty('--active-color', this.currentColor);
+            this.applyColorBorderStyle(this.btnColorPalette, this.currentColor);
+        }
+
+        this.updateDualColorSwatchesUI();
+        this.updateActiveColorPreview();
+        this.syncActiveColorHighlight();
+        if (typeof this.renderShadingRamps === 'function') {
+            this.renderShadingRamps(this.currentColor);
+        }
+        this.requestRender();
+    },
+
+    updateDualColorSwatchesUI() {
+        const swatchPri = document.querySelector('[data-ref="swatch-primary"]');
+        const swatchSec = document.querySelector('[data-ref="swatch-secondary"]');
+        const dotPri = document.querySelector('[data-ref="swatch-primary-dot"]');
+        const dotSec = document.querySelector('[data-ref="swatch-secondary-dot"]');
+        const priColor = this.primaryColor || '#000000';
+        const secColor = this.secondaryColor || '#FFFFFF';
+
+        if (swatchPri) {
+            swatchPri.style.setProperty('--slot-color', priColor);
+            swatchPri.classList.toggle('active', this.activeColorSlot === 'primary');
+        }
+        if (dotPri) {
+            dotPri.style.backgroundColor = priColor;
+        }
+
+        if (swatchSec) {
+            swatchSec.style.setProperty('--slot-color', secColor);
+            swatchSec.classList.toggle('active', this.activeColorSlot === 'secondary');
+        }
+        if (dotSec) {
+            dotSec.style.backgroundColor = secColor;
+        }
+    },
+
     selectAndAddCustomColor(hex) {
         if (!hex || typeof hex !== 'string') return;
         hex = hex.trim().toUpperCase();
@@ -125,12 +216,19 @@ export const InteractionHistoryColors = {
 
         this.recordRecentColor(hex);
 
+        if (this.activeColorSlot === 'secondary') {
+            this.secondaryColor = hex;
+        } else {
+            this.primaryColor = hex;
+        }
         this.currentColor = hex;
+
         if (this.btnColorPalette) {
             this.btnColorPalette.style.setProperty('--active-color', this.currentColor);
             this.applyColorBorderStyle(this.btnColorPalette, this.currentColor);
         }
 
+        this.updateDualColorSwatchesUI();
         this.updateActiveColorPreview();
         this.syncActiveColorHighlight();
         if (typeof this.renderShadingRamps === 'function') {
@@ -157,12 +255,24 @@ export const InteractionHistoryColors = {
 
         container.innerHTML = '';
         ramp.forEach(step => {
+            const isActive = step.hex.toUpperCase() === (this.currentColor || '').toUpperCase();
             const swatch = document.createElement('button');
             swatch.type = 'button';
-            swatch.className = `component-color-ramp-swatch ${step.hex.toUpperCase() === (this.currentColor || '').toUpperCase() ? 'active' : ''} ${step.isBase ? 'is-base' : ''}`;
+            swatch.className = `component-color-btn ${isActive ? 'active' : ''} ${step.isBase ? 'is-base' : ''}`;
             swatch.setAttribute('data-action', 'selectRampColor');
             swatch.setAttribute('data-color', step.hex);
-            swatch.style.backgroundColor = step.hex;
+            swatch.style.setProperty('--color-val', step.hex);
+            swatch.style.setProperty('--adaptive-ring-color', step.hex);
+
+            // Adaptive border for extreme colors
+            const brightness = parseInt(step.hex.slice(1, 3), 16) * 0.299
+                + parseInt(step.hex.slice(3, 5), 16) * 0.587
+                + parseInt(step.hex.slice(5, 7), 16) * 0.114;
+            if (brightness > 210) {
+                swatch.classList.add('color-btn--extreme-light');
+            } else if (brightness < 20) {
+                swatch.classList.add('color-btn--extreme-dark');
+            }
 
             const roleName = typeof window.__ === 'function' ? window.__(step.nameKey) : step.defaultLabel;
             swatch.setAttribute('data-tooltip', `${roleName}: ${step.hex}`);

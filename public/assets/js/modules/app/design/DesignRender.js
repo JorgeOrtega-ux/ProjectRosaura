@@ -11,19 +11,31 @@ export const DesignRender = {
         container.innerHTML = '';
 
         if (!palette || !palette.colors || palette.colors.length === 0) {
-            container.classList.remove('active'); container.classList.add('disabled');
+            if (container) {
+                container.classList.remove('active');
+                container.classList.add('disabled');
+            }
             if (emptyState) {
-                emptyState.classList.remove('disabled'); emptyState.classList.add('active');
+                emptyState.classList.remove('disabled');
+                emptyState.classList.add('active');
                 const emptyText = emptyState.querySelector('.component-empty-state-text');
                 if (emptyText) emptyText.innerText = window.__('no_colors_available');
             }
             return;
         }
 
-        container.classList.remove('disabled'); container.classList.add('active');
-        if (emptyState) emptyState.classList.remove('active'); emptyState.classList.add('disabled');
+        if (container) {
+            container.classList.remove('disabled');
+            container.classList.add('active');
+        }
+        if (emptyState) {
+            emptyState.classList.remove('active');
+            emptyState.classList.add('disabled');
+        }
 
-        this.currentColor = palette.colors[0].hex;
+        this.primaryColor = palette.colors[0].hex;
+        this.secondaryColor = palette.colors[1] ? palette.colors[1].hex : '#FFFFFF';
+        this.currentColor = (this.activeColorSlot === 'secondary') ? this.secondaryColor : this.primaryColor;
         if (this.btnColorPalette) {
             this.btnColorPalette.style.setProperty('--active-color', this.currentColor);
             this.applyColorBorderStyle(this.btnColorPalette, this.currentColor);
@@ -49,6 +61,7 @@ export const DesignRender = {
 
         this.renderCustomPickedColors();
         this.updateActiveColorPreview();
+        this.updateDualColorSwatchesUI();
         if (typeof this.renderShadingRamps === 'function') {
             this.renderShadingRamps(this.currentColor);
         }
@@ -60,6 +73,9 @@ export const DesignRender = {
         if (preview) {
             preview.style.backgroundColor = this.currentColor;
             preview.style.setProperty('--color-val', this.currentColor);
+        }
+        if (typeof this.updateDualColorSwatchesUI === 'function') {
+            this.updateDualColorSwatchesUI();
         }
     },
 

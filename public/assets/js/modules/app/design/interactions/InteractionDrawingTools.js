@@ -38,7 +38,221 @@ export const InteractionDrawingTools = {
             if (typeof this.closeSubtoolbar === 'function') this.closeSubtoolbar();
             if (typeof this.closeBrushSizeToolbar === 'function') this.closeBrushSizeToolbar();
         }
+        if (typeof this.updateTopPropertyBar === 'function') this.updateTopPropertyBar();
         this.requestRender();
+    },
+
+    updateTopPropertyBar(mode = null) {
+        const currentMode = mode || this.interactionMode || 'normal';
+        const iconEl = document.querySelector('[data-ref="prop-active-tool-icon"]');
+        const titleEl = document.querySelector('[data-ref="prop-active-tool-title"]');
+
+        const toolMeta = {
+            offline_brush: { title: 'Lápiz', icon: 'brush', context: 'offline_brush' },
+            offline_eraser: { title: 'Goma de borrar', icon: 'cleaning_services', context: 'offline_eraser' },
+            offline_quick_shapes: { title: 'Formas rápidas', icon: 'polyline', context: 'offline_quick_shapes' },
+            offline_eyedropper: { title: 'Cuentagotas', icon: 'colorize', context: null },
+            offline_moving_area: { title: 'Selección', icon: 'crop_free', context: 'offline_moving_area' },
+            offline_bucket: { title: 'Bote de pintura', icon: 'format_color_fill', context: 'offline_bucket' },
+            offline_spray: { title: 'Aerosol / Spray', icon: 'grain', context: 'offline_spray' },
+            offline_dither: { title: 'Tramado (Dither)', icon: 'texture', context: 'offline_dither' },
+            offline_shading: { title: 'Sombreado', icon: 'exposure', context: 'offline_shading' },
+            offline_text: { title: 'Texto Pixel', icon: 'title', context: null },
+            offline_seamless_tile: { title: 'Baldosa continua', icon: 'repeat', context: null },
+            normal: { title: 'Navegación', icon: 'pan_tool', context: null }
+        };
+
+        const meta = toolMeta[currentMode] || toolMeta.normal;
+        if (iconEl) iconEl.textContent = meta.icon;
+        if (titleEl) titleEl.textContent = meta.title;
+
+        document.querySelectorAll('.property-bar-context-group').forEach(group => {
+            const groupContext = group.getAttribute('data-tool-context');
+            if (meta.context && groupContext === meta.context) {
+                group.classList.remove('disabled');
+                group.classList.add('active');
+            } else {
+                group.classList.remove('active');
+                group.classList.add('disabled');
+            }
+        });
+
+        const sizeQuickGroup = document.querySelector('[data-ref="brush-size-quick-group"]');
+        if (sizeQuickGroup) {
+            const btns = sizeQuickGroup.querySelectorAll('[data-action="setBrushSize"]');
+            btns.forEach(b => b.classList.toggle('active', parseInt(b.getAttribute('data-size'), 10) === (this.brushSize || 1)));
+        }
+
+        const ppBtn = document.querySelector('[data-ref="prop-btn-pixel-perfect"]');
+        if (ppBtn) ppBtn.classList.toggle('active', !!this.isPixelPerfect);
+
+        const stabGroup = document.querySelector('[data-ref="brush-stabilizer-group"]');
+        if (stabGroup) {
+            const btns = stabGroup.querySelectorAll('[data-action="setStabilizerPreset"]');
+            btns.forEach(b => b.classList.toggle('active', parseInt(b.getAttribute('data-stabilizer'), 10) === (this.stabilizer || 0)));
+        }
+
+        const mirrorX = document.querySelector('[data-ref="prop-mirror-x"]');
+        const mirrorY = document.querySelector('[data-ref="prop-mirror-y"]');
+        if (mirrorX) mirrorX.classList.toggle('active', !!this.isMirrorX);
+        if (mirrorY) mirrorY.classList.toggle('active', !!this.isMirrorY);
+
+        if (this.topBarCarouselController && typeof this.topBarCarouselController.updateButtons === 'function') {
+            setTimeout(() => this.topBarCarouselController.updateButtons(), 50);
+        }
+
+        if (typeof this.updateSidebarToolSettingsUI === 'function') {
+            this.updateSidebarToolSettingsUI();
+        }
+    },
+
+    updateSidebarToolSettingsUI() {
+        const currentMode = this.interactionMode || 'normal';
+        const toolMeta = {
+            offline_brush: { title: 'Lápiz', icon: 'brush', desc: 'Dibuja píxeles directos en la capa activa', section: 'offline_brush' },
+            offline_eraser: { title: 'Goma de borrar', icon: 'cleaning_services', desc: 'Borra píxeles de la capa activa', section: 'offline_eraser' },
+            offline_quick_shapes: { title: 'Formas rápidas', icon: 'polyline', desc: 'Traza líneas, rectángulos y círculos', section: 'offline_quick_shapes' },
+            offline_eyedropper: { title: 'Cuentagotas', icon: 'colorize', desc: 'Selecciona colores del lienzo', section: null },
+            offline_moving_area: { title: 'Selección', icon: 'crop_free', desc: 'Selecciona y mueve áreas de píxeles', section: 'offline_moving_area' },
+            offline_bucket: { title: 'Bote de pintura', icon: 'format_color_fill', desc: 'Rellena áreas contiguas o reemplaza color', section: 'offline_bucket' },
+            offline_spray: { title: 'Aerosol / Spray', icon: 'grain', desc: 'Esparce partículas de color con densidad ajustable', section: 'offline_spray' },
+            offline_dither: { title: 'Tramado (Dither)', icon: 'texture', desc: 'Dibuja degradados con tramas ordenadas', section: 'offline_dither' },
+            offline_shading: { title: 'Sombreado', icon: 'exposure', desc: 'Aclara u oscurece píxeles proporcionalmente', section: 'offline_shading' },
+            offline_text: { title: 'Texto Pixel', icon: 'title', desc: 'Inserta texto rasterizado en el lienzo', section: null },
+            offline_seamless_tile: { title: 'Baldosa continua', icon: 'repeat', desc: 'Previsualiza repetición en patrón infinito', section: null },
+            normal: { title: 'Navegación', icon: 'pan_tool', desc: 'Desplaza y haz zoom por el lienzo', section: null }
+        };
+
+        const meta = toolMeta[currentMode] || toolMeta.normal;
+        const iconEl = document.querySelector('[data-ref="sidebar-tool-icon"]');
+        const titleEl = document.querySelector('[data-ref="sidebar-tool-title"]');
+        const descEl = document.querySelector('[data-ref="sidebar-tool-desc"]');
+        if (iconEl) iconEl.textContent = meta.icon;
+        if (titleEl) titleEl.textContent = meta.title;
+        if (descEl) descEl.textContent = meta.desc;
+
+        document.querySelectorAll('.canvas-tool-settings-section').forEach(sec => {
+            const secTool = sec.getAttribute('data-sidebar-tool-section');
+            if (meta.section && secTool === meta.section) {
+                sec.classList.remove('disabled');
+            } else {
+                sec.classList.add('disabled');
+            }
+        });
+
+        // Sync brush size slider, value text, and chips
+        const bSlider = document.querySelector('[data-ref="sidebar-brush-size-slider"]');
+        const bVal = document.querySelector('[data-ref="sidebar-brush-size-val"]');
+        if (bSlider) bSlider.value = this.brushSize || 1;
+        if (bVal) bVal.textContent = `${this.brushSize || 1}px`;
+        document.querySelectorAll('.canvas-tool-chip[data-action="setBrushSize"]').forEach(chip => {
+            chip.classList.toggle('active', parseInt(chip.getAttribute('data-size'), 10) === (this.brushSize || 1));
+        });
+
+        // Sync brush shape segmented buttons
+        document.querySelectorAll('.canvas-tool-segmented-btn[data-brush-shape]').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-brush-shape') === (this.brushShape || 'square'));
+        });
+
+        // Sync pixel-perfect toggle
+        const sPP = document.querySelector('[data-ref="sidebar-btn-pixel-perfect"]');
+        if (sPP) sPP.classList.toggle('active', !!this.isPixelPerfect);
+
+        // Sync stabilizer slider and value text
+        const stabSlider = document.querySelector('[data-ref="sidebar-stabilizer-slider"]');
+        const stabVal = document.querySelector('[data-ref="sidebar-stabilizer-val"]');
+        if (stabSlider) stabSlider.value = this.stabilizer || 0;
+        if (stabVal) stabVal.textContent = `${this.stabilizer || 0}%`;
+
+        // Sync mirror axes
+        const mX = document.querySelector('[data-ref="sidebar-mirror-x"]');
+        const mY = document.querySelector('[data-ref="sidebar-mirror-y"]');
+        if (mX) mX.classList.toggle('active', !!this.isMirrorX);
+        if (mY) mY.classList.toggle('active', !!this.isMirrorY);
+
+        // Sync spray slider, value text, and chips
+        const spraySlider = document.querySelector('[data-ref="sidebar-spray-slider"]');
+        const sprayVal = document.querySelector('[data-ref="sidebar-spray-val"]');
+        const spSize = this.spraySize || 5;
+        if (spraySlider) spraySlider.value = spSize;
+        if (sprayVal) sprayVal.textContent = `${spSize}px`;
+        document.querySelectorAll('.canvas-tool-chip[data-action="setSpraySizeRange"]').forEach(chip => {
+            chip.classList.toggle('active', parseInt(chip.getAttribute('data-size'), 10) === spSize);
+        });
+
+        if (typeof this.updateSegmentedGliders === 'function') {
+            this.updateSegmentedGliders();
+        }
+    },
+
+    updateSegmentedGliders(root = document) {
+        requestAnimationFrame(() => {
+            const containers = root.querySelectorAll ? root.querySelectorAll('.canvas-tool-segmented, .canvas-tool-quick-chips') : [];
+            containers.forEach(container => {
+                const activeBtn = container.querySelector('.active');
+                if (!activeBtn) {
+                    container.style.setProperty('--glider-opacity', '0');
+                    return;
+                }
+                const left = Math.max(0, activeBtn.offsetLeft - 2);
+                const width = activeBtn.offsetWidth;
+                if (width > 0) {
+                    container.style.setProperty('--glider-opacity', '1');
+                    container.style.setProperty('--glider-x', `${left}px`);
+                    container.style.setProperty('--glider-width', `${width}px`);
+                }
+            });
+        });
+    },
+
+    setBrushSizeRange(size) {
+        this.setBrushSize(parseInt(size, 10) || 1);
+    },
+
+    setStabilizerRange(val) {
+        this.stabilizer = Math.max(0, Math.min(100, parseInt(val, 10) || 0));
+        const stabSlider = document.querySelector('[data-ref="sidebar-stabilizer-slider"]');
+        const stabVal = document.querySelector('[data-ref="sidebar-stabilizer-val"]');
+        if (stabSlider) stabSlider.value = this.stabilizer;
+        if (stabVal) stabVal.textContent = `${this.stabilizer}%`;
+    },
+
+    setSpraySizeRange(size) {
+        const numSize = parseInt(size, 10) || 5;
+        this.spraySize = numSize;
+        if (typeof this.setSpraySize === 'function') {
+            this.setSpraySize(numSize);
+        }
+        const spraySlider = document.querySelector('[data-ref="sidebar-spray-slider"]');
+        const sprayVal = document.querySelector('[data-ref="sidebar-spray-val"]');
+        if (spraySlider) spraySlider.value = numSize;
+        if (sprayVal) sprayVal.textContent = `${numSize}px`;
+        document.querySelectorAll('.canvas-tool-chip[data-action="setSpraySizeRange"]').forEach(chip => {
+            chip.classList.toggle('active', parseInt(chip.getAttribute('data-size'), 10) === numSize);
+        });
+        if (typeof this.updateSegmentedGliders === 'function') {
+            this.updateSegmentedGliders();
+        }
+    },
+
+    toggleOfflineMirrorAxis(axis = 'x') {
+        if (axis === 'x') {
+            this.isMirrorX = !this.isMirrorX;
+        } else if (axis === 'y') {
+            this.isMirrorY = !this.isMirrorY;
+        }
+
+        if (this.isMirrorX && this.isMirrorY) {
+            if (typeof this.setOfflineMirrorMode === 'function') this.setOfflineMirrorMode('quad');
+        } else if (this.isMirrorX) {
+            if (typeof this.setOfflineMirrorMode === 'function') this.setOfflineMirrorMode('x');
+        } else if (this.isMirrorY) {
+            if (typeof this.setOfflineMirrorMode === 'function') this.setOfflineMirrorMode('y');
+        } else {
+            this.isMirrorMode = false;
+        }
+
+        this.updateTopPropertyBar();
     },
 
     toggleOfflineBrush() {
@@ -57,6 +271,7 @@ export const InteractionDrawingTools = {
             this.openSubtoolbar('brush');
             this.openBrushSizeToolbar('brush');
         }
+        if (typeof this.updateTopPropertyBar === 'function') this.updateTopPropertyBar();
         this.requestRender();
     },
 
@@ -67,9 +282,15 @@ export const InteractionDrawingTools = {
             const btns = subtoolbar.querySelectorAll('[data-action="setBrushShape"]');
             btns.forEach(b => b.classList.toggle('active', b.getAttribute('data-brush-shape') === shape));
         }
+        document.querySelectorAll('[data-action="setBrushShape"]').forEach(b => {
+            b.classList.toggle('active', b.getAttribute('data-brush-shape') === shape);
+        });
         const shapeNames = { square: 'Cuadrado', circle: 'Redondo', slash: 'Diagonal' };
         if (typeof showMessage === 'function') {
             showMessage(`Forma de pincel: ${shapeNames[shape] || shape}`, 'info');
+        }
+        if (typeof this.updateSegmentedGliders === 'function') {
+            this.updateSegmentedGliders();
         }
         this.requestRender();
     },
@@ -81,6 +302,18 @@ export const InteractionDrawingTools = {
             const btns = toolbar.querySelectorAll('[data-action="setBrushSize"]');
             btns.forEach(b => b.classList.toggle('active', parseInt(b.getAttribute('data-size'), 10) === this.brushSize));
         }
+        const bSlider = document.querySelector('[data-ref="sidebar-brush-size-slider"]');
+        const bVal = document.querySelector('[data-ref="sidebar-brush-size-val"]');
+        if (bSlider) bSlider.value = this.brushSize;
+        if (bVal) bVal.textContent = `${this.brushSize}px`;
+        document.querySelectorAll('.canvas-tool-chip[data-action="setBrushSize"]').forEach(chip => {
+            chip.classList.toggle('active', parseInt(chip.getAttribute('data-size'), 10) === this.brushSize);
+        });
+
+        if (typeof this.updateSegmentedGliders === 'function') {
+            this.updateSegmentedGliders();
+        }
+
         if (typeof showMessage === 'function') {
             showMessage(`Tamaño de pincel: ${this.brushSize}x${this.brushSize} px`, 'info');
         }
@@ -89,8 +322,8 @@ export const InteractionDrawingTools = {
 
     togglePixelPerfect() {
         this.isPixelPerfect = !this.isPixelPerfect;
-        const btn = document.querySelector('[data-ref="btn-brush-pixel-perfect"]') || document.querySelector('[data-action="togglePixelPerfect"]');
-        if (btn) btn.classList.toggle('active', !!this.isPixelPerfect);
+        const btns = document.querySelectorAll('[data-ref="btn-brush-pixel-perfect"], [data-ref="prop-btn-pixel-perfect"], [data-action="togglePixelPerfect"]');
+        btns.forEach(btn => btn.classList.toggle('active', !!this.isPixelPerfect));
         const msg = this.isPixelPerfect 
             ? (window.__('msg_pixel_perfect_on') || 'Modo Pixel-Perfect activado')
             : (window.__('msg_pixel_perfect_off') || 'Modo Pixel-Perfect desactivado');
@@ -184,22 +417,24 @@ export const InteractionDrawingTools = {
 
     setQuickShapeType(type = 'line', targetEl = null) {
         this.quickShapeType = type;
-        const subtoolbar = document.querySelector('[data-ref="offline-subtoolbar-vertical"]');
-        if (subtoolbar) {
-            const btns = subtoolbar.querySelectorAll('[data-action="setQuickShapeType"]');
-            btns.forEach(b => b.classList.toggle('active', b.getAttribute('data-shape-type') === type));
-        }
+        document.querySelectorAll('[data-action="setQuickShapeType"]').forEach(b => {
+            b.classList.toggle('active', b.getAttribute('data-shape-type') === type);
+        });
         const typeNames = { line: 'Línea Recta', rectangle: 'Rectángulo', circle: 'Círculo' };
         if (typeof showMessage === 'function') {
             showMessage(`Primitiva seleccionada: ${typeNames[type] || type}`, 'info');
+        }
+        if (typeof this.updateSegmentedGliders === 'function') {
+            this.updateSegmentedGliders();
         }
         this.requestRender();
     },
 
     toggleQuickShapeFill(targetEl = null) {
         this.quickShapeFill = !this.quickShapeFill;
-        const btn = document.querySelector('[data-ref="btn-quick-shape-fill"]') || document.querySelector('[data-action="toggleQuickShapeFill"]');
-        if (btn) btn.classList.toggle('active', !!this.quickShapeFill);
+        document.querySelectorAll('[data-action="toggleQuickShapeFill"]').forEach(btn => {
+            btn.classList.toggle('active', !!this.quickShapeFill);
+        });
         const label = this.quickShapeFill ? 'Rellena' : 'Solo Contorno';
         if (typeof showMessage === 'function') {
             showMessage(`Modo de figura: ${label}`, 'info');
@@ -1232,11 +1467,9 @@ export const InteractionDrawingTools = {
         this.isDitherPainting = false;
         this.ditherLastCoords = null;
 
-        const subtoolbar = document.querySelector('[data-ref="offline-subtoolbar-vertical"]');
-        if (subtoolbar) {
-            const btns = subtoolbar.querySelectorAll('[data-action="setOfflineEraserMode"]');
-            btns.forEach(b => b.classList.toggle('active', b.getAttribute('data-eraser-mode') === mode));
-        }
+        document.querySelectorAll('[data-action="setOfflineEraserMode"]').forEach(b => {
+            b.classList.toggle('active', b.getAttribute('data-eraser-mode') === mode);
+        });
 
         if (btnEraser) btnEraser.classList.add('active');
         this.selectedPixels.clear();
@@ -1269,6 +1502,7 @@ export const InteractionDrawingTools = {
         this.openSubtoolbar('eraser');
         this.updateSelectionUI();
         if (typeof this.updateOwnerBadges === 'function') this.updateOwnerBadges();
+        if (typeof this.updateSegmentedGliders === 'function') this.updateSegmentedGliders();
         this.requestRender();
     },
 

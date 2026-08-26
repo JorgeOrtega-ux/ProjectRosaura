@@ -156,6 +156,14 @@ export const DesignSetup = {
             if (typeof this.updateZoomUI === 'function') this.updateZoomUI();
             this.setCanvasBadge('coords', 'my_location', '- , -', 'left');
             this.renderColorPalette(this.canvasPaletteId);
+            if (this.isOfflineMode && !this.isSpectator) {
+                this.interactionMode = 'offline_brush';
+                const btnBrush = document.querySelector('[data-action="toggleOfflineBrush"]');
+                if (btnBrush) btnBrush.classList.add('active');
+            }
+            if (typeof this.updateTopPropertyBar === 'function') this.updateTopPropertyBar(this.interactionMode);
+            if (typeof this.updateDualColorSwatchesUI === 'function') this.updateDualColorSwatchesUI();
+            if (typeof this.setupHorizontalToolsScroll === 'function') this.setupHorizontalToolsScroll();
             if (typeof this.loadStickersLibrary === 'function') {
                 this.loadStickersLibrary();
             }
@@ -256,13 +264,7 @@ export const DesignSetup = {
             this.removeCanvasBadge('lock-freeze', 'left');
         }
 
-        if (this.isOfflineMode) {
-            this.setCanvasBadge('mode-offline', 'palette', (window.__ ? window.__('badge_studio') : null) || 'Estudio Personal', 'left');
-            this.removeCanvasBadge('mode-online', 'left');
-        } else {
-            this.setCanvasBadge('mode-online', 'sensors', (window.__ ? window.__('badge_online_battle') : null) || 'Lienzo En Vivo', 'left');
-            this.removeCanvasBadge('mode-offline', 'left');
-        }
+
 
         if (this.isSubscriptionLocked) {
             this.setCanvasBadge('lock-premium', 'warning', __('badge_subscription_expired'), 'left');
@@ -892,5 +894,29 @@ export const DesignSetup = {
 
         this.transform.x = Math.min(Math.max(this.transform.x, minX), maxX);
         this.transform.y = Math.min(Math.max(this.transform.y, minY), maxY);
+    },
+
+    setupHorizontalToolsScroll() {
+        const toolbar = document.querySelector('[data-ref="offline-tools-horizontal"]');
+        const btnLeft = document.querySelector('[data-action="scrollToolsLeft"]');
+        const btnRight = document.querySelector('[data-action="scrollToolsRight"]');
+        if (!toolbar) return;
+
+        const updateScrollButtons = () => {
+            const hasOverflow = toolbar.scrollWidth > (toolbar.clientWidth + 2);
+            if (!hasOverflow) {
+                if (btnLeft) btnLeft.classList.add('disabled');
+                if (btnRight) btnRight.classList.add('disabled');
+                return;
+            }
+            const isStart = toolbar.scrollLeft <= 2;
+            const isEnd = toolbar.scrollLeft + toolbar.clientWidth >= toolbar.scrollWidth - 2;
+            if (btnLeft) btnLeft.classList.toggle('disabled', isStart);
+            if (btnRight) btnRight.classList.toggle('disabled', isEnd);
+        };
+
+        toolbar.addEventListener('scroll', updateScrollButtons, { passive: true });
+        window.addEventListener('resize', updateScrollButtons, { passive: true });
+        setTimeout(updateScrollButtons, 100);
     }
 };

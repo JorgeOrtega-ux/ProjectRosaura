@@ -77,18 +77,208 @@
     width: max-content;
 }
 
+/* ==========================================================================
+   UNIFIED CANVAS TOOLBAR BUTTON SYSTEM (SCOPED MONOCHROME THEME)
+   ========================================================================== */
+
+.canvas-top-property-bar .component-button,
+.canvas-design-toolbar .component-button,
+.canvas-design-toolbar-horizontal .component-button,
+.canvas-design-toolbar-vertical .component-button,
+.canvas-design-toolbar-vertical-right .component-button,
+.canvas-design-subtoolbar-vertical .component-button,
+.canvas-design-footer .component-button,
+.canvas-right-unified-sidebar .component-button,
+.component-badge--toolbar .component-button,
+.component-button--canvas {
+    color: #ffffff;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+.canvas-top-property-bar .component-button:hover,
+.canvas-design-toolbar .component-button:hover,
+.canvas-design-toolbar-horizontal .component-button:hover,
+.canvas-design-toolbar-vertical .component-button:hover,
+.canvas-design-toolbar-vertical-right .component-button:hover,
+.canvas-design-subtoolbar-vertical .component-button:hover,
+.canvas-design-footer .component-button:hover,
+.canvas-right-unified-sidebar .component-button:hover,
+.component-badge--toolbar .component-button:hover,
+.component-button--canvas:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.45);
+    color: #ffffff;
+}
+
+.canvas-top-property-bar .component-button.active,
+.canvas-top-property-bar .component-button:active,
+.canvas-design-toolbar .component-button.active,
+.canvas-design-toolbar .component-button:active,
+.canvas-design-toolbar-horizontal .component-button.active,
+.canvas-design-toolbar-horizontal .component-button:active,
+.canvas-design-toolbar-vertical .component-button.active,
+.canvas-design-toolbar-vertical .component-button:active,
+.canvas-design-toolbar-vertical-right .component-button.active,
+.canvas-design-toolbar-vertical-right .component-button:active,
+.canvas-design-subtoolbar-vertical .component-button.active,
+.canvas-design-subtoolbar-vertical .component-button:active,
+.canvas-design-footer .component-button.active,
+.canvas-design-footer .component-button:active,
+.canvas-right-unified-sidebar .component-button.active,
+.canvas-right-unified-sidebar .component-button:active,
+.component-badge--toolbar .component-button.active,
+.component-badge--toolbar .component-button:active,
+.component-button--canvas.active,
+.component-button--canvas:active {
+    background: rgba(255, 255, 255, 0.22);
+    border-color: rgba(255, 255, 255, 0.65);
+    color: #ffffff;
+}
+
+.canvas-top-property-bar .component-button--icon,
+.canvas-design-toolbar .component-button--icon,
+.canvas-design-toolbar-horizontal .component-button--icon,
+.canvas-design-toolbar-vertical .component-button--icon,
+.canvas-design-toolbar-vertical-right .component-button--icon,
+.canvas-design-subtoolbar-vertical .component-button--icon,
+.canvas-design-footer .component-button--icon,
+.canvas-right-unified-sidebar .component-button--icon,
+.component-badge--toolbar .component-button--icon,
+.component-button--canvas.component-button--icon {
+    border-radius: 9999px;
+    padding: 0;
+}
+
+.canvas-top-property-bar .material-symbols-rounded,
+.canvas-design-toolbar .material-symbols-rounded,
+.canvas-design-toolbar-horizontal .material-symbols-rounded,
+.canvas-design-toolbar-vertical .material-symbols-rounded,
+.canvas-design-toolbar-vertical-right .material-symbols-rounded,
+.canvas-design-subtoolbar-vertical .material-symbols-rounded,
+.canvas-design-footer .material-symbols-rounded,
+.canvas-right-unified-sidebar .material-symbols-rounded,
+.component-badge--toolbar .material-symbols-rounded,
+.component-button--canvas .material-symbols-rounded {
+    color: #ffffff;
+    font-size: 1.1rem;
+}
+
+/* ── Canvas Toolbar Carousel Wrappers & Nav Buttons ── */
+
+.canvas-top-property-bar-wrapper {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: calc(100vw - 140px);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    pointer-events: none;
+}
+
+.canvas-vertical-toolbar-wrapper {
+    position: absolute;
+    top: 50%;
+    left: 16px;
+    transform: translateY(-50%);
+    max-height: calc(100vh - 120px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    pointer-events: none;
+}
+
+@media (max-width: 768px) {
+    .canvas-top-property-bar-wrapper {
+        top: 8px;
+        max-width: calc(100vw - 20px);
+    }
+    .canvas-vertical-toolbar-wrapper {
+        left: 8px;
+    }
+}
+
+.canvas-top-property-bar-wrapper .canvas-top-property-bar {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    pointer-events: auto;
+    max-width: 100%;
+    min-width: 0;
+    flex-shrink: 1;
+}
+
+.canvas-vertical-toolbar-wrapper .canvas-design-toolbar-vertical {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    pointer-events: auto;
+    max-height: 100%;
+    min-height: 0;
+    flex-shrink: 1;
+}
+
+.canvas-nav-btn {
+    position: static;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    min-height: 28px;
+    border-radius: 50%;
+    background: #18181b !important;
+    border: 1px solid rgba(255, 255, 255, 0.45) !important;
+    color: #ffffff !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.75) !important;
+    pointer-events: auto;
+    padding: 0;
+    transition: opacity 0.2s ease, transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, visibility 0.2s ease;
+}
+
+.canvas-nav-btn:hover {
+    background: #27272a !important;
+    border-color: #ffffff !important;
+    transform: scale(1.1);
+}
+
+.canvas-nav-btn.disabled {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+.canvas-nav-btn .material-symbols-rounded {
+    font-size: 1.25rem !important;
+    color: #ffffff !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* ── Canvas Design Toolbar (top-center floating pill) ── */
 .canvas-design-toolbar {
     position: absolute;
     top: 12px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 50;
-    height: 40px;
+    height: 48px;
     display: none;
     align-items: center;
-    gap: 3px;
-    padding: 4px;
+    gap: 4px;
+    padding: 4px 8px;
     background: #0d0d10;
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 9999px;
@@ -104,31 +294,6 @@
 
 .canvas-design-toolbar.disabled {
     display: none !important;
-}
-
-.canvas-design-toolbar .component-button--icon {
-    width: 32px;
-    height: 32px;
-    min-height: 32px;
-    border-radius: 9999px;
-    background: transparent;
-    border-color: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-}
-
-.canvas-design-toolbar .component-button--icon:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.45);
-}
-
-.canvas-design-toolbar .component-button--icon.active {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.6);
-}
-
-.canvas-design-toolbar .material-symbols-rounded {
-    font-size: 1.1rem;
-    color: #ffffff;
 }
 
 .canvas-design-toolbar .component-button--processing .component-spinner,
@@ -189,126 +354,102 @@
     }
 }
 
-/* ── Canvas Design Toolbar Vertical (Left-center floating pill for offline tools) ── */
-.canvas-design-toolbar-vertical {
+/* ── Canvas Design Bottom Dock (Dynamic Flex Stack for Floating Tools, Layers Carousel & Footer) ── */
+.canvas-design-bottom-dock {
     position: absolute;
-    top: 50%;
-    left: 16px;
-    transform: translateY(-50%);
-    display: none;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
     flex-direction: column;
     align-items: center;
+    pointer-events: none;
+    z-index: 45;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    max-width: 100vw;
+}
+
+.canvas-design-bottom-dock > * {
+    pointer-events: auto;
+}
+
+/* ── Floating Horizontal Tools Toolbar (Procreate / iPad Style Capsule) ── */
+.canvas-horizontal-tools-wrapper {
+    display: flex;
+    align-items: center;
     gap: 4px;
-    padding: 4px;
+    margin-bottom: 8px;
+    max-width: calc(100vw - 32px);
+    pointer-events: auto;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.canvas-horizontal-tools-wrapper .canvas-design-toolbar-horizontal {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    pointer-events: auto;
+    max-width: 100%;
+    min-width: 0;
+    flex-shrink: 1;
+}
+
+.canvas-design-toolbar-horizontal {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 4px 6px;
     background: #0d0d10;
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 9999px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-    pointer-events: auto;
-    color: #ffffff;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    max-width: calc(100vw - 80px);
+    user-select: none;
 }
 
-.canvas-design-toolbar-vertical.active {
-    display: flex;
+.canvas-design-toolbar-horizontal::-webkit-scrollbar {
+    display: none;
 }
 
-.canvas-design-toolbar-vertical.disabled {
+.canvas-design-toolbar-horizontal.disabled {
     display: none !important;
 }
 
-.canvas-design-toolbar-vertical .component-button--icon {
-    width: 32px;
-    height: 32px;
-    min-height: 32px;
-    border-radius: 9999px;
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+/* Primary & Secondary Color Slot Buttons (Uniform 32px Round Buttons) */
+.canvas-color-slot-btn {
+    position: relative;
+    padding: 0 !important;
 }
 
-.canvas-design-toolbar-vertical .component-button--icon:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.45);
+.canvas-color-slot-indicator {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: var(--slot-color, #000000);
+    border: 1.5px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+    display: inline-block;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    pointer-events: none;
 }
 
-.canvas-design-toolbar-vertical .component-button--icon.active {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.6);
-    color: #ffffff;
+.canvas-color-slot-btn.active {
+    background-color: rgba(255, 255, 255, 0.22) !important;
+    border-color: #ffffff !important;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.35) !important;
 }
 
-.canvas-design-toolbar-vertical [data-action="toggleOfflineEraser"].active {
-    background: rgba(239, 68, 68, 0.2);
-    border-color: var(--color-danger, #ef4444);
-    color: var(--color-danger, #ef4444);
-}
-
-.canvas-design-toolbar-vertical [data-action="toggleOfflineMirror"].active {
-    background: rgba(16, 185, 129, 0.2);
-    border-color: #10b981;
-    color: #10b981;
-}
-
-.canvas-design-toolbar-vertical [data-action="toggleOfflineMoveArea"].active {
-    background: rgba(6, 182, 212, 0.2);
-    border-color: #06b6d4;
-    color: #06b6d4;
-}
-
-.canvas-design-toolbar-vertical [data-action="toggleOfflineBucket"].active {
-    background: rgba(59, 130, 246, 0.2);
-    border-color: var(--color-primary, #3b82f6);
-    color: var(--color-primary, #3b82f6);
-}
-
-.canvas-design-toolbar-vertical [data-action="toggleOfflineSpray"].active {
-    background: rgba(168, 85, 247, 0.2);
-    border-color: #a855f7;
-    color: #a855f7;
-}
-
-.canvas-design-toolbar-vertical [data-menu-target="menu-shapes"].active,
-.canvas-design-toolbar-vertical [data-action="toggleOfflineShapes"].active {
-    background: rgba(245, 158, 11, 0.2);
-    border-color: #f59e0b;
-    color: #f59e0b;
-}
-
-.canvas-design-toolbar-vertical [data-action="toggleOfflineBrush"].active {
-    background: rgba(99, 102, 241, 0.2);
-    border-color: var(--color-primary, #6366f1);
-    color: var(--color-primary, #6366f1);
-}
-
-.canvas-design-toolbar-vertical [data-action="toggleOfflineShading"].active {
-    background: rgba(234, 179, 8, 0.2);
-    border-color: #eab308;
-    color: #eab308;
-}
-
-.canvas-design-toolbar-vertical [data-action="toggleTileGrid"].active {
-    background: rgba(14, 165, 233, 0.2);
-    border-color: #0ea5e9;
-    color: #0ea5e9;
-}
-
-.canvas-design-toolbar-vertical [data-menu-target="menu-text"].active,
-.canvas-design-toolbar-vertical [data-action="toggleOfflineText"].active {
-    background: rgba(139, 92, 246, 0.2);
-    border-color: #8b5cf6;
-    color: #8b5cf6;
-}
-
-.canvas-design-toolbar-vertical .material-symbols-rounded {
-    font-size: 1.1rem;
-    color: inherit;
-}
-
-@media (max-width: 768px) {
-    .canvas-design-toolbar-vertical {
-        left: 8px;
-    }
+.canvas-color-slot-btn.active .canvas-color-slot-indicator {
+    border-color: #ffffff;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+    transform: scale(1.15);
 }
 
 /* ── Canvas Design Toolbar Vertical Right (Right-center floating pill for offline workspace tools: resize & reset) ── */
@@ -328,7 +469,6 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
     pointer-events: auto;
     color: #ffffff;
-    z-index: 50;
 }
 
 .canvas-design-toolbar-vertical-right.active {
@@ -337,33 +477,6 @@
 
 .canvas-design-toolbar-vertical-right.disabled {
     display: none !important;
-}
-
-.canvas-design-toolbar-vertical-right .component-button--icon {
-    width: 32px;
-    height: 32px;
-    min-height: 32px;
-    border-radius: 9999px;
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-
-.canvas-design-toolbar-vertical-right .component-button--icon:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.45);
-}
-
-.canvas-design-toolbar-vertical-right .component-button--icon.active {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.6);
-    color: #ffffff;
-}
-
-.canvas-design-toolbar-vertical-right .material-symbols-rounded {
-    font-size: 1.1rem;
-    color: inherit;
 }
 
 @media (max-width: 768px) {
@@ -577,8 +690,8 @@
 }
 
 .component-timelapse-speed-btn.active {
-    background-color: var(--color-primary, #6366f1);
-    border-color: var(--color-primary, #6366f1);
+    background-color: rgba(255, 255, 255, 0.22);
+    border-color: rgba(255, 255, 255, 0.65);
     color: #ffffff;
 }
 
@@ -2012,9 +2125,7 @@
 
 /* ── Canvas Design Layers Bottom Carousel (Horizontal Bar) ── */
 .canvas-design-layers-carousel {
-    position: absolute;
-    bottom: 40px;
-    left: 0;
+    position: relative;
     width: 100%;
     height: 98px;
     min-height: 98px;
@@ -2233,7 +2344,6 @@
     flex-shrink: 0;
     box-sizing: border-box;
     position: relative;
-    z-index: 50;
     color: #ffffff;
     user-select: none;
 }
@@ -2251,33 +2361,7 @@
     gap: 4px;
 }
 
-.canvas-design-footer .component-button--icon {
-    width: 32px;
-    height: 32px;
-    min-height: 32px;
-    border-radius: 9999px;
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
 
-.canvas-design-footer .component-button--icon:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.45);
-    color: #ffffff;
-}
-
-.canvas-design-footer .component-button--icon.active {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.6);
-    color: #ffffff;
-}
-
-.canvas-design-footer .material-symbols-rounded {
-    font-size: 1.1rem;
-    color: #ffffff;
-}
 
 .canvas-design-footer-layers-badge {
     font-size: 0.72rem;
@@ -2374,46 +2458,85 @@
 
 /* ── Footer Mode Tabs (Capas / Animación) ── */
 .canvas-design-footer-tabs {
-    display: inline-flex;
-    align-items: center;
+    display: inline-grid;
+    grid-template-columns: 1fr 1fr;
+    position: relative;
+    isolation: isolate;
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 9999px;
     padding: 2px;
     gap: 2px;
+    user-select: none;
+}
+
+.canvas-design-footer-tabs-glider {
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    left: 2px;
+    width: calc((100% - 6px) / 2);
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 9999px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.canvas-design-footer-tabs[data-mode="layers"] .canvas-design-footer-tabs-glider {
+    transform: translateX(0);
+}
+
+.canvas-design-footer-tabs[data-mode="timeline"] .canvas-design-footer-tabs-glider {
+    transform: translateX(calc(100% + 2px));
 }
 
 .canvas-design-footer-tab-btn {
+    position: relative;
+    z-index: 2;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    text-align: center;
     gap: 6px;
-    background: transparent;
-    border: none;
-    outline: none;
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
     color: rgba(255, 255, 255, 0.6);
-    padding: 4px 10px;
+    padding: 4px 12px;
     border-radius: 9999px;
     font-size: 0.75rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+    transition: color 0.2s ease;
     user-select: none;
     height: 26px;
     box-sizing: border-box;
+    box-shadow: none !important;
+    line-height: 1;
 }
 
 .canvas-design-footer-tab-btn .material-symbols-rounded {
     font-size: 16px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.canvas-design-footer-tab-btn .canvas-design-footer-tab-text {
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
 }
 
 .canvas-design-footer-tab-btn:hover {
     color: #ffffff;
-    background: rgba(255, 255, 255, 0.08);
 }
 
 .canvas-design-footer-tab-btn.active {
     color: #ffffff;
-    background: rgba(255, 255, 255, 0.18);
     font-weight: 600;
 }
 
@@ -2445,62 +2568,965 @@
     }
 }
 
-/* ── Color Shading Ramp Swatches ── */
-.component-color-ramp-container {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 4px;
-    padding: 6px 8px;
-    background: rgba(0, 0, 0, 0.25);
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.component-color-ramp-swatch {
-    flex: 1;
-    height: 28px;
-    min-width: 0;
-    border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    cursor: pointer;
-    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-    position: relative;
-    padding: 0;
-    outline: none;
-}
-
-.component-color-ramp-swatch:hover {
-    transform: scale(1.08);
-    border-color: rgba(255, 255, 255, 0.6);
-    z-index: 2;
-}
-
-.component-color-ramp-swatch.active {
-    border: 2px solid #ffffff !important;
-    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
-    transform: scale(1.05);
-    z-index: 3;
-}
-
-.component-color-ramp-swatch.is-base::after {
+/* ── Color Shading Ramp: is-base indicator (circle dot below active base swatch) ── */
+.component-color-btn.is-base::after {
     content: '';
     position: absolute;
-    bottom: -3px;
+    bottom: -5px;
     left: 50%;
     transform: translateX(-50%);
     width: 4px;
     height: 4px;
     border-radius: 50%;
-    background: #ffffff;
+    background: rgba(255, 255, 255, 0.8);
     box-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
 }
 
-.canvas-design-toolbar-vertical [data-action="toggleSeamlessTile"].active {
-    background: rgba(99, 102, 241, 0.25);
-    border-color: #6366f1;
-    color: #6366f1;
+/* ==========================================================================
+   TOP PROPERTY BAR (DYNAMIC CONTEXTUAL TOOLBAR)
+   ========================================================================== */
+
+.canvas-top-property-bar {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 48px;
+    max-width: calc(100% - 140px);
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: rgba(13, 13, 16, 0.94);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 9999px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+    pointer-events: auto;
+    white-space: nowrap;
+    color: #ffffff;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    touch-action: pan-x;
 }
+
+.canvas-top-property-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.canvas-top-property-bar.is-dragging {
+    scroll-behavior: auto;
+    cursor: grabbing;
+    user-select: none;
+}
+
+.canvas-top-property-bar.is-dragging .component-button,
+.canvas-top-property-bar.is-dragging input {
+    pointer-events: none;
+}
+
+.canvas-top-property-bar.active {
+    display: flex;
+}
+
+.canvas-top-property-bar.disabled {
+    display: none !important;
+}
+
+.property-bar-left-section {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.property-bar-tool-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 9999px;
+    color: #ffffff;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.property-bar-coords-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 32px;
+    min-width: 78px;
+    padding: 0 10px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #ffffff;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.property-bar-coords-text {
+    font-family: var(--sl-font-mono, monospace);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.72rem;
+    display: inline-block;
+    min-width: 44px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.property-bar-tool-badge .material-symbols-rounded,
+.property-bar-coords-badge .material-symbols-rounded {
+    font-size: 1.1rem;
+    color: #ffffff;
+}
+
+.property-bar-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.15);
+    margin: 0 2px;
+    flex-shrink: 0;
+}
+
+.property-bar-context-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.property-bar-context-group {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.property-bar-context-group.active {
+    display: flex;
+}
+
+.property-bar-context-group.disabled {
+    display: none !important;
+}
+
+.property-bar-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.75);
+    flex-shrink: 0;
+}
+
+.property-bar-label {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+    user-select: none;
+}
+
+.property-bar-val {
+    font-size: 0.75rem;
+    font-family: var(--sl-font-mono, monospace);
+    font-variant-numeric: tabular-nums;
+    color: #ffffff;
+    min-width: 24px;
+}
+
+/* ── Popover dropdowns for compact top bar controls ── */
+.property-bar-popover-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.property-bar-compact-val-btn {
+    padding: 0 10px !important;
+    gap: 5px !important;
+    font-size: 0.75rem !important;
+}
+
+.property-bar-compact-val-btn .material-symbols-rounded {
+    font-size: 1.05rem !important;
+}
+
+.property-bar-compact-val-btn .msr-arrow_drop_down {
+    font-size: 1.15rem !important;
+    margin-left: -3px;
+    opacity: 0.75;
+}
+
+.property-bar-popover-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #18181b;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    padding: 10px 14px;
+    min-width: 190px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: auto;
+}
+
+.property-bar-popover-menu.disabled {
+    display: none !important;
+}
+
+.property-bar-popover-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.property-bar-quick-sizes {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: space-between;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.property-bar-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 65px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.22);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.property-bar-range--full {
+    width: 100%;
+}
+
+.property-bar-range:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.property-bar-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ffffff;
+    cursor: pointer;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+    transition: transform 0.15s ease;
+}
+
+.property-bar-range::-webkit-slider-thumb:hover {
+    transform: scale(1.25);
+}
+
+.property-bar-range::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ffffff;
+    cursor: pointer;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+}
+
+.property-bar-btn-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.property-bar-right-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+/* ==========================================================================
+   DUAL COLOR SELECTOR (PRIMARY / SECONDARY SWATCHES)
+   ========================================================================== */
+
+.canvas-dual-color-wrapper {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.canvas-dual-color-box {
+    position: relative;
+    width: 32px;
+    height: 32px;
+}
+
+.canvas-dual-color-swatch {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease, z-index 0.15s ease;
+}
+
+.canvas-dual-color-swatch--primary {
+    top: 0;
+    left: 0;
+    z-index: 2;
+    background-color: #000000;
+}
+
+.canvas-dual-color-swatch--secondary {
+    bottom: 0;
+    right: 0;
+    z-index: 1;
+    background-color: #ffffff;
+}
+
+.canvas-dual-color-swatch.active {
+    border-color: #ffffff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.8), 0 2px 8px rgba(0, 0, 0, 0.6);
+    z-index: 3;
+    transform: scale(1.08);
+}
+
+.canvas-dual-color-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.canvas-dual-color-btn {
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    border-radius: 3px;
+    padding: 0;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.canvas-dual-color-btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.canvas-dual-color-btn .material-symbols-rounded {
+    font-size: 0.95rem;
+}
+
+/* ==========================================================================
+   UNIFIED RIGHT SIDEBAR WITH TABS (CAPAS, MINIMAPA)
+   ========================================================================== */
+
+.canvas-right-unified-sidebar {
+    position: absolute;
+    top: 50%;
+    right: 64px;
+    transform: translateY(-50%) translateX(0);
+    width: 275px;
+    max-height: calc(100% - 64px);
+    background: rgba(13, 13, 16, 0.94);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+    display: flex;
+    flex-direction: column;
+    z-index: 50;
+    pointer-events: auto;
+    color: #ffffff;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s ease;
+    overflow: hidden;
+}
+
+.canvas-right-unified-sidebar.disabled {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transform: translateY(-50%) translateX(12px) !important;
+    display: none !important;
+}
+
+.canvas-sidebar-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    position: relative;
+    isolation: isolate;
+    background: rgba(0, 0, 0, 0.4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 3px;
+    gap: 3px;
+    user-select: none;
+}
+
+.canvas-sidebar-tabs-glider {
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    left: 3px;
+    width: calc((100% - 12px) / 3);
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.canvas-sidebar-tabs[data-active-tab="layers"] .canvas-sidebar-tabs-glider {
+    transform: translateX(0);
+}
+
+.canvas-sidebar-tabs[data-active-tab="minimap"] .canvas-sidebar-tabs-glider {
+    transform: translateX(calc(100% + 3px));
+}
+
+.canvas-sidebar-tabs[data-active-tab="tool"] .canvas-sidebar-tabs-glider {
+    transform: translateX(calc(200% + 6px));
+}
+
+.canvas-sidebar-tab-btn {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 6px;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    user-select: none;
+    box-shadow: none !important;
+}
+
+.canvas-sidebar-tab-btn .material-symbols-rounded {
+    font-size: 1.15rem;
+}
+
+.canvas-sidebar-tab-btn:hover {
+    color: #ffffff;
+}
+
+.canvas-sidebar-tab-btn.active {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.canvas-sidebar-body {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.canvas-sidebar-tab-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.canvas-sidebar-tab-content.disabled {
+    display: none !important;
+}
+
+/* ── Sidebar: Tool Settings Panel ── */
+.canvas-tool-settings-panel {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.canvas-tool-settings-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.canvas-tool-settings-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    flex-shrink: 0;
+}
+
+.canvas-tool-settings-badge .material-symbols-rounded {
+    font-size: 1.25rem;
+}
+
+.canvas-tool-settings-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+}
+
+.canvas-tool-settings-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.canvas-tool-settings-desc {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.55);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.canvas-tool-settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.canvas-tool-settings-section.disabled {
+    display: none !important;
+}
+
+.canvas-tool-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.canvas-tool-field-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.canvas-tool-field-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.canvas-tool-field-val {
+    font-size: 0.75rem;
+    font-family: var(--sl-font-mono, monospace);
+    font-variant-numeric: tabular-nums;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.canvas-tool-field-sub {
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.canvas-tool-field-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+}
+
+.canvas-tool-quick-chips {
+    display: flex;
+    position: relative;
+    isolation: isolate;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 2px;
+    gap: 2px;
+    margin-top: 2px;
+    user-select: none;
+}
+
+.canvas-tool-chips-glider {
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    left: 2px;
+    width: var(--glider-width, 24px);
+    transform: translateX(var(--glider-x, 0px));
+    background: #ffffff;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.2s ease, opacity 0.15s ease;
+    z-index: 1;
+    pointer-events: none;
+    opacity: var(--glider-opacity, 1);
+}
+
+.canvas-tool-chip {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-family: var(--sl-font-mono, monospace);
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    transition: color 0.2s ease;
+    box-shadow: none !important;
+    line-height: 1;
+    padding: 0;
+}
+
+.canvas-tool-chip:hover {
+    color: #ffffff;
+}
+
+.canvas-tool-chip.active {
+    color: #000000 !important;
+    font-weight: 700;
+}
+
+.canvas-tool-segmented {
+    display: flex;
+    position: relative;
+    isolation: isolate;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 2px;
+    gap: 2px;
+    user-select: none;
+}
+
+.canvas-tool-segmented-glider {
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    left: 2px;
+    width: var(--glider-width, calc(33.333% - 2px));
+    transform: translateX(var(--glider-x, 0px));
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 6px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.2s ease, opacity 0.15s ease;
+    z-index: 1;
+    pointer-events: none;
+    opacity: var(--glider-opacity, 1);
+}
+
+.canvas-tool-segmented-btn {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 5px;
+    padding: 6px 8px;
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.65);
+    cursor: pointer;
+    transition: color 0.2s ease;
+    user-select: none;
+    box-shadow: none !important;
+    line-height: 1;
+}
+
+.canvas-tool-segmented-btn .material-symbols-rounded {
+    font-size: 1.05rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.canvas-tool-segmented-btn span {
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+}
+
+.canvas-tool-segmented-btn:hover {
+    color: #ffffff;
+}
+
+.canvas-tool-segmented-btn.active {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* Layer Settings in Sidebar (Spacious Controls) */
+.component-layer-settings-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    width: 100%;
+}
+
+.component-layer-blend-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.component-layer-blend-wrapper .component-dropdown-trigger {
+    height: 34px;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    user-select: none;
+}
+
+.component-layer-blend-wrapper .component-dropdown-trigger:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.35);
+}
+
+.component-layer-blend-wrapper .component-dropdown-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+.component-layer-blend-wrapper .material-symbols-rounded {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.6);
+    flex-shrink: 0;
+}
+
+.component-layer-alpha-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.component-layer-opacity-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+
+.component-layer-opacity-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ffffff;
+    cursor: pointer;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+    transition: transform 0.15s ease;
+}
+
+.component-layer-opacity-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.25);
+}
+
+.component-layer-opacity-slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ffffff;
+    cursor: pointer;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+}
+
+.component-layers-actions-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 6px 8px;
+    background: rgba(0, 0, 0, 0.25);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    flex-wrap: wrap;
+}
+
+/* Minimap Tab in Sidebar */
+.canvas-minimap-panel {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.canvas-minimap-canvas-wrapper {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    background: #141418;
+    background-image: 
+        linear-gradient(45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%), 
+        linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%), 
+        linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%);
+    background-size: 8px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: crosshair;
+}
+
+.canvas-minimap-canvas {
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    display: block;
+}
+
+.canvas-minimap-viewport-box {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 2px solid #ffffff;
+    background: rgba(255, 255, 255, 0.15);
+    pointer-events: none;
+    box-sizing: border-box;
+}
+
+.canvas-minimap-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    justify-content: center;
+}
+
+.canvas-minimap-stats {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    font-size: 0.72rem;
+    font-family: var(--sl-font-mono, monospace);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.canvas-minimap-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.canvas-minimap-stat-item .material-symbols-rounded {
+    font-size: 0.95rem;
+}
+
+/* Mobile Responsive Toolbar Optimizations */
+@media (max-width: 768px) {
+    .canvas-top-property-bar {
+        top: 8px;
+        max-width: calc(100% - 24px);
+        padding: 4px 8px;
+        gap: 4px;
+    }
+
+    .property-bar-left-section {
+        gap: 4px;
+    }
+
+    .property-bar-tool-badge,
+    .property-bar-coords-badge {
+        height: 30px;
+        padding: 0 8px;
+        font-size: 0.72rem;
+    }
+
+    .property-bar-divider {
+        height: 20px;
+        margin: 0 1px;
+    }
+}
+
 
 
 
