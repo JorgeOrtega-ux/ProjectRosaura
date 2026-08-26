@@ -92,7 +92,10 @@ export const RouteModulesMap = {
 
     '/design/s/:uuid': { path: './modules/canvases/history/CanvasSnapshotsGalleryController.js', className: 'CanvasSnapshotsGalleryController', skeletonType: 'layout-grid' },
 
-    '/snapshot/view/:id': { path: './modules/canvases/history/CanvasSnapshotViewerController.js', className: 'CanvasSnapshotViewerController', skeletonType: 'layout-grid' }
+    '/snapshot/view/:id': { path: './modules/canvases/history/CanvasSnapshotViewerController.js', className: 'CanvasSnapshotViewerController', skeletonType: 'layout-grid' },
+    '/@:identifier': { path: './modules/user/UserProfileController.js', className: 'UserProfileController', skeletonType: 'layout-basic' },
+    '/publication/:id': { path: './modules/canvases/publications/PublicationViewerController.js', className: 'PublicationViewerController', skeletonType: 'layout-grid' },
+    '/publications/view/:id': { path: './modules/canvases/publications/PublicationViewerController.js', className: 'PublicationViewerController', skeletonType: 'layout-grid' }
 };
 
 

@@ -181,7 +181,7 @@
 .step-modal-dot {
     width: 8px;
     height: 8px;
-    border-radius: 50%;
+    border-radius: 50px;
     background: var(--border-color, rgba(128, 128, 128, 0.3));
     transition: background 0.2s ease;
     position: relative;
@@ -189,6 +189,9 @@
 }
 
 .step-modal-dot.active {
+    width: 8px;
+    height: 8px;
+    border-radius: 50px;
     background: var(--text-primary);
 }
 
@@ -200,7 +203,7 @@
     right: -4px;
     bottom: -4px;
     border: 1.5px solid var(--text-primary);
-    border-radius: 50%;
+    border-radius: 50px;
 }
 
 .step-modal-actions {

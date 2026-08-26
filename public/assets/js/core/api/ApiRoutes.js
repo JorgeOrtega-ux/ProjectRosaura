@@ -29,6 +29,10 @@ export const ApiRoutes = {
         UpdateAvatar: 'settings.update_avatar',
         DeleteAvatar: 'settings.delete_avatar',
         UpdateUsername: 'settings.update_username',
+        UpdateIdentifier: 'settings.update_identifier',
+        UpdateBanner: 'settings.update_banner',
+        DeleteBanner: 'settings.delete_banner',
+        UpdateBio: 'settings.update_bio',
         RequestEmailCode: 'settings.request_email_code',
         ResendEmailCode: 'settings.resend_email_code',
         VerifyEmailCode: 'settings.verify_email_code',
@@ -239,5 +243,19 @@ export const ApiRoutes = {
     },
     Store: {
         GetTransactionHistory: 'stripe.get_payment_history'
+    },
+    Publications: {
+        Publish: 'publications.publish',
+        GetFeed: 'publications.get_feed',
+        GetUserPublications: 'publications.get_user_publications',
+        GetDetail: 'publications.get_detail',
+        ToggleLike: 'publications.toggle_like',
+        GetComments: 'publications.get_comments',
+        AddComment: 'publications.add_comment',
+        DeleteComment: 'publications.delete_comment',
+        DeletePublication: 'publications.delete'
+    },
+    User: {
+        GetProfileData: 'user.get_profile_data'
     }
 };

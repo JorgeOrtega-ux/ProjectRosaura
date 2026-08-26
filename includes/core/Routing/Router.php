@@ -55,6 +55,9 @@ class Router {
                     if (strpos($part, ':') === 0) {
                         $paramNames[] = substr($part, 1);
                         $regexParts[] = '([^/]+)';
+                    } elseif (strpos($part, '@:') === 0) {
+                        $paramNames[] = substr($part, 2);
+                        $regexParts[] = '@([^/]+)';
                     } else {
                         $regexParts[] = preg_quote($part, '#');
                     }

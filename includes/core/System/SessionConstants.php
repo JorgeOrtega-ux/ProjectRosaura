@@ -14,9 +14,9 @@ class SessionConstants {
     public const KEY_SESSION_CREATED_AT = 'session_created_at';
     public const SESSION_COOKIE_LIFETIME = CacheConstants::TTL_ONE_HUNDRED_EIGHTY_DAYS; // 180 days (enterprise rolling window)
     public const ROOT_KEYS = [
-        'user_id', 'user_uuid', 'user_name', 'user_email', 'user_roles', 
+        'user_id', 'user_uuid', 'user_name', 'user_identifier', 'user_email', 'user_roles', 
         'user_role_weight', 'user_role_name', 'user_role_color', 
-        'user_permissions', 'user_pic', 'user_prefs', 'user_2fa'
+        'user_permissions', 'user_pic', 'user_banner', 'user_bio', 'user_prefs', 'user_2fa'
     ];
 }
 ?>

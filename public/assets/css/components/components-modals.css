@@ -103,7 +103,7 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     box-shadow: var(--shadow-card, 0 12px 36px rgba(0, 0, 0, 0.3));
     box-sizing: border-box;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .component-modal-box--medium {
@@ -459,16 +459,29 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
 .step-modal-dot {
     width: 8px;
     height: 8px;
-    border-radius: 50%;
+    border-radius: 50px;
     background-color: var(--border-color, rgba(255, 255, 255, 0.2));
     transition: all 0.2s ease;
     cursor: pointer;
+    position: relative;
 }
 
 .step-modal-dot.active {
-    width: 24px;
-    border-radius: 4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50px;
     background-color: var(--action-primary, #3b82f6);
+}
+
+.step-modal-dot.active::after {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    border: 1.5px solid var(--action-primary, #3b82f6);
+    border-radius: 50px;
 }
 
 .step-modal-actions {

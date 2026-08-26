@@ -146,212 +146,217 @@ if (!isset($showDesignTools)) {
                 $isOnlineModeActive = !empty($isOnlineActive);
             ?>
             <!-- Unified Top Property Bar & Actions -->
-            <div class="component-property-bar-wrapper" data-ref="canvas-top-property-bar-wrapper">
-                <button type="button" class="component-tag-nav-btn component-tag-nav-btn--left disabled" data-action="scrollCanvasToolbarLeft" data-tooltip="<?php echo __('btn_scroll_left'); ?>" data-position="bottom">
-                    <span class="material-symbols-rounded">chevron_left</span>
-                </button>
-
-                <div class="component-property-bar <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="canvas-top-property-bar">
-                <div class="component-property-bar__context">
-                    <!-- Tool settings icon shortcut -->
-                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="openToolSettings" data-ref="prop-btn-tool-settings" data-tooltip="<?php echo __('tooltip_tool_settings'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded msr-tune">tune</span>
+            <div class="component-tools-wrapper component-tools-wrapper--top component-property-bar-wrapper" data-ref="canvas-top-property-bar-wrapper">
+                <div class="component-toolbar component-toolbar--horizontal component-toolbar--top component-property-bar <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="canvas-top-property-bar">
+                    <button type="button" class="component-button component-button--icon component-button--h32 component-toolbar__nav-btn component-toolbar__nav-btn--left disabled" data-action="scrollCanvasToolbarLeft" data-tooltip="<?php echo __('btn_scroll_left'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">chevron_left</span>
                     </button>
 
-                    <!-- Context: Brush -->
-                    <div class="component-property-bar__group active" data-tool-context="offline_brush">
-                        <div class="component-property-bar__btn-group">
-                            <button type="button" class="component-button component-button--icon component-button--h32 active" data-action="setBrushShape" data-brush-shape="square" data-tooltip="<?php echo __('tooltip_brush_square'); ?>" data-position="bottom">
-                                <span class="material-symbols-rounded msr-square">square</span>
-                            </button>
-                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="setBrushShape" data-brush-shape="circle" data-tooltip="<?php echo __('tooltip_brush_circle'); ?>" data-position="bottom">
-                                <span class="material-symbols-rounded msr-circle">circle</span>
-                            </button>
-                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="setBrushShape" data-brush-shape="slash" data-tooltip="<?php echo __('tooltip_brush_slash'); ?>" data-position="bottom">
-                                <span class="material-symbols-rounded msr-edit">edit</span>
-                            </button>
-                        </div>
-
-                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="togglePixelPerfect" data-ref="prop-btn-pixel-perfect" data-tooltip="<?php echo __('tooltip_pixel_perfect'); ?>" data-position="bottom">
-                            <span class="material-symbols-rounded msr-auto_fix_high">auto_fix_high</span>
+                    <div class="component-property-bar__context">
+                        <!-- Tool settings icon shortcut -->
+                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="openToolSettings" data-ref="prop-btn-tool-settings" data-tooltip="<?php echo __('tooltip_tool_settings'); ?>" data-position="bottom">
+                            <span class="material-symbols-rounded msr-tune">tune</span>
                         </button>
 
-                        <div class="component-property-bar__btn-group">
-                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleOfflineMirrorAxis" data-axis="x" data-ref="prop-mirror-x" data-tooltip="<?php echo __('tooltip_mirror_x'); ?>" data-position="bottom">
-                                <span class="material-symbols-rounded msr-flip">flip</span>
+                        <!-- Context: Brush -->
+                        <div class="component-property-bar__group active" data-tool-context="offline_brush">
+                            <div class="component-property-bar__btn-group">
+                                <button type="button" class="component-button component-button--icon component-button--h32 active" data-action="setBrushShape" data-brush-shape="square" data-tooltip="<?php echo __('tooltip_brush_square'); ?>" data-position="bottom">
+                                    <span class="material-symbols-rounded msr-square">square</span>
+                                </button>
+                                <button type="button" class="component-button component-button--icon component-button--h32" data-action="setBrushShape" data-brush-shape="circle" data-tooltip="<?php echo __('tooltip_brush_circle'); ?>" data-position="bottom">
+                                    <span class="material-symbols-rounded msr-circle">circle</span>
+                                </button>
+                                <button type="button" class="component-button component-button--icon component-button--h32" data-action="setBrushShape" data-brush-shape="slash" data-tooltip="<?php echo __('tooltip_brush_slash'); ?>" data-position="bottom">
+                                    <span class="material-symbols-rounded msr-edit">edit</span>
+                                </button>
+                            </div>
+
+                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="togglePixelPerfect" data-ref="prop-btn-pixel-perfect" data-tooltip="<?php echo __('tooltip_pixel_perfect'); ?>" data-position="bottom">
+                                <span class="material-symbols-rounded msr-auto_fix_high">auto_fix_high</span>
                             </button>
-                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleOfflineMirrorAxis" data-axis="y" data-ref="prop-mirror-y" data-tooltip="<?php echo __('tooltip_mirror_y'); ?>" data-position="bottom">
-                                <span class="material-symbols-rounded msr-swap_vert">swap_vert</span>
+
+                            <div class="component-property-bar__btn-group">
+                                <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleOfflineMirrorAxis" data-axis="x" data-ref="prop-mirror-x" data-tooltip="<?php echo __('tooltip_mirror_x'); ?>" data-position="bottom">
+                                    <span class="material-symbols-rounded msr-flip">flip</span>
+                                </button>
+                                <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleOfflineMirrorAxis" data-axis="y" data-ref="prop-mirror-y" data-tooltip="<?php echo __('tooltip_mirror_y'); ?>" data-position="bottom">
+                                    <span class="material-symbols-rounded msr-swap_vert">swap_vert</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Context: Eraser -->
+                        <div class="component-property-bar__group disabled" data-tool-context="offline_eraser">
+                            <div class="component-property-bar__btn-group">
+                                <button type="button" class="component-button component-button--icon component-button--h32 active" data-action="setOfflineEraserMode" data-eraser-mode="box" data-tooltip="<?php echo __('lbl_box'); ?>" data-position="bottom">
+                                    <span class="material-symbols-rounded msr-check_box_outline_blank">check_box_outline_blank</span>
+                                </button>
+                                <button type="button" class="component-button component-button--icon component-button--h32" data-action="setOfflineEraserMode" data-eraser-mode="brush" data-tooltip="<?php echo __('lbl_brush'); ?>" data-position="bottom">
+                                    <span class="material-symbols-rounded msr-brush">brush</span>
+                                </button>
+                                <button type="button" class="component-button component-button--icon component-button--h32" data-action="setOfflineEraserMode" data-eraser-mode="color" data-tooltip="<?php echo __('lbl_color'); ?>" data-position="bottom">
+                                    <span class="material-symbols-rounded msr-colorize">colorize</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Context: Quick Shapes -->
+                        <div class="component-property-bar__group disabled" data-tool-context="offline_quick_shapes">
+                            <div class="component-property-bar__btn-group">
+                                <button type="button" class="component-button component-button--icon component-button--h32 active" data-action="setQuickShapeType" data-shape-type="line" data-tooltip="<?php echo __('tooltip_shape_line'); ?>" data-position="bottom">
+                                    <span class="material-symbols-rounded msr-show_chart">show_chart</span>
+                                </button>
+                                <button type="button" class="component-button component-button--icon component-button--h32" data-action="setQuickShapeType" data-shape-type="rectangle" data-tooltip="<?php echo __('tooltip_shape_rectangle'); ?>" data-position="bottom">
+                                    <span class="material-symbols-rounded msr-rectangle">rectangle</span>
+                                </button>
+                                <button type="button" class="component-button component-button--icon component-button--h32" data-action="setQuickShapeType" data-shape-type="circle" data-tooltip="<?php echo __('tooltip_shape_circle'); ?>" data-position="bottom">
+                                    <span class="material-symbols-rounded msr-circle">circle</span>
+                                </button>
+                            </div>
+                            <button type="button" class="component-button component-button--icon component-button--h32 property-bar-btn--toggle" data-action="toggleQuickShapeFill" data-ref="prop-shape-fill" data-tooltip="<?php echo __('tooltip_shape_mode_fill'); ?>" data-position="bottom">
+                                <span class="material-symbols-rounded msr-format_paint">format_paint</span>
                             </button>
                         </div>
-                    </div>
 
-                    <!-- Context: Eraser -->
-                    <div class="component-property-bar__group disabled" data-tool-context="offline_eraser">
-                        <div class="component-property-bar__btn-group">
-                            <button type="button" class="component-button component-button--icon component-button--h32 active" data-action="setOfflineEraserMode" data-eraser-mode="box" data-tooltip="<?php echo __('lbl_box'); ?>" data-position="bottom">
-                                <span class="material-symbols-rounded msr-check_box_outline_blank">check_box_outline_blank</span>
-                            </button>
-                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="setOfflineEraserMode" data-eraser-mode="brush" data-tooltip="<?php echo __('lbl_brush'); ?>" data-position="bottom">
-                                <span class="material-symbols-rounded msr-brush">brush</span>
-                            </button>
-                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="setOfflineEraserMode" data-eraser-mode="color" data-tooltip="<?php echo __('lbl_color'); ?>" data-position="bottom">
-                                <span class="material-symbols-rounded msr-colorize">colorize</span>
+                        <!-- Context: Move & Selection -->
+                        <div class="component-property-bar__group disabled" data-tool-context="offline_moving_area">
+                            <div class="component-property-bar__btn-group">
+                                <button type="button" class="component-button component-button--icon component-button--h32 active" data-action="setSelectionMode" data-selection-mode="box" data-tooltip="<?php echo __('lbl_box'); ?>" data-position="bottom">
+                                    <span class="material-symbols-rounded msr-crop_free">crop_free</span>
+                                </button>
+                                <button type="button" class="component-button component-button--icon component-button--h32" data-action="setSelectionMode" data-selection-mode="lasso" data-tooltip="<?php echo __('lbl_lasso'); ?>" data-position="bottom">
+                                    <span class="material-symbols-rounded msr-gesture">gesture</span>
+                                </button>
+                                <button type="button" class="component-button component-button--icon component-button--h32" data-action="setSelectionMode" data-selection-mode="wand" data-tooltip="<?php echo __('lbl_wand'); ?>" data-position="bottom">
+                                    <span class="material-symbols-rounded msr-auto_awesome">auto_awesome</span>
+                                </button>
+                            </div>
+                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="clearSelection" data-tooltip="<?php echo __('tooltip_deselect'); ?>" data-position="bottom">
+                                <span class="material-symbols-rounded msr-close">close</span>
                             </button>
                         </div>
-                    </div>
 
-                    <!-- Context: Quick Shapes -->
-                    <div class="component-property-bar__group disabled" data-tool-context="offline_quick_shapes">
-                        <div class="component-property-bar__btn-group">
-                            <button type="button" class="component-button component-button--icon component-button--h32 active" data-action="setQuickShapeType" data-shape-type="line" data-tooltip="<?php echo __('tooltip_shape_line'); ?>" data-position="bottom">
-                                <span class="material-symbols-rounded msr-show_chart">show_chart</span>
-                            </button>
-                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="setQuickShapeType" data-shape-type="rectangle" data-tooltip="<?php echo __('tooltip_shape_rectangle'); ?>" data-position="bottom">
-                                <span class="material-symbols-rounded msr-rectangle">rectangle</span>
-                            </button>
-                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="setQuickShapeType" data-shape-type="circle" data-tooltip="<?php echo __('tooltip_shape_circle'); ?>" data-position="bottom">
-                                <span class="material-symbols-rounded msr-circle">circle</span>
-                            </button>
+                        <!-- Context: Bucket -->
+                        <div class="component-property-bar__group disabled" data-tool-context="offline_bucket">
+                            <div class="component-property-bar__btn-group">
+                                <button type="button" class="component-button component-button--icon component-button--h32 active" data-action="setOfflineBucketMode" data-bucket-mode="flood" data-tooltip="<?php echo __('lbl_flood'); ?>" data-position="bottom">
+                                    <span class="material-symbols-rounded msr-format_color_fill">format_color_fill</span>
+                                </button>
+                                <button type="button" class="component-button component-button--icon component-button--h32" data-action="setOfflineBucketMode" data-bucket-mode="swap" data-tooltip="<?php echo __('lbl_swap_color'); ?>" data-position="bottom">
+                                    <span class="material-symbols-rounded msr-find_replace">find_replace</span>
+                                </button>
+                            </div>
                         </div>
-                        <button type="button" class="component-button component-button--icon component-button--h32 property-bar-btn--toggle" data-action="toggleQuickShapeFill" data-ref="prop-shape-fill" data-tooltip="<?php echo __('tooltip_shape_mode_fill'); ?>" data-position="bottom">
-                            <span class="material-symbols-rounded msr-format_paint">format_paint</span>
-                        </button>
-                    </div>
 
-                    <!-- Context: Move & Selection -->
-                    <div class="component-property-bar__group disabled" data-tool-context="offline_moving_area">
-                        <div class="component-property-bar__btn-group">
-                            <button type="button" class="component-button component-button--icon component-button--h32 active" data-action="setSelectionMode" data-selection-mode="box" data-tooltip="<?php echo __('lbl_box'); ?>" data-position="bottom">
-                                <span class="material-symbols-rounded msr-crop_free">crop_free</span>
-                            </button>
-                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="setSelectionMode" data-selection-mode="lasso" data-tooltip="<?php echo __('lbl_lasso'); ?>" data-position="bottom">
-                                <span class="material-symbols-rounded msr-gesture">gesture</span>
-                            </button>
-                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="setSelectionMode" data-selection-mode="wand" data-tooltip="<?php echo __('lbl_wand'); ?>" data-position="bottom">
-                                <span class="material-symbols-rounded msr-auto_awesome">auto_awesome</span>
-                            </button>
-                        </div>
-                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="clearSelection" data-tooltip="<?php echo __('tooltip_deselect'); ?>" data-position="bottom">
-                            <span class="material-symbols-rounded msr-close">close</span>
-                        </button>
-                    </div>
-
-                    <!-- Context: Bucket -->
-                    <div class="component-property-bar__group disabled" data-tool-context="offline_bucket">
-                        <div class="component-property-bar__btn-group">
-                            <button type="button" class="component-button component-button--icon component-button--h32 active" data-action="setOfflineBucketMode" data-bucket-mode="flood" data-tooltip="<?php echo __('lbl_flood'); ?>" data-position="bottom">
-                                <span class="material-symbols-rounded msr-format_color_fill">format_color_fill</span>
-                            </button>
-                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="setOfflineBucketMode" data-bucket-mode="swap" data-tooltip="<?php echo __('lbl_swap_color'); ?>" data-position="bottom">
-                                <span class="material-symbols-rounded msr-find_replace">find_replace</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Context: Spray -->
-                    <div class="component-property-bar__group disabled" data-tool-context="offline_spray">
-                        <button type="button" class="component-button component-button--icon component-button--h32 active" data-action="openToolSettings" data-tooltip="<?php echo __('lbl_radius'); ?>" data-position="bottom">
-                            <span class="material-symbols-rounded msr-grain">grain</span>
-                        </button>
-                    </div>
-
-                    <!-- Context: Dither -->
-                    <div class="component-property-bar__group disabled" data-tool-context="offline_dither">
-                        <div class="component-property-bar__btn-group">
-                            <button type="button" class="component-button component-button--icon component-button--h32 active" data-action="setDitherPattern" data-dither-pattern="checker_50" data-tooltip="<?php echo __('lbl_dither_checker'); ?>" data-position="bottom">
-                                <span class="material-symbols-rounded msr-texture">texture</span>
-                            </button>
-                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="setDitherPattern" data-dither-pattern="dots_25" data-tooltip="<?php echo __('lbl_dither_dots25'); ?>" data-position="bottom">
+                        <!-- Context: Spray -->
+                        <div class="component-property-bar__group disabled" data-tool-context="offline_spray">
+                            <button type="button" class="component-button component-button--icon component-button--h32 active" data-action="openToolSettings" data-tooltip="<?php echo __('lbl_radius'); ?>" data-position="bottom">
                                 <span class="material-symbols-rounded msr-grain">grain</span>
                             </button>
-                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="setDitherPattern" data-dither-pattern="dots_75" data-tooltip="<?php echo __('lbl_dither_dots75'); ?>" data-position="bottom">
-                                <span class="material-symbols-rounded msr-blur_on">blur_on</span>
-                            </button>
-                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="setDitherPattern" data-dither-pattern="diag_lines" data-tooltip="<?php echo __('lbl_dither_diag'); ?>" data-position="bottom">
-                                <span class="material-symbols-rounded msr-reorder">reorder</span>
-                            </button>
+                        </div>
+
+                        <!-- Context: Dither -->
+                        <div class="component-property-bar__group disabled" data-tool-context="offline_dither">
+                            <div class="component-property-bar__btn-group">
+                                <button type="button" class="component-button component-button--icon component-button--h32 active" data-action="setDitherPattern" data-dither-pattern="checker_50" data-tooltip="<?php echo __('lbl_dither_checker'); ?>" data-position="bottom">
+                                    <span class="material-symbols-rounded msr-texture">texture</span>
+                                </button>
+                                <button type="button" class="component-button component-button--icon component-button--h32" data-action="setDitherPattern" data-dither-pattern="dots_25" data-tooltip="<?php echo __('lbl_dither_dots25'); ?>" data-position="bottom">
+                                    <span class="material-symbols-rounded msr-grain">grain</span>
+                                </button>
+                                <button type="button" class="component-button component-button--icon component-button--h32" data-action="setDitherPattern" data-dither-pattern="dots_75" data-tooltip="<?php echo __('lbl_dither_dots75'); ?>" data-position="bottom">
+                                    <span class="material-symbols-rounded msr-blur_on">blur_on</span>
+                                </button>
+                                <button type="button" class="component-button component-button--icon component-button--h32" data-action="setDitherPattern" data-dither-pattern="diag_lines" data-tooltip="<?php echo __('lbl_dither_diag'); ?>" data-position="bottom">
+                                    <span class="material-symbols-rounded msr-reorder">reorder</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Context: Shading -->
+                        <div class="component-property-bar__group disabled" data-tool-context="offline_shading">
+                            <div class="component-property-bar__btn-group">
+                                <button type="button" class="component-button component-button--icon component-button--h32 active" data-action="setShadingMode" data-shading-mode="shadow" data-tooltip="<?php echo __('lbl_shading_shadow'); ?>" data-position="bottom">
+                                    <span class="material-symbols-rounded msr-dark_mode">dark_mode</span>
+                                </button>
+                                <button type="button" class="component-button component-button--icon component-button--h32" data-action="setShadingMode" data-shading-mode="highlight" data-tooltip="<?php echo __('lbl_shading_highlight'); ?>" data-position="bottom">
+                                    <span class="material-symbols-rounded msr-light_mode">light_mode</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Context: Shading -->
-                    <div class="component-property-bar__group disabled" data-tool-context="offline_shading">
-                        <div class="component-property-bar__btn-group">
-                            <button type="button" class="component-button component-button--icon component-button--h32 active" data-action="setShadingMode" data-shading-mode="shadow" data-tooltip="<?php echo __('lbl_shading_shadow'); ?>" data-position="bottom">
-                                <span class="material-symbols-rounded msr-dark_mode">dark_mode</span>
-                            </button>
-                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="setShadingMode" data-shading-mode="highlight" data-tooltip="<?php echo __('lbl_shading_highlight'); ?>" data-position="bottom">
-                                <span class="material-symbols-rounded msr-light_mode">light_mode</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="component-property-bar__divider"></div>
-
-                <div class="component-property-bar__actions" data-ref="design-tools-actions">
-                    <?php if ($isOnlineModeActive): ?>
-                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="openJoinLiveModal" data-tooltip="<?php echo __('tooltip_join_live'); ?> [J]" data-position="bottom">
-                        <span class="material-symbols-rounded msr-sensors">sensors</span>
-                    </button>
-                    <?php
-                        $liveLock = \App\Core\System\SubscriptionFeatureConfig::getLockDetails($userTier ?? 0, 'feat_live_share', 'button');
-                    ?>
-                    <button type="button" class="component-button component-button--icon component-button--h32 <?php echo $liveLock['class']; ?>" data-action="toggleLiveBroadcast" data-ref="btn-start-live" data-tooltip="<?php echo __('tooltip_stream_live'); ?> [S]" data-position="bottom" <?php echo $liveLock['attributes']; ?>>
-                        <span class="material-symbols-rounded msr-stream">stream</span>
-                    </button>
-                    <!-- Paleta de colores del lienzo -->
-                    <button type="button" class="component-button component-button--icon component-button--h32 component-color-indicator" data-ref="btn-color-palette" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-colors" data-tooltip="<?php echo __('tooltip_color_palette'); ?> [C]" data-position="bottom">
-                        <span class="material-symbols-rounded msr-palette">palette</span>
-                    </button>
-                    <!-- Plantillas de lienzo -->
-                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-templates" data-tooltip="<?php echo __('tooltip_templates'); ?> [T]" data-position="bottom">
-                        <span class="material-symbols-rounded msr-photo_library">photo_library</span>
-                    </button>
-                    <?php if (isset($isOwner) && $isOwner): ?>
-                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleOnlineMode" data-tooltip="<?php echo ($isOnlineModeActive ? __('tooltip_deactivate_online') : __('tooltip_activate_online')); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded msr-sensors <?php echo $isOnlineModeActive ? 'component-text-success' : ''; ?>"><?php echo $isOnlineModeActive ? 'sensors' : 'sensors_off'; ?></span>
-                    </button>
-                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleOwnerTools" data-ref="btn-owner-tools" data-tooltip="<?php echo __('tooltip_owner_tools'); ?> [O]" data-position="bottom">
-                        <span class="material-symbols-rounded msr-construction">construction</span>
-                    </button>
-                    <?php endif; ?>
-                    <?php
-                        $chatLock = ['class' => '', 'attributes' => ''];
-                        if (isset($isOwner) && $isOwner) {
-                            $chatLock = \App\Core\System\SubscriptionFeatureConfig::getLockDetails($userTier ?? 0, 'feat_chat_restriction', 'button');
-                        }
-                    ?>
-                    <button type="button" class="component-button component-button--icon component-button--h32 <?php echo $chatLock['class']; ?>" data-action="toggleMenuInModule" data-module-target="moduleLiveChat" data-menu-target="menu-chat" data-tooltip="<?php echo __('tooltip_live_chat'); ?> [H]" data-position="bottom" <?php echo $chatLock['attributes']; ?>>
-                        <span class="material-symbols-rounded msr-chat">chat</span>
-                    </button>
                     <div class="component-property-bar__divider"></div>
-                    <?php endif; ?>
 
-                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleTileGrid" data-tooltip="<?php echo __('tooltip_tile_grid'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded msr-grid_on">grid_on</span>
-                    </button>
-                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="undo" data-tooltip="<?php echo __('tooltip_undo'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded msr-undo">undo</span>
-                    </button>
-                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="redo" data-tooltip="<?php echo __('tooltip_redo'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded msr-redo">redo</span>
-                    </button>
-                    <button type="button" class="component-button component-button--icon component-button--h32 property-bar-btn--sidebar-toggle" data-action="toggleUnifiedSidebar" data-ref="btn-top-sidebar-toggle" data-tooltip="<?php echo __('tooltip_toggle_sidebar'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded msr-view_sidebar">view_sidebar</span>
+                    <div class="component-property-bar__actions" data-ref="design-tools-actions">
+                        <?php if ($isOnlineModeActive): ?>
+                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="openJoinLiveModal" data-tooltip="<?php echo __('tooltip_join_live'); ?> [J]" data-position="bottom">
+                            <span class="material-symbols-rounded msr-sensors">sensors</span>
+                        </button>
+                        <?php
+                            $liveLock = \App\Core\System\SubscriptionFeatureConfig::getLockDetails($userTier ?? 0, 'feat_live_share', 'button');
+                        ?>
+                        <button type="button" class="component-button component-button--icon component-button--h32 <?php echo $liveLock['class']; ?>" data-action="toggleLiveBroadcast" data-ref="btn-start-live" data-tooltip="<?php echo __('tooltip_stream_live'); ?> [S]" data-position="bottom" <?php echo $liveLock['attributes']; ?>>
+                            <span class="material-symbols-rounded msr-stream">stream</span>
+                        </button>
+                        <!-- Paleta de colores del lienzo -->
+                        <button type="button" class="component-button component-button--icon component-button--h32 component-color-indicator" data-ref="btn-color-palette" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-colors" data-tooltip="<?php echo __('tooltip_color_palette'); ?> [C]" data-position="bottom">
+                            <span class="material-symbols-rounded msr-palette">palette</span>
+                        </button>
+                        <!-- Plantillas de lienzo -->
+                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-templates" data-tooltip="<?php echo __('tooltip_templates'); ?> [T]" data-position="bottom">
+                            <span class="material-symbols-rounded msr-photo_library">photo_library</span>
+                        </button>
+                        <?php if (isset($isOwner) && $isOwner): ?>
+                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleOnlineMode" data-tooltip="<?php echo ($isOnlineModeActive ? __('tooltip_deactivate_online') : __('tooltip_activate_online')); ?>" data-position="bottom">
+                            <span class="material-symbols-rounded msr-sensors <?php echo $isOnlineModeActive ? 'component-text-success' : ''; ?>"><?php echo $isOnlineModeActive ? 'sensors' : 'sensors_off'; ?></span>
+                        </button>
+                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleOwnerTools" data-ref="btn-owner-tools" data-tooltip="<?php echo __('tooltip_owner_tools'); ?> [O]" data-position="bottom">
+                            <span class="material-symbols-rounded msr-construction">construction</span>
+                        </button>
+                        <?php endif; ?>
+                        <?php
+                            $chatLock = ['class' => '', 'attributes' => ''];
+                            if (isset($isOwner) && $isOwner) {
+                                $chatLock = \App\Core\System\SubscriptionFeatureConfig::getLockDetails($userTier ?? 0, 'feat_chat_restriction', 'button');
+                            }
+                        ?>
+                        <button type="button" class="component-button component-button--icon component-button--h32 <?php echo $chatLock['class']; ?>" data-action="toggleMenuInModule" data-module-target="moduleLiveChat" data-menu-target="menu-chat" data-tooltip="<?php echo __('tooltip_live_chat'); ?> [H]" data-position="bottom" <?php echo $chatLock['attributes']; ?>>
+                            <span class="material-symbols-rounded msr-chat">chat</span>
+                        </button>
+                        <div class="component-property-bar__divider"></div>
+                        <?php endif; ?>
+
+                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleTileGrid" data-tooltip="<?php echo __('tooltip_tile_grid'); ?>" data-position="bottom">
+                            <span class="material-symbols-rounded msr-grid_on">grid_on</span>
+                        </button>
+                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="undo" data-tooltip="<?php echo __('tooltip_undo'); ?>" data-position="bottom">
+                            <span class="material-symbols-rounded msr-undo">undo</span>
+                        </button>
+                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="redo" data-tooltip="<?php echo __('tooltip_redo'); ?>" data-position="bottom">
+                            <span class="material-symbols-rounded msr-redo">redo</span>
+                        </button>
+                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="openPublishModal" data-ref="btn-publish-artwork" data-tooltip="<?php echo __('publications.btn_publish'); ?>" data-position="bottom">
+                            <span class="material-symbols-rounded msr-rocket_launch component-text-accent">rocket_launch</span>
+                        </button>
+                        <button type="button" class="component-button component-button--icon component-button--h32 property-bar-btn--sidebar-toggle" data-action="toggleUnifiedSidebar" data-ref="btn-top-sidebar-toggle" data-tooltip="<?php echo __('tooltip_toggle_sidebar'); ?>" data-position="bottom">
+                            <span class="material-symbols-rounded msr-view_sidebar">view_sidebar</span>
+                        </button>
+                    </div>
+
+                    <button type="button" class="component-button component-button--icon component-button--h32 component-toolbar__nav-btn component-toolbar__nav-btn--right disabled" data-action="scrollCanvasToolbarRight" data-tooltip="<?php echo __('btn_scroll_right'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">chevron_right</span>
                     </button>
                 </div>
-                </div>
-
-                <button type="button" class="component-tag-nav-btn component-tag-nav-btn--right disabled" data-action="scrollCanvasToolbarRight" data-tooltip="<?php echo __('btn_scroll_right'); ?>" data-position="bottom">
-                    <span class="material-symbols-rounded">chevron_right</span>
-                </button>
             </div>
-
-
             <?php endif; ?>
 
-            <div class="component-toolbar component-toolbar--vertical-right <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="workspace-tools-vertical-right">
+            <div class="component-toolbar component-toolbar--vertical component-toolbar--right <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="workspace-tools-vertical-right">
+                <button type="button" class="component-button component-button--icon component-button--h32 component-toolbar__nav-btn component-toolbar__nav-btn--up disabled" data-action="scrollVerticalToolsUp" data-tooltip="<?php echo __('lbl_scroll_up', 'Desplazar arriba'); ?>" data-position="left">
+                    <span class="material-symbols-rounded">keyboard_arrow_up</span>
+                </button>
+
                 <?php if (!$isOnlineModeActive): ?>
                     <?php if (isset($isOwner) && $isOwner): ?>
                     <button type="button" class="component-button component-button--icon component-button--h32" data-action="manualSaveOffline" data-ref="btn-save-offline" data-tooltip="<?php echo __('tooltip_save_offline'); ?>" data-position="left">
@@ -373,7 +378,7 @@ if (!isset($showDesignTools)) {
                     </button>
                     <?php endif; ?>
 
-                    <div class="component-property-bar__divider component-property-bar__divider--vertical"></div>
+                    <div class="component-property-bar__divider"></div>
 
                     <button class="component-button component-button--icon component-button--h32" data-action="openToolSettings" data-ref="btn-sidebar-tool-settings" data-tooltip="<?php echo __('lbl_tool_settings'); ?>" data-position="left">
                         <span class="material-symbols-rounded">tune</span>
@@ -411,6 +416,10 @@ if (!isset($showDesignTools)) {
                     </button>
                     <?php endif; ?>
                 <?php endif; ?>
+
+                <button type="button" class="component-button component-button--icon component-button--h32 component-toolbar__nav-btn component-toolbar__nav-btn--down disabled" data-action="scrollVerticalToolsDown" data-tooltip="<?php echo __('lbl_scroll_down', 'Desplazar abajo'); ?>" data-position="left">
+                    <span class="material-symbols-rounded">keyboard_arrow_down</span>
+                </button>
             </div>
 
             <!-- Unified Right Sidebar with Tabs (Capas, Minimapa, Herramienta) -->
@@ -449,59 +458,6 @@ if (!isset($showDesignTools)) {
                                 </div>
                                 <div class="component-tool-slider-box">
                                     <input type="range" class="component-range" min="0" max="100" value="100" data-action="setLayerOpacity" data-ref="layer-opacity-slider">
-                                    <input type="number" class="component-tool-input-number" min="0" max="100" value="100" data-action="setLayerOpacityNumber" data-ref="layer-opacity-number">
-                                </div>
-                            </div>
-
-                            <!-- Blend Mode -->
-                            <div class="component-tool-field">
-                                <span class="component-tool-field__label"><?php echo __('lbl_blend_mode'); ?></span>
-                                <div class="component-dropdown-wrapper component-dropdown-wrapper--w-full">
-                                    <div class="component-dropdown-trigger" data-action="toggleModule" data-target="moduleLayerBlendModes" data-ref="layer-blend-trigger">
-                                        <span class="component-dropdown-text" data-ref="layer-blend-text">Normal</span>
-                                        <span class="material-symbols-rounded">expand_more</span>
-                                    </div>
-                                    <div class="component-module component-module--dropdown disabled" data-module="moduleLayerBlendModes" data-ref="layer-blend-dropdown">
-                                        <div class="component-menu component-menu--w180 component-menu--h-auto component-menu--padding-xs">
-                                            <ul class="component-menu-list">
-                                                <li>
-                                                    <button type="button" class="component-menu-link active" data-action="selectLayerBlendMode" data-blend="normal">
-                                                        <span>Normal</span>
-                                                    </button>
-                                                </li>
-                                                <li>
-                                                    <button type="button" class="component-menu-link" data-action="selectLayerBlendMode" data-blend="multiply">
-                                                        <span>Multiplicar</span>
-                                                    </button>
-                                                </li>
-                                                <li>
-                                                    <button type="button" class="component-menu-link" data-action="selectLayerBlendMode" data-blend="screen">
-                                                        <span>Pantalla</span>
-                                                    </button>
-                                                </li>
-                                                <li>
-                                                    <button type="button" class="component-menu-link" data-action="selectLayerBlendMode" data-blend="overlay">
-                                                        <span>Superponer</span>
-                                                    </button>
-                                                </li>
-                                                <li>
-                                                    <button type="button" class="component-menu-link" data-action="selectLayerBlendMode" data-blend="darken">
-                                                        <span>Oscurecer</span>
-                                                    </button>
-                                                </li>
-                                                <li>
-                                                    <button type="button" class="component-menu-link" data-action="selectLayerBlendMode" data-blend="lighten">
-                                                        <span>Aclarar</span>
-                                                    </button>
-                                                </li>
-                                                <li>
-                                                    <button type="button" class="component-menu-link" data-action="selectLayerBlendMode" data-blend="color-dodge">
-                                                        <span>Sobreexponer</span>
-                                                    </button>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -529,6 +485,9 @@ if (!isset($showDesignTools)) {
                             <div class="component-layers-actions-row">
                                 <button class="component-button component-button--icon component-button--h32" data-action="openAutoOutlineModal" data-tooltip="<?php echo __('tooltip_auto_outline'); ?>" data-position="top">
                                     <span class="material-symbols-rounded msr-border_outer">border_outer</span>
+                                </button>
+                                <button class="component-button component-button--icon component-button--h32" data-action="openLayerBlendModeModal" data-tooltip="<?php echo __('lbl_blend_mode', 'Modo de fusión'); ?>" data-position="top">
+                                    <span class="material-symbols-rounded msr-layers">layers</span>
                                 </button>
                                 <button class="component-button component-button--icon component-button--h32" data-action="mergeLayerUp" data-tooltip="<?php echo __('tooltip_merge_layer_up'); ?>" data-position="top">
                                     <span class="material-symbols-rounded msr-vertical_align_top">vertical_align_top</span>
@@ -597,7 +556,6 @@ if (!isset($showDesignTools)) {
                                     </div>
                                     <div class="component-tool-slider-box">
                                         <input type="range" class="component-range" min="1" max="32" value="1" data-action="setBrushSizeRange" data-ref="sidebar-brush-size-slider">
-                                        <input type="number" class="component-tool-input-number" min="1" max="32" value="1" data-action="setBrushSizeNumber" data-ref="sidebar-brush-size-number">
                                     </div>
                                 </div>
 
@@ -625,7 +583,6 @@ if (!isset($showDesignTools)) {
                                     </div>
                                     <div class="component-tool-slider-box">
                                         <input type="range" class="component-range" min="0" max="100" value="0" data-action="setStabilizerRange" data-ref="sidebar-stabilizer-slider">
-                                        <input type="number" class="component-tool-input-number" min="0" max="100" value="0" data-action="setStabilizerNumber" data-ref="sidebar-stabilizer-number">
                                     </div>
                                 </div>
                             </div>
@@ -688,7 +645,6 @@ if (!isset($showDesignTools)) {
                                     </div>
                                     <div class="component-tool-slider-box">
                                         <input type="range" class="component-range" min="2" max="35" value="5" data-action="setSpraySizeRange" data-ref="sidebar-spray-slider">
-                                        <input type="number" class="component-tool-input-number" min="2" max="35" value="5" data-action="setSpraySizeNumber" data-ref="sidebar-spray-number">
                                     </div>
                                 </div>
                             </div>
@@ -776,10 +732,7 @@ if (!isset($showDesignTools)) {
                 <button class="component-button component-button--icon component-button--h24" data-action="flipTemplateV" data-ref="btn-template-flip-v" data-tooltip="<?php echo __('tooltip_flip_v'); ?>" data-position="top">
                     <span class="material-symbols-rounded icon-rotate-90">flip</span>
                 </button>
-                <?php
-                    $injectLock = \App\Core\System\SubscriptionFeatureConfig::getLockDetails($userTier ?? 0, 'feat_inject_templates', 'button');
-                ?>
-                <button class="component-button component-button--icon component-button--h24 <?php echo $injectLock['class']; ?>" data-action="injectTemplate" data-ref="btn-template-inject" data-tooltip="<?php echo __('tooltip_inject_template'); ?>" data-position="top" <?php echo $injectLock['attributes']; ?>>
+                <button class="component-button component-button--icon component-button--h24" data-action="injectTemplate" data-ref="btn-template-inject" data-tooltip="<?php echo __('tooltip_inject_template'); ?>" data-position="top">
                     <span class="material-symbols-rounded">brush</span>
                 </button>
                 <button class="component-button component-button--icon component-button--h24" data-action="deleteTemplate" data-ref="btn-template-delete" data-tooltip="<?php echo __('tooltip_remove_template'); ?> [Supr]" data-position="top">
@@ -894,11 +847,11 @@ if (!isset($showDesignTools)) {
                 $offlineTools = \App\Core\System\OfflineToolsConfig::getTools();
             ?>
             <div class="component-tools-wrapper component-tools-wrapper--horizontal" data-ref="canvas-horizontal-tools-wrapper">
-                <button type="button" class="component-tag-nav-btn component-tag-nav-btn--left disabled" data-action="scrollToolsLeft" data-tooltip="<?php echo __('btn_scroll_left'); ?>" data-position="top">
-                    <span class="material-symbols-rounded">chevron_left</span>
-                </button>
-
                 <div class="component-toolbar component-toolbar--horizontal <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="offline-tools-horizontal">
+                    <button type="button" class="component-button component-button--icon component-button--h32 component-toolbar__nav-btn component-toolbar__nav-btn--left disabled" data-action="scrollToolsLeft" data-tooltip="<?php echo __('btn_scroll_left'); ?>" data-position="top">
+                        <span class="material-symbols-rounded">chevron_left</span>
+                    </button>
+
                     <?php foreach ($offlineTools as $tool): 
                         $tooltipText = __($tool['name_key']) . (!empty($tool['shortcut']) ? " [{$tool['shortcut']}]" : '');
                         $actionAttr = 'data-action="' . htmlspecialchars($tool['action']) . '"';
@@ -933,18 +886,24 @@ if (!isset($showDesignTools)) {
                     <button type="button" class="component-button component-button--icon component-button--h32" data-action="resetDefaultColors" data-tooltip="<?php echo __('tooltip_reset_colors'); ?>" data-position="top">
                         <span class="material-symbols-rounded">contrast</span>
                     </button>
-                </div>
 
-                <button type="button" class="component-tag-nav-btn component-tag-nav-btn--right disabled" data-action="scrollToolsRight" data-tooltip="<?php echo __('btn_scroll_right'); ?>" data-position="top">
-                    <span class="material-symbols-rounded">chevron_right</span>
-                </button>
+                    <button type="button" class="component-button component-button--icon component-button--h32 component-toolbar__nav-btn component-toolbar__nav-btn--right disabled" data-action="scrollToolsRight" data-tooltip="<?php echo __('btn_scroll_right'); ?>" data-position="top">
+                        <span class="material-symbols-rounded">chevron_right</span>
+                    </button>
+                </div>
             </div>
             <?php endif; ?>
 
             <!-- 2. Layers / Animation Bottom Carousel -->
             <?php if (!$isOnlineModeActive): ?>
             <div class="component-layers-carousel disabled" data-ref="layers-bottom-carousel">
+                <button type="button" class="component-button component-button--icon component-button--h32 component-layers-carousel__nav-btn component-layers-carousel__nav-btn--left disabled" data-action="scrollLayersCarouselLeft" data-tooltip="<?php echo __('btn_scroll_left'); ?>" data-position="top">
+                    <span class="material-symbols-rounded">chevron_left</span>
+                </button>
                 <div class="component-layers-carousel__track" data-ref="layers-carousel-track"></div>
+                <button type="button" class="component-button component-button--icon component-button--h32 component-layers-carousel__nav-btn component-layers-carousel__nav-btn--right disabled" data-action="scrollLayersCarouselRight" data-tooltip="<?php echo __('btn_scroll_right'); ?>" data-position="top">
+                    <span class="material-symbols-rounded">chevron_right</span>
+                </button>
             </div>
             <?php endif; ?>
 
@@ -952,13 +911,13 @@ if (!isset($showDesignTools)) {
             <div class="component-canvas-footer" data-ref="canvas-design-footer">
                 <div class="component-canvas-footer-left" data-ref="canvas-design-footer-left">
                     <?php if (!$isOnlineModeActive): ?>
-                    <div class="component-canvas-footer-tabs" data-ref="footer-carousel-tabs" data-mode="layers">
+                    <div class="component-canvas-footer-tabs" data-ref="footer-carousel-tabs" data-mode="none">
                         <div class="component-canvas-footer-tabs-glider" data-ref="footer-tabs-glider"></div>
-                        <button type="button" class="component-canvas-footer-tab-btn active" data-action="setCarouselModeLayers" data-tooltip="<?php echo __('tooltip_layers'); ?>" data-position="top">
+                        <button type="button" class="component-canvas-footer-tab-btn" data-action="toggleCarouselLayers" data-tooltip="<?php echo __('tooltip_layers'); ?>" data-position="top">
                             <span class="material-symbols-rounded">layers</span>
                             <span class="component-canvas-footer-tab-text"><?php echo __('tooltip_layers'); ?></span>
                         </button>
-                        <button type="button" class="component-canvas-footer-tab-btn" data-action="setCarouselModeTimeline" data-tooltip="<?php echo __('lbl_timeline'); ?>" data-position="top">
+                        <button type="button" class="component-canvas-footer-tab-btn" data-action="toggleCarouselTimeline" data-tooltip="<?php echo __('lbl_timeline'); ?>" data-position="top">
                             <span class="material-symbols-rounded">movie</span>
                             <span class="component-canvas-footer-tab-text"><?php echo __('lbl_timeline'); ?></span>
                         </button>
@@ -985,10 +944,7 @@ if (!isset($showDesignTools)) {
 
                     <?php if (!$isOnlineModeActive): ?>
                     <!-- 2. Controles de Capas (Modo Capas) -->
-                    <div class="component-canvas-footer-group" data-ref="footer-layers-controls">
-                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleLayersCarousel" data-ref="btn-footer-toggle-layers" data-tooltip="<?php echo __('tooltip_layers'); ?> [L]" data-position="top">
-                            <span class="material-symbols-rounded">layers</span>
-                        </button>
+                    <div class="component-canvas-footer-group disabled" data-ref="footer-layers-controls">
                         <div class="component-canvas-footer-layers-badge" data-ref="footer-layers-count" data-tooltip="<?php echo __('lbl_active_layer_count'); ?>" data-position="top">
                             1/1
                         </div>

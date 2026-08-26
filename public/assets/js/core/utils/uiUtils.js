@@ -508,9 +508,12 @@ function bindDragToScroll(carousel, isVertical = false) {
 function initCarouselScroll(wrapper, isVertical = false) {
     if (!wrapper) return null;
 
-    const carousel = wrapper.querySelector('.component-tags-carousel, .component-tabs-header, .canvas-top-property-bar, .canvas-design-toolbar, .canvas-design-toolbar-horizontal, .canvas-design-toolbar-vertical');
-    const leftBtn = wrapper.querySelector('.component-tag-nav-left, .canvas-nav-btn--left, .canvas-nav-btn--up, [data-action$="Left"], [data-action$="Up"]');
-    const rightBtn = wrapper.querySelector('.component-tag-nav-right, .canvas-nav-btn--right, .canvas-nav-btn--down, [data-action$="Right"], [data-action$="Down"]');
+    const carousel = (wrapper.matches && (wrapper.matches('.component-toolbar, .component-property-bar, .component-tags-carousel, .component-tabs-header, .component-layers-carousel__track, .component-layers-carousel, .canvas-design-toolbar, .canvas-design-toolbar-horizontal, .canvas-design-toolbar-vertical'))) 
+        ? wrapper 
+        : wrapper.querySelector('.component-layers-carousel__track, .component-toolbar, .component-property-bar, .component-tags-carousel, .component-tabs-header, .canvas-top-property-bar, .canvas-design-toolbar, .canvas-design-toolbar-horizontal, .canvas-design-toolbar-vertical') || wrapper;
+
+    const leftBtn = wrapper.querySelector('.component-toolbar__nav-btn--left, .component-toolbar__nav-btn--up, .component-layers-carousel__nav-btn--left, .component-tag-nav-btn--left, .component-tag-nav-left, .canvas-nav-btn--left, .canvas-nav-btn--up, [data-action$="Left"], [data-action$="Up"]');
+    const rightBtn = wrapper.querySelector('.component-toolbar__nav-btn--right, .component-toolbar__nav-btn--down, .component-layers-carousel__nav-btn--right, .component-tag-nav-btn--right, .component-tag-nav-right, .canvas-nav-btn--right, .canvas-nav-btn--down, [data-action$="Right"], [data-action$="Down"]');
 
     if (!carousel) return null;
 
@@ -520,6 +523,7 @@ function initCarouselScroll(wrapper, isVertical = false) {
         leftBtn.setAttribute('data-carousel-bound', 'true');
         leftBtn.addEventListener('click', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             if (isVertical) {
                 carousel.scrollBy({ top: -160, behavior: 'smooth' });
             } else {
@@ -533,6 +537,7 @@ function initCarouselScroll(wrapper, isVertical = false) {
         rightBtn.setAttribute('data-carousel-bound', 'true');
         rightBtn.addEventListener('click', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             if (isVertical) {
                 carousel.scrollBy({ top: 160, behavior: 'smooth' });
             } else {

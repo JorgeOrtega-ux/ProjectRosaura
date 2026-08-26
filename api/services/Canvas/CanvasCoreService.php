@@ -694,6 +694,9 @@ class CanvasCoreService {
             $hasTemplatePainted = false;
 
             // Pre-paint template if selected
+            $sizeParts = explode('x', strtolower($size));
+            $targetW = (int)($sizeParts[0] ?? 64);
+            $targetH = isset($sizeParts[1]) ? (int)$sizeParts[1] : $targetW;
             if ($templateId !== null) {
                 try {
                     $templatePath = dirname(__DIR__, 3) . '/public/assets/config/canvas_templates.json';
@@ -701,7 +704,7 @@ class CanvasCoreService {
                         $templates = json_decode(file_get_contents($templatePath), true);
                         $foundTpl = null;
                         foreach ($templates as $tpl) {
-                            if ($tpl['id'] === $templateId) {
+                        if ($tpl['id'] === $templateId) {
                                 $foundTpl = $tpl;
                                 break;
                             }
@@ -711,7 +714,15 @@ class CanvasCoreService {
                             $imgPath = $foundTpl['image_paths'][$size] ?? null;
                             if ($imgPath) {
                                 $fullImgPath = dirname(__DIR__, 3) . '/public' . $imgPath;
-                                if (file_exists($fullImgPath) && extension_loaded('gd')) {
+                                if (!extension_loaded('gd')) {
+                                    Logger::error('Template painting skipped: GD extension not loaded.', [
+                                        'canvas_id' => $canvasId, 'template_id' => $templateId
+                                    ]);
+                                } elseif (!file_exists($fullImgPath)) {
+                                    Logger::error('Template painting skipped: image file not found.', [
+                                        'canvas_id' => $canvasId, 'template_id' => $templateId, 'path' => $fullImgPath
+                                    ]);
+                                } else {
                                     $ext = strtolower(pathinfo($fullImgPath, PATHINFO_EXTENSION));
                                     $img = null;
                                     if ($ext === 'png') {
@@ -725,7 +736,11 @@ class CanvasCoreService {
                                         $img = @imagecreatefromjpeg($fullImgPath);
                                     }
 
-                                    if ($img) {
+                                    if (!$img) {
+                                        Logger::error('Template painting skipped: GD failed to load image.', [
+                                            'canvas_id' => $canvasId, 'template_id' => $templateId, 'path' => $fullImgPath
+                                        ]);
+                                    } elseif ($img) {
                                         $targetW = 64;
                                         $targetH = 64;
                                         if (strpos($size, 'x') !== false) {
@@ -767,10 +782,11 @@ class CanvasCoreService {
                                         $this->canvasRepository->saveSnapshot($canvasId, $binaryData);
                                         $hasTemplatePainted = true;
 
-                                        // Enqueue for Python worker to generate thumbnail
+                                        // Set state in Redis and enqueue for Python worker to generate thumbnail
                                         if (class_exists(RedisCache::class)) {
                                             $thumbRedis = (new RedisCache())->getClient();
                                             if ($thumbRedis) {
+                                                $thumbRedis->set("canvas:{$canvasId}:state", $binaryData);
                                                 $thumbRedis->sAdd('canvases:pending_snapshots', (string)$canvasId);
                                             }
                                         }
@@ -935,16 +951,16 @@ class CanvasCoreService {
                 'owner_id'              => $userId,
                 'name'                  => $name,
                 'privacy'               => $privacy,
-                'requires_approval'     => 0,
+                'requires_approval'     => !empty($params['requires_approval']) ? 1 : 0,
                 'size'                  => $size,
                 'palette_id'            => $paletteId,
                 'mode'                  => 'offline',
                 'is_online_active'      => 0,
                 'storage_bytes'         => $actualSizeBytes,
-                'max_participants'      => 10,
-                'cooldown_pixels_batch' => 5,
-                'cooldown_seconds'      => 10,
-                'allow_chat'            => 0,
+                'max_participants'      => !empty($params['max_participants']) ? (int)$params['max_participants'] : 10,
+                'cooldown_pixels_batch' => !empty($params['cooldown_pixels_batch']) ? (int)$params['cooldown_pixels_batch'] : 5,
+                'cooldown_seconds'      => isset($params['cooldown_seconds']) ? (int)$params['cooldown_seconds'] : 10,
+                'allow_chat'            => !empty($params['allow_chat']) ? 1 : 0,
                 'tags'                  => $cleanTags
             ];
 
@@ -953,6 +969,13 @@ class CanvasCoreService {
 
             // Save Snapshot binary
             $this->canvasRepository->saveSnapshot($canvasId, $rawBinary);
+
+            if (class_exists(RedisCache::class)) {
+                $redis = (new RedisCache())->getClient();
+                if ($redis) {
+                    $redis->set("canvas:{$canvasId}:state", $rawBinary);
+                }
+            }
 
             // Save layers if provided
             $layersData = $params['layers_data'] ?? null;

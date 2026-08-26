@@ -37,6 +37,10 @@ export class SpaRouter {
                         params.push(part.slice(1));
                         return '([^/]+)';
                     }
+                    if (part.startsWith('@:')) {
+                        params.push(part.slice(2));
+                        return '@([^/]+)';
+                    }
                     return part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 });
                 const regex = new RegExp(`^${regexParts.join('/')}$`);

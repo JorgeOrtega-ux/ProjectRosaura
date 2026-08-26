@@ -107,6 +107,103 @@ extract($accountData);
 
                 <hr class="component-divider">
 
+                <!-- Handle / Identifier Section -->
+                <div class="component-group-item component-group-item--stateful">
+
+                    <div class="active component-state-box" data-state="identifier-view">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('lbl_identifier'); ?></h2>
+                                <span class="component-display-value" data-ref="display-identifier">
+                                    @<?php echo htmlspecialchars($userIdentifier); ?>
+                                </span>
+                                <?php if (!$identifierCanChange): ?>
+                                    <p class="component-card__description component-text-warning" style="margin-top: 4px; font-size: 0.75rem;">
+                                        <span class="material-symbols-rounded" style="font-size: 14px; vertical-align: middle;">schedule</span>
+                                        <?php echo __('identifier.cooldown_active', ['days' => (string)$identifierCooldownDaysRemaining]); ?>
+                                    </p>
+                                <?php else: ?>
+                                    <p class="component-card__description" style="margin-top: 4px; font-size: 0.75rem;">
+                                        <?php echo __('identifier.desc'); ?>
+                                    </p>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--stretch">
+                            <?php if ($identifierCanChange): ?>
+                                <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="identifier"><?php echo __('btn_edit'); ?></button>
+                            <?php else: ?>
+                                <button type="button" class="component-button component-button--h34 disabled" disabled title="<?php echo __('identifier.cooldown_active', ['days' => (string)$identifierCooldownDaysRemaining]); ?>">
+                                    <span class="material-symbols-rounded">lock</span>
+                                    <span><?php echo __('btn_edit'); ?></span>
+                                </button>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <?php if ($identifierCanChange): ?>
+                    <div class="disabled component-state-box" data-state="identifier-edit">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('lbl_identifier'); ?></h2>
+                                <p class="component-card__description" style="margin-bottom: 8px;"><?php echo __('identifier.cooldown_warning'); ?></p>
+                                <div class="component-edit-row">
+                                    <div class="component-input-group component-input-group--h34" style="position: relative;">
+                                        <span style="position: absolute; left: 10px; top: 8px; color: var(--text-muted); font-weight: 600;">@</span>
+                                        <input type="text" data-ref="input-identifier" class="component-input-field component-input-field--simple" style="padding-left: 26px;" value="<?php echo htmlspecialchars($userIdentifier); ?>" data-original-value="<?php echo htmlspecialchars($userIdentifier); ?>" placeholder="usuario">
+                                    </div>
+                                    <div class="component-card__actions component-card__actions--stretch">
+                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="identifier"><?php echo __('btn_cancel'); ?></button>
+                                        <button type="button" class="component-button component-button--h34" data-action="saveIdentifier"><?php echo __('btn_save'); ?></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                </div>
+
+                <hr class="component-divider">
+
+                <!-- Bio Section -->
+                <div class="component-group-item component-group-item--stateful">
+
+                    <div class="active component-state-box" data-state="bio-view">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('lbl_bio'); ?></h2>
+                                <span class="component-display-value" data-ref="display-bio">
+                                    <?php echo !empty($userBio) ? htmlspecialchars($userBio) : '<span class="component-text-muted">' . __('no_bio_yet') . '</span>'; ?>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="component-card__actions component-card__actions--stretch">
+                            <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="bio"><?php echo __('btn_edit'); ?></button>
+                        </div>
+                    </div>
+
+                    <div class="disabled component-state-box" data-state="bio-edit">
+                        <div class="component-card__content">
+                            <div class="component-card__text">
+                                <h2 class="component-card__title"><?php echo __('lbl_bio'); ?></h2>
+                                <div class="component-edit-row">
+                                    <div class="component-input-group">
+                                        <textarea data-ref="input-bio" class="component-input-field" rows="2" style="height: auto; resize: vertical;" maxlength="250" placeholder="<?php echo __('ph_bio'); ?>"><?php echo htmlspecialchars($userBio); ?></textarea>
+                                    </div>
+                                    <div class="component-card__actions component-card__actions--stretch">
+                                        <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="bio"><?php echo __('btn_cancel'); ?></button>
+                                        <button type="button" class="component-button component-button--h34" data-action="saveBio"><?php echo __('btn_save'); ?></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <hr class="component-divider">
+
                 <div class="component-group-item component-group-item--stateful">
 
                     <div class="active component-state-box" data-state="email-view">

@@ -553,6 +553,118 @@ return [
             ],
         ],
     ],
+    'settings.update_identifier' => [
+        'controller' => 'App\\Api\\Controllers\\Settings\\SettingsController',
+        'action' => 'update_identifier',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'settings_upd_identifier', 'max' => 10, 'time' => 5, 'identifier' => 'user_id'],
+        ],
+    ],
+    'settings.update_banner' => [
+        'controller' => 'App\\Api\\Controllers\\Settings\\SettingsController',
+        'action' => 'update_banner',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'settings_upd_banner', 'max' => 10, 'time' => 5, 'identifier' => 'user_id'],
+        ],
+    ],
+    'settings.delete_banner' => [
+        'controller' => 'App\\Api\\Controllers\\Settings\\SettingsController',
+        'action' => 'delete_banner',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'settings_del_banner', 'max' => 10, 'time' => 5, 'identifier' => 'user_id'],
+        ],
+    ],
+    'settings.update_bio' => [
+        'controller' => 'App\\Api\\Controllers\\Settings\\SettingsController',
+        'action' => 'update_bio',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'settings_upd_bio', 'max' => 20, 'time' => 5, 'identifier' => 'user_id'],
+        ],
+    ],
+    'publications.publish' => [
+        'controller' => 'App\\Api\\Controllers\\Publications\\PublicationsController',
+        'action' => 'publish',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'pub_publish', 'max' => 10, 'time' => 5, 'identifier' => 'user_id'],
+        ],
+    ],
+    'publications.get_feed' => [
+        'controller' => 'App\\Api\\Controllers\\Publications\\PublicationsController',
+        'action' => 'get_feed',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'pub_feed', 'max' => 120, 'time' => 1, 'identifier' => 'ip'],
+        ],
+    ],
+    'publications.get_user_publications' => [
+        'controller' => 'App\\Api\\Controllers\\Publications\\PublicationsController',
+        'action' => 'get_user_publications',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'pub_user_posts', 'max' => 120, 'time' => 1, 'identifier' => 'ip'],
+        ],
+    ],
+    'publications.get_detail' => [
+        'controller' => 'App\\Api\\Controllers\\Publications\\PublicationsController',
+        'action' => 'get_detail',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'pub_detail', 'max' => 180, 'time' => 1, 'identifier' => 'ip'],
+        ],
+    ],
+    'publications.toggle_like' => [
+        'controller' => 'App\\Api\\Controllers\\Publications\\PublicationsController',
+        'action' => 'toggle_like',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'pub_like', 'max' => 60, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'publications.get_comments' => [
+        'controller' => 'App\\Api\\Controllers\\Publications\\PublicationsController',
+        'action' => 'get_comments',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'pub_get_comments', 'max' => 120, 'time' => 1, 'identifier' => 'ip'],
+        ],
+    ],
+    'publications.add_comment' => [
+        'controller' => 'App\\Api\\Controllers\\Publications\\PublicationsController',
+        'action' => 'add_comment',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'pub_add_comment', 'max' => 30, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'publications.delete_comment' => [
+        'controller' => 'App\\Api\\Controllers\\Publications\\PublicationsController',
+        'action' => 'delete_comment',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'pub_del_comment', 'max' => 30, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'publications.delete' => [
+        'controller' => 'App\\Api\\Controllers\\Publications\\PublicationsController',
+        'action' => 'delete',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'pub_del', 'max' => 20, 'time' => 5, 'identifier' => 'user_id'],
+        ],
+    ],
+    'user.get_profile_data' => [
+        'controller' => 'App\\Api\\Controllers\\User\\UserController',
+        'action' => 'get_profile_data',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'user_get_profile', 'max' => 120, 'time' => 1, 'identifier' => 'ip'],
+        ],
+    ],
     'telemetry.collect' => [
         'controller' => 'App\\Api\\Controllers\\Telemetry\\TelemetryController',
         'action' => 'collect',

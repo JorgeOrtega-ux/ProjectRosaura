@@ -798,11 +798,16 @@
     box-shadow: 0 0 0 1px #f59e0b;
 }
 
-.component-shape-card .component-library-card__image {
+.component-shape-card .component-library-card__image,
+.component-shape-card img,
+[data-action="selectGeometricShape"] img,
+[data-action="selectGeometricShape"] .component-library-card__image {
     width: 28px;
     height: 28px;
     object-fit: contain;
     pointer-events: none;
+    filter: invert(1) !important;
+    -webkit-filter: invert(1) !important;
 }
 
 .component-text-settings-container {

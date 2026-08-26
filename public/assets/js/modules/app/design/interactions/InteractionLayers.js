@@ -1,4 +1,4 @@
-import { showMessage, setButtonLoading, restoreButton, closeDropdown, updateRangeFill } from '../../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, closeDropdown, updateRangeFill, initCarouselScroll } from '../../../../core/utils/uiUtils.js';
 import { AnimationExporter } from '../../../../core/utils/AnimationExporter.js';
 
 export const InteractionLayers = {
@@ -87,44 +87,70 @@ export const InteractionLayers = {
         }
     },
 
-    toggleLayersCarousel() {
+    toggleCarouselLayers() {
         const carousel = document.querySelector('[data-ref="layers-bottom-carousel"]');
-        if (!carousel) return;
-        this.isLayersCarouselOpen = !this.isLayersCarouselOpen;
-        carousel.classList.toggle('disabled', !this.isLayersCarouselOpen);
-        if (this.isLayersCarouselOpen) {
+        const tabsContainer = document.querySelector('[data-ref="footer-carousel-tabs"]');
+        const layersBtn = document.querySelector('[data-action="toggleCarouselLayers"]');
+        const timelineBtn = document.querySelector('[data-action="toggleCarouselTimeline"]');
+        const footerLayersControls = document.querySelector('[data-ref="footer-layers-controls"]');
+        const footerAnimControls = document.querySelector('[data-ref="footer-anim-controls"]');
+
+        if (this.isLayersCarouselOpen && this.carouselMode === 'layers') {
+            this.isLayersCarouselOpen = false;
+            if (carousel) carousel.classList.add('disabled');
+            if (tabsContainer) tabsContainer.setAttribute('data-mode', 'none');
+            if (layersBtn) layersBtn.classList.remove('active');
+            if (footerLayersControls) footerLayersControls.classList.add('disabled');
+        } else {
+            this.isLayersCarouselOpen = true;
+            this.carouselMode = 'layers';
+            if (carousel) carousel.classList.remove('disabled');
+            if (tabsContainer) tabsContainer.setAttribute('data-mode', 'layers');
+            if (layersBtn) layersBtn.classList.add('active');
+            if (timelineBtn) timelineBtn.classList.remove('active');
+            if (footerLayersControls) footerLayersControls.classList.remove('disabled');
+            if (footerAnimControls) footerAnimControls.classList.add('disabled');
             this.renderBottomCarousel();
         }
-        const btnToggle = document.querySelector('[data-ref="btn-footer-layers-carousel"]');
-        if (btnToggle) {
-            btnToggle.classList.toggle('active', this.isLayersCarouselOpen);
+    },
+
+    toggleCarouselTimeline() {
+        const carousel = document.querySelector('[data-ref="layers-bottom-carousel"]');
+        const tabsContainer = document.querySelector('[data-ref="footer-carousel-tabs"]');
+        const layersBtn = document.querySelector('[data-action="toggleCarouselLayers"]');
+        const timelineBtn = document.querySelector('[data-action="toggleCarouselTimeline"]');
+        const footerLayersControls = document.querySelector('[data-ref="footer-layers-controls"]');
+        const footerAnimControls = document.querySelector('[data-ref="footer-anim-controls"]');
+
+        if (this.isLayersCarouselOpen && this.carouselMode === 'timeline') {
+            this.isLayersCarouselOpen = false;
+            if (carousel) carousel.classList.add('disabled');
+            if (tabsContainer) tabsContainer.setAttribute('data-mode', 'none');
+            if (timelineBtn) timelineBtn.classList.remove('active');
+            if (footerAnimControls) footerAnimControls.classList.add('disabled');
+        } else {
+            this.isLayersCarouselOpen = true;
+            this.carouselMode = 'timeline';
+            if (carousel) carousel.classList.remove('disabled');
+            if (tabsContainer) tabsContainer.setAttribute('data-mode', 'timeline');
+            if (timelineBtn) timelineBtn.classList.add('active');
+            if (layersBtn) layersBtn.classList.remove('active');
+            if (footerAnimControls) footerAnimControls.classList.remove('disabled');
+            if (footerLayersControls) footerLayersControls.classList.add('disabled');
+            this.renderBottomCarousel();
         }
+    },
+
+    toggleLayersCarousel() {
+        this.toggleCarouselLayers();
     },
 
     toggleAnimationCarousel() {
-        this.carouselMode = 'animation';
-        const carousel = document.querySelector('[data-ref="layers-bottom-carousel"]');
-        if (!carousel) return;
-        this.isLayersCarouselOpen = true;
-        carousel.classList.remove('disabled');
-        this.renderBottomCarousel();
-        const btnToggle = document.querySelector('[data-ref="btn-footer-layers-carousel"]');
-        if (btnToggle) {
-            btnToggle.classList.add('active');
-        }
+        this.toggleCarouselTimeline();
     },
 
     toggleLayerModeCarousel() {
-        this.carouselMode = 'layers';
-        const carousel = document.querySelector('[data-ref="layers-bottom-carousel"]');
-        if (!carousel) return;
-        this.isLayersCarouselOpen = true;
-        carousel.classList.remove('disabled');
-        this.renderBottomCarousel();
-        const btnToggle = document.querySelector('[data-ref="btn-footer-layers-carousel"]');
-        if (btnToggle) {
-            btnToggle.classList.add('active');
-        }
+        this.toggleCarouselLayers();
     },
 
     togglePlayAnimation() {
@@ -526,6 +552,19 @@ export const InteractionLayers = {
         });
     },
 
+    renderBottomCarousel() {
+        if (!this.isOfflineMode) return;
+        if (this.carouselMode === 'timeline' || this.carouselMode === 'animation') {
+            this.renderFramesCarouselUI();
+        } else {
+            this.renderLayersCarouselUI();
+        }
+        const carouselEl = document.querySelector('[data-ref="layers-bottom-carousel"]');
+        if (carouselEl) {
+            initCarouselScroll(carouselEl, false);
+        }
+    },
+
     renderFramesCarouselUI() {
         const track = document.querySelector('[data-ref="layers-carousel-track"]');
         if (!track) return;
@@ -620,23 +659,25 @@ export const InteractionLayers = {
             canvas.height = 96;
             card.appendChild(canvas);
 
-            // Frame badge
-            const badge = document.createElement('div');
-            badge.className = 'canvas-design-layer-card__badge';
-            badge.textContent = `Frame ${idx + 1}`;
-            card.appendChild(badge);
+            // Frame Title (Standard Gallery Title with gradient backdrop)
+            const titleEl = document.createElement('div');
+            titleEl.className = 'component-gallery-title';
+            titleEl.textContent = `Frame ${idx + 1}`;
+            card.appendChild(titleEl);
 
-            // Frame action buttons (Duplicate & Delete)
+            // Frame action buttons (Duplicate & Delete using standard gallery actions)
+            const actionsWrapper = document.createElement('div');
+            actionsWrapper.className = 'component-gallery-actions-wrapper';
             const actions = document.createElement('div');
-            actions.className = 'canvas-design-layer-card__actions';
+            actions.className = 'component-gallery-actions';
 
             // Duplicate frame button
             const dupBtn = document.createElement('button');
             dupBtn.type = 'button';
-            dupBtn.className = 'canvas-design-layer-card__action-btn';
+            dupBtn.className = 'component-button component-button--icon component-button--h32';
             dupBtn.setAttribute('data-action', 'duplicateFrame');
             dupBtn.setAttribute('data-frame-id', frame.id);
-            dupBtn.setAttribute('data-tooltip', 'Duplicar fotograma');
+            dupBtn.setAttribute('data-tooltip', window.__('tooltip_duplicate_frame') || 'Duplicar fotograma');
             dupBtn.setAttribute('data-position', 'top');
             dupBtn.innerHTML = '<span class="material-symbols-rounded">content_copy</span>';
             actions.appendChild(dupBtn);
@@ -645,16 +686,17 @@ export const InteractionLayers = {
             if (this.frames.length > 1) {
                 const delBtn = document.createElement('button');
                 delBtn.type = 'button';
-                delBtn.className = 'canvas-design-layer-card__action-btn';
+                delBtn.className = 'component-button component-button--icon component-button--h32 component-button--danger';
                 delBtn.setAttribute('data-action', 'deleteFrame');
                 delBtn.setAttribute('data-frame-id', frame.id);
-                delBtn.setAttribute('data-tooltip', 'Eliminar fotograma');
+                delBtn.setAttribute('data-tooltip', window.__('tooltip_delete_frame') || 'Eliminar fotograma');
                 delBtn.setAttribute('data-position', 'top');
                 delBtn.innerHTML = '<span class="material-symbols-rounded">delete</span>';
                 actions.appendChild(delBtn);
             }
 
-            card.appendChild(actions);
+            actionsWrapper.appendChild(actions);
+            card.appendChild(actionsWrapper);
             track.appendChild(card);
         });
 
@@ -762,23 +804,25 @@ export const InteractionLayers = {
             canvas.height = 96;
             card.appendChild(canvas);
 
-            // Layer name badge
-            const badge = document.createElement('div');
-            badge.className = 'canvas-design-layer-card__badge';
-            badge.textContent = layer.name || `Capa ${idx + 1}`;
-            card.appendChild(badge);
+            // Layer Title (Standard Gallery Title with gradient backdrop)
+            const titleEl = document.createElement('div');
+            titleEl.className = 'component-gallery-title';
+            titleEl.textContent = layer.name || `Capa ${idx + 1}`;
+            card.appendChild(titleEl);
 
-            // Action buttons (Lock & Visibility)
+            // Action buttons (Lock & Visibility using standard gallery actions)
+            const actionsWrapper = document.createElement('div');
+            actionsWrapper.className = 'component-gallery-actions-wrapper';
             const actions = document.createElement('div');
-            actions.className = 'canvas-design-layer-card__actions';
+            actions.className = 'component-gallery-actions';
 
             // Lock button
             const lockBtn = document.createElement('button');
             lockBtn.type = 'button';
-            lockBtn.className = `canvas-design-layer-card__action-btn canvas-design-layer-card__action-btn--lock ${isLocked ? 'active' : ''}`;
+            lockBtn.className = `component-button component-button--icon component-button--h32 ${isLocked ? 'active' : ''}`;
             lockBtn.setAttribute('data-action', 'toggleLayerLock');
             lockBtn.setAttribute('data-layer-id', layer.id);
-            lockBtn.setAttribute('data-tooltip', isLocked ? window.__('tooltip_layer_unlock') : window.__('tooltip_layer_lock'));
+            lockBtn.setAttribute('data-tooltip', isLocked ? (window.__('tooltip_layer_unlock') || 'Desbloquear capa') : (window.__('tooltip_layer_lock') || 'Bloquear capa'));
             lockBtn.setAttribute('data-position', 'top');
             lockBtn.innerHTML = `<span class="material-symbols-rounded">${isLocked ? 'lock' : 'lock_open'}</span>`;
             actions.appendChild(lockBtn);
@@ -786,15 +830,16 @@ export const InteractionLayers = {
             // Visibility / Eye button
             const visBtn = document.createElement('button');
             visBtn.type = 'button';
-            visBtn.className = `canvas-design-layer-card__action-btn canvas-design-layer-card__action-btn--vis ${!isVisible ? 'hidden-btn' : ''}`;
+            visBtn.className = `component-button component-button--icon component-button--h32 ${!isVisible ? 'active' : ''}`;
             visBtn.setAttribute('data-action', 'toggleLayerVisibility');
             visBtn.setAttribute('data-layer-id', layer.id);
-            visBtn.setAttribute('data-tooltip', isVisible ? window.__('tooltip_layer_hide') : window.__('tooltip_layer_show'));
+            visBtn.setAttribute('data-tooltip', isVisible ? (window.__('tooltip_layer_hide') || 'Ocultar capa') : (window.__('tooltip_layer_show') || 'Mostrar capa'));
             visBtn.setAttribute('data-position', 'top');
             visBtn.innerHTML = `<span class="material-symbols-rounded">${isVisible ? 'visibility' : 'visibility_off'}</span>`;
             actions.appendChild(visBtn);
 
-            card.appendChild(actions);
+            actionsWrapper.appendChild(actions);
+            card.appendChild(actionsWrapper);
             track.appendChild(card);
         });
 
@@ -1643,6 +1688,49 @@ export const InteractionLayers = {
 
         if (dropdown && typeof closeDropdown === 'function') {
             closeDropdown(dropdown);
+        }
+    },
+
+    async openLayerBlendModeModal() {
+        if (!this.isOfflineMode || !this.renderWorker) return;
+        if (!window.modalSystem) return;
+
+        const activeL = this.layers ? this.layers.find(l => l.id === this.activeLayerId) : null;
+        const layerName = activeL ? activeL.name : 'Capa Activa';
+        const currentBlend = activeL ? (activeL.blendMode || 'source-over') : 'source-over';
+
+        await window.modalSystem.show('layerBlendModeModal', {
+            currentBlend,
+            layerName
+        });
+    },
+
+    handleSelectModalBlendModeOption(linkEl) {
+        if (!linkEl) return;
+        const val = linkEl.getAttribute('data-value') || 'source-over';
+        const label = linkEl.getAttribute('data-label') || val;
+
+        const trigger = document.querySelector('[data-ref="modal-blend-mode-trigger"]');
+        const labelRef = document.querySelector('[data-ref="modal-blend-mode-label"]');
+
+        if (trigger) trigger.setAttribute('data-value', val);
+        if (labelRef) labelRef.textContent = label;
+
+        const dropdown = linkEl.closest('.component-module--dropdown');
+        if (dropdown && typeof closeDropdown === 'function') closeDropdown(dropdown);
+
+        const links = linkEl.closest('.component-menu-list')?.querySelectorAll('.component-menu-link') || [];
+        links.forEach(l => l.classList.toggle('active', l === linkEl));
+    },
+
+    applyLayerBlendModeFromModal() {
+        const trigger = document.querySelector('[data-ref="modal-blend-mode-trigger"]');
+        const blendMode = trigger ? (trigger.getAttribute('data-value') || 'source-over') : 'source-over';
+
+        this.setLayerBlendMode(blendMode);
+
+        if (window.modalSystem) {
+            window.modalSystem.closeCurrent(true);
         }
     }
 };

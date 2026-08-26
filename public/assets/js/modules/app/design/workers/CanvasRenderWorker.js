@@ -2768,9 +2768,9 @@ self.onmessage = async function (e) {
                 const savedW = payload.layersData.boardWidth || boardWidth;
                 const savedH = payload.layersData.boardHeight || boardHeight;
 
-                frames = rawFrames.map(f => {
-                    const fLayers = (f.layers || []).map(l => {
-                        const b64 = l.buffer_base64 || l.bufferBase64;
+                frames = rawFrames.map((f, fIdx) => {
+                    const fLayers = (f.layers || []).map((l, lIdx) => {
+                        const b64 = l.buffer_base64 || l.bufferBase64 || (fIdx === 0 && lIdx === 0 && payload.base64String ? payload.base64String : null);
                         let finalBuf;
                         if (b64) {
                             const rawBuf = base64ToUint32(b64, savedW * savedH);

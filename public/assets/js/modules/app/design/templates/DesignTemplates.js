@@ -1,5 +1,5 @@
 import { ApiRoutes } from '../../../../core/api/ApiRoutes.js';
-import { showMessage, setButtonLoading, restoreButton } from '../../../../core/utils/uiUtils.js';
+import { showMessage, setButtonLoading, restoreButton, getLockDetails } from '../../../../core/utils/uiUtils.js';
 import { getStickersList, getStickerById } from '../data/StickersData.js';
 import { SHAPE_SVG_PATHS } from '../data/ShapeSvgPathsData.js?v=34';
 import { generateShapePixels } from '../utils/GeometricShapesUtils.js?v=34';
@@ -894,7 +894,33 @@ export const DesignTemplates = {
         if (this.activeTemplateId && activeTpl) {
             if (btnLock) btnLock.classList.remove('disabled');
             if (btnRotate) btnRotate.classList.remove('disabled');
-            if (btnInject) btnInject.classList.remove('disabled');
+            if (btnInject) {
+                btnInject.classList.remove('disabled');
+                const isFreePrimitive = Boolean(activeTpl.isSticker || activeTpl.isShape);
+                if (isFreePrimitive) {
+                    // Figuras geométricas y stickers del sistema son 100% gratuitos
+                    btnInject.classList.remove('premium-locked', 'component-button--premium', 'disabled-interaction');
+                    btnInject.removeAttribute('data-requires-premium');
+                    btnInject.removeAttribute('data-required-tier');
+                    btnInject.setAttribute('data-action', 'injectTemplate');
+                } else {
+                    // Plantillas de imagen subidas por el usuario: evaluar feature de suscripción
+                    const lock = (typeof getLockDetails === 'function') ? getLockDetails('feat_inject_templates', 'button') : null;
+                    if (lock && lock.isLocked) {
+                        btnInject.classList.add('premium-locked', 'component-button--premium');
+                        btnInject.setAttribute('data-requires-premium', 'true');
+                        if (lock.attributesStr) {
+                            const match = lock.attributesStr.match(/data-required-tier="([^"]+)"/);
+                            if (match) btnInject.setAttribute('data-required-tier', match[1]);
+                        }
+                    } else {
+                        btnInject.classList.remove('premium-locked', 'component-button--premium', 'disabled-interaction');
+                        btnInject.removeAttribute('data-requires-premium');
+                        btnInject.removeAttribute('data-required-tier');
+                        btnInject.setAttribute('data-action', 'injectTemplate');
+                    }
+                }
+            }
             if (btnDel) btnDel.classList.remove('disabled');
             
             if (btnLock) {
@@ -1121,7 +1147,9 @@ export const DesignTemplates = {
         offCtx.drawImage(source, 0, 0);
 
         try {
+            tpl.canvas = offCanvas;
             tpl.imageBitmap = await createImageBitmap(offCanvas);
+            tpl._bitmapSentToWorker = false;
             this.requestRender();
             if (typeof showMessage === 'function') showMessage(window.__('msg_template_flipped_h') || 'Figura volteada horizontalmente', 'info');
         } catch (e) {}
@@ -1148,7 +1176,9 @@ export const DesignTemplates = {
         offCtx.drawImage(source, 0, 0);
 
         try {
+            tpl.canvas = offCanvas;
             tpl.imageBitmap = await createImageBitmap(offCanvas);
+            tpl._bitmapSentToWorker = false;
             this.requestRender();
             if (typeof showMessage === 'function') showMessage(window.__('msg_template_flipped_v') || 'Figura volteada verticalmente', 'info');
         } catch (e) {}

@@ -187,6 +187,12 @@ class CanvasCoreController extends BaseController {
             $stateBase64 = $input['state_base64'] ?? '';
             $layersData = $input['layers_data'] ?? null;
             $localUuid = $input['local_uuid'] ?? ($input['uuid'] ?? '');
+            $requiresApproval = !empty($input['requires_approval']) ? 1 : 0;
+            $cooldownPixelsBatch = isset($input['cooldown_pixels_batch']) ? (int)$input['cooldown_pixels_batch'] : 5;
+            $cooldownSeconds = isset($input['cooldown_seconds']) ? (int)$input['cooldown_seconds'] : 10;
+            $maxParticipants = isset($input['max_participants']) ? (int)$input['max_participants'] : (isset($input['limit']) ? (int)$input['limit'] : 10);
+            $allowChat = !empty($input['allow_chat']) ? 1 : 0;
+            $templateId = $input['template_id'] ?? null;
 
             $result = $this->canvasServices->syncLocalCanvas(
                 $userId,
@@ -198,7 +204,13 @@ class CanvasCoreController extends BaseController {
                     'tags' => $tags,
                     'state_base64' => $stateBase64,
                     'layers_data' => $layersData,
-                    'local_uuid' => $localUuid
+                    'local_uuid' => $localUuid,
+                    'requires_approval' => $requiresApproval,
+                    'cooldown_pixels_batch' => $cooldownPixelsBatch,
+                    'cooldown_seconds' => $cooldownSeconds,
+                    'max_participants' => $maxParticipants,
+                    'allow_chat' => $allowChat,
+                    'template_id' => $templateId
                 ]
             );
 

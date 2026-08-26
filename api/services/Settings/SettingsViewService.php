@@ -83,6 +83,13 @@ class SettingsViewService {
         $subscriptionPlanLabel = \App\Core\System\SubscriptionPlanConstants::getTierLimits($subscriptionTier)['name'] ?? __('tier_free');
 
         $googleId = null;
+        $userIdentifier = $_SESSION['user_identifier'] ?? strtolower(str_replace(' ', '_', $userName));
+        $userBanner = $_SESSION['user_banner'] ?? null;
+        $userBio = $_SESSION['user_bio'] ?? '';
+        $identifierUpdatedAt = null;
+        $isIdentifierCooldownActive = false;
+        $identifierDaysRemaining = 0;
+
         if ($isLoggedIn) {
             try {
                 global $container;
@@ -91,10 +98,25 @@ class SettingsViewService {
                     $currentUserDb = $userRepo->findById($userId);
                     if ($currentUserDb) {
                         $googleId = $currentUserDb['google_id'] ?? null;
+                        $userIdentifier = $currentUserDb['identifier'] ?? $userIdentifier;
+                        $userBanner = !empty($currentUserDb['banner_picture']) ? \App\Core\Helpers\Utils::getS3PublicUrl($currentUserDb['banner_picture']) : null;
+                        $userBio = $currentUserDb['bio'] ?? '';
+                        $identifierUpdatedAt = $currentUserDb['identifier_updated_at'] ?? null;
+
+                        if ($identifierUpdatedAt) {
+                            $cooldownDays = (int)($serverConfig['identifier_change_cooldown_days'] ?? 90);
+                            $updatedTime = strtotime($identifierUpdatedAt);
+                            $elapsedSeconds = time() - $updatedTime;
+                            $cooldownSeconds = $cooldownDays * 86400;
+                            if ($elapsedSeconds < $cooldownSeconds) {
+                                $isIdentifierCooldownActive = true;
+                                $identifierDaysRemaining = ceil(($cooldownSeconds - $elapsedSeconds) / 86400);
+                            }
+                        }
                     }
                 }
             } catch (\Throwable $e) {
-                Logger::error("Failed to fetch Google ID in SettingsViewService: " . $e->getMessage(), ['user_id' => $userId, 'exception' => $e]);
+                Logger::error("Failed to fetch user profile details in SettingsViewService: " . $e->getMessage(), ['user_id' => $userId, 'exception' => $e]);
             }
         }
         $isGoogleConnected = !empty($googleId);
@@ -102,9 +124,16 @@ class SettingsViewService {
 
         return [
             'maxAvatarSize' => $maxAvatarSize,
+            'maxBannerSize' => (int)($serverConfig['max_banner_size_mb'] ?? 5),
             'isLoggedIn' => $isLoggedIn,
             'userId' => $userId,
             'userName' => $userName,
+            'userIdentifier' => $userIdentifier,
+            'userBanner' => $userBanner,
+            'userBio' => $userBio,
+            'isIdentifierCooldownActive' => $isIdentifierCooldownActive,
+            'identifierDaysRemaining' => $identifierDaysRemaining,
+            'identifierUpdatedAt' => $identifierUpdatedAt,
             'userEmail' => $userEmail,
             'userRoleName' => $userRoleName,
             'activeSubBg' => $activeSubBg,

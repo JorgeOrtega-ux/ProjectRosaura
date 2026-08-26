@@ -34,6 +34,10 @@ $tagsList = $viewService->getHomeTags();
                             <span class="material-symbols-rounded">group</span>
                             <?php echo __('filter_home_joined'); ?>
                         </button>
+                        <button class="component-badge component-badge--interactive" data-action="filterHomePublications">
+                            <span class="material-symbols-rounded">palette</span>
+                            <?php echo __('filter_publications'); ?>
+                        </button>
                         <span class="component-tags-carousel-divider" aria-hidden="true"></span>
 
                         <button class="component-badge component-badge--interactive" data-action="filterHomeTag" data-tag="all">

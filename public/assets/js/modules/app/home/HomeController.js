@@ -50,6 +50,9 @@ class HomeController {
             if (item && item.is_promo) {
                 return CardTemplates.promoCard(item, { basePath: this.basePath });
             }
+            if (item && item.is_publication) {
+                return CardTemplates.publicationCard(item, { basePath: this.basePath });
+            }
             return CardTemplates.canvasCard(item, { basePath: this.basePath });
         });
 
@@ -138,6 +141,9 @@ class HomeController {
             return { mode: 'explore', key: 'all' };
         }
         const action = active.getAttribute('data-action');
+        if (action === 'filterHomePublications') {
+            return { mode: 'publications', key: 'all' };
+        }
         if (action === 'filterHomePersonal') {
             return { mode: 'personal', key: active.getAttribute('data-filter') || 'mine' };
         }
@@ -254,6 +260,15 @@ class HomeController {
             return;
         }
 
+        if (action === 'filterHomePublications') {
+            if (this.currentViewMode === 'publications') return;
+
+            this.activateBadge(actionBtn);
+            this.resetGridWithSkeleton();
+            this.scheduleReload();
+            return;
+        }
+
         if (action === 'filterHomeTag') {
             const selectedTag = actionBtn.getAttribute('data-tag') || 'all';
             if (this.currentViewMode === 'explore' && this.currentTag === selectedTag) return;
@@ -261,6 +276,15 @@ class HomeController {
             this.activateBadge(actionBtn);
             this.resetGridWithSkeleton();
             this.scheduleReload();
+            return;
+        }
+
+        const pubLikeBtn = e.target.closest('[data-action="togglePublicationLike"]');
+        if (pubLikeBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const pubUuid = pubLikeBtn.getAttribute('data-uuid');
+            this.togglePublicationLike(pubUuid, pubLikeBtn);
             return;
         }
 
@@ -389,7 +413,29 @@ class HomeController {
         } else {
             const signal = this.feedAbortController ? this.feedAbortController.signal : this.abortController.signal;
 
-            if (isPersonal) {
+            if (this.currentViewMode === 'publications') {
+                res = await this.api.post(
+                    ApiRoutes.Publications.GetFeed,
+                    { limit, offset: this.currentServerOffset, sort: 'recent' },
+                    signal
+                ).catch(() => null);
+
+                if (signal.aborted) {
+                    this.isLoadingMore = false;
+                    return;
+                }
+
+                if (res && res.success) {
+                    const serverData = (res.data || []).map(p => ({ ...p, is_publication: true }));
+                    this.currentServerOffset += serverData.length;
+                    if (serverData.length < limit) {
+                        this.hasMore = false;
+                    }
+                    newCanvases = serverData;
+                } else {
+                    isError = true;
+                }
+            } else if (isPersonal) {
                 if (this.currentPersonalFilter === 'mine') {
                     if (window.activeUserId) {
                         res = await this.api.post(
@@ -480,7 +526,7 @@ class HomeController {
         removeInfiniteScrollSkeletons(this.contentArea);
 
         let finalItems = newCanvases;
-        if (!isPersonal) {
+        if (!isPersonal && this.currentViewMode !== 'publications') {
             await PromoService.ensureLoaded();
             finalItems = PromoService.injectFeedCards(newCanvases, this.currentOffset);
         }
@@ -497,7 +543,13 @@ class HomeController {
         } else if (isError && !isLoadMore) {
             this.showError(this.contentArea, (res && res.message) ? res.message : window.__('err_load_canvases'));
         } else if (!isLoadMore) {
-            if (isPersonal) {
+            if (this.currentViewMode === 'publications') {
+                this.contentArea.innerHTML = CardTemplates.emptyState({
+                    type: 'palette',
+                    title: 'No hay publicaciones todavía',
+                    message: 'Sé el primero en compartir tu pixel art con la comunidad.'
+                });
+            } else if (isPersonal) {
                 const empty = this.getPersonalEmptyState(this.currentPersonalFilter);
                 this.contentArea.innerHTML = CardTemplates.emptyState({
                     type: 'canvas',
@@ -543,6 +595,27 @@ class HomeController {
 
         if (this.currentViewMode === 'explore') {
             PromoService.initCardInteractions(this.contentArea);
+        }
+    }
+
+    async togglePublicationLike(pubUuid, buttonEl) {
+        if (!pubUuid) return;
+        try {
+            const res = await this.api.post(ApiRoutes.Publications.ToggleLike, { uuid: pubUuid });
+            if (res && res.success) {
+                buttonEl.classList.toggle('is-favorite', res.liked);
+                const card = buttonEl.closest('.component-publication-card');
+                if (card) {
+                    const countEl = card.querySelector('.pub-like-count');
+                    if (countEl) {
+                        countEl.textContent = (res.likes_count || 0).toLocaleString();
+                    }
+                }
+            } else if (res && res.message) {
+                if (typeof showMessage === 'function') showMessage(res.message, 'error');
+            }
+        } catch (err) {
+            console.error('Error toggling like:', err);
         }
     }
 

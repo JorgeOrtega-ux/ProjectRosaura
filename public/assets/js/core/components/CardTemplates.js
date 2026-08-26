@@ -259,6 +259,61 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         `;
     },
 
+    publicationCard: (pub, config = {}) => {
+        const title = escapeHTML(pub.title || 'Pixel Art');
+        const uuid = escapeHTML(pub.uuid);
+        const basePath = config.basePath || '';
+        const viewUrl = `${basePath}/publication/${uuid}`;
+        const fallbackImg = `${basePath}/assets/img/fallbacks/canvas-default.png`;
+        const imageUrl = pub.image_url ? escapeHTML(pub.image_url) : fallbackImg;
+        const likesCount = parseInt(pub.likes_count || 0, 10);
+        const commentsCount = parseInt(pub.comments_count || 0, 10);
+        const isLikedClass = pub.is_liked ? 'is-favorite' : '';
+        const author = pub.author || {};
+        const authorName = escapeHTML(author.username || 'Usuario');
+        const authorHandle = escapeHTML(author.identifier ? `@${author.identifier}` : (author.handle || '@usuario'));
+        const authorUrl = `${basePath}/@${escapeHTML(author.identifier || '')}`;
+        const authorAvatar = author.avatar_url ? escapeHTML(author.avatar_url) : `${basePath}/assets/img/fallbacks/avatar-default.png`;
+
+        return `
+            <div class="component-gallery-card component-publication-card" data-publication-uuid="${uuid}">
+                <img src="${imageUrl}" 
+                     alt="${title}" 
+                     class="component-gallery-card__image image-lazy-fade" 
+                     loading="lazy" 
+                     decoding="async"
+                     onload="this.classList.add('image-loaded')"
+                     onerror="this.onerror=null; this.src='${fallbackImg}'; this.classList.add('image-loaded');">
+
+                <div class="component-badge component-badge--glass component-badge--absolute-tr">
+                    <span class="material-symbols-rounded component-text-accent">favorite</span>
+                    <span class="pub-like-count">${formatNumber(likesCount)}</span>
+                    <span class="component-badge-divider">|</span>
+                    <span class="material-symbols-rounded">chat</span>
+                    <span>${formatNumber(commentsCount)}</span>
+                </div>
+
+                <div data-nav="${viewUrl}" class="component-gallery-link">
+                    <h3 class="component-gallery-title">${title}</h3>
+                </div>
+
+                <div class="component-gallery-actions-wrapper">
+                    <div class="component-publication-author" data-nav="${authorUrl}">
+                        <img src="${authorAvatar}" alt="${authorName}" class="component-publication-author__avatar" onerror="this.src='${basePath}/assets/img/fallbacks/avatar-default.png'">
+                        <span class="component-publication-author__handle">${authorHandle}</span>
+                    </div>
+                    <div class="component-gallery-actions">
+                        ${window.activeUserId ? `
+                        <button type="button" class="component-button component-button--icon component-button--h32 btn-favorite ${isLikedClass}" data-action="togglePublicationLike" data-uuid="${uuid}">
+                            <span class="material-symbols-rounded component-icon--20">favorite</span>
+                        </button>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
     getEmptyGraphicSvg: (type) => {
         if (type === 'trash') {
             return `

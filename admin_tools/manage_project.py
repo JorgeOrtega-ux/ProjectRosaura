@@ -1414,6 +1414,125 @@ def run_seeder(project_root, script_dir):
     seed_database(project_root, target_records=10000)
 
 
+def run_project_cleanup(project_root):
+    print(f"\n{Colors.HEADER}{Colors.BOLD}=============================================================={Colors.ENDC}")
+    print(f"{Colors.HEADER}{Colors.BOLD}   Limpieza Completa y Segura del Proyecto - Project Rosaura   {Colors.ENDC}")
+    print(f"{Colors.HEADER}{Colors.BOLD}=============================================================={Colors.ENDC}")
+    print(f"{Colors.WARNING}Esta opción eliminará de forma segura:{Colors.ENDC}")
+    print("  • Todos los directorios __pycache__ y archivos compilados (*.pyc, *.pyo)")
+    print("  • Todos los logs existentes (*.log, storage/logs/)")
+    print("  • Todo el contenido de la carpeta /scratch/ en la raíz del proyecto")
+    print("  • Backups temporales (*.bak, *.backup, *~) y temporales del SO (.DS_Store, Thumbs.db)")
+    print("  • Archivos temporales no esenciales (.tmp, reportes de análisis previos)")
+    
+    confirm = input(f"\n{Colors.FAIL}{Colors.BOLD}¿Deseas proceder con la limpieza? (S/N): {Colors.ENDC}").strip().upper()
+    if confirm not in ('S', 'SI', 'Y', 'YES'):
+        print(f"\n{Colors.GREEN}Limpieza cancelada. No se eliminó ningún archivo.{Colors.ENDC}\n")
+        return
+
+    print(f"\n{Colors.BLUE}Iniciando limpieza...{Colors.ENDC}\n")
+    deleted_files = 0
+    deleted_dirs = 0
+    bytes_freed = 0
+    errors = 0
+
+    excluded_dirs = {'.git', 'vendor', 'node_modules', '.idea', '.vscode'}
+
+    # 1. Limpieza de __pycache__ y archivos .pyc/.pyo
+    for root, dirs, files in os.walk(project_root, topdown=False):
+        dirs[:] = [d for d in dirs if d not in excluded_dirs]
+        
+        for file in files:
+            file_lower = file.lower()
+            file_path = os.path.join(root, file)
+            
+            # Chequear si es un archivo de log, temporal, backup o compilado de python
+            is_pycache_file = file_lower.endswith(('.pyc', '.pyo', '.pyd'))
+            is_log_file = file_lower.endswith('.log')
+            is_temp_file = file_lower.endswith(('.tmp', '.bak', '.backup', '~')) or file in ('.DS_Store', 'Thumbs.db', 'syntax_out.html')
+            
+            if is_pycache_file or is_log_file or is_temp_file:
+                try:
+                    fsize = os.path.getsize(file_path)
+                    os.remove(file_path)
+                    deleted_files += 1
+                    bytes_freed += fsize
+                    rel_p = os.path.relpath(file_path, project_root)
+                    print(f"  {Colors.GREEN}✔ Eliminado:{Colors.ENDC} {rel_p}")
+                except Exception as e:
+                    errors += 1
+                    print(f"  {Colors.FAIL}✘ Error eliminando {file_path}: {e}{Colors.ENDC}")
+
+        for d in dirs:
+            if d == '__pycache__':
+                d_path = os.path.join(root, d)
+                try:
+                    shutil.rmtree(d_path, ignore_errors=True)
+                    deleted_dirs += 1
+                    rel_p = os.path.relpath(d_path, project_root)
+                    print(f"  {Colors.GREEN}✔ Directorio eliminado:{Colors.ENDC} {rel_p}")
+                except Exception as e:
+                    errors += 1
+                    print(f"  {Colors.FAIL}✘ Error eliminando dir {d_path}: {e}{Colors.ENDC}")
+
+    # 2. Limpieza del contenido de /scratch/ en la raíz del proyecto
+    scratch_dir = os.path.join(project_root, 'scratch')
+    if os.path.exists(scratch_dir) and os.path.isdir(scratch_dir):
+        for item in os.listdir(scratch_dir):
+            item_path = os.path.join(scratch_dir, item)
+            try:
+                if os.path.isdir(item_path):
+                    shutil.rmtree(item_path, ignore_errors=True)
+                    deleted_dirs += 1
+                else:
+                    fsize = os.path.getsize(item_path)
+                    os.remove(item_path)
+                    bytes_freed += fsize
+                    deleted_files += 1
+                print(f"  {Colors.GREEN}✔ Scratch eliminado:{Colors.ENDC} scratch/{item}")
+            except Exception as e:
+                errors += 1
+                print(f"  {Colors.FAIL}✘ Error eliminando scratch/{item}: {e}{Colors.ENDC}")
+
+    # 3. Limpieza de storage/logs si existe
+    logs_dir = os.path.join(project_root, 'storage', 'logs')
+    if os.path.exists(logs_dir) and os.path.isdir(logs_dir):
+        for item in os.listdir(logs_dir):
+            if item == '.gitkeep':
+                continue
+            item_path = os.path.join(logs_dir, item)
+            try:
+                if os.path.isdir(item_path):
+                    shutil.rmtree(item_path, ignore_errors=True)
+                    deleted_dirs += 1
+                else:
+                    fsize = os.path.getsize(item_path)
+                    os.remove(item_path)
+                    bytes_freed += fsize
+                    deleted_files += 1
+                print(f"  {Colors.GREEN}✔ Log eliminado:{Colors.ENDC} storage/logs/{item}")
+            except Exception as e:
+                errors += 1
+                print(f"  {Colors.FAIL}✘ Error eliminando storage/logs/{item}: {e}{Colors.ENDC}")
+
+    # Formatear bytes liberados
+    if bytes_freed >= 1024 * 1024:
+        freed_str = f"{bytes_freed / (1024 * 1024):.2f} MB"
+    elif bytes_freed >= 1024:
+        freed_str = f"{bytes_freed / 1024:.2f} KB"
+    else:
+        freed_str = f"{bytes_freed} bytes"
+
+    print(f"\n{Colors.GREEN}{Colors.BOLD}=============================================================={Colors.ENDC}")
+    print(f"{Colors.GREEN}{Colors.BOLD}   ✅ Limpieza Completada con Éxito                          {Colors.ENDC}")
+    print(f"{Colors.GREEN}{Colors.BOLD}=============================================================={Colors.ENDC}")
+    print(f"  • Archivos eliminados: {Colors.BLUE}{deleted_files}{Colors.ENDC}")
+    print(f"  • Directorios eliminados: {Colors.BLUE}{deleted_dirs}{Colors.ENDC}")
+    print(f"  • Espacio liberado: {Colors.GREEN}{freed_str}{Colors.ENDC}")
+    if errors > 0:
+        print(f"  • Errores/Omitidos: {Colors.FAIL}{errors}{Colors.ENDC}")
+    print()
+
 
 def main():
     print(f"{Colors.HEADER}{Colors.BOLD}=============================================================={Colors.ENDC}")
@@ -1428,20 +1547,25 @@ def main():
     print("6 - Poblar bases de datos con datos de prueba (~10k registros por tabla)")
     print("7 - Asignar rol SuperAdministrador a usuario ID 1 y purgar caché Redis")
     print("8 - Escanear integridad de vistas (atributos ID e inputs hidden)")
+    print("9 - Limpieza completa del proyecto (logs, __pycache__, scratch, temporales)")
     print("0 - Salir")
-    choice = input(f"\n{Colors.WARNING}Ingresa una opción (0-8): {Colors.ENDC}").strip()
+    choice = input(f"\n{Colors.WARNING}Ingresa una opción (0-9): {Colors.ENDC}").strip()
 
     if choice in ('0', 'q', 'exit', ''):
         print(f"{Colors.GREEN}Saliendo.{Colors.ENDC}")
         return
 
-    if choice not in ('1', '2', '3', '4', '5', '6', '7', '8'):
+    if choice not in ('1', '2', '3', '4', '5', '6', '7', '8', '9'):
         print(f"{Colors.FAIL}Opción no válida. Saliendo.{Colors.ENDC}")
         return
 
     start_time = time.time()
     script_dir = os.path.dirname(os.path.abspath(__file__))
     target_path = os.path.abspath(os.path.join(script_dir, TARGET_DIR))
+
+    if choice == '9':
+        run_project_cleanup(target_path)
+        return
 
     if choice == '4':
         generate_svg_icons(target_path)

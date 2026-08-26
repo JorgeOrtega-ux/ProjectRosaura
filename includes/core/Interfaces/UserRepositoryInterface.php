@@ -9,12 +9,16 @@ interface UserRepositoryInterface {
     public function findByGoogleId(string $googleId): ?array;
     public function updateGoogleId(int $id, ?string $googleId): bool;
     public function findByUsername(string $username): ?array;
+    public function findByIdentifier(string $identifier): ?array;
     public function createUser(array $data): int;
     public function liftSuspension(int $id): bool;
     public function getUsersList(int $limit, int $offset): array;
 
     public function updateAvatar(int $id, string $path): bool;
+    public function updateBanner(int $id, ?string $path): bool;
+    public function updateBio(int $id, ?string $bio): bool;
     public function updateUsername(int $id, string $username): bool;
+    public function updateIdentifier(int $id, string $identifier): bool;
     public function updateEmail(int $id, string $email): bool;
 
     public function updatePassword(int $id, string $hashedPassword): bool;

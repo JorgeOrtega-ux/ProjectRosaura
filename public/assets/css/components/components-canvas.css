@@ -223,8 +223,10 @@
 
 /* ── Canvas Toolbar Carousel Wrappers & Nav Buttons ── */
 
+.component-tools-wrapper--top,
 .component-property-bar-wrapper,
-.canvas-top-property-bar-wrapper {
+.canvas-top-property-bar-wrapper,
+[data-ref="canvas-top-property-bar-wrapper"] {
     position: absolute;
     top: 12px;
     left: 50%;
@@ -234,10 +236,12 @@
     align-items: center;
     gap: 6px;
     pointer-events: none;
+    z-index: 45;
 }
 
 .component-vertical-toolbar-wrapper,
-.canvas-vertical-toolbar-wrapper {
+.canvas-vertical-toolbar-wrapper,
+[data-ref="canvas-vertical-tools-wrapper"] {
     position: absolute;
     top: 50%;
     left: 16px;
@@ -248,22 +252,30 @@
     align-items: center;
     gap: 6px;
     pointer-events: none;
+    z-index: 45;
 }
 
 @media (max-width: 768px) {
+    .component-tools-wrapper--top,
     .component-property-bar-wrapper,
-    .canvas-top-property-bar-wrapper {
+    .canvas-top-property-bar-wrapper,
+    [data-ref="canvas-top-property-bar-wrapper"] {
         top: 8px;
         max-width: calc(100vw - 20px);
     }
     .component-vertical-toolbar-wrapper,
-    .canvas-vertical-toolbar-wrapper {
+    .canvas-vertical-toolbar-wrapper,
+    [data-ref="canvas-vertical-tools-wrapper"] {
         left: 8px;
     }
 }
 
+.component-tools-wrapper--top .component-toolbar--top,
+.component-tools-wrapper--top .component-property-bar,
+.component-tools-wrapper--top .component-toolbar--horizontal,
 .component-property-bar-wrapper .component-property-bar,
-.canvas-top-property-bar-wrapper .canvas-top-property-bar {
+.canvas-top-property-bar-wrapper .canvas-top-property-bar,
+[data-ref="canvas-top-property-bar-wrapper"] [data-ref="canvas-top-property-bar"] {
     position: relative;
     top: auto;
     left: auto;
@@ -274,7 +286,8 @@
     flex-shrink: 1;
 }
 
-.canvas-vertical-toolbar-wrapper .canvas-design-toolbar-vertical {
+.canvas-vertical-toolbar-wrapper .canvas-design-toolbar-vertical,
+[data-ref="canvas-vertical-tools-wrapper"] .component-toolbar--vertical {
     position: relative;
     top: auto;
     left: auto;
@@ -456,16 +469,32 @@
     flex-shrink: 1;
 }
 
+.component-toolbar {
+    display: flex;
+    align-items: center;
+    background: #0d0d10;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 9999px;
+    box-shadow: none !important;
+    user-select: none;
+    pointer-events: auto;
+    color: #ffffff;
+    z-index: 40;
+}
+
 .component-toolbar--horizontal,
 .canvas-design-toolbar-horizontal {
     display: flex;
     align-items: center;
-    gap: 3px;
-    padding: 4px 6px;
+    gap: 4px;
+    padding: 0 5px;
+    height: 42px;
+    min-height: 42px;
+    max-height: 42px;
     background: #0d0d10;
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 9999px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    box-shadow: none !important;
     overflow-x: auto;
     overflow-y: hidden;
     scroll-behavior: smooth;
@@ -484,6 +513,33 @@
 .component-toolbar--horizontal.disabled,
 .canvas-design-toolbar-horizontal.disabled {
     display: none !important;
+}
+
+.component-toolbar__nav-btn {
+    flex-shrink: 0;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #ffffff !important;
+}
+
+.component-toolbar__nav-btn:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.35) !important;
+}
+
+.component-toolbar__nav-btn.disabled,
+.component-toolbar__nav-btn:disabled {
+    opacity: 0.25 !important;
+    pointer-events: none !important;
 }
 
 /* Primary & Secondary Color Slot Buttons (Uniform 32px Round Buttons) */
@@ -520,8 +576,10 @@
     transform: scale(1.15);
 }
 
-/* ── Canvas Design Toolbar Vertical Right (Right-center floating pill for offline workspace tools: resize & reset) ── */
+/* ── Canvas Design Toolbar Vertical (Right floating pill for offline workspace tools) ── */
+.component-toolbar--vertical,
 .component-toolbar--vertical-right,
+.canvas-design-toolbar-vertical,
 .canvas-design-toolbar-vertical-right {
     position: absolute;
     top: 50%;
@@ -531,24 +589,52 @@
     flex-direction: column;
     align-items: center;
     gap: 4px;
-    padding: 4px;
+    padding: 5px 0;
+    width: 42px;
+    min-width: 42px;
+    max-width: 42px;
+    height: auto;
+    max-height: calc(100vh - 120px);
     background: #0d0d10;
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 9999px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    box-shadow: none !important;
     pointer-events: auto;
     color: #ffffff;
     z-index: 40;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
+.component-toolbar--vertical::-webkit-scrollbar,
+.component-toolbar--vertical-right::-webkit-scrollbar,
+.canvas-design-toolbar-vertical::-webkit-scrollbar,
+.canvas-design-toolbar-vertical-right::-webkit-scrollbar {
+    display: none;
+}
+
+.component-toolbar--vertical.active,
 .component-toolbar--vertical-right.active,
+.canvas-design-toolbar-vertical.active,
 .canvas-design-toolbar-vertical-right.active {
     display: flex;
 }
 
+.component-toolbar--vertical.disabled,
 .component-toolbar--vertical-right.disabled,
+.canvas-design-toolbar-vertical.disabled,
 .canvas-design-toolbar-vertical-right.disabled {
     display: none !important;
+}
+
+.component-toolbar--vertical .component-property-bar__divider,
+.component-toolbar--vertical-right .component-property-bar__divider {
+    width: 20px;
+    height: 1px;
+    margin: 2px 0;
 }
 
 @media (max-width: 768px) {
@@ -2235,7 +2321,7 @@
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-top: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.4);
+    box-shadow: none !important;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2254,6 +2340,33 @@
     display: none !important;
 }
 
+.component-layers-carousel__nav-btn {
+    flex-shrink: 0;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #ffffff !important;
+}
+
+.component-layers-carousel__nav-btn:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.35) !important;
+}
+
+.component-layers-carousel__nav-btn.disabled,
+.component-layers-carousel__nav-btn:disabled {
+    opacity: 0.25 !important;
+    pointer-events: none !important;
+}
+
 .component-layers-carousel__track,
 .canvas-design-layers-carousel__track {
     display: flex;
@@ -2265,7 +2378,8 @@
 }
 
 .component-layer-card,
-.canvas-design-layer-card {
+.canvas-design-layer-card,
+.canvas-design-frame-card {
     width: 112px;
     height: 72px;
     min-width: 112px;
@@ -2284,25 +2398,34 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: outline 0.15s ease, border-color 0.15s ease;
     box-sizing: border-box;
     overflow: hidden;
 }
 
 .component-layer-card:hover,
-.canvas-design-layer-card:hover {
-    border-color: rgba(255, 255, 255, 0.45);
-    background-color: #22222c;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+.canvas-design-layer-card:hover,
+.canvas-design-frame-card:hover {
+    outline: 2px solid #ffffff !important;
+    outline-offset: 2px !important;
+    transform: none !important;
+    box-shadow: none !important;
 }
 
 .component-layer-card.active,
-.canvas-design-layer-card.active {
+.canvas-design-layer-card.active,
+.canvas-design-frame-card.active {
     border: 2px solid #ffffff;
     background-color: #282834;
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.4);
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.canvas-design-frame-card.playing-tick {
+    outline: 2px solid var(--color-success, #10b981) !important;
+    outline-offset: 2px !important;
+    transform: none !important;
+    box-shadow: none !important;
 }
 
 .component-layer-card.locked,
@@ -2317,20 +2440,23 @@
 }
 
 .component-layer-card.is-dragging,
-.canvas-design-layer-card.is-dragging {
+.canvas-design-layer-card.is-dragging,
+.canvas-design-frame-card.is-dragging {
     opacity: 0.35;
     transform: scale(0.94);
     cursor: grabbing !important;
 }
 
 .component-layer-card.drag-over-left,
-.canvas-design-layer-card.drag-over-left {
+.canvas-design-layer-card.drag-over-left,
+.canvas-design-frame-card.drag-over-left {
     border-left: 3px solid #ffffff !important;
     box-shadow: -4px 0 14px rgba(255, 255, 255, 0.5);
 }
 
 .component-layer-card.drag-over-right,
-.canvas-design-layer-card.drag-over-right {
+.canvas-design-layer-card.drag-over-right,
+.canvas-design-frame-card.drag-over-right {
     border-right: 3px solid #ffffff !important;
     box-shadow: 4px 0 14px rgba(255, 255, 255, 0.5);
 }
@@ -2344,81 +2470,42 @@
     pointer-events: none;
 }
 
-.component-layer-card__badge,
-.canvas-design-layer-card__badge {
+.component-layer-card .component-gallery-title,
+.canvas-design-layer-card .component-gallery-title,
+.canvas-design-frame-card .component-gallery-title {
     position: absolute;
-    bottom: 4px;
-    left: 4px;
-    font-size: 0.62rem;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 6px 8px 4px;
+    font-size: 0.68rem;
     font-weight: 600;
     color: #ffffff;
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(6px);
-    padding: 2px 7px;
-    border-radius: 6px;
-    font-family: var(--sl-font-mono, monospace);
-    max-width: 86px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 65%, transparent 100%);
+    text-align: left;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     pointer-events: none;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.component-layer-card__actions,
-.canvas-design-layer-card__actions {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    display: flex;
-    gap: 4px;
     z-index: 2;
 }
 
-.component-layer-card__action-btn,
-.canvas-design-layer-card__action-btn {
-    width: 22px;
-    height: 22px;
-    min-width: 22px;
-    border-radius: 6px;
-    background: rgba(0, 0, 0, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    color: rgba(255, 255, 255, 0.85);
-    display: inline-flex;
+.component-layer-card .component-gallery-actions-wrapper,
+.canvas-design-layer-card .component-gallery-actions-wrapper,
+.canvas-design-frame-card .component-gallery-actions-wrapper {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    z-index: 5;
+}
+
+.component-layer-card .component-gallery-actions,
+.canvas-design-layer-card .component-gallery-actions,
+.canvas-design-frame-card .component-gallery-actions {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    padding: 0;
-    transition: all 0.15s ease;
+    gap: 4px;
 }
-
-.component-layer-card__action-btn:hover,
-.canvas-design-layer-card__action-btn:hover {
-    background: rgba(255, 255, 255, 0.25);
-    border-color: rgba(255, 255, 255, 0.45);
-    color: #ffffff;
-    transform: scale(1.08);
-}
-
-.component-layer-card__action-btn--vis.hidden-btn,
-.canvas-design-layer-card__action-btn--vis.hidden-btn {
-    color: #ff6b6b !important;
-    background: rgba(255, 80, 80, 0.25) !important;
-    border-color: rgba(255, 80, 80, 0.5) !important;
-}
-
-.component-layer-card__action-btn--lock.active,
-.canvas-design-layer-card__action-btn--lock.active {
-    color: #ffd166 !important;
-    background: rgba(255, 209, 102, 0.25) !important;
-    border-color: rgba(255, 209, 102, 0.5) !important;
-}
-
-.component-layer-card__action-btn .material-symbols-rounded,
-.canvas-design-layer-card__action-btn .material-symbols-rounded {
-    font-size: 0.82rem;
-}
-
 .component-layer-card--add,
 .canvas-design-layer-card--add {
     width: 112px;
@@ -2442,8 +2529,9 @@
     border-color: #ffffff;
     color: #ffffff;
     background: rgba(255, 255, 255, 0.12);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    transform: none !important;
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
 }
 
 .component-layer-card--add .material-symbols-rounded,
@@ -2455,20 +2543,20 @@
 .component-canvas-footer,
 .canvas-design-footer {
     width: 100%;
-    height: 40px;
-    min-height: 40px;
-    max-height: 40px;
+    height: auto;
+    min-height: 48px;
     border-top: 1px solid rgba(255, 255, 255, 0.12);
     background-color: #000000 !important;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 12px;
+    padding: 8px 12px;
     flex-shrink: 0;
     box-sizing: border-box;
     position: relative;
     color: #ffffff;
     user-select: none;
+    box-shadow: none !important;
 }
 
 .component-canvas-footer-left,
@@ -2477,7 +2565,7 @@
 .canvas-design-footer-right {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
 }
 
 .component-canvas-footer-group,
@@ -2603,35 +2691,42 @@
     isolation: isolate;
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 9999px;
-    padding: 2px;
-    gap: 2px;
+    border-radius: 50px;
+    padding: 3px;
+    gap: 4px;
     user-select: none;
 }
 
 .component-canvas-footer-tabs-glider,
 .canvas-design-footer-tabs-glider {
     position: absolute;
-    top: 2px;
-    bottom: 2px;
-    left: 2px;
-    width: calc((100% - 6px) / 2);
+    top: 3px;
+    bottom: 3px;
+    left: 3px;
+    width: calc((100% - 10px) / 2);
     background: rgba(255, 255, 255, 0.18);
-    border-radius: 9999px;
+    border-radius: 50px;
     box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
-    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease;
     z-index: 1;
     pointer-events: none;
 }
 
 .component-canvas-footer-tabs[data-mode="layers"] .component-canvas-footer-tabs-glider,
 .canvas-design-footer-tabs[data-mode="layers"] .canvas-design-footer-tabs-glider {
+    opacity: 1;
     transform: translateX(0);
 }
 
 .component-canvas-footer-tabs[data-mode="timeline"] .component-canvas-footer-tabs-glider,
 .canvas-design-footer-tabs[data-mode="timeline"] .canvas-design-footer-tabs-glider {
-    transform: translateX(calc(100% + 2px));
+    opacity: 1;
+    transform: translateX(calc(100% + 4px));
+}
+
+.component-canvas-footer-tabs[data-mode="none"] .component-canvas-footer-tabs-glider,
+.canvas-design-footer-tabs[data-mode="none"] .canvas-design-footer-tabs-glider {
+    opacity: 0;
 }
 
 .component-canvas-footer-tab-btn,
@@ -2647,14 +2742,14 @@
     border: none !important;
     outline: none !important;
     color: rgba(255, 255, 255, 0.6);
-    padding: 4px 12px;
-    border-radius: 9999px;
+    padding: 0 12px;
+    border-radius: 50px;
     font-size: 0.75rem;
     font-weight: 500;
     cursor: pointer;
     transition: color 0.2s ease;
     user-select: none;
-    height: 26px;
+    height: 32px;
     box-sizing: border-box;
     box-shadow: none !important;
     line-height: 1;
@@ -2735,23 +2830,27 @@
    ========================================================================== */
 
 .component-property-bar,
-.canvas-top-property-bar {
+.canvas-top-property-bar,
+.component-toolbar--top,
+[data-ref="canvas-top-property-bar"] {
     position: absolute;
     top: 12px;
     left: 50%;
     transform: translateX(-50%);
-    height: 48px;
+    height: 42px;
+    min-height: 42px;
+    max-height: 42px;
     max-width: calc(100% - 140px);
     display: none;
     align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
+    gap: 4px;
+    padding: 0 5px;
     background: rgba(13, 13, 16, 0.94);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 9999px;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+    box-shadow: none !important;
     pointer-events: auto;
     white-space: nowrap;
     color: #ffffff;
@@ -2762,15 +2861,20 @@
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     touch-action: pan-x;
+    z-index: 45;
 }
 
 .component-property-bar::-webkit-scrollbar,
-.canvas-top-property-bar::-webkit-scrollbar {
+.canvas-top-property-bar::-webkit-scrollbar,
+.component-toolbar--top::-webkit-scrollbar,
+[data-ref="canvas-top-property-bar"]::-webkit-scrollbar {
     display: none;
 }
 
 .component-property-bar.is-dragging,
-.canvas-top-property-bar.is-dragging {
+.canvas-top-property-bar.is-dragging,
+.component-toolbar--top.is-dragging,
+[data-ref="canvas-top-property-bar"].is-dragging {
     scroll-behavior: auto;
     cursor: grabbing;
     user-select: none;
@@ -2779,17 +2883,25 @@
 .component-property-bar.is-dragging .component-button,
 .component-property-bar.is-dragging input,
 .canvas-top-property-bar.is-dragging .component-button,
-.canvas-top-property-bar.is-dragging input {
+.canvas-top-property-bar.is-dragging input,
+.component-toolbar--top.is-dragging .component-button,
+.component-toolbar--top.is-dragging input,
+[data-ref="canvas-top-property-bar"].is-dragging .component-button,
+[data-ref="canvas-top-property-bar"].is-dragging input {
     pointer-events: none;
 }
 
 .component-property-bar.active,
-.canvas-top-property-bar.active {
-    display: flex;
+.canvas-top-property-bar.active,
+.component-toolbar--top.active,
+[data-ref="canvas-top-property-bar"].active {
+    display: flex !important;
 }
 
 .component-property-bar.disabled,
-.canvas-top-property-bar.disabled {
+.canvas-top-property-bar.disabled,
+.component-toolbar--top.disabled,
+[data-ref="canvas-top-property-bar"].disabled {
     display: none !important;
 }
 
@@ -3163,7 +3275,7 @@
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 16px;
+    border-radius: 24px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
     display: flex;
     flex-direction: column;
@@ -3192,9 +3304,11 @@
     position: relative;
     isolation: isolate;
     background: rgba(0, 0, 0, 0.4);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 50px;
+    margin: 8px;
     padding: 3px;
-    gap: 3px;
+    gap: 4px;
     user-select: none;
 }
 
@@ -3204,10 +3318,10 @@
     top: 3px;
     bottom: 3px;
     left: 3px;
-    width: calc((100% - 12px) / 3);
+    width: calc((100% - 14px) / 3);
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
+    border-radius: 50px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
     z-index: 1;
@@ -3221,12 +3335,12 @@
 
 .component-sidebar__tabs[data-active-tab="minimap"] .component-sidebar__tabs-glider,
 .canvas-sidebar-tabs[data-active-tab="minimap"] .canvas-sidebar-tabs-glider {
-    transform: translateX(calc(100% + 3px));
+    transform: translateX(calc(100% + 4px));
 }
 
 .component-sidebar__tabs[data-active-tab="tool"] .component-sidebar__tabs-glider,
 .canvas-sidebar-tabs[data-active-tab="tool"] .canvas-sidebar-tabs-glider {
-    transform: translateX(calc(200% + 6px));
+    transform: translateX(calc(200% + 8px));
 }
 
 .component-sidebar__tab-btn,
@@ -3240,8 +3354,8 @@
     gap: 6px;
     padding: 8px 6px;
     background: transparent !important;
-    border: none !important;
-    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 50px;
     color: rgba(255, 255, 255, 0.6);
     font-size: 0.75rem;
     font-weight: 500;
@@ -3874,6 +3988,19 @@
         height: 20px;
         margin: 0 1px;
     }
+}
+
+/* ── Geometric Shape Cards Contrast (Dark/Canvas UI) ── */
+.component-shape-card .component-library-card__image,
+.component-shape-card img,
+[data-action="selectGeometricShape"] img,
+[data-action="selectGeometricShape"] .component-library-card__image {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    pointer-events: none;
+    filter: invert(1) !important;
+    -webkit-filter: invert(1) !important;
 }
 
 

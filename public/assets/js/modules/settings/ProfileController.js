@@ -67,6 +67,12 @@ class ProfileController {
         const btnSaveUsername = e.target.closest('[data-action="saveUsername"]');
         if (btnSaveUsername) this.saveUsername(btnSaveUsername);
 
+        const btnSaveIdentifier = e.target.closest('[data-action="saveIdentifier"]');
+        if (btnSaveIdentifier) this.saveIdentifier(btnSaveIdentifier);
+
+        const btnSaveBio = e.target.closest('[data-action="saveBio"]');
+        if (btnSaveBio) this.saveBio(btnSaveBio);
+
         const btnRequestEmail = e.target.closest('[data-action="requestEmailUpdate"]');
         if (btnRequestEmail) this.handleEmailUpdateRequest();
 
@@ -256,6 +262,59 @@ class ProfileController {
             input.setAttribute('data-original-value', result.new_username);
             window.appInstance.toggleEditState('username');
         } else showMessage(result.message, 'error');
+    }
+
+    async saveIdentifier(btn) {
+        const input = document.querySelector('[data-ref="input-identifier"]');
+        if (!input) return;
+        let val = input.value.trim();
+        if (val.startsWith('@')) val = val.substring(1).trim();
+        const originalVal = input.getAttribute('data-original-value');
+        if (val === originalVal) { window.appInstance?.toggleEditState('identifier'); return; }
+
+        setButtonLoading(btn);
+        const result = await this.api.post(ApiRoutes.Settings.UpdateIdentifier, { identifier: val }, this.abortController.signal);
+
+        if (result.aborted) return;
+        restoreButton(btn);
+
+        if (result && result.success) {
+            showMessage(result.message, 'success');
+            const display = document.querySelector('[data-ref="display-identifier"]');
+            if (display) display.textContent = `@${result.new_identifier}`;
+            input.setAttribute('data-original-value', result.new_identifier);
+            if (window.appInstance && typeof window.appInstance.toggleEditState === 'function') {
+                window.appInstance.toggleEditState('identifier');
+            }
+            setTimeout(() => {
+                window.location.reload();
+            }, 1200);
+        } else {
+            showMessage((result && result.message) || 'Error al actualizar identificador', 'error');
+        }
+    }
+
+    async saveBio(btn) {
+        const input = document.querySelector('[data-ref="input-bio"]');
+        if (!input) return;
+        const val = input.value.trim();
+
+        setButtonLoading(btn);
+        const result = await this.api.post(ApiRoutes.Settings.UpdateBio, { bio: val }, this.abortController.signal);
+
+        if (result.aborted) return;
+        restoreButton(btn);
+
+        if (result && result.success) {
+            showMessage(result.message, 'success');
+            const display = document.querySelector('[data-ref="display-bio"]');
+            if (display) display.textContent = val || 'Sin biografía';
+            if (window.appInstance && typeof window.appInstance.toggleEditState === 'function') {
+                window.appInstance.toggleEditState('bio');
+            }
+        } else {
+            showMessage((result && result.message) || 'Error al actualizar biografía', 'error');
+        }
     }
 
     async handleEmailUpdateRequest() {

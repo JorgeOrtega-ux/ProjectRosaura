@@ -190,6 +190,180 @@ class SettingsService
         return ['success' => false, 'message' => __('error.update_failed')];
     }
 
+    public function updateIdentifier($data)
+    {
+        if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => __('auth.session_expired')];
+
+        $userId = $this->sessionManager->get('user_id');
+        $identifier = trim($data['identifier'] ?? '');
+
+        // Sanitizar y normalizar (remover @ inicial si el usuario lo incluyó)
+        if (strpos($identifier, '@') === 0) {
+            $identifier = substr($identifier, 1);
+        }
+        $identifier = strtolower(trim($identifier));
+
+        if (empty($identifier)) {
+            return ['success' => false, 'message' => __('validation.missing_fields')];
+        }
+
+        // Validación de formato: 3 a 30 caracteres, letras minúsculas, números, guiones bajos y puntos
+        if (!preg_match('/^[a-z0-9_.-]{3,30}$/', $identifier)) {
+            return ['success' => false, 'message' => __('validation.invalid_identifier_format')];
+        }
+
+        $user = $this->userRepository->findById($userId);
+        if (!$user) return ['success' => false, 'message' => __('error.user_not_found')];
+
+        // Verificar cooldown de 90 días (3 meses)
+        $cooldownDays = (int)($this->config['identifier_change_cooldown_days'] ?? 90);
+        if (!empty($user['identifier_updated_at'])) {
+            $updatedTime = strtotime($user['identifier_updated_at']);
+            $elapsedSeconds = time() - $updatedTime;
+            $cooldownSeconds = $cooldownDays * 86400;
+
+            if ($elapsedSeconds < $cooldownSeconds) {
+                $daysRemaining = ceil(($cooldownSeconds - $elapsedSeconds) / 86400);
+                return [
+                    'success' => false, 
+                    'message' => __('settings.identifier_cooldown_active', ['days' => (string)$daysRemaining]),
+                    'days_remaining' => $daysRemaining
+                ];
+            }
+        }
+
+        // Verificar unicidad
+        $existing = $this->userRepository->findByIdentifier($identifier);
+        if ($existing && (int)$existing['id'] !== (int)$userId) {
+            return ['success' => false, 'message' => __('validation.identifier_in_use')];
+        }
+
+        $oldIdentifier = $user['identifier'] ?? '';
+        if ($this->userRepository->updateIdentifier($userId, $identifier)) {
+            $this->logProfileChange($userId, DB::LOG_CHANGE_IDENTIFIER, json_encode(['identifier' => $oldIdentifier]), json_encode(['identifier' => $identifier]));
+            $this->sessionManager->set('user_identifier', $identifier);
+
+            $accounts = $this->sessionManager->getLinkedAccounts();
+            if (isset($accounts[$userId])) {
+                $accounts[$userId]['user_identifier'] = $identifier;
+                $this->sessionManager->set(SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+            }
+
+            return ['success' => true, 'message' => __('settings.identifier_updated'), 'new_identifier' => $identifier];
+        }
+
+        return ['success' => false, 'message' => __('error.update_failed')];
+    }
+
+    public function updateBanner($data)
+    {
+        if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => __('auth.session_expired')];
+
+        $userId = $this->sessionManager->get('user_id');
+        $files = $data['_files'] ?? [];
+        if (!isset($files['banner'])) return ['success' => false, 'message' => __('upload.error')];
+        $file = $files['banner'];
+
+        $maxSizeMb = (int)($this->config['max_banner_size_mb'] ?? 5);
+        $uploadDir = 'banners/uploaded/';
+
+        $uploadResult = Utils::uploadAndSanitizeImage($file, $uploadDir, $maxSizeMb);
+
+        if ($uploadResult['success']) {
+            $fileName = $uploadResult['file_name'];
+            $user = $this->userRepository->findById($userId);
+            $oldBanner = $user['banner_picture'] ?? null;
+
+            if ($oldBanner) {
+                $rootPath = defined('ROOT_PATH') ? ROOT_PATH : dirname(__DIR__, 3);
+                $oldBannerRel = ltrim(str_replace('public/storage/', 'storage/public/', $oldBanner), '/');
+                $oldBannerPath = $rootPath . '/' . $oldBannerRel;
+                if (file_exists($oldBannerPath) && is_file($oldBannerPath)) {
+                    @unlink($oldBannerPath);
+                }
+            }
+
+            $newRelPath = 'banners/uploaded/' . $fileName;
+
+            if ($this->userRepository->updateBanner($userId, $newRelPath)) {
+                $this->logProfileChange($userId, DB::LOG_CHANGE_BANNER, json_encode(['banner' => $oldBanner]), json_encode(['banner' => $newRelPath]));
+                $newBannerUrl = Utils::getS3PublicUrl($newRelPath);
+                $this->sessionManager->set('user_banner', $newBannerUrl);
+
+                $accounts = $this->sessionManager->getLinkedAccounts();
+                if (isset($accounts[$userId])) {
+                    $accounts[$userId]['user_banner'] = $newBannerUrl;
+                    $this->sessionManager->set(SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+                }
+
+                return ['success' => true, 'message' => __('settings.banner_updated'), 'new_banner' => $newBannerUrl];
+            }
+        } else {
+            return ['success' => false, 'message' => __($uploadResult['message_key'])];
+        }
+
+        return ['success' => false, 'message' => __('error.internal_server_error')];
+    }
+
+    public function deleteBanner()
+    {
+        if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => __('auth.session_expired')];
+
+        $userId = $this->sessionManager->get('user_id');
+        $user = $this->userRepository->findById($userId);
+        $oldBanner = $user['banner_picture'] ?? null;
+
+        if (!$oldBanner) {
+            return ['success' => false, 'message' => __('settings.banner_already_default')];
+        }
+
+        $rootPath = defined('ROOT_PATH') ? ROOT_PATH : dirname(__DIR__, 3);
+        $oldBannerRel = ltrim(str_replace('public/storage/', 'storage/public/', $oldBanner), '/');
+        $oldBannerPath = $rootPath . '/' . $oldBannerRel;
+        if (file_exists($oldBannerPath) && is_file($oldBannerPath)) {
+            @unlink($oldBannerPath);
+        }
+
+        if ($this->userRepository->updateBanner($userId, null)) {
+            $this->logProfileChange($userId, DB::LOG_CHANGE_BANNER, json_encode(['banner' => $oldBanner]), null);
+            $this->sessionManager->set('user_banner', null);
+
+            $accounts = $this->sessionManager->getLinkedAccounts();
+            if (isset($accounts[$userId])) {
+                $accounts[$userId]['user_banner'] = null;
+                $this->sessionManager->set(SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+            }
+
+            return ['success' => true, 'message' => __('settings.banner_deleted'), 'new_banner' => null];
+        }
+
+        return ['success' => false, 'message' => __('error.database')];
+    }
+
+    public function updateBio($data)
+    {
+        if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => __('auth.session_expired')];
+
+        $userId = $this->sessionManager->get('user_id');
+        $bio = Utils::sanitizeText($data['bio'] ?? '') ?? '';
+        if (strlen($bio) > 255) {
+            $bio = substr($bio, 0, 255);
+        }
+
+        if ($this->userRepository->updateBio($userId, $bio)) {
+            $this->sessionManager->set('user_bio', $bio);
+            $accounts = $this->sessionManager->getLinkedAccounts();
+            if (isset($accounts[$userId])) {
+                $accounts[$userId]['user_bio'] = $bio;
+                $this->sessionManager->set(SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
+            }
+
+            return ['success' => true, 'message' => __('settings.bio_updated'), 'new_bio' => $bio];
+        }
+
+        return ['success' => false, 'message' => __('error.update_failed')];
+    }
+
     public function requestEmailCode()
     {
         if (!$this->sessionManager->has('user_id')) return ['success' => false, 'message' => __('auth.session_expired')];

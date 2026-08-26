@@ -198,6 +198,9 @@ export const DesignSetup = {
                 this.interactionMode = 'offline_brush';
                 const btnBrush = document.querySelector('[data-action="toggleOfflineBrush"]');
                 if (btnBrush) btnBrush.classList.add('active');
+            } else {
+                this.interactionMode = 'default';
+                document.querySelectorAll('[data-action^="toggleOffline"]').forEach(btn => btn.classList.remove('active'));
             }
             if (typeof this.updateTopPropertyBar === 'function') this.updateTopPropertyBar(this.interactionMode);
             if (typeof this.updateDualColorSwatchesUI === 'function') this.updateDualColorSwatchesUI();

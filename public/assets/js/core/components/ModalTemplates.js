@@ -3557,5 +3557,151 @@ export const ModalTemplates = {
                 </div>
             `;
         }
+    },
+
+    layerBlendModeModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const currentBlend = data.currentBlend || 'source-over';
+            const layerName = data.layerName || 'Capa Activa';
+
+            const blendModes = [
+                { value: 'source-over', label: 'Normal (source-over)', desc: 'Modo de dibujo estándar sin mezcla especial' },
+                { value: 'multiply', label: 'Multiplicar (multiply)', desc: 'Oscurece multiplicando los colores de las capas' },
+                { value: 'screen', label: 'Pantalla (screen)', desc: 'Aclara combinando inversamente los valores de color' },
+                { value: 'overlay', label: 'Superponer (overlay)', desc: 'Aumenta el contraste combinando multiplicar y pantalla' },
+                { value: 'darken', label: 'Oscurecer (darken)', desc: 'Conserva los píxeles más oscuros de cada capa' },
+                { value: 'lighten', label: 'Aclarar (lighten)', desc: 'Conserva los píxeles más claros de cada capa' },
+                { value: 'color-dodge', label: 'Sobreexponer (color-dodge)', desc: 'Aclara los colores reflejando la capa superior' },
+                { value: 'color-burn', label: 'Subexponer (color-burn)', desc: 'Oscurece aumentando el contraste' },
+                { value: 'hard-light', label: 'Luz fuerte (hard-light)', desc: 'Simula iluminación dura sobre el contenido' },
+                { value: 'soft-light', label: 'Luz suave (soft-light)', desc: 'Simula iluminación difusa suave' },
+                { value: 'difference', label: 'Diferencia (difference)', desc: 'Resta el color más brillante del otro' },
+                { value: 'exclusion', label: 'Exclusión (exclusion)', desc: 'Efecto similar a diferencia con menor contraste' }
+            ];
+
+            const currentObj = blendModes.find(b => b.value === currentBlend) || blendModes[0];
+
+            const optionsHtml = blendModes.map(b => `
+                <div class="component-menu-link ${b.value === currentBlend ? 'active' : ''}" data-action="selectModalBlendModeOption" data-value="${b.value}" data-label="${b.label}">
+                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">layers</span></div>
+                    <div class="component-menu-link-text">
+                        <span>${b.label}</span>
+                        <span class="component-menu-link-subtext">${b.desc}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+
+                <div class="component-card--grouped component-card--flush active component-modal-step">
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('lbl_blend_mode') || 'Modo de Fusión'}</h2>
+                        <p class="component-modal-desc">${__('lbl_blend_mode_desc') || 'Selecciona cómo se fusionan visualmente los píxeles de ' + layerName + ' con las capas inferiores.'}</p>
+                    </div>
+
+                    <div class="component-modal-body">
+                        <div class="component-form-group">
+                            <label class="component-label">${__('lbl_blend_mode_select') || 'Modo de Mezcla'}</label>
+                            <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                                <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleModalBlendModeDropdown" data-ref="modal-blend-mode-trigger" data-value="${currentObj.value}">
+                                    <span class="material-symbols-rounded" data-ref="modal-blend-mode-icon">layers</span>
+                                    <span class="component-dropdown-text" data-ref="modal-blend-mode-label">${currentObj.label}</span>
+                                    <span class="material-symbols-rounded">expand_more</span>
+                                </div>
+                                <div class="component-module component-module--dropdown disabled" data-module="moduleModalBlendModeDropdown">
+                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                        <div class="component-menu-list">
+                                            ${optionsHtml}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="component-modal-actions">
+                        <button type="button" class="component-button component-button--h40" data-modal-action="cancel">
+                            <span>${__('btn_cancel') || 'Cancelar'}</span>
+                        </button>
+                        <button type="button" class="component-button component-button--primary component-button--h40" data-action="applyLayerBlendModeFromModal">
+                            <span class="material-symbols-rounded">check</span>
+                            <span>${__('btn_apply') || 'Aplicar'}</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    },
+
+    publishPixelArtModal: {
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const previewUrl = data.previewUrl || '';
+            const defaultTitle = escapeHTML(data.title || 'Mi Pixel Art');
+            const width = data.width || 64;
+            const height = data.height || 64;
+
+            return `
+                <div class="component-modal-body-container" data-modal-name="publishPixelArtModal">
+                    <div class="pill-container"><div class="drag-handle"></div></div>
+                    
+                    <div class="component-modal-header">
+                        <h2 class="component-modal-title">${__('publications.publish_title')}</h2>
+                        <p class="component-modal-desc">${__('publications.publish_desc')}</p>
+                    </div>
+
+                    <div class="component-modal-body">
+                        <div class="component-publish-preview-wrapper" style="text-align: center; margin-bottom: 16px;">
+                            <div class="component-publish-preview" style="display: inline-flex; align-items: center; justify-content: center; background: repeating-conic-gradient(var(--bg-tertiary) 0% 25%, var(--bg-surface) 0% 50%) 50% / 16px 16px; border: 1px solid var(--border-subtle); border-radius: var(--border-radius-md); padding: 12px; max-width: 100%; overflow: hidden;">
+                                <img src="${previewUrl}" alt="Preview" data-ref="pub-preview-img" style="max-height: 180px; max-width: 100%; image-rendering: pixelated; object-fit: contain; border-radius: var(--border-radius-sm);">
+                            </div>
+                            <div class="component-text-muted component-font-sm" style="margin-top: 6px;">${width} x ${height} px</div>
+                        </div>
+
+                        <div class="component-form-group" style="margin-bottom: 14px;">
+                            <label class="component-label">${__('publications.field_title')}</label>
+                            <div class="component-input-group">
+                                <input type="text" data-ref="pub-title" class="component-input-field" value="${defaultTitle}" placeholder="${__('publications.field_title')}" maxlength="100">
+                            </div>
+                        </div>
+
+                        <div class="component-form-group" style="margin-bottom: 14px;">
+                            <label class="component-label">${__('publications.field_desc')}</label>
+                            <div class="component-input-group">
+                                <textarea data-ref="pub-desc" class="component-input-field" rows="2" style="height: auto; padding: 8px 12px; resize: vertical;" placeholder="${__('publications.field_desc')}" maxlength="500"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="component-form-group" style="margin-bottom: 14px;">
+                            <label class="component-label">${__('publications.field_tags')}</label>
+                            <div class="component-input-group">
+                                <input type="text" data-ref="pub-tags" class="component-input-field" placeholder="pixelart, retro, game, oc">
+                            </div>
+                        </div>
+
+                        <div class="component-form-group">
+                            <label class="component-label">${__('publications.field_privacy')}</label>
+                            <select data-ref="pub-privacy" class="component-input-field component-select-field" style="cursor: pointer;">
+                                <option value="public" selected>${__('publications.privacy_public')}</option>
+                                <option value="unlisted">${__('publications.privacy_unlisted')}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="component-modal-actions">
+                        <button type="button" class="component-button component-button--h40" data-modal-action="cancel">
+                            <span>${__('btn_cancel') || 'Cancelar'}</span>
+                        </button>
+                        <button type="button" class="component-button component-button--primary component-button--h40" data-action="submitPublishPixelArt">
+                            <span class="material-symbols-rounded">rocket_launch</span>
+                            <span>${__('publications.btn_publish_now')}</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
     }
 };

@@ -11,6 +11,7 @@ use App\Core\System\SecurityConstants;
 use App\Core\System\CacheConstants;
 use App\Core\System\CacheInvalidator;
 use App\Core\Security\DataCipher;
+use App\Core\Helpers\Utils;
 use App\Config\Database\RedisCache;
 use PDO;
 use PDOException;
@@ -42,7 +43,7 @@ class UserRepository implements UserRepositoryInterface {
             $cached = $this->redisClient->get($cacheKey);
             if ($cached) {
                 $decoded = json_decode($cached, true);
-                if (is_array($decoded) && array_key_exists('google_id', $decoded)) {
+                if (is_array($decoded) && array_key_exists('identifier', $decoded) && array_key_exists('banner_picture', $decoded)) {
                     return $decoded;
                 }
             }
@@ -54,7 +55,7 @@ class UserRepository implements UserRepositoryInterface {
         try {
             $stmtUser = $this->pdo->prepare("
                 SELECT 
-                    u.id, u.uuid, u.username, u.email, u.password, u.google_id, u.subscription_tier, u.profile_picture,
+                    u.id, u.uuid, u.username, u.identifier, u.identifier_updated_at, u.email, u.password, u.google_id, u.subscription_tier, u.profile_picture, u.banner_picture, u.bio,
                     u.two_factor_secret, u.two_factor_enabled, u.two_factor_recovery_codes, u.deletion_scheduled_at, u.created_at,
                     u.template_tokens_used, u.template_tokens_reset_at,
                     ur.is_suspended, ur.suspension_type, ur.suspension_reason, ur.suspension_end_date, 
@@ -210,18 +211,29 @@ class UserRepository implements UserRepositoryInterface {
         }
     }
 
+    public function findByIdentifier(string $identifier): ?array {
+        return $this->getUserWithDetails('identifier', $identifier);
+    }
+
     public function createUser(array $data): int {
         $tblUsers = DB::TBL_USERS;
         $tblUserRoles = DB::TBL_USER_ROLES;
         $tblUserRestr = DB::TBL_USER_RESTRICTIONS;
 
+        $identifier = $data['identifier'] ?? strtolower(preg_replace('/[^a-zA-Z0-9_]/', '', str_replace(' ', '_', $data['username'] ?? '')));
+        if (empty($identifier)) {
+            $identifier = 'user_' . substr(bin2hex(random_bytes(4)), 0, 6);
+        }
+        $uuid = $data['uuid'] ?? Utils::generateUUID();
+
         try {
             $this->pdo->beginTransaction();
             
-            $stmtUser = $this->pdo->prepare("INSERT INTO {$tblUsers} (uuid, username, email, password, profile_picture, google_id) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmtUser = $this->pdo->prepare("INSERT INTO {$tblUsers} (uuid, username, identifier, email, password, profile_picture, google_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
             $stmtUser->execute([
-                $data['uuid'], 
+                $uuid, 
                 $data['username'], 
+                $identifier,
                 $data['email'], 
                 $data['password'], 
                 $data['profile_picture'],
@@ -293,6 +305,45 @@ class UserRepository implements UserRepositoryInterface {
             return $res;
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $id, 'username' => $username, 'exception' => $e]);
+            return false;
+        }
+    }
+
+    public function updateIdentifier(int $id, string $identifier): bool {
+        $tblUsers = DB::TBL_USERS;
+        try {
+            $stmt = $this->pdo->prepare("UPDATE {$tblUsers} SET identifier = ?, identifier_updated_at = NOW() WHERE id = ?");
+            $res = $stmt->execute([$identifier, $id]);
+            if ($res) $this->invalidateProfileCache($id);
+            return $res;
+        } catch (PDOException $e) {
+            Logger::error("Database error in " . __METHOD__, ['user_id' => $id, 'identifier' => $identifier, 'exception' => $e]);
+            return false;
+        }
+    }
+
+    public function updateBanner(int $id, ?string $path): bool {
+        $tblUsers = DB::TBL_USERS;
+        try {
+            $stmt = $this->pdo->prepare("UPDATE {$tblUsers} SET banner_picture = ? WHERE id = ?");
+            $res = $stmt->execute([$path, $id]);
+            if ($res) $this->invalidateProfileCache($id);
+            return $res;
+        } catch (PDOException $e) {
+            Logger::error("Database error in " . __METHOD__, ['user_id' => $id, 'path' => $path, 'exception' => $e]);
+            return false;
+        }
+    }
+
+    public function updateBio(int $id, ?string $bio): bool {
+        $tblUsers = DB::TBL_USERS;
+        try {
+            $stmt = $this->pdo->prepare("UPDATE {$tblUsers} SET bio = ? WHERE id = ?");
+            $res = $stmt->execute([$bio, $id]);
+            if ($res) $this->invalidateProfileCache($id);
+            return $res;
+        } catch (PDOException $e) {
+            Logger::error("Database error in " . __METHOD__, ['user_id' => $id, 'bio' => $bio, 'exception' => $e]);
             return false;
         }
     }

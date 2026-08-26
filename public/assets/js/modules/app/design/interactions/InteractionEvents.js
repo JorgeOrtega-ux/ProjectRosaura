@@ -1,4 +1,5 @@
-import { showMessage, hexToHsv, hsvToHex, bindDragToScroll, initCarouselScroll, updateRangeFill, updateAllRangesFill } from '../../../../core/utils/uiUtils.js';
+import { showMessage, hexToHsv, hsvToHex, bindDragToScroll, initCarouselScroll, updateRangeFill, updateAllRangesFill, setButtonLoading, restoreButton } from '../../../../core/utils/uiUtils.js';
+import { ApiRoutes } from '../../../../core/api/ApiRoutes.js';
 
 export const InteractionEvents = {
     bindEvents() {
@@ -17,42 +18,27 @@ export const InteractionEvents = {
         updateAllRangesFill(document);
 
         // Bind carousel scroll & navigation arrows for top property bar (horizontal)
-        const topBarWrapper = document.querySelector('[data-ref="canvas-top-property-bar-wrapper"]');
-        if (topBarWrapper) {
-            this.topBarCarouselController = initCarouselScroll(topBarWrapper, false);
-        } else {
-            const topPropertyBar = document.querySelector('[data-ref="canvas-top-property-bar"]');
-            if (topPropertyBar) {
-                bindDragToScroll(topPropertyBar, false);
-                topPropertyBar.addEventListener('wheel', (e) => {
-                    if (e.deltaY !== 0) {
-                        e.preventDefault();
-                        topPropertyBar.scrollLeft += e.deltaY;
-                    }
-                }, { passive: false });
-            }
+        const topToolbar = document.querySelector('.component-toolbar--top, [data-ref="canvas-top-property-bar-wrapper"], [data-ref="canvas-top-property-bar"]');
+        if (topToolbar) {
+            this.topBarCarouselController = initCarouselScroll(topToolbar, false);
         }
 
         // Bind carousel scroll & navigation arrows for bottom horizontal tools toolbar (horizontal)
-        const horizontalToolsWrapper = document.querySelector('[data-ref="canvas-horizontal-tools-wrapper"]');
-        if (horizontalToolsWrapper) {
-            this.horizontalToolsCarouselController = initCarouselScroll(horizontalToolsWrapper, false);
-        } else {
-            const horizontalToolsToolbar = document.querySelector('.canvas-design-toolbar-horizontal');
-            if (horizontalToolsToolbar) {
-                bindDragToScroll(horizontalToolsToolbar, false);
-            }
+        const horizontalToolsToolbar = document.querySelector('.component-toolbar--horizontal:not(.component-toolbar--top), [data-ref="canvas-horizontal-tools-wrapper"]');
+        if (horizontalToolsToolbar) {
+            this.horizontalToolsCarouselController = initCarouselScroll(horizontalToolsToolbar, false);
         }
 
-        const topDesignToolbar = document.querySelector('.canvas-design-toolbar');
-        if (topDesignToolbar) {
-            bindDragToScroll(topDesignToolbar, false);
-            topDesignToolbar.addEventListener('wheel', (e) => {
-                if (e.deltaY !== 0) {
-                    e.preventDefault();
-                    topDesignToolbar.scrollLeft += e.deltaY;
-                }
-            }, { passive: false });
+        // Bind carousel scroll & navigation arrows for vertical right toolbar (vertical)
+        const verticalToolsToolbar = document.querySelector('.component-toolbar--vertical, [data-ref="canvas-vertical-tools-wrapper"]');
+        if (verticalToolsToolbar) {
+            this.verticalToolsCarouselController = initCarouselScroll(verticalToolsToolbar, true);
+        }
+
+        // Bind carousel scroll & navigation arrows for layers / timeline bottom carousel
+        const layersBottomCarousel = document.querySelector('[data-ref="layers-bottom-carousel"]');
+        if (layersBottomCarousel) {
+            this.layersCarouselController = initCarouselScroll(layersBottomCarousel, false);
         }
 
         if (this.canvas && this.canvas.parentElement && typeof ResizeObserver !== 'undefined') {
@@ -150,6 +136,20 @@ export const InteractionEvents = {
             return;
         }
 
+        const btnOpenPublish = e.target.closest('[data-action="openPublishModal"]');
+        if (btnOpenPublish) {
+            e.preventDefault();
+            this.openPublishArtworkModal();
+            return;
+        }
+
+        const btnSubmitPublish = e.target.closest('[data-action="submitPublishPixelArt"]');
+        if (btnSubmitPublish) {
+            e.preventDefault();
+            this.submitPublishPixelArt();
+            return;
+        }
+
         const btnSelectBlend = e.target.closest('[data-action="selectLayerBlendMode"]');
         if (btnSelectBlend) {
             e.preventDefault();
@@ -200,11 +200,22 @@ export const InteractionEvents = {
             return;
         }
 
-        const btnToggleLayersCarousel = e.target.closest('[data-action="toggleLayersCarousel"]');
+        const btnToggleLayersCarousel = e.target.closest('[data-action="toggleLayersCarousel"], [data-action="toggleCarouselLayers"]');
         if (btnToggleLayersCarousel) {
             e.preventDefault();
-            if (typeof this.toggleLayersCarousel === 'function') {
+            if (typeof this.toggleCarouselLayers === 'function') {
+                this.toggleCarouselLayers();
+            } else if (typeof this.toggleLayersCarousel === 'function') {
                 this.toggleLayersCarousel();
+            }
+            return;
+        }
+
+        const btnToggleTimelineCarousel = e.target.closest('[data-action="toggleCarouselTimeline"]');
+        if (btnToggleTimelineCarousel) {
+            e.preventDefault();
+            if (typeof this.toggleCarouselTimeline === 'function') {
+                this.toggleCarouselTimeline();
             }
             return;
         }
@@ -212,7 +223,9 @@ export const InteractionEvents = {
         const btnSetCarouselModeLayers = e.target.closest('[data-action="setCarouselModeLayers"]');
         if (btnSetCarouselModeLayers) {
             e.preventDefault();
-            if (typeof this.setCarouselMode === 'function') {
+            if (typeof this.toggleCarouselLayers === 'function') {
+                this.toggleCarouselLayers();
+            } else if (typeof this.setCarouselMode === 'function') {
                 this.setCarouselMode('layers');
             }
             return;
@@ -221,7 +234,9 @@ export const InteractionEvents = {
         const btnSetCarouselModeTimeline = e.target.closest('[data-action="setCarouselModeTimeline"]');
         if (btnSetCarouselModeTimeline) {
             e.preventDefault();
-            if (typeof this.setCarouselMode === 'function') {
+            if (typeof this.toggleCarouselTimeline === 'function') {
+                this.toggleCarouselTimeline();
+            } else if (typeof this.setCarouselMode === 'function') {
                 this.setCarouselMode('timeline');
             }
             return;
@@ -531,6 +546,33 @@ export const InteractionEvents = {
             e.preventDefault();
             if (typeof this.handleSelectOutlineOption === 'function') {
                 this.handleSelectOutlineOption(outlineOptionLink);
+            }
+            return;
+        }
+
+        const btnOpenLayerBlendModeModal = e.target.closest('[data-action="openLayerBlendModeModal"]');
+        if (btnOpenLayerBlendModeModal) {
+            e.preventDefault();
+            if (typeof this.openLayerBlendModeModal === 'function') {
+                this.openLayerBlendModeModal();
+            }
+            return;
+        }
+
+        const btnSelectModalBlendMode = e.target.closest('[data-action="selectModalBlendModeOption"]');
+        if (btnSelectModalBlendMode) {
+            e.preventDefault();
+            if (typeof this.handleSelectModalBlendModeOption === 'function') {
+                this.handleSelectModalBlendModeOption(btnSelectModalBlendMode);
+            }
+            return;
+        }
+
+        const btnApplyModalBlendMode = e.target.closest('[data-action="applyLayerBlendModeFromModal"]');
+        if (btnApplyModalBlendMode) {
+            e.preventDefault();
+            if (typeof this.applyLayerBlendModeFromModal === 'function') {
+                this.applyLayerBlendModeFromModal();
             }
             return;
         }
@@ -1861,7 +1903,10 @@ export const InteractionEvents = {
                 this.resetDefaultColors();
             }
         } else if (keyUpper === 'L') {
-            if (this.isOfflineMode && typeof this.toggleUnifiedSidebar === 'function') {
+            if (this.isOfflineMode && typeof this.openSidebarTab === 'function') {
+                e.preventDefault();
+                this.openSidebarTab('layers');
+            } else if (this.isOfflineMode && typeof this.toggleUnifiedSidebar === 'function') {
                 e.preventDefault();
                 this.toggleUnifiedSidebar();
             }
@@ -2316,6 +2361,95 @@ export const InteractionEvents = {
             } else {
                 this.updatePixelTextPreview();
             }
+        }
+    },
+
+    getFlattenedCanvasDataUrl() {
+        const w = this.boardWidth || 64;
+        const h = this.boardHeight || 64;
+        const flatCanvas = document.createElement('canvas');
+        flatCanvas.width = w;
+        flatCanvas.height = h;
+        const flatCtx = flatCanvas.getContext('2d');
+        flatCtx.imageSmoothingEnabled = false;
+
+        if (this.layers && this.layers.length > 0) {
+            for (const layer of this.layers) {
+                if (layer.visible !== false && layer.canvas) {
+                    flatCtx.globalAlpha = layer.opacity !== undefined ? layer.opacity : 1;
+                    flatCtx.globalCompositeOperation = layer.blendMode || 'source-over';
+                    flatCtx.drawImage(layer.canvas, 0, 0);
+                }
+            }
+        } else if (this.offscreenCanvas) {
+            flatCtx.drawImage(this.offscreenCanvas, 0, 0);
+        }
+        return flatCanvas.toDataURL('image/png');
+    },
+
+    async openPublishArtworkModal() {
+        if (!window.modalSystem) return;
+        const dataUrl = this.getFlattenedCanvasDataUrl();
+        const currentTitle = this.canvasName || (document.querySelector('.canvas-title-input')?.value) || 'Mi Pixel Art';
+
+        this._lastPublishDataUrl = dataUrl;
+
+        await window.modalSystem.show('publishPixelArtModal', {
+            previewUrl: dataUrl,
+            title: currentTitle,
+            width: this.boardWidth || 64,
+            height: this.boardHeight || 64
+        });
+    },
+
+    async submitPublishPixelArt() {
+        const titleInput = document.querySelector('[data-ref="pub-title"]');
+        const descInput = document.querySelector('[data-ref="pub-desc"]');
+        const tagsInput = document.querySelector('[data-ref="pub-tags"]');
+        const privacyInput = document.querySelector('[data-ref="pub-privacy"]');
+
+        const title = titleInput?.value.trim() || 'Mi Pixel Art';
+        const description = descInput?.value.trim() || '';
+        const tags = tagsInput?.value.trim() || '';
+        const privacy = privacyInput?.value || 'public';
+        const imageData = this._lastPublishDataUrl || this.getFlattenedCanvasDataUrl();
+
+        const submitBtn = document.querySelector('[data-action="submitPublishPixelArt"]');
+        if (submitBtn) setButtonLoading(submitBtn);
+
+        try {
+            const payload = {
+                title,
+                description,
+                tags,
+                privacy,
+                image_data: imageData,
+                canvas_id: this.canvasId || null,
+                width: this.boardWidth || 64,
+                height: this.boardHeight || 64
+            };
+
+            const res = await this.api.post(ApiRoutes.Publications.Publish, payload);
+
+            if (res && res.success) {
+                if (window.modalSystem) window.modalSystem.closeCurrent(true);
+                showMessage(res.message || 'Pixel Art publicado con éxito', 'success');
+                if (res.url) {
+                    setTimeout(() => {
+                        if (window.spaRouter) {
+                            window.spaRouter.navigate(res.url);
+                        } else {
+                            window.location.href = res.url;
+                        }
+                    }, 500);
+                }
+            } else {
+                showMessage((res && res.message) || 'Error al publicar obra', 'error');
+                if (submitBtn) restoreButton(submitBtn);
+            }
+        } catch (err) {
+            showMessage('Error de conexión al publicar', 'error');
+            if (submitBtn) restoreButton(submitBtn);
         }
     }
 };

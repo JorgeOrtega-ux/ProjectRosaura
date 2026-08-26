@@ -544,7 +544,7 @@ class CanvasCreateController {
                                     resolve();
                                 };
                                 img.onerror = () => resolve();
-                                img.src = tplImagePath;
+                                img.src = `${this.basePath}${tplImagePath.startsWith('/') ? '' : '/'}${tplImagePath}`;
                             });
                         } catch (e) {}
                     }
@@ -555,7 +555,12 @@ class CanvasCreateController {
                     uuid: localUuid,
                     name: canvasName,
                     size: size,
-                    privacy: 'private',
+                    privacy: this.formState.privacy || 'private',
+                    requires_approval: this.formState.requires_approval ? 1 : 0,
+                    cooldown_pixels_batch: parseInt(this.formState.cooldown_pixels_batch || 5, 10),
+                    cooldown_seconds: parseInt(this.formState.cooldown_seconds ?? 10, 10),
+                    max_participants: parseInt(this.formState.limit || 10, 10),
+                    allow_chat: this.formState.allow_chat ? 1 : 0,
                     mode: 'offline',
                     is_local: true,
                     palette_id: this.formState.palette_id || 'default',
@@ -585,7 +590,7 @@ class CanvasCreateController {
 
                 await CanvasStorageEngine.saveCanvasState(localUuid, blankBase64, width, height);
 
-                // Capa por defecto
+                // Capa por defecto con búfer inicial
                 const initialLayers = {
                     layers: [
                         {
@@ -595,7 +600,8 @@ class CanvasCreateController {
                             locked: false,
                             opacity: 1,
                             blendMode: 'source-over',
-                            order: 0
+                            order: 0,
+                            buffer_base64: blankBase64
                         }
                     ],
                     activeLayerId: 1
@@ -606,9 +612,9 @@ class CanvasCreateController {
                 showMessage(window.__('msg_local_canvas_created') || '¡Lienzo local creado exitosamente!', 'success');
 
                 if (window.spaRouter) {
-                    window.spaRouter.navigate(`${this.basePath}/design/${localUuid}?size=${encodeURIComponent(size)}`);
+                    window.spaRouter.navigate(`${this.basePath}/design/${localUuid}`);
                 } else {
-                    window.location.href = `${this.basePath}/design/${localUuid}?size=${encodeURIComponent(size)}`;
+                    window.location.href = `${this.basePath}/design/${localUuid}`;
                 }
             } catch (err) {
                 restoreButton(btn);

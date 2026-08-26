@@ -37,6 +37,26 @@ class SettingsController extends BaseController {
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
     }
 
+    public function update_identifier($input) {
+        try { return $this->respond($this->settingsServices->updateIdentifier($input)); }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function update_banner($input) {
+        try { return $this->respond($this->settingsServices->updateBanner($input)); }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function delete_banner() {
+        try { return $this->respond($this->settingsServices->deleteBanner()); }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
+    public function update_bio($input) {
+        try { return $this->respond($this->settingsServices->updateBio($input)); }
+        catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
+    }
+
     public function request_email_code() {
         try { return $this->respond($this->settingsServices->requestEmailCode()); }
         catch (\Throwable $e) { return $this->handleException($e, __FUNCTION__); }
