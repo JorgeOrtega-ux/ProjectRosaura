@@ -135,7 +135,7 @@ class UserProfileViewService {
 
         $identifier = $user['identifier'] ?? strtolower(str_replace(' ', '_', $user['username']));
         $avatarUrl = Utils::getS3PublicUrl($user['profile_picture']);
-        $bannerUrl = !empty($user['banner_picture']) ? Utils::getS3PublicUrl($user['banner_picture']) : null;
+        $bannerUrl = !empty($user['banner_picture']) ? Utils::getS3PublicUrl($user['banner_picture']) : Utils::getDefaultBannerForUser($userId);
 
         $publications = [];
         foreach ($pubRows as $p) {

@@ -225,11 +225,12 @@ class UserRepository implements UserRepositoryInterface {
             $identifier = 'user_' . substr(bin2hex(random_bytes(4)), 0, 6);
         }
         $uuid = $data['uuid'] ?? Utils::generateUUID();
+        $bannerPicture = $data['banner_picture'] ?? Utils::getRandomDefaultBanner();
 
         try {
             $this->pdo->beginTransaction();
             
-            $stmtUser = $this->pdo->prepare("INSERT INTO {$tblUsers} (uuid, username, identifier, email, password, profile_picture, google_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmtUser = $this->pdo->prepare("INSERT INTO {$tblUsers} (uuid, username, identifier, email, password, profile_picture, banner_picture, google_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
             $stmtUser->execute([
                 $uuid, 
                 $data['username'], 
@@ -237,6 +238,7 @@ class UserRepository implements UserRepositoryInterface {
                 $data['email'], 
                 $data['password'], 
                 $data['profile_picture'],
+                $bannerPicture,
                 $data['google_id'] ?? null
             ]);
             $userId = (int) $this->pdo->lastInsertId();

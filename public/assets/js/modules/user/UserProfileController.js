@@ -126,38 +126,52 @@ export class UserProfileController {
         const file = e.target.files[0];
         if (!file) return;
 
-        const maxMb = 5;
+        const maxMb = 10;
         if (file.size > maxMb * 1024 * 1024) {
             showMessage(window.__('upload.size_exceeded') || `El archivo supera el límite de ${maxMb}MB`, 'error');
             e.target.value = '';
             return;
         }
 
-        const formData = new FormData();
-        formData.append('banner', file);
-
-        const bannerImg = document.querySelector('[data-ref="profile-banner-img"]');
-        const placeholder = document.querySelector('[data-ref="profile-banner-placeholder"]');
+        const imageSrc = URL.createObjectURL(file);
 
         try {
-            showMessage(window.__('uploading') || 'Subiendo banner...', 'info');
-            const res = await this.api.post(ApiRoutes.Settings.UpdateBanner, formData);
+            const modalRes = await window.modalSystem.show('bannerCropperModal', {
+                imageSrc: imageSrc,
+                fileName: file.name
+            });
 
-            if (res && res.success) {
-                if (bannerImg) {
-                    bannerImg.src = res.new_banner;
-                    bannerImg.classList.remove('disabled');
+            if (modalRes && modalRes.confirmed && modalRes.data && modalRes.data.blob) {
+                const croppedBlob = modalRes.data.blob;
+                const formData = new FormData();
+                const rawName = file.name ? file.name.replace(/\.[^/.]+$/, '') : 'banner';
+                const uploadFileName = `${rawName}.webp`;
+                formData.append('banner', croppedBlob, uploadFileName);
+
+                const bannerImg = document.querySelector('[data-ref="profile-banner-img"]');
+                const placeholder = document.querySelector('[data-ref="profile-banner-placeholder"]');
+
+                showMessage(window.__('uploading') || 'Subiendo banner...', 'info');
+                const res = await this.api.post(ApiRoutes.Settings.UpdateBanner, formData);
+
+                if (res && res.success) {
+                    if (bannerImg) {
+                        bannerImg.src = res.new_banner;
+                        bannerImg.classList.remove('disabled');
+                    }
+                    if (placeholder) {
+                        placeholder.classList.add('disabled');
+                    }
+                    showMessage(res.message || 'Banner actualizado', 'success');
+                } else {
+                    showMessage((res && res.message) || 'Error al actualizar banner', 'error');
                 }
-                if (placeholder) {
-                    placeholder.classList.add('disabled');
-                }
-                showMessage(res.message || 'Banner actualizado', 'success');
-            } else {
-                showMessage((res && res.message) || 'Error al actualizar banner', 'error');
             }
         } catch (err) {
-            showMessage('Error al subir banner', 'error');
+            console.error('Error cropping/uploading banner:', err);
+            showMessage('Error al procesar banner', 'error');
         } finally {
+            URL.revokeObjectURL(imageSrc);
             e.target.value = '';
         }
     }

@@ -1,4 +1,9 @@
 {
+    "banner_customize_title": "Personalizar material gráfico del banner",
+    "banner_customize_tip": "Para obtener los mejores resultados, usa una imagen de al menos 1200 × 320 píxeles",
+    "banner_device_tvs": "TVs",
+    "banner_device_desktop": "Computadoras",
+    "banner_device_all": "Todos los dispositivos",
     "lbl_local_canvas": "Lienzo Local",
     "lbl_device_storage": "En este dispositivo",
     "btn_sync_cloud": "Sincronizar con la nube",

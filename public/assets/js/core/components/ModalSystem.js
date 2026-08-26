@@ -1,5 +1,6 @@
 import { ModalTemplates } from './ModalTemplates.js';
 import { CalendarSystem } from './CalendarSystem.js';
+import { BannerCropperSystem } from './BannerCropperSystem.js';
 import { getEventCoords, hexToHsv, hsvToHex, restoreButton, setButtonLoading, showMessage, initCarouselScroll, closeDropdown, localInputFormatToUtcString, parseUtcToLocalDate, formatLocalDateTimeToInput, getScheduledTimeDetails, copyToClipboard } from '../utils/uiUtils.js';
 import { ApiService } from '../api/ApiService.js';
 import { ApiRoutes } from '../api/ApiRoutes.js';
@@ -13,6 +14,7 @@ export class ModalSystem {
         this.activeOverlay = null;
         this.activeBox = null;
         this.calendarSystem = null;
+        this.bannerCropper = null;
         this.modalStack = [];
         this.activeOnConfirm = null;
         this.activeAsyncConfirm = false;
@@ -243,6 +245,18 @@ export class ModalSystem {
                 });
             }
 
+            if (templateName === 'bannerCropperModal') {
+                const mount = this.activeBox?.querySelector('[data-ref="banner-cropper-mount"]');
+                if (mount && data.imageSrc) {
+                    this.bannerCropper = new BannerCropperSystem(mount, {
+                        imageSrc: data.imageSrc,
+                        outputWidth: data.outputWidth || 1200,
+                        outputHeight: data.outputHeight || 320,
+                        bannerRatio: data.bannerRatio || 3.75
+                    });
+                }
+            }
+
             this.activeResolveFn = resolve;
         });
     }
@@ -338,6 +352,28 @@ export class ModalSystem {
         const closeBtn = e.target.closest('.component-modal-close-btn');
         if (closeBtn) {
             this.closeCurrent(false);
+            return;
+        }
+
+        const btnConfirmBannerCrop = e.target.closest('[data-ref="btn-confirm-banner-crop"]');
+        if (btnConfirmBannerCrop && this.activeBox && this.bannerCropper) {
+            e.preventDefault();
+            setButtonLoading(btnConfirmBannerCrop);
+            this.bannerCropper.getCroppedBlob().then(async (cropResult) => {
+                if (typeof this.activeOnConfirm === 'function') {
+                    const success = await this.activeOnConfirm(cropResult, btnConfirmBannerCrop);
+                    if (success !== false) {
+                        this.closeCurrent(cropResult);
+                    } else {
+                        restoreButton(btnConfirmBannerCrop);
+                    }
+                } else {
+                    this.closeCurrent(cropResult);
+                }
+            }).catch((err) => {
+                console.error('[ModalSystem] Crop failed:', err);
+                restoreButton(btnConfirmBannerCrop);
+            });
             return;
         }
 
@@ -2054,6 +2090,11 @@ export class ModalSystem {
             this.calendarSystem = null;
         }
 
+        if (this.bannerCropper) {
+            this.bannerCropper.destroy();
+            this.bannerCropper = null;
+        }
+
         this.activeResolveFn = null;
         this.activeOverlay = null;
         this.activeWrapper = null;
@@ -2063,7 +2104,8 @@ export class ModalSystem {
         this.activeAsyncConfirm = false;
 
         if (resolveToCall) {
-            resolveToCall({ confirmed: result !== false, action: result, data: formData });
+            const finalData = (result && typeof result === 'object' && result.blob) ? result : formData;
+            resolveToCall({ confirmed: result !== false, action: result, data: finalData });
         }
 
         if (this.modalStack && this.modalStack.length > 0) {

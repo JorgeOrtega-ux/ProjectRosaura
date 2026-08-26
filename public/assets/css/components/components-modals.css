@@ -303,8 +303,7 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     flex-direction: column;
 }
 
-.onboarding-tour-container.step-modal-content,
-.step-modal-container {
+.onboarding-tour-container.step-modal-content, .step-modal-container {
     padding: 0 !important;
     display: flex;
     flex-direction: column;
@@ -312,10 +311,8 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     min-height: 480px;
     max-height: 90vh;
     background: var(--bg-surface);
-    overflow: hidden;
-    border-radius: inherit;
+    border-radius: 24px;
 }
-
 .onboarding-tour-step {
     display: none;
     flex-direction: column;
@@ -2520,4 +2517,175 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     flex-direction: column;
     gap: 8px;
 }
+
+/* ==========================================================================
+   BANNER CROPPER MODAL (INTEGRATED WITH DESIGN SYSTEM)
+   ========================================================================== */
+
+.component-modal-box--cropper {
+    max-width: 800px;
+}
+
+.component-banner-cropper-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.component-banner-cropper-stage {
+    width: 100%;
+    height: 380px;
+    background-color: var(--bg-tertiary, #121216);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--border-radius-md, 12px);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    touch-action: none;
+    box-sizing: border-box;
+}
+
+.component-banner-cropper-viewport {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.component-banner-cropper-img {
+    position: absolute;
+    pointer-events: none;
+    user-select: none;
+    display: block;
+    object-fit: fill;
+}
+
+.component-banner-cropper-svg-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.component-banner-crop-box {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border: 2px solid var(--accent-primary, #3b82f6);
+    box-sizing: border-box;
+    cursor: move;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    will-change: transform, width, height;
+}
+
+.component-banner-desktop-band {
+    width: 100%;
+    height: 47.4%;
+    border-top: 1px dashed rgba(59, 130, 246, 0.7);
+    border-bottom: 1px dashed rgba(59, 130, 246, 0.7);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.22);
+    box-sizing: border-box;
+    pointer-events: none;
+}
+
+.component-banner-safe-zone {
+    width: 60%;
+    height: 100%;
+    border-left: 1px dashed rgba(59, 130, 246, 0.7);
+    border-right: 1px dashed rgba(59, 130, 246, 0.7);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.28);
+    box-sizing: border-box;
+    pointer-events: none;
+}
+
+.component-banner-crop-badge {
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-sm, 0 2px 6px rgba(0, 0, 0, 0.25));
+    font-size: 0.72rem;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 10px;
+    pointer-events: none;
+    white-space: nowrap;
+    user-select: none;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.component-banner-crop-badge--tv {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+}
+
+.component-banner-crop-badge--desktop {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.component-banner-crop-badge--all {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.component-banner-crop-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: var(--bg-surface);
+    border: 2px solid var(--accent-primary, #3b82f6);
+    border-radius: 2px;
+    box-sizing: border-box;
+    z-index: 5;
+}
+
+.component-banner-crop-handle.handle-nw {
+    top: -5px;
+    left: -5px;
+    cursor: nwse-resize;
+}
+
+.component-banner-crop-handle.handle-ne {
+    top: -5px;
+    right: -5px;
+    cursor: nesw-resize;
+}
+
+.component-banner-crop-handle.handle-se {
+    bottom: -5px;
+    right: -5px;
+    cursor: nwse-resize;
+}
+
+.component-banner-crop-handle.handle-sw {
+    bottom: -5px;
+    left: -5px;
+    cursor: nesw-resize;
+}
+
+
 

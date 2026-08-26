@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+    <defs>
+        <!-- Background -->
+        <linearGradient id="topoBg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#090a0f"/>
+            <stop offset="50%" stop-color="#0e131f"/>
+            <stop offset="100%" stop-color="#141c2b"/>
+        </linearGradient>
+
+        <!-- Emerald to Cyan Gradient -->
+        <linearGradient id="topoStroke1" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#10b981" stop-opacity="0.1"/>
+            <stop offset="40%" stop-color="#059669" stop-opacity="0.6"/>
+            <stop offset="70%" stop-color="#06b6d4" stop-opacity="0.75"/>
+            <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.2"/>
+        </linearGradient>
+
+        <linearGradient id="topoStroke2" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.1"/>
+            <stop offset="50%" stop-color="#10b981" stop-opacity="0.5"/>
+            <stop offset="100%" stop-color="#34d399" stop-opacity="0.15"/>
+        </linearGradient>
+
+        <!-- Ambient Glow -->
+        <radialGradient id="emeraldGlow" cx="80%" cy="60%" r="60%">
+            <stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/>
+            <stop offset="50%" stop-color="#06b6d4" stop-opacity="0.08"/>
+            <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+        </radialGradient>
+        
+        <!-- Dot Pattern -->
+        <pattern id="dotPattern2" width="24" height="24" patternUnits="userSpaceOnUse">
+            <circle cx="2" cy="2" r="1" fill="#ffffff" fill-opacity="0.04"/>
+        </pattern>
+    </defs>
+
+    <!-- Canvas Base -->
+    <rect width="1200" height="320" fill="url(#topoBg)"/>
+    <rect width="1200" height="320" fill="url(#dotPattern2)"/>
+    <rect width="1200" height="320" fill="url(#emeraldGlow)"/>
+
+    <!-- Topographic Contour Lines -->
+    <g fill="none" stroke-linecap="round">
+        <!-- Main flowing lines -->
+        <path d="M-50,300 C150,280 280,180 500,210 C720,240 850,110 1050,140 C1180,160 1250,100 1300,90" stroke="url(#topoStroke1)" stroke-width="2.5"/>
+        <path d="M-50,270 C160,250 290,150 510,180 C730,210 860,80 1060,110 C1190,130 1260,70 1300,60" stroke="url(#topoStroke1)" stroke-width="1.8" stroke-opacity="0.85"/>
+        <path d="M-50,240 C170,220 300,120 520,150 C740,180 870,50 1070,80 C1200,100 1270,40 1300,30" stroke="url(#topoStroke1)" stroke-width="1.2" stroke-opacity="0.7"/>
+        <path d="M-50,210 C180,190 310,90 530,120 C750,150 880,20 1080,50 C1210,70 1280,10 1300,0" stroke="url(#topoStroke1)" stroke-width="0.8" stroke-opacity="0.5"/>
+        <path d="M-50,180 C190,160 320,60 540,90 C760,120 890,-10 1090,20 C1220,40 1290,-20 1300,-30" stroke="url(#topoStroke1)" stroke-width="0.6" stroke-opacity="0.3"/>
+
+        <!-- Secondary contour wave layer -->
+        <path d="M-50,340 C200,350 400,260 650,290 C900,320 1000,220 1300,200" stroke="url(#topoStroke2)" stroke-width="1.5" stroke-dasharray="8 5" stroke-opacity="0.6"/>
+        <path d="M-50,370 C210,380 410,290 660,320 C910,350 1010,250 1300,230" stroke="url(#topoStroke2)" stroke-width="1" stroke-opacity="0.4"/>
+    </g>
+
+    <!-- Topographic Data & Elevation Markers -->
+    <g fill="none">
+        <!-- Elevation Tag 1 -->
+        <g transform="translate(680, 215)">
+            <rect x="-35" y="-10" width="70" height="20" rx="10" fill="#090a0f" fill-opacity="0.8" stroke="#10b981" stroke-width="0.75" stroke-opacity="0.4"/>
+            <text x="0" y="3.5" font-family="monospace" font-size="9" fill="#34d399" fill-opacity="0.9" text-anchor="middle" letter-spacing="1">ELEV 420m</text>
+        </g>
+
+        <!-- Elevation Tag 2 -->
+        <g transform="translate(980, 115)">
+            <rect x="-35" y="-10" width="70" height="20" rx="10" fill="#090a0f" fill-opacity="0.8" stroke="#06b6d4" stroke-width="0.75" stroke-opacity="0.4"/>
+            <text x="0" y="3.5" font-family="monospace" font-size="9" fill="#22d3ee" fill-opacity="0.9" text-anchor="middle" letter-spacing="1">ELEV 850m</text>
+        </g>
+
+        <!-- Peak Point Marker -->
+        <g transform="translate(1060, 80)">
+            <polygon points="0,-8 7,5 -7,5" fill="#34d399" fill-opacity="0.8"/>
+            <circle cx="0" cy="12" r="1.5" fill="#ffffff" fill-opacity="0.7"/>
+        </g>
+    </g>
+
+    <!-- Minimal Grid Coordinate Marks -->
+    <g stroke="#ffffff" stroke-opacity="0.15" stroke-width="1">
+        <line x1="100" y1="40" x2="110" y2="40"/>
+        <line x1="105" y1="35" x2="105" y2="45"/>
+        <line x1="300" y1="40" x2="310" y2="40"/>
+        <line x1="305" y1="35" x2="305" y2="45"/>
+        <line x1="900" y1="260" x2="910" y2="260"/>
+        <line x1="905" y1="255" x2="905" y2="265"/>
+    </g>
+</svg>

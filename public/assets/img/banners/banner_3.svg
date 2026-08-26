@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+    <defs>
+        <!-- Background -->
+        <linearGradient id="bauhausBg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#0c0d12"/>
+            <stop offset="50%" stop-color="#12141c"/>
+            <stop offset="100%" stop-color="#181a24"/>
+        </linearGradient>
+
+        <!-- Accent Gradients -->
+        <linearGradient id="coralGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#fb7185"/>
+            <stop offset="100%" stop-color="#e11d48"/>
+        </linearGradient>
+
+        <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#fcd34d"/>
+            <stop offset="100%" stop-color="#f59e0b"/>
+        </linearGradient>
+
+        <linearGradient id="indigoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#818cf8"/>
+            <stop offset="100%" stop-color="#4f46e5"/>
+        </linearGradient>
+
+        <!-- Diagonal Stripe Pattern -->
+        <pattern id="diagStripes" width="16" height="16" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="0" x2="0" y2="16" stroke="#ffffff" stroke-width="2" stroke-opacity="0.06"/>
+        </pattern>
+        
+        <pattern id="dotGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+            <circle cx="2" cy="2" r="1.5" fill="#ffffff" fill-opacity="0.05"/>
+        </pattern>
+    </defs>
+
+    <!-- Canvas Base -->
+    <rect width="1200" height="320" fill="url(#bauhausBg)"/>
+
+    <!-- Subtle Dot Grid (Left side) -->
+    <rect x="60" y="40" width="300" height="240" fill="url(#dotGrid)"/>
+
+    <!-- Bauhaus Composition Elements (Structured on the right side for balance) -->
+    <g transform="translate(860, 160)">
+        <!-- Diagonal Stripe Rectangle -->
+        <rect x="-180" y="-120" width="140" height="220" rx="12" fill="url(#diagStripes)" stroke="#ffffff" stroke-width="1" stroke-opacity="0.1"/>
+
+        <!-- Semi-Circle Coral -->
+        <path d="M 0,-100 A 100,100 0 0,1 0,100 Z" fill="url(#coralGrad)" fill-opacity="0.85"/>
+
+        <!-- Overlapping Amber Circle -->
+        <circle cx="-60" cy="40" r="55" fill="url(#amberGrad)" fill-opacity="0.8"/>
+
+        <!-- Hollow Indigo Arch Ring -->
+        <path d="M -110,-60 A 75,75 0 0,1 40,-60" fill="none" stroke="url(#indigoGrad)" stroke-width="8" stroke-linecap="round"/>
+
+        <!-- Small Floating Geometric Accents -->
+        <circle cx="80" cy="-60" r="12" fill="#38bdf8" fill-opacity="0.9"/>
+        <rect x="60" y="30" width="24" height="24" rx="4" fill="#ffffff" fill-opacity="0.15" stroke="#ffffff" stroke-width="1" stroke-opacity="0.3" transform="rotate(25 72 42)"/>
+        <circle cx="110" cy="70" r="4" fill="#f43f5e"/>
+    </g>
+
+    <!-- Linear Framing Accents -->
+    <g stroke="#ffffff" stroke-opacity="0.15" stroke-width="1">
+        <line x1="450" y1="60" x2="680" y2="60"/>
+        <line x1="450" y1="60" x2="450" y2="260"/>
+        <circle cx="450" cy="60" r="3" fill="#ffffff" fill-opacity="0.4" stroke="none"/>
+        <circle cx="680" cy="60" r="3" fill="#ffffff" fill-opacity="0.4" stroke="none"/>
+        <text x="470" y="85" font-family="monospace" font-size="10" fill="#ffffff" fill-opacity="0.4" letter-spacing="2">MOD.03 / COMPOSITION</text>
+    </g>
+
+    <!-- Minimal Angular Accents (Bottom Left) -->
+    <g stroke="url(#indigoGrad)" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.6">
+        <path d="M 120,270 L 160,270 L 190,230"/>
+        <circle cx="190" cy="230" r="2.5" fill="#818cf8"/>
+    </g>
+</svg>

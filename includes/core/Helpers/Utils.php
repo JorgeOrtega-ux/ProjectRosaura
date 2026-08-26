@@ -288,6 +288,16 @@ class Utils {
         if (str_starts_with($path, '/avatar/') || str_starts_with($path, 'avatar/')) {
             return (defined('APP_URL') ? APP_URL : '') . '/' . ltrim($path, '/');
         }
+
+        if (str_starts_with($path, '/assets/') || str_starts_with($path, 'assets/') || str_starts_with($path, 'public/assets/') || str_starts_with($path, '/public/assets/')) {
+            $clean = preg_replace('#^/?(public/)?#', '', $path);
+            return (defined('APP_URL') ? APP_URL : '') . '/' . ltrim($clean, '/');
+        }
+
+        if (str_starts_with($path, 'banners/default/') || str_starts_with($path, '/banners/default/')) {
+            $fileName = basename($path);
+            return (defined('APP_URL') ? APP_URL : '') . '/assets/img/banners/' . $fileName;
+        }
         
         if (str_starts_with($path, 'profilePictures/default/')) {
             // Intentar extraer la letra de la ruta legada, por ejemplo 'profilePictures/default/letters/O/...'
@@ -304,6 +314,57 @@ class Utils {
         $publicUrl = rtrim(EnvLoader::get('AWS_PUBLIC_URL', 'http://localhost:9000'), '/');
         
         return $publicUrl . '/' . $bucket . '/' . $cleanPath;
+    }
+
+    /**
+     * Lista de los 5 banners SVG minimalistas pregenerados.
+     */
+    public static function getDefaultBanners(): array {
+        return [
+            'assets/img/banners/banner_1.svg',
+            'assets/img/banners/banner_2.svg',
+            'assets/img/banners/banner_3.svg',
+            'assets/img/banners/banner_4.svg',
+            'assets/img/banners/banner_5.svg'
+        ];
+    }
+
+    /**
+     * Obtiene un banner por defecto aleatorio para nuevos registros.
+     */
+    public static function getRandomDefaultBanner(): string {
+        $banners = self::getDefaultBanners();
+        $index = random_int(0, count($banners) - 1);
+        return $banners[$index];
+    }
+
+    /**
+     * Obtiene la ruta relativa de banner por defecto determinista para un usuario.
+     */
+    public static function getDefaultBannerRelForUser($seed): string {
+        $banners = self::getDefaultBanners();
+        $hashInput = (string)$seed;
+        $index = abs(crc32($hashInput)) % count($banners);
+        return $banners[$index];
+    }
+
+    /**
+     * Obtiene la URL completa del banner por defecto para un usuario.
+     */
+    public static function getDefaultBannerForUser($seed): string {
+        $relPath = self::getDefaultBannerRelForUser($seed);
+        return (defined('APP_URL') ? APP_URL : '') . '/' . ltrim($relPath, '/');
+    }
+
+    /**
+     * Comprueba si una ruta corresponde a un banner por defecto.
+     */
+    public static function isDefaultBanner(?string $path): bool {
+        if (empty($path)) {
+            return true;
+        }
+        return strpos($path, 'assets/img/banners/') !== false 
+            || strpos($path, 'banners/default/') !== false;
     }
 
     public static function generateUUID() {

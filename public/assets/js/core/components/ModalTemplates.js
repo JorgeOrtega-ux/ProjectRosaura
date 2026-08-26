@@ -3703,5 +3703,43 @@ export const ModalTemplates = {
                 </div>
             `;
         }
+    },
+    bannerCropperModal: {
+        customBoxClass: 'component-modal-box--cropper',
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                
+                <div class="component-modal-header">
+                    <h3 class="component-modal-title">${__('banner_customize_title') || 'Personalizar material gráfico del banner'}</h3>
+                    <p class="component-modal-desc">${__('banner_customize_desc') || 'Ajusta el encuadre de la imagen para visualizar cómo se verá en diferentes dispositivos.'}</p>
+                </div>
+
+                <div class="component-alert component-alert--info active">
+                    <div class="component-alert-icon">
+                        <span class="material-symbols-rounded">info</span>
+                    </div>
+                    <div class="component-alert-text">
+                        ${__('banner_customize_tip') || 'Para obtener los mejores resultados, usa una imagen de al menos 1200 × 320 píxeles.'}
+                    </div>
+                </div>
+
+                <div class="component-modal-body">
+                    <div class="component-banner-cropper-container" data-ref="banner-cropper-mount"></div>
+                </div>
+
+                <div class="component-modal-actions">
+                    <button type="button" class="component-button component-button--h40" data-modal-action="cancel">
+                        <span>${__('btn_cancel') || 'Cancelar'}</span>
+                    </button>
+                    <button type="button" class="component-button component-button--primary component-button--h40" data-ref="btn-confirm-banner-crop">
+                        <span class="material-symbols-rounded">check</span>
+                        <span>${__('btn_done') || 'Listo'}</span>
+                    </button>
+                </div>
+            `;
+        }
     }
 };
+

@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+    <defs>
+        <!-- Twilight Background -->
+        <linearGradient id="twilightBg" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#08070d"/>
+            <stop offset="45%" stop-color="#18111e"/>
+            <stop offset="85%" stop-color="#2a1424"/>
+            <stop offset="100%" stop-color="#3b1625"/>
+        </linearGradient>
+
+        <!-- Sun Glow Radial -->
+        <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#fbbf24"/>
+            <stop offset="25%" stop-color="#f97316"/>
+            <stop offset="65%" stop-color="#e11d48" stop-opacity="0.4"/>
+            <stop offset="100%" stop-color="#2a1424" stop-opacity="0"/>
+        </radialGradient>
+
+        <linearGradient id="sunBody" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#fef08a"/>
+            <stop offset="50%" stop-color="#f59e0b"/>
+            <stop offset="100%" stop-color="#e11d48"/>
+        </linearGradient>
+
+        <!-- Wave / Dune Layers Gradients -->
+        <linearGradient id="duneGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#4c1d35" stop-opacity="0.8"/>
+            <stop offset="50%" stop-color="#581c3e"/>
+            <stop offset="100%" stop-color="#3b1228"/>
+        </linearGradient>
+
+        <linearGradient id="duneGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#240c1b"/>
+            <stop offset="60%" stop-color="#1f0a17"/>
+            <stop offset="100%" stop-color="#12050e"/>
+        </linearGradient>
+
+        <linearGradient id="duneGrad3" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#0d0309"/>
+            <stop offset="100%" stop-color="#060104"/>
+        </linearGradient>
+
+        <!-- Minimal Light Rays -->
+        <linearGradient id="lightRay" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.08"/>
+            <stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/>
+        </linearGradient>
+    </defs>
+
+    <!-- Canvas Base -->
+    <rect width="1200" height="320" fill="url(#twilightBg)"/>
+
+    <!-- Light Radiance Cones -->
+    <polygon points="850,130 650,0 1050,0" fill="url(#lightRay)"/>
+    <polygon points="850,130 500,0 1200,0" fill="url(#lightRay)" opacity="0.6"/>
+
+    <!-- Sun Halo Glow -->
+    <circle cx="850" cy="130" r="140" fill="url(#sunGlow)"/>
+
+    <!-- Minimal Geometric Sun Orb -->
+    <circle cx="850" cy="130" r="48" fill="url(#sunBody)"/>
+
+    <!-- Layer 1: Distant Smooth Waves / Horizon -->
+    <path d="M-50,220 C200,160 450,230 700,180 C950,130 1100,190 1250,170 L1250,320 L-50,320 Z" fill="url(#duneGrad1)"/>
+    <path d="M-50,220 C200,160 450,230 700,180 C950,130 1100,190 1250,170" fill="none" stroke="#fb7185" stroke-width="1.5" stroke-opacity="0.4"/>
+
+    <!-- Layer 2: Midground Dunes -->
+    <path d="M-50,260 C180,210 400,270 680,230 C960,190 1080,240 1250,210 L1250,320 L-50,320 Z" fill="url(#duneGrad2)"/>
+    <path d="M-50,260 C180,210 400,270 680,230 C960,190 1080,240 1250,210" fill="none" stroke="#f43f5e" stroke-width="1" stroke-opacity="0.3"/>
+
+    <!-- Layer 3: Foreground Silhouette -->
+    <path d="M-50,290 C250,250 550,300 850,260 C1050,230 1180,270 1250,250 L1250,320 L-50,320 Z" fill="url(#duneGrad3)"/>
+
+    <!-- Subtle Geometric Star Coordinates -->
+    <g fill="#ffffff" opacity="0.5">
+        <circle cx="200" cy="70" r="1"/>
+        <circle cx="340" cy="110" r="1.5"/>
+        <circle cx="520" cy="50" r="1"/>
+        <circle cx="680" cy="90" r="1.2"/>
+        <circle cx="1060" cy="60" r="1"/>
+        <circle cx="1140" cy="110" r="1.5"/>
+    </g>
+
+    <!-- Minimal Graphic Lines (Left) -->
+    <g stroke="#ffffff" stroke-opacity="0.15" stroke-width="1" fill="none">
+        <line x1="120" y1="130" x2="220" y2="130"/>
+        <circle cx="120" cy="130" r="2.5" fill="#f59e0b" stroke="none"/>
+        <text x="135" y="125" font-family="monospace" font-size="9" fill="#f59e0b" fill-opacity="0.6" stroke="none" letter-spacing="2">HORIZON // 05</text>
+    </g>
+</svg>

@@ -99,7 +99,7 @@ class SettingsViewService {
                     if ($currentUserDb) {
                         $googleId = $currentUserDb['google_id'] ?? null;
                         $userIdentifier = $currentUserDb['identifier'] ?? $userIdentifier;
-                        $userBanner = !empty($currentUserDb['banner_picture']) ? \App\Core\Helpers\Utils::getS3PublicUrl($currentUserDb['banner_picture']) : null;
+                        $userBanner = !empty($currentUserDb['banner_picture']) ? \App\Core\Helpers\Utils::getS3PublicUrl($currentUserDb['banner_picture']) : \App\Core\Helpers\Utils::getDefaultBannerForUser($userId);
                         $userBio = $currentUserDb['bio'] ?? '';
                         $identifierUpdatedAt = $currentUserDb['identifier_updated_at'] ?? null;
 

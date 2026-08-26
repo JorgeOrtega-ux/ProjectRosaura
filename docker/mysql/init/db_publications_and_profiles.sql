@@ -107,6 +107,9 @@ DEALLOCATE PREPARE alterIfNotExists;
 -- Rellenar identifier por defecto para usuarios existentes que tengan identifier NULL
 UPDATE users SET identifier = LOWER(REPLACE(username, ' ', '_')) WHERE identifier IS NULL OR identifier = '';
 
+-- Rellenar banner_picture por defecto para usuarios existentes que tengan banner_picture NULL
+UPDATE users SET banner_picture = CONCAT('assets/img/banners/banner_', ((id % 5) + 1), '.svg') WHERE banner_picture IS NULL OR banner_picture = '';
+
 -- 2. DB CANVASES
 USE db_canvases;
 

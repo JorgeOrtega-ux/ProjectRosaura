@@ -278,7 +278,7 @@ class AuthService {
             'subscription_color' => $user['subscription_color'] ?? SecurityConstants::DEFAULT_ROLE_COLOR,
             'user_permissions' => $permissions,
             'user_pic' => \App\Core\Helpers\Utils::getS3PublicUrl($user['profile_picture']),
-            'user_banner' => !empty($user['banner_picture']) ? \App\Core\Helpers\Utils::getS3PublicUrl($user['banner_picture']) : null,
+            'user_banner' => !empty($user['banner_picture']) ? \App\Core\Helpers\Utils::getS3PublicUrl($user['banner_picture']) : \App\Core\Helpers\Utils::getDefaultBannerForUser($user['id'] ?? $user['username']),
             'user_bio' => $user['bio'] ?? null,
             'user_prefs' => $userPrefs,
             'user_flags' => $this->prefsManager->getUserFlags($user['id']),
@@ -574,6 +574,7 @@ class AuthService {
         if (!$profilePic) return ['success' => false, 'message' => __('error.internal_server_error')];
 
         $defaultRoleId = (int)($this->config['default_user_role_id'] ?? SecurityConstants::DEFAULT_USER_ROLE_ID);
+        $bannerPic = Utils::getRandomDefaultBanner();
 
         $newUserId = $this->userRepository->createUser([
             'uuid' => $uuid,
@@ -581,6 +582,7 @@ class AuthService {
             'email' => $payload['email'],
             'password' => $payload['password'], 
             'profile_picture' => $profilePic,
+            'banner_picture' => $bannerPic,
             'roles' => [$defaultRoleId]
         ]);
 
@@ -781,6 +783,7 @@ class AuthService {
                 }
 
                 $profilePic = Utils::generateProfilePicture($username, $email);
+                $bannerPic = Utils::getRandomDefaultBanner();
                 $defaultRoleId = (int)($this->config['default_user_role_id'] ?? SecurityConstants::DEFAULT_USER_ROLE_ID);
                 $randomPassword = password_hash(bin2hex(random_bytes(16)), PASSWORD_ARGON2ID);
 
@@ -790,6 +793,7 @@ class AuthService {
                     'email' => $email,
                     'password' => $randomPassword,
                     'profile_picture' => $profilePic,
+                    'banner_picture' => $bannerPic,
                     'google_id' => $googleId,
                     'roles' => [$defaultRoleId]
                 ]);

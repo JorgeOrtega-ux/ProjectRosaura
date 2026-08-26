@@ -313,7 +313,7 @@ class SettingsService
         $user = $this->userRepository->findById($userId);
         $oldBanner = $user['banner_picture'] ?? null;
 
-        if (!$oldBanner) {
+        if (empty($oldBanner) || Utils::isDefaultBanner($oldBanner)) {
             return ['success' => false, 'message' => __('settings.banner_already_default')];
         }
 
@@ -324,17 +324,20 @@ class SettingsService
             @unlink($oldBannerPath);
         }
 
-        if ($this->userRepository->updateBanner($userId, null)) {
-            $this->logProfileChange($userId, DB::LOG_CHANGE_BANNER, json_encode(['banner' => $oldBanner]), null);
-            $this->sessionManager->set('user_banner', null);
+        $defaultBannerRel = Utils::getDefaultBannerRelForUser($userId);
+        $defaultBannerUrl = Utils::getDefaultBannerForUser($userId);
+
+        if ($this->userRepository->updateBanner($userId, $defaultBannerRel)) {
+            $this->logProfileChange($userId, DB::LOG_CHANGE_BANNER, json_encode(['banner' => $oldBanner]), json_encode(['banner' => $defaultBannerRel]));
+            $this->sessionManager->set('user_banner', $defaultBannerUrl);
 
             $accounts = $this->sessionManager->getLinkedAccounts();
             if (isset($accounts[$userId])) {
-                $accounts[$userId]['user_banner'] = null;
+                $accounts[$userId]['user_banner'] = $defaultBannerUrl;
                 $this->sessionManager->set(SessionConstants::KEY_LINKED_ACCOUNTS, $accounts);
             }
 
-            return ['success' => true, 'message' => __('settings.banner_deleted'), 'new_banner' => null];
+            return ['success' => true, 'message' => __('settings.banner_deleted'), 'new_banner' => $defaultBannerUrl];
         }
 
         return ['success' => false, 'message' => __('error.database')];
