@@ -151,6 +151,72 @@ class CanvasCoreController extends BaseController {
         }
     }
 
+    public function syncLocal($input) {
+        try {
+            if (!$this->session->isLoggedIn()) {
+                return $this->respond([
+                    'success' => false,
+                    'message' => __('err_unauthorized'),
+                    'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED
+                ]);
+            }
+
+            $userId = $this->session->getActiveAccountId();
+            if (!$userId) {
+                return $this->respond([
+                    'success' => false,
+                    'message' => __('err_unauthorized'),
+                    'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED
+                ]);
+            }
+
+            $name = trim($input['name'] ?? '');
+            if (empty($name)) {
+                $name = 'Canvas_' . time();
+            }
+
+            $size = $input['size'] ?? '64x64';
+            $validSizes = array_keys(\App\Core\Helpers\Utils::getCanvasSizes());
+            if (!in_array($size, $validSizes)) {
+                $size = '64x64';
+            }
+
+            $privacy = $input['privacy'] ?? \App\Core\System\CanvasConstants::PRIVACY_PRIVATE;
+            $paletteId = $input['palette_id'] ?? 'default';
+            $tags = isset($input['tags']) && is_array($input['tags']) ? $input['tags'] : [];
+            $stateBase64 = $input['state_base64'] ?? '';
+            $layersData = $input['layers_data'] ?? null;
+            $localUuid = $input['local_uuid'] ?? ($input['uuid'] ?? '');
+
+            $result = $this->canvasServices->syncLocalCanvas(
+                $userId,
+                [
+                    'name' => $name,
+                    'size' => $size,
+                    'privacy' => $privacy,
+                    'palette_id' => $paletteId,
+                    'tags' => $tags,
+                    'state_base64' => $stateBase64,
+                    'layers_data' => $layersData,
+                    'local_uuid' => $localUuid
+                ]
+            );
+
+            if (!$result['success'] && (
+                ($result['error_code'] ?? '') === 'STORAGE_LIMIT_EXCEEDED' ||
+                ($result['error_code'] ?? '') === 'UPGRADE_REQUIRED' ||
+                ($result['error_code'] ?? '') === 'LIMIT_EXCEEDED'
+            )) {
+                $result['http_code'] = 403;
+                http_response_code(403);
+            }
+
+            return $this->respond($result);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
     public function update($input) {
         try {
             if (!$this->session->isLoggedIn()) {

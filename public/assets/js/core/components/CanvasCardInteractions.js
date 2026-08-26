@@ -4,6 +4,7 @@ import { CanvasApiService } from '../api/CanvasApiService.js';
 import { CardTemplates } from './CardTemplates.js';
 import { PromoService } from '../services/PromoCardService.js';
 import { CanvasSyncChannel } from '../services/CanvasSyncChannel.js';
+import { CanvasStorageEngine } from '../../modules/app/design/utils/CanvasStorageEngine.js';
 
 export class CanvasCardInteractions {
     constructor(apiService, basePath, abortController) {
@@ -16,6 +17,15 @@ export class CanvasCardInteractions {
     handleAction(action, btn) {
         if (action === 'toggleDynamicMenu') {
             this.toggleDynamicMenu(btn);
+            return true;
+        } else if (action === 'syncLocalCanvasToCloud') {
+            this.syncLocalCanvasToCloud(btn);
+            return true;
+        } else if (action === 'deleteLocalCanvas') {
+            this.deleteLocalCanvas(btn);
+            return true;
+        } else if (action === 'exportLocalCanvasPng') {
+            this.exportLocalCanvasPng(btn);
             return true;
         } else if (action === 'menuGoToPage') {
             this.menuGoToPage(btn);
@@ -415,6 +425,57 @@ export class CanvasCardInteractions {
         const isLocked = btn.getAttribute('data-locked') === '1';
         const isMember = btn.getAttribute('data-member') === '1';
         const isOnline = btn.getAttribute('data-online') === '1';
+        const isLocal = btn.getAttribute('data-local') === '1' || (uuid && String(uuid).startsWith('local_'));
+
+        if (isLocal) {
+            const html = `
+                <div class="component-module component-module--dropdown disabled" data-module="snapshot-menu-${id}">
+                    <div class="component-menu component-menu--w265">
+                        <div class="pill-container"><div class="drag-handle"></div></div>
+
+                        <div class="component-menu-page active" data-menu-page="main">
+                            <div class="component-menu-list">
+                                <button type="button" class="component-menu-link" data-nav="${this.basePath}/design/${uuid}">
+                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">brush</span></div>
+                                    <div class="component-menu-link-text"><span>${window.__('lbl_open_canvas') || 'Abrir lienzo'}</span></div>
+                                </button>
+
+                                <button type="button" class="component-menu-link" data-action="syncLocalCanvasToCloud" data-uuid="${uuid}" data-id="${id}">
+                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded component-text-accent">cloud_upload</span></div>
+                                    <div class="component-menu-link-text"><span>${window.__('btn_sync_cloud') || 'Sincronizar con la nube'}</span></div>
+                                </button>
+
+                                <button type="button" class="component-menu-link" data-action="exportLocalCanvasPng" data-uuid="${uuid}">
+                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">image</span></div>
+                                    <div class="component-menu-link-text"><span>${window.__('btn_export_png') || 'Exportar imagen PNG'}</span></div>
+                                </button>
+
+                                <div class="component-menu-divider"></div>
+
+                                <button type="button" class="component-menu-link component-menu-link--bordered component-text-notice--danger" data-action="deleteLocalCanvas" data-uuid="${uuid}">
+                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">delete</span></div>
+                                    <div class="component-menu-link-text"><span>${window.__('lbl_delete_local_canvas') || 'Eliminar del dispositivo'}</span></div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            this.closeDropdowns();
+            wrapper.insertAdjacentHTML('beforeend', html);
+            const newModule = wrapper.querySelector(`[data-module="snapshot-menu-${id}"]`);
+            if (newModule) {
+                if (window.appInstance && window.appInstance.moduleManager) {
+                    window.appInstance.moduleManager.open(newModule, btn);
+                } else {
+                    newModule.classList.remove('disabled');
+                    newModule.classList.add('active');
+                }
+            }
+            if (window.app && typeof window.app.initModules === 'function') window.app.initModules(wrapper);
+            if (window.router && typeof window.router.bindLinks === 'function') window.router.bindLinks(wrapper);
+            return;
+        }
 
         let actionButtonHtml = '';
         if (window.activeUserId) {
@@ -1016,5 +1077,166 @@ export class CanvasCardInteractions {
                 }
             }
         });
+    }
+
+    async syncLocalCanvasToCloud(btn) {
+        if (btn.classList.contains('disabled-interaction') || btn.dataset.syncing === 'true') return;
+
+        const uuid = btn.getAttribute('data-uuid') || btn.getAttribute('data-id');
+        if (!uuid) return;
+
+        if (!window.activeUserId) {
+            showMessage(window.__('msg_sync_login_required') || 'Inicia sesión o crea una cuenta para sincronizar tus lienzos con la nube.', 'info');
+            setTimeout(() => {
+                if (window.spaRouter) {
+                    window.spaRouter.navigate(`${this.basePath}/login`);
+                } else {
+                    window.location.href = `${this.basePath}/login`;
+                }
+            }, 1200);
+            return;
+        }
+
+        btn.dataset.syncing = 'true';
+        btn.classList.add('disabled-interaction');
+        setButtonLoading(btn);
+
+        try {
+            const localMeta = await CanvasStorageEngine.getLocalCanvas(uuid);
+            const localState = await CanvasStorageEngine.getCanvasState(uuid);
+            const localLayers = await CanvasStorageEngine.getLayersData(uuid);
+
+            if (!localMeta && !localState) {
+                restoreButton(btn);
+                btn.classList.remove('disabled-interaction');
+                btn.dataset.syncing = 'false';
+                showMessage('No se encontraron los datos locales del lienzo.', 'error');
+                return;
+            }
+
+            const payload = {
+                name: localMeta?.name || 'Canvas',
+                size: localMeta?.size || '64x64',
+                privacy: localMeta?.privacy || 'private',
+                palette_id: localMeta?.palette_id || 'default',
+                tags: localMeta?.tags || [],
+                state_base64: localState?.base64 || '',
+                layers_data: localLayers || null,
+                local_uuid: uuid
+            };
+
+            const res = await this.api.post(ApiRoutes.Canvases.SyncLocal, payload, this.abortController?.signal);
+
+            restoreButton(btn);
+            btn.classList.remove('disabled-interaction');
+            btn.dataset.syncing = 'false';
+
+            if (res && res.success) {
+                await CanvasStorageEngine.deleteLocalCanvas(uuid);
+
+                showMessage(window.__('msg_canvas_synced_success') || '¡Lienzo sincronizado con la nube exitosamente!', 'success');
+
+                if (window.location.pathname.includes(`/design/${uuid}`)) {
+                    if (window.spaRouter) {
+                        window.spaRouter.navigate(`${this.basePath}/design/${res.data.uuid}`);
+                    } else {
+                        window.location.href = `${this.basePath}/design/${res.data.uuid}`;
+                    }
+                    return;
+                }
+
+                const card = btn.closest('.component-gallery-card');
+                if (card) {
+                    const newCanvasObj = {
+                        id: res.data.id,
+                        uuid: res.data.uuid,
+                        name: res.data.name,
+                        size: res.data.size,
+                        thumbnail_url: localMeta?.thumbnail_url || null,
+                        mode: 'offline',
+                        is_owner: true,
+                        members_count: 1,
+                        favorites_count: 0,
+                        online_players: 0,
+                        is_online_active: false
+                    };
+                    const newCardHtml = CardTemplates.canvasCard(newCanvasObj, { basePath: this.basePath });
+                    card.outerHTML = newCardHtml;
+                }
+            } else {
+                const errMsg = res?.message || window.__('err_occurred') || 'Error al sincronizar con la nube.';
+                showMessage(errMsg, 'error');
+            }
+        } catch (err) {
+            restoreButton(btn);
+            btn.classList.remove('disabled-interaction');
+            btn.dataset.syncing = 'false';
+            showMessage('Error al procesar la sincronización local.', 'error');
+        }
+    }
+
+    async deleteLocalCanvas(btn) {
+        const uuid = btn.getAttribute('data-uuid') || btn.getAttribute('data-id');
+        if (!uuid) return;
+
+        const confirmMsg = window.__('confirm_delete_local_canvas') || '¿Estás seguro de que deseas eliminar este lienzo local de tu dispositivo?';
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            await CanvasStorageEngine.deleteLocalCanvas(uuid);
+            showMessage(window.__('msg_local_canvas_deleted') || 'Lienzo local eliminado del dispositivo.', 'success');
+            this.closeDropdowns();
+
+            const card = btn.closest('.component-gallery-card');
+            if (card) {
+                card.remove();
+            }
+        } catch (err) {
+            showMessage('Error al eliminar el lienzo local.', 'error');
+        }
+    }
+
+    async exportLocalCanvasPng(btn) {
+        const uuid = btn.getAttribute('data-uuid') || btn.getAttribute('data-id');
+        if (!uuid) return;
+
+        try {
+            const localMeta = await CanvasStorageEngine.getLocalCanvas(uuid);
+            const localState = await CanvasStorageEngine.getCanvasState(uuid);
+            const sizeStr = localMeta?.size || '64x64';
+            const parts = sizeStr.toLowerCase().split('x');
+            const w = parseInt(parts[0], 10) || 64;
+            const h = parseInt(parts[1] || parts[0], 10) || 64;
+
+            if (localMeta?.thumbnail_url && localMeta.thumbnail_url.startsWith('data:image')) {
+                const a = document.createElement('a');
+                a.href = localMeta.thumbnail_url;
+                a.download = `${(localMeta.name || 'canvas').replace(/\s+/g, '_')}.png`;
+                a.click();
+                return;
+            }
+
+            if (localState?.base64) {
+                const binaryStr = atob(localState.base64);
+                const bytes = new Uint8ClampedArray(binaryStr.length);
+                for (let i = 0; i < binaryStr.length; i++) {
+                    bytes[i] = binaryStr.charCodeAt(i);
+                }
+                const offscreen = document.createElement('canvas');
+                offscreen.width = w;
+                offscreen.height = h;
+                const ctx = offscreen.getContext('2d');
+                const imgData = ctx.createImageData(w, h);
+                imgData.data.set(bytes.subarray(0, imgData.data.length));
+                ctx.putImageData(imgData, 0, 0);
+
+                const a = document.createElement('a');
+                a.href = offscreen.toDataURL('image/png');
+                a.download = `${(localMeta?.name || 'canvas').replace(/\s+/g, '_')}.png`;
+                a.click();
+            }
+        } catch (e) {
+            showMessage('Error al exportar PNG del lienzo.', 'error');
+        }
     }
 }

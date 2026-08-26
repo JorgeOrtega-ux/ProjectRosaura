@@ -3,6 +3,7 @@ import { ApiService } from '../../../core/api/ApiService.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
 import { CardTemplates } from '../../../core/components/CardTemplates.js';
 import { PromoService } from '../../../core/services/PromoCardService.js';
+import { CanvasStorageEngine } from '../design/utils/CanvasStorageEngine.js';
 import {
     appendInfiniteScrollSkeletons,
     initCarouselScroll,
@@ -347,41 +348,94 @@ class HomeController {
         let res = null;
         const limit = isPersonal ? 50 : 20;
 
+        let localCanvases = [];
+        if (isPersonal && this.currentPersonalFilter === 'mine' && !isLoadMore) {
+            try {
+                localCanvases = await CanvasStorageEngine.getAllLocalCanvases();
+            } catch (e) {
+                localCanvases = [];
+            }
+        }
+
         if (this.canUseInitialData(isLoadMore)) {
-            newCanvases = window.initialHomeCanvases;
+            const serverCanvases = window.initialHomeCanvases || [];
             window.initialHomeCanvases = null;
             this.initialMode = null;
             this.initialKey = null;
+            newCanvases = [...localCanvases, ...serverCanvases];
         } else {
             const signal = this.feedAbortController ? this.feedAbortController.signal : this.abortController.signal;
 
             if (isPersonal) {
-                if (!window.activeUserId) {
-                    this.isLoadingMore = false;
-                    return;
+                if (this.currentPersonalFilter === 'mine') {
+                    if (window.activeUserId) {
+                        res = await this.api.post(
+                            ApiRoutes.Canvases.GetMine,
+                            { limit, offset: this.currentOffset, filter: this.currentPersonalFilter },
+                            signal
+                        ).catch(() => null);
+
+                        if (signal.aborted) {
+                            this.isLoadingMore = false;
+                            return;
+                        }
+
+                        if (res && res.success) {
+                            const serverData = res.data || [];
+                            newCanvases = isLoadMore ? serverData : [...localCanvases, ...serverData];
+                        } else {
+                            if (!isLoadMore && localCanvases.length > 0) {
+                                newCanvases = localCanvases;
+                            } else {
+                                isError = true;
+                            }
+                        }
+                    } else {
+                        // Usuario sin sesión (Guest): cargar desde IndexedDB
+                        newCanvases = localCanvases;
+                        this.hasMore = false;
+                    }
+                } else {
+                    // favorites o joined
+                    if (!window.activeUserId) {
+                        newCanvases = [];
+                        this.hasMore = false;
+                    } else {
+                        res = await this.api.post(
+                            ApiRoutes.Canvases.GetMine,
+                            { limit, offset: this.currentOffset, filter: this.currentPersonalFilter },
+                            signal
+                        ).catch(() => null);
+
+                        if (signal.aborted) {
+                            this.isLoadingMore = false;
+                            return;
+                        }
+
+                        if (res && res.success) {
+                            newCanvases = res.data || [];
+                        } else {
+                            isError = true;
+                        }
+                    }
                 }
-                res = await this.api.post(
-                    ApiRoutes.Canvases.GetMine,
-                    { limit, offset: this.currentOffset, filter: this.currentPersonalFilter },
-                    signal
-                ).catch(() => null);
             } else {
                 res = await this.api.post(
                     ApiRoutes.Canvases.GetHomeFeed,
                     { limit, offset: this.currentOffset, tag: this.currentTag },
                     signal
                 ).catch(() => null);
-            }
 
-            if (signal.aborted) {
-                this.isLoadingMore = false;
-                return;
-            }
+                if (signal.aborted) {
+                    this.isLoadingMore = false;
+                    return;
+                }
 
-            if (res && res.success) {
-                newCanvases = res.data || [];
-            } else {
-                isError = true;
+                if (res && res.success) {
+                    newCanvases = res.data || [];
+                } else {
+                    isError = true;
+                }
             }
         }
 

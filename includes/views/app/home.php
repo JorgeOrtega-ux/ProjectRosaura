@@ -5,8 +5,8 @@ global $initialCanvasesJson;
 $initialCanvasesJson = $initialCanvasesJson ?? '[]';
 
 $isUserLoggedIn = !empty($_SESSION['active_account']) || isset($_SESSION['user_id']);
-$initialMode = $isUserLoggedIn ? 'personal' : 'explore';
-$initialKey = $isUserLoggedIn ? 'mine' : 'all';
+$initialMode = 'personal';
+$initialKey = 'mine';
 
 $viewService = new AppViewService();
 $tagsList = $viewService->getHomeTags();
@@ -22,23 +22,21 @@ $tagsList = $viewService->getHomeTags();
                     </button>
 
                     <div class="component-tags-carousel" data-ref="home-tags-carousel">
-                        <?php if ($isUserLoggedIn): ?>
-                            <button class="component-badge component-badge--interactive active" data-action="filterHomePersonal" data-filter="mine">
-                                <span class="material-symbols-rounded">person</span>
-                                <?php echo __('filter_home_mine'); ?>
-                            </button>
-                            <button class="component-badge component-badge--interactive" data-action="filterHomePersonal" data-filter="favorites">
-                                <span class="material-symbols-rounded">star</span>
-                                <?php echo __('filter_home_favorites'); ?>
-                            </button>
-                            <button class="component-badge component-badge--interactive" data-action="filterHomePersonal" data-filter="joined">
-                                <span class="material-symbols-rounded">group</span>
-                                <?php echo __('filter_home_joined'); ?>
-                            </button>
-                            <span class="component-tags-carousel-divider" aria-hidden="true"></span>
-                        <?php endif; ?>
+                        <button class="component-badge component-badge--interactive active" data-action="filterHomePersonal" data-filter="mine">
+                            <span class="material-symbols-rounded">person</span>
+                            <?php echo __('filter_home_mine'); ?>
+                        </button>
+                        <button class="component-badge component-badge--interactive" data-action="filterHomePersonal" data-filter="favorites">
+                            <span class="material-symbols-rounded">star</span>
+                            <?php echo __('filter_home_favorites'); ?>
+                        </button>
+                        <button class="component-badge component-badge--interactive" data-action="filterHomePersonal" data-filter="joined">
+                            <span class="material-symbols-rounded">group</span>
+                            <?php echo __('filter_home_joined'); ?>
+                        </button>
+                        <span class="component-tags-carousel-divider" aria-hidden="true"></span>
 
-                        <button class="component-badge component-badge--interactive<?php echo $isUserLoggedIn ? '' : ' active'; ?>" data-action="filterHomeTag" data-tag="all">
+                        <button class="component-badge component-badge--interactive" data-action="filterHomeTag" data-tag="all">
                             <span class="material-symbols-rounded">explore</span>
                             <?php echo __('filter_all_canvases'); ?>
                         </button>

@@ -276,6 +276,22 @@ return [
             ],
         ],
     ],
+    'canvases.sync_local' => [
+        'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasCoreController',
+        'action' => 'syncLocal',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'canvas_sync_local',
+                'max' => 10,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
     'canvases.update' => [
         'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasCoreController',
         'action' => 'update',

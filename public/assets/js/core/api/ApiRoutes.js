@@ -146,6 +146,7 @@ export const ApiRoutes = {
         ActivateOnline: 'canvases.activate_online',
         DeactivateOnline: 'canvases.deactivate_online',
         SaveOfflineState: 'canvases.save_offline_state',
+        SyncLocal: 'canvases.sync_local',
         ToggleChat: 'canvases.toggle_chat',
         Delete: 'canvases.delete',
         GetTrash: 'canvases.get_trash',

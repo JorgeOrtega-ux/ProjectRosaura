@@ -135,6 +135,50 @@ class AppViewService {
         $session = $sessionManager ?? null;
         $activeAccountId = ($session && method_exists($session, 'isLoggedIn') && $session->isLoggedIn()) ? $session->getActiveAccountId() : null;
 
+        if (strpos($canvasUuid, 'local_') === 0) {
+            return [
+                'isNotFound' => false,
+                'isBanned' => false,
+                'canvasIntId' => $canvasUuid,
+                'canvasUuid' => $canvasUuid,
+                'canvasName' => 'Lienzo Local',
+                'canvasSize' => '64x64',
+                'canvasPalette' => 'default',
+                'canvasPrivacy' => 'private',
+                'canvasMode' => 'offline',
+                'isOnlineActive' => 0,
+                'storageBytes' => 0,
+                'canvasApproval' => '0',
+                'canvasAllowChat' => '0',
+                'membersCount' => '1',
+                'canvasCreatedAt' => date('d/m/Y'),
+                'ownerUsername' => __('lbl_guest') ?: 'Invitado',
+                'ownerTier' => 0,
+                'hasLiveChat' => false,
+                'lowestChatTier' => 'Pro',
+                'isMember' => true,
+                'userRole' => 'admin',
+                'userId' => $activeAccountId,
+                'isOwner' => true,
+                'isBlockedInit' => false,
+                'isSpectatorInit' => false,
+                'isSubscriptionLockedInit' => false,
+                'canvasInitialZoom' => 0.5,
+                'canvasCooldownBatch' => '5',
+                'canvasCooldownSeconds' => '10',
+                'canvasAllowCustomColors' => '1',
+                'resetActive' => '0',
+                'nextResetAt' => '',
+                'timerAction' => 'restart',
+                'resizeActive' => '0',
+                'nextResizeAt' => '',
+                'resizeTargetSize' => '64x64',
+                'resizeTimerAction' => 'restart',
+                'isSnapshot' => false,
+                'isLocalCanvas' => true
+            ];
+        }
+
         $cacheKey = "canvas:view_data:{$canvasUuid}:u:" . ($activeAccountId ?? 0) . ($isSnapshot ? ':snap' : '');
         $redis = null;
         try {

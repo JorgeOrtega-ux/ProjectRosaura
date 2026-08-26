@@ -10,11 +10,12 @@
  */
 
 const DB_NAME = 'RosauraCanvasDB_v2';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_STATE = 'canvas_state';
 const STORE_LAYERS = 'canvas_layers';
 const STORE_BACKUPS = 'canvas_backups';
 const STORE_SYNC_QUEUE = 'offline_sync_queue';
+const STORE_LOCAL_CANVASES = 'local_canvases';
 const MAX_BACKUPS_PER_CANVAS = 10;
 
 class CanvasStorageEngineClass {
@@ -23,6 +24,15 @@ class CanvasStorageEngineClass {
         this.dbPromise = null;
         this.lastBackupHashes = new Map(); // canvasId -> last hash
         this.isFlushingQueue = false;
+    }
+
+    _normalizeCanvasId(canvasId) {
+        if (canvasId === undefined || canvasId === null) return '';
+        if (typeof canvasId === 'string' && (canvasId.startsWith('local_') || isNaN(Number(canvasId)))) {
+            return canvasId;
+        }
+        const parsed = parseInt(canvasId, 10);
+        return isNaN(parsed) ? String(canvasId) : parsed;
     }
 
     /**
@@ -66,6 +76,14 @@ class CanvasStorageEngineClass {
                     queueStore.createIndex('canvasId', 'canvasId', { unique: false });
                     queueStore.createIndex('createdAt', 'createdAt', { unique: false });
                 }
+
+                // 5. Metadatos de lienzos creados localmente por usuarios sin sesión
+                if (!db.objectStoreNames.contains(STORE_LOCAL_CANVASES)) {
+                    const localStore = db.createObjectStore(STORE_LOCAL_CANVASES, { keyPath: 'uuid' });
+                    localStore.createIndex('id', 'id', { unique: false });
+                    localStore.createIndex('created_at', 'created_at', { unique: false });
+                    localStore.createIndex('updated_at', 'updated_at', { unique: false });
+                }
             };
 
             request.onsuccess = (e) => {
@@ -87,6 +105,7 @@ class CanvasStorageEngineClass {
      */
     async saveCanvasState(canvasId, base64Data, width = 64, height = 64) {
         if (!canvasId || !base64Data) return false;
+        const normId = this._normalizeCanvasId(canvasId);
         try {
             const db = await this.getDB();
             if (!db) return false;
@@ -95,7 +114,7 @@ class CanvasStorageEngineClass {
                 const tx = db.transaction([STORE_STATE], 'readwrite');
                 const store = tx.objectStore(STORE_STATE);
                 const record = {
-                    canvasId: parseInt(canvasId, 10),
+                    canvasId: normId,
                     base64: base64Data,
                     width: width,
                     height: height,
@@ -115,6 +134,7 @@ class CanvasStorageEngineClass {
      */
     async getCanvasState(canvasId) {
         if (!canvasId) return null;
+        const normId = this._normalizeCanvasId(canvasId);
         try {
             const db = await this.getDB();
             if (!db) return null;
@@ -122,7 +142,7 @@ class CanvasStorageEngineClass {
             return new Promise((resolve) => {
                 const tx = db.transaction([STORE_STATE], 'readonly');
                 const store = tx.objectStore(STORE_STATE);
-                const req = store.get(parseInt(canvasId, 10));
+                const req = store.get(normId);
                 req.onsuccess = () => resolve(req.result || null);
                 req.onerror = () => resolve(null);
             });
@@ -136,11 +156,11 @@ class CanvasStorageEngineClass {
      */
     async saveLayersData(canvasId, layersData) {
         if (!canvasId || !layersData) return false;
-        const cId = parseInt(canvasId, 10);
+        const normId = this._normalizeCanvasId(canvasId);
 
         // Fallback redundante a localStorage
         try {
-            localStorage.setItem(`rosaura_layers_${cId}`, JSON.stringify(layersData));
+            localStorage.setItem(`rosaura_layers_${normId}`, JSON.stringify(layersData));
         } catch (lsErr) {
             // Ignorar QuotaExceededError en localStorage ya que IndexedDB es la fuente principal
         }
@@ -153,7 +173,7 @@ class CanvasStorageEngineClass {
                 const tx = db.transaction([STORE_LAYERS], 'readwrite');
                 const store = tx.objectStore(STORE_LAYERS);
                 const record = {
-                    canvasId: cId,
+                    canvasId: normId,
                     layersData: layersData,
                     timestamp: Date.now()
                 };
@@ -171,7 +191,7 @@ class CanvasStorageEngineClass {
      */
     async getLayersData(canvasId) {
         if (!canvasId) return null;
-        const cId = parseInt(canvasId, 10);
+        const normId = this._normalizeCanvasId(canvasId);
 
         try {
             const db = await this.getDB();
@@ -179,7 +199,7 @@ class CanvasStorageEngineClass {
                 const idbResult = await new Promise((resolve) => {
                     const tx = db.transaction([STORE_LAYERS], 'readonly');
                     const store = tx.objectStore(STORE_LAYERS);
-                    const req = store.get(cId);
+                    const req = store.get(normId);
                     req.onsuccess = () => resolve(req.result ? req.result.layersData : null);
                     req.onerror = () => resolve(null);
                 });
@@ -189,11 +209,182 @@ class CanvasStorageEngineClass {
 
         // Fallback a localStorage
         try {
-            const stored = localStorage.getItem(`rosaura_layers_${cId}`);
+            const stored = localStorage.getItem(`rosaura_layers_${normId}`);
             if (stored) return JSON.parse(stored);
         } catch (e) {}
 
         return null;
+    }
+
+    /**
+     * Guarda o actualiza los metadatos de un lienzo local en IndexedDB
+     */
+    async saveLocalCanvas(meta) {
+        if (!meta || !meta.uuid) return false;
+        try {
+            const db = await this.getDB();
+            if (!db) return false;
+
+            const now = new Date().toISOString();
+            const record = {
+                id: meta.id || meta.uuid,
+                uuid: meta.uuid,
+                name: meta.name || 'Canvas_' + Date.now(),
+                size: meta.size || '64x64',
+                privacy: meta.privacy || 'private',
+                mode: 'offline',
+                is_local: true,
+                palette_id: meta.palette_id || 'default',
+                tags: Array.isArray(meta.tags) ? meta.tags : [],
+                template_id: meta.template_id || null,
+                created_at: meta.created_at || now,
+                updated_at: now,
+                storage_bytes: meta.storage_bytes || 0,
+                is_owner: true,
+                is_favorite: !!meta.is_favorite,
+                members_count: 1,
+                online_players: 0,
+                is_online_active: false,
+                thumbnail_url: meta.thumbnail_url || null
+            };
+
+            return new Promise((resolve) => {
+                const tx = db.transaction([STORE_LOCAL_CANVASES], 'readwrite');
+                const store = tx.objectStore(STORE_LOCAL_CANVASES);
+                const req = store.put(record);
+                req.onsuccess = () => resolve(record);
+                req.onerror = () => resolve(false);
+            });
+        } catch (e) {
+            return false;
+        }
+    }
+
+    /**
+     * Obtiene un lienzo local por su UUID
+     */
+    async getLocalCanvas(uuid) {
+        if (!uuid) return null;
+        try {
+            const db = await this.getDB();
+            if (!db) return null;
+
+            return new Promise((resolve) => {
+                const tx = db.transaction([STORE_LOCAL_CANVASES], 'readonly');
+                const store = tx.objectStore(STORE_LOCAL_CANVASES);
+                const req = store.get(uuid);
+                req.onsuccess = () => resolve(req.result || null);
+                req.onerror = () => resolve(null);
+            });
+        } catch (e) {
+            return null;
+        }
+    }
+
+    /**
+     * Obtiene todos los lienzos locales guardados en el dispositivo
+     */
+    async getAllLocalCanvases() {
+        try {
+            const db = await this.getDB();
+            if (!db) return [];
+
+            return new Promise((resolve) => {
+                const tx = db.transaction([STORE_LOCAL_CANVASES], 'readonly');
+                const store = tx.objectStore(STORE_LOCAL_CANVASES);
+                const req = store.getAll();
+                req.onsuccess = () => {
+                    const list = req.result || [];
+                    list.sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0));
+                    resolve(list);
+                };
+                req.onerror = () => resolve([]);
+            });
+        } catch (e) {
+            return [];
+        }
+    }
+
+    /**
+     * Elimina un lienzo local y todos sus datos asociados (estado, capas, backups)
+     */
+    async deleteLocalCanvas(uuid) {
+        if (!uuid) return false;
+        const normId = this._normalizeCanvasId(uuid);
+        try {
+            const db = await this.getDB();
+            if (!db) return false;
+
+            // 1. Eliminar de local_canvases
+            await new Promise((resolve) => {
+                const tx = db.transaction([STORE_LOCAL_CANVASES], 'readwrite');
+                const store = tx.objectStore(STORE_LOCAL_CANVASES);
+                const req = store.delete(uuid);
+                req.onsuccess = () => resolve(true);
+                req.onerror = () => resolve(false);
+            });
+
+            // 2. Eliminar de canvas_state
+            try {
+                const tx = db.transaction([STORE_STATE], 'readwrite');
+                tx.objectStore(STORE_STATE).delete(normId);
+            } catch (e) {}
+
+            // 3. Eliminar de canvas_layers
+            try {
+                const tx = db.transaction([STORE_LAYERS], 'readwrite');
+                tx.objectStore(STORE_LAYERS).delete(normId);
+            } catch (e) {}
+
+            // 4. Limpiar backups asociados
+            try {
+                const tx = db.transaction([STORE_BACKUPS], 'readwrite');
+                const store = tx.objectStore(STORE_BACKUPS);
+                const index = store.index('canvasId');
+                const req = index.getAll(normId);
+                req.onsuccess = () => {
+                    (req.result || []).forEach(b => store.delete(b.backupKey));
+                };
+            } catch (e) {}
+
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    /**
+     * Actualiza la miniatura de vista previa de un lienzo local
+     */
+    async updateLocalCanvasThumbnail(uuid, thumbnailDataUrl) {
+        if (!uuid || !thumbnailDataUrl) return false;
+        try {
+            const canvas = await this.getLocalCanvas(uuid);
+            if (!canvas) return false;
+            canvas.thumbnail_url = thumbnailDataUrl;
+            canvas.updated_at = new Date().toISOString();
+            return await this.saveLocalCanvas(canvas);
+        } catch (e) {
+            return false;
+        }
+    }
+
+    /**
+     * Cuenta cuántos lienzos locales existen en IndexedDB
+     */
+    async countLocalCanvases() {
+        try {
+            const db = await this.getDB();
+            if (!db) return 0;
+            return new Promise((resolve) => {
+                const tx = db.transaction([STORE_LOCAL_CANVASES], 'readonly');
+                const req = tx.objectStore(STORE_LOCAL_CANVASES).count();
+                req.onsuccess = () => resolve(req.result || 0);
+                req.onerror = () => resolve(0);
+            });
+        } catch (e) {
+            return 0;
+        }
     }
 
     /**
@@ -202,22 +393,22 @@ class CanvasStorageEngineClass {
      */
     async createSilentBackup(canvasId, base64Data, layersData = null, type = 'auto') {
         if (!canvasId || !base64Data) return false;
-        const cId = parseInt(canvasId, 10);
+        const normId = this._normalizeCanvasId(canvasId);
 
         // Generar hash simple rápido de contenido para evitar backups redundantes si no hubo cambios
         const dataSnippet = `${base64Data.slice(0, 80)}_${base64Data.slice(-80)}_${base64Data.length}`;
-        const lastHash = this.lastBackupHashes.get(cId);
+        const lastHash = this.lastBackupHashes.get(normId);
         if (lastHash === dataSnippet && type === 'auto') {
             return false; // Sin cambios desde el último backup
         }
-        this.lastBackupHashes.set(cId, dataSnippet);
+        this.lastBackupHashes.set(normId, dataSnippet);
 
         try {
             const db = await this.getDB();
             if (!db) return false;
 
             const now = Date.now();
-            const backupKey = `${cId}_${now}_${Math.random().toString(36).substring(2, 7)}`;
+            const backupKey = `${normId}_${now}_${Math.random().toString(36).substring(2, 7)}`;
             
             let layerCount = 1;
             if (layersData) {
@@ -227,7 +418,7 @@ class CanvasStorageEngineClass {
 
             const backupRecord = {
                 backupKey: backupKey,
-                canvasId: cId,
+                canvasId: normId,
                 timestamp: now,
                 type: type,
                 base64: base64Data,
@@ -244,7 +435,7 @@ class CanvasStorageEngineClass {
             });
 
             // Rotación: Podar backups viejos si superan MAX_BACKUPS_PER_CANVAS
-            this._pruneOldBackups(db, cId);
+            this._pruneOldBackups(db, normId);
             return true;
         } catch (e) {
             return false;
@@ -256,10 +447,11 @@ class CanvasStorageEngineClass {
      */
     async _pruneOldBackups(db, canvasId) {
         try {
+            const normId = this._normalizeCanvasId(canvasId);
             const tx = db.transaction([STORE_BACKUPS], 'readwrite');
             const store = tx.objectStore(STORE_BACKUPS);
             const index = store.index('canvasId');
-            const req = index.getAll(canvasId);
+            const req = index.getAll(normId);
 
             req.onsuccess = () => {
                 const backups = req.result || [];
@@ -280,7 +472,7 @@ class CanvasStorageEngineClass {
      */
     async getLatestValidBackup(canvasId) {
         if (!canvasId) return null;
-        const cId = parseInt(canvasId, 10);
+        const normId = this._normalizeCanvasId(canvasId);
 
         try {
             const db = await this.getDB();
@@ -290,7 +482,7 @@ class CanvasStorageEngineClass {
                 const tx = db.transaction([STORE_BACKUPS], 'readonly');
                 const store = tx.objectStore(STORE_BACKUPS);
                 const index = store.index('canvasId');
-                const req = index.getAll(cId);
+                const req = index.getAll(normId);
 
                 req.onsuccess = () => {
                     const backups = req.result || [];
@@ -298,7 +490,6 @@ class CanvasStorageEngineClass {
                         resolve(null);
                         return;
                     }
-                    // Ordenar por timestamp descendente
                     backups.sort((a, b) => b.timestamp - a.timestamp);
                     const latest = backups.find(b => b.base64 && b.base64.length > 50);
                     resolve(latest || null);
@@ -315,6 +506,7 @@ class CanvasStorageEngineClass {
      */
     async enqueueOfflineSync(canvasId, endpoint, payload) {
         if (!canvasId || !payload) return false;
+        const normId = this._normalizeCanvasId(canvasId);
         try {
             const db = await this.getDB();
             if (!db) return false;
@@ -323,7 +515,7 @@ class CanvasStorageEngineClass {
                 const tx = db.transaction([STORE_SYNC_QUEUE], 'readwrite');
                 const store = tx.objectStore(STORE_SYNC_QUEUE);
                 const record = {
-                    canvasId: parseInt(canvasId, 10),
+                    canvasId: normId,
                     endpoint: endpoint,
                     payload: payload,
                     retryCount: 0,

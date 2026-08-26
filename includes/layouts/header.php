@@ -35,7 +35,7 @@ global $serverConfig;
 $isMaintenanceActive = isset($serverConfig['maintenance_mode']) && $serverConfig['maintenance_mode'] == 1;
 $isPrivileged = in_array(\App\Core\System\PermissionsConstants::ACCESS_ADMIN_PANEL, $userPermissions);
 
-$canCreateCanvas = in_array('create_canvas', $userPermissions);
+$canCreateCanvas = !$isLoggedIn || in_array('create_canvas', $userPermissions);
 $canManageCanvases = in_array('manage_canvases', $userPermissions);
 $canJoinCanvas = in_array('join_canvas', $userPermissions);
 $hasCanvasAccess = $canCreateCanvas || $canManageCanvases || $canJoinCanvas;
@@ -108,7 +108,7 @@ if ($isLoggedIn) {
             
 
 
-            <?php if ($isLoggedIn && $hasCanvasAccess): ?>
+            <?php if ($hasCanvasAccess): ?>
                 <button class="component-button component-button--icon component-button--h40" data-action="toggleModule" data-target="moduleCanvases" data-tooltip="<?php echo __('tooltip_canvases'); ?>" data-position="bottom">
                     <span class="material-symbols-rounded">add</span>
                 </button>
@@ -141,5 +141,5 @@ if ($isLoggedIn) {
     </div>
 
     <?php include __DIR__ . '/../modules/moduleMainOptions.php'; ?>
-    <?php if ($isLoggedIn && $hasCanvasAccess) { include __DIR__ . '/../modules/moduleCanvases.php'; } ?>
+    <?php if ($hasCanvasAccess) { include __DIR__ . '/../modules/moduleCanvases.php'; } ?>
 </div>

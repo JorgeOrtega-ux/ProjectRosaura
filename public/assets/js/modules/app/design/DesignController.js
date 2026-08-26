@@ -263,7 +263,9 @@ class DesignController {
             this.loadCanvasConfigForSnapshot();
         } else {
             this.loadCanvasConfig();
-            this.checkCanvasAccess();
+            if (!this.isLocalCanvas) {
+                this.checkCanvasAccess();
+            }
             
             const uid = window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || null;
             
@@ -272,7 +274,9 @@ class DesignController {
             if (this.chat && typeof this.chat.destroy === 'function') {
                 this.chat.destroy();
             }
-            this.chat = new DesignChat(this);
+            if (!this.isLocalCanvas) {
+                this.chat = new DesignChat(this);
+            }
         }
         if (typeof this.updateTemplateUI === 'function') {
             this.updateTemplateUI();

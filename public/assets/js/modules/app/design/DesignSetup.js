@@ -90,10 +90,34 @@ export const DesignSetup = {
                     payload: { isOfflineMode: this.isOfflineMode }
                 });
             }
-            this.isPrivateBlocked = wrapper.getAttribute('data-is-blocked') === '1';
-            this.isSubscriptionLocked = wrapper.getAttribute('data-subscription-locked') === '1';
-            this.isSpectator = wrapper.getAttribute('data-is-spectator') === '1';
-            this.isOwner = wrapper.getAttribute('data-is-owner') === '1';
+            this.isLocalCanvas = wrapper.getAttribute('data-is-local') === '1' || (typeof this.canvasId === 'string' && this.canvasId.startsWith('local_')) || (typeof this.canvasIntId === 'string' && String(this.canvasIntId).startsWith('local_'));
+            if (this.isLocalCanvas) {
+                this.isOfflineMode = true;
+                this.isOwner = true;
+                this.isSpectator = false;
+                this.isPrivateBlocked = false;
+                this.isSubscriptionLocked = false;
+                this.canvasRole = 'owner';
+                CanvasStorageEngine.getLocalCanvas(this.canvasId).then(localMeta => {
+                    if (localMeta) {
+                        if (localMeta.name) {
+                            this.canvasName = localMeta.name;
+                            const titleEl = document.querySelector('.component-top-title');
+                            if (titleEl) titleEl.textContent = localMeta.name;
+                        }
+                        if (localMeta.palette_id && this.renderColorPalette) {
+                            this.canvasPaletteId = localMeta.palette_id;
+                            this.renderColorPalette(this.canvasPaletteId);
+                        }
+                    }
+                }).catch(() => {});
+                this.hydrateCanvasState(null).catch(() => {});
+            } else {
+                this.isPrivateBlocked = wrapper.getAttribute('data-is-blocked') === '1';
+                this.isSubscriptionLocked = wrapper.getAttribute('data-subscription-locked') === '1';
+                this.isSpectator = wrapper.getAttribute('data-is-spectator') === '1';
+                this.isOwner = wrapper.getAttribute('data-is-owner') === '1';
+            }
             this.canvasApproval = wrapper.getAttribute('data-approval') === '1';
 
             this.resetActive = wrapper.getAttribute('data-reset-active') === '1';

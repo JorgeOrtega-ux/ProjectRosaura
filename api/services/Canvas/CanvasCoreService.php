@@ -822,6 +822,185 @@ class CanvasCoreService {
         }
     }
 
+    public function syncLocalCanvas(int $userId, array $params): array {
+        $trans = function($k, $fallback) {
+            return function_exists('__') ? (__($k) ?: $fallback) : $fallback;
+        };
+
+        try {
+            $user = $this->userRepository->findById($userId);
+            if (!$user) {
+                return ['success' => false, 'message' => $trans('err_unauthorized', 'No autorizado')];
+            }
+
+            $tier = (int)($user['subscription_tier'] ?? 0);
+            $planLimits = SubscriptionPlanConstants::getTierLimits($tier);
+
+            $size = $params['size'] ?? '64x64';
+            $allSizes = Utils::getCanvasSizes();
+            if (!isset($allSizes[$size])) {
+                $size = '64x64';
+            }
+
+            $requiredTier = $allSizes[$size]['tier'] ?? 0;
+            if ($tier < $requiredTier) {
+                return [
+                    'success' => false,
+                    'message' => $trans('err_plan_canvas_size', 'El tamaño del lienzo requiere un plan superior'),
+                    'error_code' => 'UPGRADE_REQUIRED'
+                ];
+            }
+
+            $sizeParts = explode('x', strtolower($size));
+            $targetW = (int)$sizeParts[0];
+            $targetH = isset($sizeParts[1]) ? (int)$sizeParts[1] : $targetW;
+            $expectedBytes = $targetW * $targetH * 4;
+
+            $stateBase64 = $params['state_base64'] ?? '';
+            $rawBinary = null;
+
+            if (!empty($stateBase64)) {
+                $decoded = base64_decode($stateBase64);
+                if ($decoded) {
+                    if (strlen($decoded) >= 2) {
+                        $magic = substr($decoded, 0, 2);
+                        if ($magic === "\x1f\x8b") {
+                            $decompressed = @gzdecode($decoded);
+                            if ($decompressed !== false) $decoded = $decompressed;
+                        } elseif ($magic === "\x78\x9c" || $magic === "\x78\x01" || $magic === "\x78\xda" || $magic === "\x78\x5e") {
+                            $decompressed = @gzuncompress($decoded);
+                            if ($decompressed !== false) $decoded = $decompressed;
+                        }
+                    }
+                    if (strlen($decoded) === $expectedBytes) {
+                        $rawBinary = $decoded;
+                    }
+                }
+            }
+
+            if (!$rawBinary) {
+                $rawBinary = str_repeat(chr(0).chr(0).chr(0).chr(0), $targetW * $targetH);
+            }
+
+            $actualSizeBytes = strlen($rawBinary);
+
+            // Storage quota check
+            if ($planLimits['max_storage_mb'] !== -1) {
+                $currentStorageMB = $this->canvasRepository->getUserStorageUsed($userId);
+                $newCanvasMB = $actualSizeBytes / (1024 * 1024);
+                if (($currentStorageMB + $newCanvasMB) > $planLimits['max_storage_mb']) {
+                    return [
+                        'success' => false,
+                        'message' => $trans('err_storage_limit_exceeded', 'Has alcanzado el límite de almacenamiento de tu cuenta.'),
+                        'error_code' => 'STORAGE_LIMIT_EXCEEDED'
+                    ];
+                }
+            }
+
+            if ($requiredTier >= 3) {
+                $tier3Count = $this->canvasRepository->countUserTierCanvases($userId, 3);
+                if ($tier3Count >= 3) {
+                    return [
+                        'success' => false,
+                        'message' => $trans('err_canvas_tier3_limit_reached', 'Has alcanzado el límite de lienzos ultra'),
+                        'error_code' => 'TIER3_LIMIT_EXCEEDED'
+                    ];
+                }
+            }
+
+            $uuid = Utils::generateUUID();
+            $validPalettes = $this->getValidPalettes();
+            $paletteId = $params['palette_id'] ?? 'default';
+            $paletteId = in_array($paletteId, $validPalettes) ? $paletteId : 'default';
+            if ($paletteId !== 'default' && !SubscriptionPlanConstants::hasFeature($tier, 'custom_palettes')) {
+                $paletteId = 'default';
+            }
+
+            $validPrivacies = [DB::PRIVACY_PUBLIC, DB::PRIVACY_PRIVATE];
+            $privacy = in_array($params['privacy'] ?? '', $validPrivacies) ? $params['privacy'] : DB::PRIVACY_PRIVATE;
+
+            $tags = isset($params['tags']) && is_array($params['tags']) ? $params['tags'] : [];
+            $allowedTags = ['art', 'gaming', 'anime', 'flags', 'memes', 'pixelart', 'community', 'nature', 'scifi', 'fantasy', 'music', 'sports', 'popculture'];
+            $cleanTags = array_slice(array_values(array_intersect($tags, $allowedTags)), 0, 8);
+
+            $name = trim($params['name'] ?? '');
+            if (empty($name)) {
+                $name = 'Canvas_' . time();
+            }
+
+            $canvasData = [
+                'uuid'                  => $uuid,
+                'owner_id'              => $userId,
+                'name'                  => $name,
+                'privacy'               => $privacy,
+                'requires_approval'     => 0,
+                'size'                  => $size,
+                'palette_id'            => $paletteId,
+                'mode'                  => 'offline',
+                'is_online_active'      => 0,
+                'storage_bytes'         => $actualSizeBytes,
+                'max_participants'      => 10,
+                'cooldown_pixels_batch' => 5,
+                'cooldown_seconds'      => 10,
+                'allow_chat'            => 0,
+                'tags'                  => $cleanTags
+            ];
+
+            $canvasId = $this->canvasRepository->create($canvasData);
+            $this->canvasRepository->addMember($canvasId, $userId, 4);
+
+            // Save Snapshot binary
+            $this->canvasRepository->saveSnapshot($canvasId, $rawBinary);
+
+            // Save layers if provided
+            $layersData = $params['layers_data'] ?? null;
+            if (!empty($layersData)) {
+                $this->canvasRepository->saveLayersData($canvasId, $layersData);
+            }
+
+            // Update user storage bytes
+            try {
+                $this->userRepository->updateStorageUsed($userId, $actualSizeBytes);
+            } catch (\Throwable $e) {}
+
+            // Enqueue snapshot generation and clean Redis cache
+            if (class_exists(RedisCache::class)) {
+                $redis = (new RedisCache())->getClient();
+                if ($redis) {
+                    $redis->del("canvas:{$canvasId}:state");
+                    $redis->del("canvas:{$canvasId}:layers");
+                    $redis->sAdd('canvases:pending_snapshots', (string)$canvasId);
+                    (new \App\Core\System\CacheInvalidator($redis))->canvas($canvasId, $uuid);
+                }
+            }
+
+            try {
+                $dbManager = new DatabaseManager();
+                $redisCache = new RedisCache();
+                $lockManager = new CanvasLockManager($this->canvasRepository, $this->userRepository, $dbManager, $redisCache);
+                $lockManager->evaluateUserCanvases($userId);
+            } catch (\Throwable $e) {}
+
+            return [
+                'success' => true,
+                'message' => $trans('msg_canvas_synced_success', 'Lienzo sincronizado con la nube exitosamente.'),
+                'data' => [
+                    'id' => $canvasId,
+                    'uuid' => $uuid,
+                    'name' => $name,
+                    'size' => $size,
+                    'local_uuid' => $params['local_uuid'] ?? null
+                ]
+            ];
+        } catch (Exception $e) {
+            Logger::error('Error during local canvas synchronization.', [
+                'user_id' => $userId,
+                'exception' => $e->getMessage()
+            ]);
+            return ['success' => false, 'message' => $trans('err_database', 'Error en la base de datos')];
+        }
+    }
+
     public function updateCanvas(int $userId, int $canvasId, array $data): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);

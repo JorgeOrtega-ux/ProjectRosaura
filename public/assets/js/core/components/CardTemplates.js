@@ -18,28 +18,64 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                  onload="this.classList.add('image-loaded')"
                  onerror="this.onerror=null; this.src='${fallbackImg}'; this.classList.add('image-loaded');">`;
 
-        const onlinePlayers = parseInt(canvas.online_players || 0, 10);
-        const membersCount = parseInt(canvas.members_count || 0, 10);
-        const likesCount = parseInt(canvas.favorites_count || 0, 10);
-        const isOnline = (canvas.mode === 'online' || !!canvas.is_online_active);
-        const modeSegment = isOnline
-            ? `<span class="material-symbols-rounded ${onlinePlayers > 0 ? 'component-text-success' : ''}">sensors</span><span>${formatNumber(onlinePlayers)} ${window.__('online')}</span>`
-            : `<span class="material-symbols-rounded component-text-accent">brush</span><span>${window.__('badge_studio')}</span>`;
+        const isLocal = !!canvas.is_local || (typeof canvas.uuid === 'string' && canvas.uuid.startsWith('local_'));
 
-        const badgeHtml = `
-            <div class="component-badge component-badge--glass component-badge--absolute-tr">
-                ${modeSegment}
-                <span class="component-badge-divider">|</span>
-                <span class="material-symbols-rounded">group</span>
-                <span class="member-count-val">${formatNumber(membersCount)}</span>
-                <span class="component-badge-divider">|</span>
-                <span class="material-symbols-rounded component-text-accent">favorite</span>
-                <span>${formatNumber(likesCount)}</span>
-            </div>
-        `;
+        let badgeHtml = '';
+        if (isLocal) {
+            badgeHtml = `
+                <div class="component-badge component-badge--glass component-badge--absolute-tr">
+                    <span class="material-symbols-rounded component-text-accent">devices</span>
+                    <span>${window.__('lbl_local_canvas') || 'Lienzo Local'}</span>
+                </div>
+            `;
+        } else {
+            const onlinePlayers = parseInt(canvas.online_players || 0, 10);
+            const membersCount = parseInt(canvas.members_count || 0, 10);
+            const likesCount = parseInt(canvas.favorites_count || 0, 10);
+            const isOnline = (canvas.mode === 'online' || !!canvas.is_online_active);
+            const modeSegment = isOnline
+                ? `<span class="material-symbols-rounded ${onlinePlayers > 0 ? 'component-text-success' : ''}">sensors</span><span>${formatNumber(onlinePlayers)} ${window.__('online')}</span>`
+                : `<span class="material-symbols-rounded component-text-accent">brush</span><span>${window.__('badge_studio')}</span>`;
+
+            badgeHtml = `
+                <div class="component-badge component-badge--glass component-badge--absolute-tr">
+                    ${modeSegment}
+                    <span class="component-badge-divider">|</span>
+                    <span class="material-symbols-rounded">group</span>
+                    <span class="member-count-val">${formatNumber(membersCount)}</span>
+                    <span class="component-badge-divider">|</span>
+                    <span class="material-symbols-rounded component-text-accent">favorite</span>
+                    <span>${formatNumber(likesCount)}</span>
+                </div>
+            `;
+        }
         
         const navAction = `data-nav="${basePath}/design/${uuid}"`;
         const linkClass = '';
+
+        let actionsHtml = '';
+        if (isLocal) {
+            actionsHtml = `
+                <button type="button" class="component-button component-button--icon component-button--h32" data-action="syncLocalCanvasToCloud" data-id="${canvas.id}" data-uuid="${uuid}" data-tooltip="${window.__('btn_sync_cloud') || 'Sincronizar con la nube'}" data-position="bottom">
+                    <span class="material-symbols-rounded component-icon--20 component-text-accent">cloud_upload</span>
+                </button>
+                <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleDynamicMenu" data-id="${canvas.id}" data-uuid="${uuid}" data-local="1" data-owner="1" data-online="0">
+                    <span class="material-symbols-rounded">more_vert</span>
+                </button>
+            `;
+        } else {
+            const isOnline = (canvas.mode === 'online' || !!canvas.is_online_active);
+            actionsHtml = `
+                ${window.activeUserId ? `
+                <button type="button" class="component-button component-button--icon component-button--h32 btn-favorite ${isFavoriteClass}" data-action="toggleFavorite" data-id="${canvas.id}">
+                    <span class="material-symbols-rounded component-icon--20">favorite</span>
+                </button>
+                ` : ''}
+                <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleDynamicMenu" data-id="${canvas.id}" data-uuid="${uuid}" data-owner="${canvas.is_owner ? '1' : '0'}" data-locked="${canvas.locked_requires_downgrade ? '1' : '0'}" data-member="${canvas.is_member ? '1' : '0'}" data-online="${isOnline ? '1' : '0'}">
+                    <span class="material-symbols-rounded">more_vert</span>
+                </button>
+            `;
+        }
 
         return `
             <div class="component-gallery-card" data-card-id="${canvas.id}" data-privacy="${canvas.privacy || 'public'}">
@@ -52,14 +88,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
 
                 <div class="component-gallery-actions-wrapper component-dropdown-wrapper">
                     <div class="component-gallery-actions">
-                        ${window.activeUserId ? `
-                        <button type="button" class="component-button component-button--icon component-button--h32 btn-favorite ${isFavoriteClass}" data-action="toggleFavorite" data-id="${canvas.id}">
-                            <span class="material-symbols-rounded component-icon--20">favorite</span>
-                        </button>
-                        ` : ''}
-                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleDynamicMenu" data-id="${canvas.id}" data-uuid="${uuid}" data-owner="${canvas.is_owner ? '1' : '0'}" data-locked="${canvas.locked_requires_downgrade ? '1' : '0'}" data-member="${canvas.is_member ? '1' : '0'}" data-online="${isOnline ? '1' : '0'}">
-                            <span class="material-symbols-rounded">more_vert</span>
-                        </button>
+                        ${actionsHtml}
                     </div>
                 </div>
             </div>

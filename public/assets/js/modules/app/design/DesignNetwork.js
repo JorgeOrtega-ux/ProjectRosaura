@@ -1505,6 +1505,9 @@ export const DesignNetwork = {
     },
 
     async checkCanvasAccess() {
+        if (this.isLocalCanvas || (typeof this.canvasId === 'string' && this.canvasId.startsWith('local_')) || (typeof this.canvasIntId === 'string' && String(this.canvasIntId).startsWith('local_'))) {
+            return;
+        }
         if (!this.canvasIntId || this.canvasIntId === '0') return;
 
         try {
@@ -1552,6 +1555,15 @@ export const DesignNetwork = {
     },
 
     applyCanvasRoleState(role, data = null) {
+        if (this.isLocalCanvas || (typeof this.canvasId === 'string' && this.canvasId.startsWith('local_')) || (typeof this.canvasIntId === 'string' && String(this.canvasIntId).startsWith('local_'))) {
+            this.isSubscriptionLocked = false;
+            this.isSpectator = false;
+            this.isPrivateBlocked = false;
+            this.isOwner = true;
+            this.canvasRole = 'owner';
+            this.setRoleUI('owner', data);
+            return;
+        }
         const prevSpectator = this.isSpectator;
         const isPremiumLocked = !!(data?.locked_requires_downgrade || this.isSubscriptionLocked);
         
@@ -2037,7 +2049,23 @@ export const DesignNetwork = {
                         savePayload.layers_data = layersData;
                     }
 
-                    // 3. Si el navegador está offline, encolar en IndexedDB y salir limpiamente
+                    // 3. Si es un lienzo local de invitado, actualizar registro y salir sin llamar al backend
+                    if (this.isLocalCanvas || (typeof this.canvasIntId === 'string' && this.canvasIntId.startsWith('local_'))) {
+                        try {
+                            const offscreen = document.createElement('canvas');
+                            offscreen.width = this.boardWidth || 64;
+                            offscreen.height = this.boardHeight || 64;
+                            const ctx = offscreen.getContext('2d');
+                            if (this.offscreenCanvas) {
+                                ctx.drawImage(this.offscreenCanvas, 0, 0);
+                            }
+                            const thumbUrl = offscreen.toDataURL('image/png');
+                            CanvasStorageEngine.updateLocalCanvasThumbnail(this.canvasIntId, thumbUrl).catch(() => {});
+                        } catch (e) {}
+                        return true;
+                    }
+
+                    // 4. Si el navegador está offline, encolar en IndexedDB y salir limpiamente
                     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
                         CanvasStorageEngine.enqueueOfflineSync(this.canvasIntId, ApiRoutes.Canvases.SaveOfflineState, savePayload).catch(() => {});
                         return true;

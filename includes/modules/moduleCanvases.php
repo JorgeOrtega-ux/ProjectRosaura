@@ -1,7 +1,8 @@
 <?php 
 
+$isLoggedIn = !empty($_SESSION['active_account']) || isset($_SESSION['user_id']);
 $userPermissions = $_SESSION['user_permissions'] ?? [];
-$canCreateCanvas = in_array('create_canvas', $userPermissions);
+$canCreateCanvas = !$isLoggedIn || in_array('create_canvas', $userPermissions);
 $canManageCanvases = in_array('manage_canvases', $userPermissions);
 $canJoinCanvas = in_array('join_canvas', $userPermissions);
 ?>

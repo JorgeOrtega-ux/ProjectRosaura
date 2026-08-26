@@ -1,6 +1,7 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiService.js';
 import { CanvasCardInteractions } from '../../../core/components/CanvasCardInteractions.js';
+import { CanvasStorageEngine } from '../../app/design/utils/CanvasStorageEngine.js';
 import { closeDropdown, filterMenuList, getAllPalettes, getDynamicTierName, restoreButton, setButtonLoading, showMessage } from '../../../core/utils/uiUtils.js';
 
 class CanvasCreateController {
@@ -504,6 +505,88 @@ class CanvasCreateController {
 
     async submitCanvas(btn) {
         this.syncStateWithDOM();
+
+        const isLoggedIn = !!(window.activeUserId || window.ActiveUserId || (window.userData && window.userData.id));
+
+        if (!isLoggedIn) {
+            setButtonLoading(btn);
+
+            try {
+                const localUuid = `local_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+                const rawName = (this.formState.name || '').trim();
+                const canvasName = rawName || `${window.__('lbl_local_canvas') || 'Lienzo Local'} ${Date.now().toString().slice(-4)}`;
+                const size = this.formState.size || '64x64';
+                const sizeParts = size.toLowerCase().split('x');
+                const width = parseInt(sizeParts[0], 10) || 64;
+                const height = parseInt(sizeParts[1] || sizeParts[0], 10) || 64;
+
+                const localCanvasMeta = {
+                    id: localUuid,
+                    uuid: localUuid,
+                    name: canvasName,
+                    size: size,
+                    privacy: 'private',
+                    mode: 'offline',
+                    is_local: true,
+                    palette_id: this.formState.palette_id || 'default',
+                    tags: Array.isArray(this.formState.tags) ? this.formState.tags : [],
+                    template_id: this.formState.template_id || null,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    storage_bytes: width * height * 4,
+                    is_owner: true,
+                    is_favorite: false,
+                    members_count: 1,
+                    online_players: 0,
+                    is_online_active: false,
+                    thumbnail_url: null
+                };
+
+                // Guardar metadatos en IndexedDB
+                await CanvasStorageEngine.saveLocalCanvas(localCanvasMeta);
+
+                // Inicializar estado base64 en blanco
+                const blankBytes = new Uint8ClampedArray(width * height * 4);
+                let binaryStr = '';
+                const chunkSize = 8192;
+                for (let i = 0; i < blankBytes.length; i += chunkSize) {
+                    binaryStr += String.fromCharCode.apply(null, blankBytes.subarray(i, i + chunkSize));
+                }
+                const blankBase64 = btoa(binaryStr);
+
+                await CanvasStorageEngine.saveCanvasState(localUuid, blankBase64, width, height);
+
+                // Capa por defecto
+                const initialLayers = {
+                    layers: [
+                        {
+                            id: 1,
+                            name: 'Capa 1',
+                            visible: true,
+                            locked: false,
+                            opacity: 1,
+                            blendMode: 'source-over',
+                            order: 0
+                        }
+                    ],
+                    activeLayerId: 1
+                };
+                await CanvasStorageEngine.saveLayersData(localUuid, initialLayers);
+
+                restoreButton(btn);
+                showMessage(window.__('msg_local_canvas_created') || '¡Lienzo local creado exitosamente!', 'success');
+
+                if (window.spaRouter) {
+                    window.spaRouter.navigate(`${this.basePath}/design/${localUuid}`);
+                } else {
+                    window.location.href = `${this.basePath}/design/${localUuid}`;
+                }
+            } catch (err) {
+                restoreButton(btn);
+                showMessage('Error al guardar el lienzo localmente en el dispositivo.', 'error');
+            }
+            return;
+        }
 
         setButtonLoading(btn);
 

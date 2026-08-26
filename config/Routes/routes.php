@@ -35,7 +35,7 @@ return [
     '/settings/billing' => ['view' => 'settings/billing/billing.php', 'auth' => true],
     '/settings/purchase-history' => ['view' => 'settings/billing/purchase-history.php', 'auth' => true],
     '/trash' => ['view' => 'canvases/core/trash.php', 'auth' => true, 'requires_2fa' => false],
-    '/canvases/create' => ['view' => 'canvases/core/create.php', 'auth' => true, 'permissions' => [PC::CREATE_CANVAS], 'requires_2fa' => false],
+    '/canvases/create' => ['view' => 'canvases/core/create.php'],
     '/canvases/trash' => ['view' => 'canvases/core/trash.php', 'auth' => true, 'permissions' => [PC::MANAGE_CANVASES], 'requires_2fa' => false],
     '/canvases/manage/requests/:uuid' => ['view' => 'canvases/team/requests.php', 'auth' => true, 'permissions' => [PC::MANAGE_CANVASES], 'requires_2fa' => false],
     '/canvases/edit/:uuid' => ['view' => 'canvases/workspace/edit.php', 'auth' => true, 'permissions' => [PC::MANAGE_CANVASES], 'requires_2fa' => false],

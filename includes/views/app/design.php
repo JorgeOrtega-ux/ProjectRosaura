@@ -20,6 +20,15 @@ if (!empty($designData['isBanned'])) {
 }
 
 extract($designData);
+
+$isLocal = !empty($isLocalCanvas) || (isset($canvasUuid) && strpos($canvasUuid, 'local_') === 0);
+if ($isLocal) {
+    $isBlockedInit = false;
+    $isSpectatorInit = false;
+    $isSubscriptionLockedInit = false;
+    $isOwner = true;
+    $isMember = true;
+}
 ?>
 <script>window.__CANVAS_VIEW_START__ = performance.now();</script>
 <div class="view-content">
@@ -40,10 +49,11 @@ extract($designData);
          data-initial-zoom="<?php echo htmlspecialchars($canvasInitialZoom ?? '0.5'); ?>"
          data-palette="<?php echo htmlspecialchars($canvasPalette); ?>"
          data-privacy="<?php echo htmlspecialchars($canvasPrivacy); ?>"
-         data-is-owner="<?php echo (isset($isOwner) && $isOwner) ? '1' : '0'; ?>"
-         data-is-blocked="<?php echo isset($isBlockedInit) && $isBlockedInit ? '1' : '0'; ?>"
-         data-subscription-locked="<?php echo isset($isSubscriptionLockedInit) && $isSubscriptionLockedInit ? '1' : '0'; ?>"
-         data-is-spectator="<?php echo isset($isSpectatorInit) && $isSpectatorInit ? '1' : '0'; ?>"
+         data-is-owner="<?php echo ($isLocal || (isset($isOwner) && $isOwner)) ? '1' : '0'; ?>"
+         data-is-local="<?php echo $isLocal ? '1' : '0'; ?>"
+         data-is-blocked="<?php echo (!$isLocal && isset($isBlockedInit) && $isBlockedInit) ? '1' : '0'; ?>"
+         data-subscription-locked="<?php echo (!$isLocal && isset($isSubscriptionLockedInit) && $isSubscriptionLockedInit) ? '1' : '0'; ?>"
+         data-is-spectator="<?php echo (!$isLocal && isset($isSpectatorInit) && $isSpectatorInit) ? '1' : '0'; ?>"
          data-approval="<?php echo htmlspecialchars($canvasApproval); ?>"
          data-allow-chat="<?php echo htmlspecialchars($canvasAllowChat); ?>"
          data-has-live-chat="<?php echo $hasLiveChat ? '1' : '0'; ?>"
@@ -83,11 +93,11 @@ extract($designData);
                 
                 <?php if (!$isSnapshot): ?>
                 <?php 
-                if (!isset($isBlockedInit)) {
+                if (!$isLocal && !isset($isBlockedInit)) {
                     $isBlockedInit = ($canvasPrivacy === 'private');
                     $isSpectatorInit = true;
                 }
-                $showSpectatorControls = ($isBlockedInit || $isSpectatorInit || $isSubscriptionLockedInit);
+                $showSpectatorControls = !$isLocal && ($isBlockedInit || $isSpectatorInit || $isSubscriptionLockedInit);
                 $showDesignTools = !$showSpectatorControls;
                 ?>
                 <div class="component-actions <?php echo $showSpectatorControls ? 'active' : 'disabled'; ?>" data-ref="spectator-controls">
