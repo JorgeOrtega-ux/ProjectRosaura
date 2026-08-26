@@ -41,6 +41,15 @@ export const InteractionOfflineWorkspace = {
 
         if (btn) setButtonLoading(btn);
 
+        if (this.isLocalCanvas || (typeof this.canvasIntId === 'string' && this.canvasIntId.startsWith('local_'))) {
+            if (this.isOfflineMode && typeof this.saveOfflineCanvasState === 'function') {
+                await this.saveOfflineCanvasState(true);
+            }
+            if (btn) restoreButton(btn);
+            showMessage(window.__('msg_local_canvas_saved') || 'Lienzo local guardado exitosamente.', 'success');
+            return;
+        }
+
         if (this.isOfflineMode && typeof this.saveOfflineCanvasState === 'function') {
             await this.saveOfflineCanvasState(true);
         }
@@ -290,6 +299,59 @@ export const InteractionOfflineWorkspace = {
         const parts = newSize.toLowerCase().split('x');
         const nextW = parseInt(parts[0], 10);
         const nextH = parts.length > 1 ? parseInt(parts[1], 10) : nextW;
+
+        if (this.isLocalCanvas || (typeof this.canvasIntId === 'string' && this.canvasIntId.startsWith('local_'))) {
+            try {
+                const localMeta = await CanvasStorageEngine.getLocalCanvas(this.canvasIntId);
+                if (localMeta) {
+                    localMeta.size = newSize;
+                    localMeta.updated_at = new Date().toISOString();
+                    await CanvasStorageEngine.saveLocalCanvas(localMeta);
+                }
+            } catch (e) {}
+
+            window.modalSystem.closeCurrent(true);
+            showMessage(window.__('msg_resize_settings_updated') || 'Tamaño del lienzo actualizado.', 'success');
+
+            this.boardWidth = nextW;
+            this.boardHeight = nextH;
+
+            const wrapper = document.querySelector('[data-ref="design-wrapper"]');
+            if (wrapper) {
+                wrapper.setAttribute('data-size', newSize);
+            }
+
+            if (this.offscreenCanvas) {
+                const oldCanvas = this.offscreenCanvas;
+                this.offscreenCanvas = document.createElement('canvas');
+                this.offscreenCanvas.width = nextW;
+                this.offscreenCanvas.height = nextH;
+                this.offscreenCtx = this.offscreenCanvas.getContext('2d', { alpha: true });
+                if (this.offscreenCtx && oldCanvas) {
+                    this.offscreenCtx.drawImage(oldCanvas, 0, 0);
+                }
+            }
+
+            if (this.renderWorker) {
+                this.renderWorker.postMessage({
+                    type: 'RESIZE_BOARD',
+                    payload: {
+                        boardWidth: nextW,
+                        boardHeight: nextH
+                    }
+                });
+            }
+
+            this.selectedPixels.clear();
+            if (typeof this.updateSelectionUI === 'function') this.updateSelectionUI();
+            this.centerBoard();
+            this.requestRender();
+
+            if (this.isOfflineMode && typeof this.saveOfflineCanvasState === 'function') {
+                this.saveOfflineCanvasState(false);
+            }
+            return;
+        }
 
         if (btn) setButtonLoading(btn);
 
@@ -572,6 +634,41 @@ export const InteractionOfflineWorkspace = {
         const snapshotCheckbox = document.querySelector('[data-ref="offline_reset_snapshot"]');
         const takeSnapshot = snapshotCheckbox ? snapshotCheckbox.checked : false;
 
+        if (this.isLocalCanvas || (typeof this.canvasIntId === 'string' && this.canvasIntId.startsWith('local_'))) {
+            window.modalSystem.closeCurrent(true);
+            showMessage(window.__('msg_reset_order_sent') || 'Lienzo reiniciado.', 'success');
+
+            if (this.offscreenCtx) {
+                this.offscreenCtx.clearRect(0, 0, this.boardWidth, this.boardHeight);
+            }
+
+            if (this.renderWorker) {
+                this.renderWorker.postMessage({
+                    type: 'DRAW_IMAGE_BUFFER',
+                    payload: { imageBitmap: null }
+                });
+            }
+
+            this.selectedPixels.clear();
+            this.undoStack = [];
+            this.redoStack = [];
+            if (typeof this.updateSelectionUI === 'function') this.updateSelectionUI();
+            this.requestRender();
+
+            if (this.isOfflineMode) {
+                if (this.canvasIntId) {
+                    try {
+                        localStorage.removeItem(`rosaura_layers_${this.canvasIntId}`);
+                    } catch (e) {}
+                    CanvasStorageEngine.saveLayersData(this.canvasIntId, { layers: [] }).catch(() => {});
+                }
+                if (typeof this.saveOfflineCanvasState === 'function') {
+                    this.saveOfflineCanvasState(false);
+                }
+            }
+            return;
+        }
+
         if (btn) setButtonLoading(btn);
 
         const result = await this.api.post(ApiRoutes.Canvases.ResetNow, {
@@ -671,6 +768,68 @@ export const InteractionOfflineWorkspace = {
             showMessage(result.message || window.__('msg_reset_settings_updated'), 'success');
         } else {
             showMessage(result?.message || window.__('err_occurred'), 'error');
+        }
+    },
+
+    async syncLocalCanvasToCloud(btn = null) {
+        const uuid = this.canvasId || this.canvasIntId;
+        if (!uuid) return;
+
+        if (!window.activeUserId) {
+            showMessage(window.__('msg_sync_login_required') || 'Inicia sesión o crea una cuenta para sincronizar tus lienzos con la nube.', 'info');
+            setTimeout(() => {
+                const targetUrl = (this.basePath || '') + '/login';
+                if (window.spaRouter) {
+                    window.spaRouter.navigate(targetUrl);
+                } else {
+                    window.location.href = targetUrl;
+                }
+            }, 1200);
+            return;
+        }
+
+        if (btn) setButtonLoading(btn);
+
+        try {
+            if (this.isOfflineMode && typeof this.saveOfflineCanvasState === 'function') {
+                await this.saveOfflineCanvasState(true);
+            }
+
+            const localMeta = await CanvasStorageEngine.getLocalCanvas(uuid);
+            const localState = await CanvasStorageEngine.getCanvasState(uuid);
+            const localLayers = await CanvasStorageEngine.getLayersData(uuid);
+
+            const payload = {
+                name: localMeta?.name || this.canvasName || 'Canvas',
+                size: localMeta?.size || `${this.boardWidth}x${this.boardHeight}`,
+                privacy: localMeta?.privacy || 'private',
+                palette_id: localMeta?.palette_id || this.canvasPaletteId || 'default',
+                tags: localMeta?.tags || [],
+                state_base64: localState?.base64 || '',
+                layers_data: localLayers || null,
+                local_uuid: uuid
+            };
+
+            const res = await this.api.post(ApiRoutes.Canvases.SyncLocal, payload);
+
+            if (btn) restoreButton(btn);
+
+            if (res && res.success) {
+                await CanvasStorageEngine.deleteLocalCanvas(uuid);
+                showMessage(window.__('msg_canvas_synced_success') || '¡Lienzo sincronizado con la nube exitosamente!', 'success');
+
+                const targetPath = `${this.basePath || ''}/design/${res.data.uuid}`;
+                if (window.spaRouter) {
+                    window.spaRouter.navigate(targetPath);
+                } else {
+                    window.location.href = targetPath;
+                }
+            } else {
+                showMessage(res?.message || window.__('err_occurred') || 'Error al sincronizar con la nube.', 'error');
+            }
+        } catch (e) {
+            if (btn) restoreButton(btn);
+            showMessage('Error al procesar la sincronización local.', 'error');
         }
     }
 };

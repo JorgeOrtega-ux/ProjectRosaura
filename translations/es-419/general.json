@@ -13,6 +13,8 @@
     "btn_export_png": "Exportar imagen PNG",
     "lbl_delete_local_canvas": "Eliminar del dispositivo",
     "msg_local_canvas_created": "¡Lienzo local creado exitosamente!",
+    "lbl_open_canvas": "Abrir lienzo",
+    "msg_local_canvas_saved": "Lienzo local guardado exitosamente en este dispositivo.",
     "route_home": "Inicio",
     "route_login": "Iniciar sesión",
     "route_register": "Crear cuenta",

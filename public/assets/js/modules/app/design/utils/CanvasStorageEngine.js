@@ -10,7 +10,7 @@
  */
 
 const DB_NAME = 'RosauraCanvasDB_v2';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE_STATE = 'canvas_state';
 const STORE_LAYERS = 'canvas_layers';
 const STORE_BACKUPS = 'canvas_backups';
@@ -347,9 +347,41 @@ class CanvasStorageEngineClass {
                 };
             } catch (e) {}
 
+            // 5. Limpiar claves redundantes de localStorage
+            try {
+                localStorage.removeItem(`rosaura_layers_${normId}`);
+                localStorage.removeItem(`rosaura_custom_colors_${normId}`);
+            } catch (e) {}
+
             return true;
         } catch (e) {
             return false;
+        }
+    }
+
+    /**
+     * Descomprime un string base64 que potencialmente contiene flujo binario Gzip
+     */
+    async decompressBase64(base64Str) {
+        if (!base64Str) return null;
+        try {
+            const binaryString = atob(base64Str);
+            let bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+
+            // Detectar magic bytes de Gzip (0x1F, 0x8B)
+            if (bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b) {
+                if (typeof DecompressionStream !== 'undefined') {
+                    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+                    const decompressedBuffer = await new Response(stream).arrayBuffer();
+                    bytes = new Uint8Array(decompressedBuffer);
+                }
+            }
+            return bytes;
+        } catch (err) {
+            return null;
         }
     }
 

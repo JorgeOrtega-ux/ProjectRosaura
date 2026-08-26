@@ -262,7 +262,7 @@ class DesignController {
         if (this.isSnapshotMode) {
             this.loadCanvasConfigForSnapshot();
         } else {
-            this.loadCanvasConfig();
+            await this.loadCanvasConfig();
             if (!this.isLocalCanvas) {
                 this.checkCanvasAccess();
             }

@@ -518,7 +518,34 @@ class CanvasCreateController {
                 const size = this.formState.size || '64x64';
                 const sizeParts = size.toLowerCase().split('x');
                 const width = parseInt(sizeParts[0], 10) || 64;
-                const height = parseInt(sizeParts[1] || sizeParts[0], 10) || 64;
+                let initialBytes = new Uint8ClampedArray(width * height * 4);
+                let initialThumbUrl = null;
+
+                if (this.formState.template_id) {
+                    const tpl = (this.templates || []).find(t => String(t.id) === String(this.formState.template_id));
+                    if (tpl && tpl.file_path) {
+                        try {
+                            const img = new Image();
+                            img.crossOrigin = 'anonymous';
+                            await new Promise((resolve) => {
+                                img.onload = () => {
+                                    const tempCanvas = document.createElement('canvas');
+                                    tempCanvas.width = width;
+                                    tempCanvas.height = height;
+                                    const tempCtx = tempCanvas.getContext('2d');
+                                    tempCtx.imageSmoothingEnabled = false;
+                                    tempCtx.drawImage(img, 0, 0, width, height);
+                                    const imgData = tempCtx.getImageData(0, 0, width, height);
+                                    initialBytes = new Uint8ClampedArray(imgData.data.buffer);
+                                    initialThumbUrl = tempCanvas.toDataURL('image/png');
+                                    resolve();
+                                };
+                                img.onerror = () => resolve();
+                                img.src = tpl.file_path;
+                            });
+                        } catch (e) {}
+                    }
+                }
 
                 const localCanvasMeta = {
                     id: localUuid,
@@ -539,18 +566,17 @@ class CanvasCreateController {
                     members_count: 1,
                     online_players: 0,
                     is_online_active: false,
-                    thumbnail_url: null
+                    thumbnail_url: initialThumbUrl
                 };
 
                 // Guardar metadatos en IndexedDB
                 await CanvasStorageEngine.saveLocalCanvas(localCanvasMeta);
 
-                // Inicializar estado base64 en blanco
-                const blankBytes = new Uint8ClampedArray(width * height * 4);
+                // Inicializar estado base64
                 let binaryStr = '';
                 const chunkSize = 8192;
-                for (let i = 0; i < blankBytes.length; i += chunkSize) {
-                    binaryStr += String.fromCharCode.apply(null, blankBytes.subarray(i, i + chunkSize));
+                for (let i = 0; i < initialBytes.length; i += chunkSize) {
+                    binaryStr += String.fromCharCode.apply(null, initialBytes.subarray(i, i + chunkSize));
                 }
                 const blankBase64 = btoa(binaryStr);
 

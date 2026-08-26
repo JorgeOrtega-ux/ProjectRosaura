@@ -1217,24 +1217,24 @@ export class CanvasCardInteractions {
             }
 
             if (localState?.base64) {
-                const binaryStr = atob(localState.base64);
-                const bytes = new Uint8ClampedArray(binaryStr.length);
-                for (let i = 0; i < binaryStr.length; i++) {
-                    bytes[i] = binaryStr.charCodeAt(i);
-                }
-                const offscreen = document.createElement('canvas');
-                offscreen.width = w;
-                offscreen.height = h;
-                const ctx = offscreen.getContext('2d');
-                const imgData = ctx.createImageData(w, h);
-                imgData.data.set(bytes.subarray(0, imgData.data.length));
-                ctx.putImageData(imgData, 0, 0);
+                const decompressedBytes = await CanvasStorageEngine.decompressBase64(localState.base64);
+                if (decompressedBytes && decompressedBytes.length >= w * h * 4) {
+                    const offscreen = document.createElement('canvas');
+                    offscreen.width = w;
+                    offscreen.height = h;
+                    const ctx = offscreen.getContext('2d');
+                    const imgData = ctx.createImageData(w, h);
+                    imgData.data.set(decompressedBytes.subarray(0, w * h * 4));
+                    ctx.putImageData(imgData, 0, 0);
 
-                const a = document.createElement('a');
-                a.href = offscreen.toDataURL('image/png');
-                a.download = `${(localMeta?.name || 'canvas').replace(/\s+/g, '_')}.png`;
-                a.click();
+                    const a = document.createElement('a');
+                    a.href = offscreen.toDataURL('image/png');
+                    a.download = `${(localMeta?.name || 'canvas').replace(/\s+/g, '_')}.png`;
+                    a.click();
+                    return;
+                }
             }
+            showMessage(window.__('err_occurred') || 'Error al exportar PNG del lienzo.', 'error');
         } catch (e) {
             showMessage('Error al exportar PNG del lienzo.', 'error');
         }

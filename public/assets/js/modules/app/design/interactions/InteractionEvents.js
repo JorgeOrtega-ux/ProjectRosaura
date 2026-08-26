@@ -357,6 +357,15 @@ export const InteractionEvents = {
             return;
         }
 
+        const btnSyncLocalCanvas = e.target.closest('[data-action="syncLocalCanvasToCloud"]');
+        if (btnSyncLocalCanvas) {
+            e.preventDefault();
+            if (typeof this.syncLocalCanvasToCloud === 'function') {
+                this.syncLocalCanvasToCloud(btnSyncLocalCanvas);
+            }
+            return;
+        }
+
         const btnSelectFrame = e.target.closest('[data-action="selectFrame"]');
         if (btnSelectFrame) {
             e.preventDefault();

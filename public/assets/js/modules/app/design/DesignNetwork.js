@@ -1901,6 +1901,11 @@ export const DesignNetwork = {
 
     async toggleOnlineMode(action = 'activate', btnElement = null) {
         const btn = btnElement || document.querySelector('[data-action="toggleOnlineMode"]');
+        if (this.isLocalCanvas || (typeof this.canvasIntId === 'string' && this.canvasIntId.startsWith('local_'))) {
+            showMessage(window.__('msg_sync_login_required') || 'Inicia sesión o sincroniza tu lienzo con la nube para activar el modo online.', 'warning');
+            return;
+        }
+
         if (btn) setButtonLoading(btn);
         this._isChangingMode = true;
 
@@ -2052,12 +2057,21 @@ export const DesignNetwork = {
                     // 3. Si es un lienzo local de invitado, actualizar registro y salir sin llamar al backend
                     if (this.isLocalCanvas || (typeof this.canvasIntId === 'string' && this.canvasIntId.startsWith('local_'))) {
                         try {
+                            const w = this.boardWidth || 64;
+                            const h = this.boardHeight || 64;
                             const offscreen = document.createElement('canvas');
-                            offscreen.width = this.boardWidth || 64;
-                            offscreen.height = this.boardHeight || 64;
+                            offscreen.width = w;
+                            offscreen.height = h;
                             const ctx = offscreen.getContext('2d');
                             if (this.offscreenCanvas) {
                                 ctx.drawImage(this.offscreenCanvas, 0, 0);
+                            } else if (base64Data) {
+                                const decompressedBytes = await CanvasStorageEngine.decompressBase64(base64Data);
+                                if (decompressedBytes && decompressedBytes.length >= w * h * 4) {
+                                    const imgData = ctx.createImageData(w, h);
+                                    imgData.data.set(decompressedBytes.subarray(0, w * h * 4));
+                                    ctx.putImageData(imgData, 0, 0);
+                                }
                             }
                             const thumbUrl = offscreen.toDataURL('image/png');
                             CanvasStorageEngine.updateLocalCanvasThumbnail(this.canvasIntId, thumbUrl).catch(() => {});

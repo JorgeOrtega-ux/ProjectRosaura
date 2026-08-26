@@ -92,13 +92,20 @@ if ($isLocal) {
             <div class="component-top-right">
                 
                 <?php if (!$isSnapshot): ?>
+                <?php if ($isLocal): ?>
+                <div class="component-actions active" data-ref="local-canvas-actions">
+                    <button type="button" class="component-button component-button--h34" data-action="syncLocalCanvasToCloud" data-uuid="<?php echo htmlspecialchars($canvasUuid); ?>" data-tooltip="<?php echo __('btn_sync_cloud'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded component-icon--20 component-text-accent">cloud_upload</span>
+                        <span><?php echo __('btn_sync_cloud'); ?></span>
+                    </button>
+                </div>
+                <?php else: ?>
                 <?php 
-                if (!$isLocal && !isset($isBlockedInit)) {
+                if (!isset($isBlockedInit)) {
                     $isBlockedInit = ($canvasPrivacy === 'private');
                     $isSpectatorInit = true;
                 }
-                $showSpectatorControls = !$isLocal && ($isBlockedInit || $isSpectatorInit || $isSubscriptionLockedInit);
-                $showDesignTools = !$showSpectatorControls;
+                $showSpectatorControls = ($isBlockedInit || $isSpectatorInit || $isSubscriptionLockedInit);
                 ?>
                 <div class="component-actions <?php echo $showSpectatorControls ? 'active' : 'disabled'; ?>" data-ref="spectator-controls">
                     
@@ -119,6 +126,7 @@ if ($isLocal) {
                     </div>
                     <?php endif; ?>
                 </div>
+                <?php endif; ?>
                 <?php endif; ?>
             </div>
         </div>

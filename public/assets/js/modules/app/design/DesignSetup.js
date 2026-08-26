@@ -74,7 +74,7 @@ export const DesignSetup = {
         return loadPromise;
     },
 
-    loadCanvasConfig() {
+    async loadCanvasConfig() {
         const wrapper = document.querySelector('[data-ref="design-wrapper"]');
         
         if (wrapper) {
@@ -91,6 +91,8 @@ export const DesignSetup = {
                 });
             }
             this.isLocalCanvas = wrapper.getAttribute('data-is-local') === '1' || (typeof this.canvasId === 'string' && this.canvasId.startsWith('local_')) || (typeof this.canvasIntId === 'string' && String(this.canvasIntId).startsWith('local_'));
+            
+            let localMeta = null;
             if (this.isLocalCanvas) {
                 this.isOfflineMode = true;
                 this.isOwner = true;
@@ -98,20 +100,26 @@ export const DesignSetup = {
                 this.isPrivateBlocked = false;
                 this.isSubscriptionLocked = false;
                 this.canvasRole = 'owner';
-                CanvasStorageEngine.getLocalCanvas(this.canvasId).then(localMeta => {
-                    if (localMeta) {
-                        if (localMeta.name) {
-                            this.canvasName = localMeta.name;
-                            const titleEl = document.querySelector('.component-top-title');
-                            if (titleEl) titleEl.textContent = localMeta.name;
-                        }
-                        if (localMeta.palette_id && this.renderColorPalette) {
-                            this.canvasPaletteId = localMeta.palette_id;
-                            this.renderColorPalette(this.canvasPaletteId);
-                        }
+                
+                try {
+                    localMeta = await CanvasStorageEngine.getLocalCanvas(this.canvasId);
+                } catch (e) {
+                    localMeta = null;
+                }
+
+                if (localMeta) {
+                    if (localMeta.name) {
+                        this.canvasName = localMeta.name;
+                        const titleEl = document.querySelector('.component-top-title');
+                        if (titleEl) titleEl.textContent = localMeta.name;
                     }
-                }).catch(() => {});
-                this.hydrateCanvasState(null).catch(() => {});
+                    if (localMeta.palette_id) {
+                        this.canvasPaletteId = localMeta.palette_id;
+                    }
+                    if (localMeta.size) {
+                        wrapper.setAttribute('data-size', localMeta.size);
+                    }
+                }
             } else {
                 this.isPrivateBlocked = wrapper.getAttribute('data-is-blocked') === '1';
                 this.isSubscriptionLocked = wrapper.getAttribute('data-subscription-locked') === '1';
@@ -129,7 +137,7 @@ export const DesignSetup = {
             this.resizeTargetSize = wrapper.getAttribute('data-resize-target') || '64x64';
             this.resizeTimerAction = wrapper.getAttribute('data-resize-timer-action') || 'restart';
 
-            const sizeStr = wrapper.getAttribute('data-size');
+            const sizeStr = (localMeta && localMeta.size) ? localMeta.size : wrapper.getAttribute('data-size');
             if (sizeStr) {
                 const parts = sizeStr.toLowerCase().split('x');
                 this.boardWidth = parseInt(parts[0], 10);
@@ -142,7 +150,9 @@ export const DesignSetup = {
             const initialZoomAttr = wrapper.getAttribute('data-initial-zoom');
             this.initialZoomConfig = initialZoomAttr ? parseFloat(initialZoomAttr) : 0.5;
             
-            this.canvasPaletteId = wrapper.getAttribute('data-palette') || 'default';
+            if (!this.canvasPaletteId) {
+                this.canvasPaletteId = wrapper.getAttribute('data-palette') || 'default';
+            }
             this.allowCustomColors = wrapper.getAttribute('data-allow-custom-colors') === '1';
             
             const customSection = document.querySelector('[data-ref="custom-colors-section"]');
@@ -174,6 +184,9 @@ export const DesignSetup = {
             }
 
             this.setupCanvas();
+            if (this.isLocalCanvas) {
+                await this.hydrateCanvasState(null);
+            }
             if (this.isOfflineMode && typeof this.syncOfflineToolsTier === 'function') {
                 this.syncOfflineToolsTier();
             }

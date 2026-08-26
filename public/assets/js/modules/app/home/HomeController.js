@@ -25,6 +25,7 @@ class HomeController {
         this.cardInteractions = null;
 
         this.currentOffset = 0;
+        this.currentServerOffset = 0;
         this.allCanvases = [];
         this.isLoadingMore = false;
         this.hasMore = true;
@@ -328,6 +329,7 @@ class HomeController {
             this.feedAbortController = new AbortController();
 
             this.currentOffset = 0;
+            this.currentServerOffset = 0;
             this.allCanvases = [];
             this.hasMore = true;
             this.isLoadingMore = false;
@@ -362,6 +364,10 @@ class HomeController {
             window.initialHomeCanvases = null;
             this.initialMode = null;
             this.initialKey = null;
+            this.currentServerOffset = serverCanvases.length;
+            if (serverCanvases.length < limit) {
+                this.hasMore = false;
+            }
             newCanvases = [...localCanvases, ...serverCanvases];
         } else {
             const signal = this.feedAbortController ? this.feedAbortController.signal : this.abortController.signal;
@@ -371,7 +377,7 @@ class HomeController {
                     if (window.activeUserId) {
                         res = await this.api.post(
                             ApiRoutes.Canvases.GetMine,
-                            { limit, offset: this.currentOffset, filter: this.currentPersonalFilter },
+                            { limit, offset: this.currentServerOffset, filter: this.currentPersonalFilter },
                             signal
                         ).catch(() => null);
 
@@ -382,10 +388,15 @@ class HomeController {
 
                         if (res && res.success) {
                             const serverData = res.data || [];
+                            this.currentServerOffset += serverData.length;
+                            if (serverData.length < limit) {
+                                this.hasMore = false;
+                            }
                             newCanvases = isLoadMore ? serverData : [...localCanvases, ...serverData];
                         } else {
                             if (!isLoadMore && localCanvases.length > 0) {
                                 newCanvases = localCanvases;
+                                this.hasMore = false;
                             } else {
                                 isError = true;
                             }
@@ -403,7 +414,7 @@ class HomeController {
                     } else {
                         res = await this.api.post(
                             ApiRoutes.Canvases.GetMine,
-                            { limit, offset: this.currentOffset, filter: this.currentPersonalFilter },
+                            { limit, offset: this.currentServerOffset, filter: this.currentPersonalFilter },
                             signal
                         ).catch(() => null);
 
@@ -413,7 +424,12 @@ class HomeController {
                         }
 
                         if (res && res.success) {
-                            newCanvases = res.data || [];
+                            const serverData = res.data || [];
+                            this.currentServerOffset += serverData.length;
+                            if (serverData.length < limit) {
+                                this.hasMore = false;
+                            }
+                            newCanvases = serverData;
                         } else {
                             isError = true;
                         }
@@ -422,7 +438,7 @@ class HomeController {
             } else {
                 res = await this.api.post(
                     ApiRoutes.Canvases.GetHomeFeed,
-                    { limit, offset: this.currentOffset, tag: this.currentTag },
+                    { limit, offset: this.currentServerOffset, tag: this.currentTag },
                     signal
                 ).catch(() => null);
 
@@ -432,7 +448,12 @@ class HomeController {
                 }
 
                 if (res && res.success) {
-                    newCanvases = res.data || [];
+                    const serverData = res.data || [];
+                    this.currentServerOffset += serverData.length;
+                    if (serverData.length < limit) {
+                        this.hasMore = false;
+                    }
+                    newCanvases = serverData;
                 } else {
                     isError = true;
                 }
@@ -476,9 +497,6 @@ class HomeController {
             }
         }
 
-        if (newCanvases.length < limit) {
-            this.hasMore = false;
-        }
         this.currentOffset += newCanvases.length;
         this.isLoadingMore = false;
 
