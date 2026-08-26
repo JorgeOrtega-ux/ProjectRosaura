@@ -2,6 +2,7 @@ import { getPaletteById } from './utils/DesignPaletteUtils.js';
 import { showMessage } from '../../../core/utils/uiUtils.js';
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiService.js';
+import { CanvasStorageEngine } from './utils/CanvasStorageEngine.js';
 
 const api = new ApiService();
 
@@ -386,40 +387,45 @@ export const DesignSetup = {
     async hydrateCanvasState(base64String, templateCoords = null, serverLayersData = null) {
         try {
             let layersData = null;
+            let effectiveBase64 = base64String;
+
             if (this.isOfflineMode && this.canvasIntId) {
+                // 1. Obtener o recuperar capas desde server o IndexedDB/localStorage
                 if (serverLayersData && (typeof serverLayersData === 'object' || Array.isArray(serverLayersData))) {
                     layersData = serverLayersData;
-                    try {
-                        localStorage.setItem(`rosaura_layers_${this.canvasIntId}`, JSON.stringify(serverLayersData));
-                    } catch (e) {}
-
-                    const serverColors = serverLayersData.recent_colors || serverLayersData.custom_colors;
-                    if (Array.isArray(serverColors) && serverColors.length > 0) {
-                        this.customPickedColors = serverColors.slice(0, 18);
-                        if (typeof this.saveCustomColors === 'function') {
-                            this.saveCustomColors();
-                        }
-                        if (typeof this.renderCustomPickedColors === 'function') {
-                            this.renderCustomPickedColors();
-                        }
-                    }
+                    CanvasStorageEngine.saveLayersData(this.canvasIntId, serverLayersData).catch(() => {});
                 } else {
-                    try {
-                        const stored = localStorage.getItem(`rosaura_layers_${this.canvasIntId}`);
-                        if (stored) {
-                            layersData = JSON.parse(stored);
-                            const storedColors = layersData.recent_colors || layersData.custom_colors;
-                            if (Array.isArray(storedColors) && storedColors.length > 0) {
-                                this.customPickedColors = storedColors.slice(0, 18);
-                                if (typeof this.saveCustomColors === 'function') {
-                                    this.saveCustomColors();
-                                }
-                                if (typeof this.renderCustomPickedColors === 'function') {
-                                    this.renderCustomPickedColors();
-                                }
+                    layersData = await CanvasStorageEngine.getLayersData(this.canvasIntId);
+                }
+
+                // 2. Extraer paleta de colores recientes
+                const extractedColors = layersData?.recent_colors || layersData?.custom_colors;
+                if (Array.isArray(extractedColors) && extractedColors.length > 0) {
+                    this.customPickedColors = extractedColors.slice(0, 18);
+                    if (typeof this.saveCustomColors === 'function') this.saveCustomColors();
+                    if (typeof this.renderCustomPickedColors === 'function') this.renderCustomPickedColors();
+                }
+
+                // 3. Autorrecuperación silenciosa en caso de estado nulo o dañado
+                if ((!effectiveBase64 || effectiveBase64.length < 20) && this.canvasIntId) {
+                    const localState = await CanvasStorageEngine.getCanvasState(this.canvasIntId);
+                    if (localState && localState.base64 && localState.base64.length > 20) {
+                        effectiveBase64 = localState.base64;
+                    } else {
+                        const backup = await CanvasStorageEngine.getLatestValidBackup(this.canvasIntId);
+                        if (backup && backup.base64) {
+                            effectiveBase64 = backup.base64;
+                            if (!layersData && backup.layersData) {
+                                layersData = backup.layersData;
                             }
                         }
-                    } catch (e) {}
+                    }
+                }
+
+                // 4. Persistir estado en IndexedDB y generar backup silencioso de inicio de sesión
+                if (effectiveBase64 && this.canvasIntId) {
+                    CanvasStorageEngine.saveCanvasState(this.canvasIntId, effectiveBase64, this.boardWidth, this.boardHeight).catch(() => {});
+                    CanvasStorageEngine.createSilentBackup(this.canvasIntId, effectiveBase64, layersData, 'session_start').catch(() => {});
                 }
             }
 
@@ -427,7 +433,7 @@ export const DesignSetup = {
                 this.renderWorker.postMessage({
                     type: 'HYDRATE_STATE',
                     payload: {
-                        base64String,
+                        base64String: effectiveBase64,
                         layersData,
                         boardWidth: this.boardWidth,
                         boardHeight: this.boardHeight,
@@ -436,7 +442,7 @@ export const DesignSetup = {
                 });
                 return;
             }
-            const bytes = await this.decompressIfNeeded(base64String);
+            const bytes = await this.decompressIfNeeded(effectiveBase64);
             if (!bytes) return;
 
             const w = parseInt(this.boardWidth, 10);

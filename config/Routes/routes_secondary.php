@@ -427,8 +427,8 @@ return [
             [
                 'type' => 'RateLimit',
                 'key' => 'canvas_save_offline',
-                'max' => 60,
-                'time' => 60,
+                'max' => 180,
+                'time' => 1,
                 'identifier' => 'user_id',
             ],
         ],

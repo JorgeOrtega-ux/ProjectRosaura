@@ -3,12 +3,20 @@ import { showMessage, setButtonLoading, restoreButton } from '../../../core/util
 import { WebSocketManager } from '../../../core/api/WebSocketManager.js';
 import { getPaletteById } from './utils/DesignPaletteUtils.js';
 import { CanvasSyncChannel } from '../../../core/services/CanvasSyncChannel.js';
+import { CanvasStorageEngine } from './utils/CanvasStorageEngine.js';
 
 export const DesignNetwork = {
     initSyncChannel() {
         if (typeof this._syncUnsubscribe === 'function') {
             this._syncUnsubscribe();
             this._syncUnsubscribe = null;
+        }
+
+        if (!this._onlineListenerBound) {
+            this._onlineListenerBound = () => {
+                CanvasStorageEngine.flushOfflineSyncQueue(this.api).catch(() => {});
+            };
+            window.addEventListener('online', this._onlineListenerBound);
         }
 
         this._syncUnsubscribe = CanvasSyncChannel.subscribe((data) => {
@@ -2008,6 +2016,19 @@ export const DesignNetwork = {
                 }
 
                 if (base64Data) {
+                    // 1. Guardar INMEDIATAMENTE en IndexedDB (cero latencia, persistencia blindada)
+                    CanvasStorageEngine.saveCanvasState(this.canvasIntId, base64Data, this.boardWidth, this.boardHeight).catch(() => {});
+                    if (layersData) {
+                        CanvasStorageEngine.saveLayersData(this.canvasIntId, layersData).catch(() => {});
+                    }
+
+                    // 2. Generar backup silencioso periódico (sin interrumpir al usuario)
+                    this._offlineBackupCounter = (this._offlineBackupCounter || 0) + 1;
+                    if (this._offlineBackupCounter >= 6) {
+                        this._offlineBackupCounter = 0;
+                        CanvasStorageEngine.createSilentBackup(this.canvasIntId, base64Data, layersData, 'periodic').catch(() => {});
+                    }
+
                     const savePayload = {
                         canvas_id: this.canvasIntId,
                         state_base64: base64Data
@@ -2015,11 +2036,26 @@ export const DesignNetwork = {
                     if (layersData) {
                         savePayload.layers_data = layersData;
                     }
+
+                    // 3. Si el navegador está offline, encolar en IndexedDB y salir limpiamente
+                    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                        CanvasStorageEngine.enqueueOfflineSync(this.canvasIntId, ApiRoutes.Canvases.SaveOfflineState, savePayload).catch(() => {});
+                        return true;
+                    }
+
                     const resp = await this.api.post(ApiRoutes.Canvases.SaveOfflineState, savePayload);
                     if (resp && resp.success) {
+                        // Sincronización exitosa: vaciar cualquier paquete pendiente previo
+                        CanvasStorageEngine.flushOfflineSyncQueue(this.api).catch(() => {});
+                        return true;
+                    } else if (resp && (resp.isRateLimited || resp.http_code === 429)) {
+                        // Rate limit mitigado: encolar silenciosamente sin perder ni un pixel
+                        CanvasStorageEngine.enqueueOfflineSync(this.canvasIntId, ApiRoutes.Canvases.SaveOfflineState, savePayload).catch(() => {});
                         return true;
                     } else {
-                        return false;
+                        // Error de conexión u otro: asegurar en cola de reintento
+                        CanvasStorageEngine.enqueueOfflineSync(this.canvasIntId, ApiRoutes.Canvases.SaveOfflineState, savePayload).catch(() => {});
+                        return true;
                     }
                 } else {
                     return false;

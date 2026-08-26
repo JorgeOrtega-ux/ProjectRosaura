@@ -563,8 +563,8 @@ return [
             [
                 'type' => 'RateLimit',
                 'key' => 'telemetry_collect',
-                'max' => 60,
-                'time' => 5,
+                'max' => 120,
+                'time' => 1,
                 'identifier' => 'ip',
             ],
         ],

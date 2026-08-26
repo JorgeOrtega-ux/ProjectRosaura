@@ -175,6 +175,10 @@ export class HttpClient {
                         }
                     }
                     const processedResult = this._processResponse(result);
+                    if (response.status === 429) {
+                        processedResult.isRateLimited = true;
+                        processedResult.http_code = 429;
+                    }
                     if (response.status === 403) {
                         window.dispatchEvent(new CustomEvent('securityViolationTriggered', { detail: processedResult }));
                     }

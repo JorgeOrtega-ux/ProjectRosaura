@@ -201,47 +201,200 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
         <div class="component-menu-bottom component-menu-bottom--no-border" data-ref="module-promo-bottom-templates"></div>
     </div>
 
-    <?php
-    $presetStickers = [
-        // 1. RPG & Fantasía
-        ['id' => 'sticker_sword', 'name' => 'Espada de Héroe', 'category' => 'rpg', 'file' => 'sword.svg'],
-        ['id' => 'sticker_shield', 'name' => 'Escudo Real', 'category' => 'rpg', 'file' => 'shield.svg'],
-        ['id' => 'sticker_axe', 'name' => 'Hacha de Batalla', 'category' => 'rpg', 'file' => 'axe.svg'],
-        ['id' => 'sticker_potion_red', 'name' => 'Poción de Vida', 'category' => 'rpg', 'file' => 'potion_red.svg'],
-        ['id' => 'sticker_potion_blue', 'name' => 'Poción de Maná', 'category' => 'rpg', 'file' => 'potion_blue.svg'],
-        ['id' => 'sticker_chest', 'name' => 'Cofre del Tesoro', 'category' => 'rpg', 'file' => 'chest.svg'],
-
-        // 2. Objetos & Tesoros
-        ['id' => 'sticker_coin', 'name' => 'Moneda de Oro', 'category' => 'treasures', 'file' => 'coin.svg'],
-        ['id' => 'sticker_gem', 'name' => 'Gema Brillante', 'category' => 'treasures', 'file' => 'gem.svg'],
-        ['id' => 'sticker_crown', 'name' => 'Corona Imperial', 'category' => 'treasures', 'file' => 'crown.svg'],
-        ['id' => 'sticker_key', 'name' => 'Llave Antigua', 'category' => 'treasures', 'file' => 'key.svg'],
-        ['id' => 'sticker_star', 'name' => 'Estrella Dorada', 'category' => 'treasures', 'file' => 'star.svg'],
-        ['id' => 'sticker_trophy', 'name' => 'Trofeo de Campeón', 'category' => 'treasures', 'file' => 'trophy.svg'],
-
-        // 3. Símbolos & Emociones
-        ['id' => 'sticker_heart', 'name' => 'Corazón', 'category' => 'symbols', 'file' => 'heart.svg'],
-        ['id' => 'sticker_heart_broken', 'name' => 'Corazón Roto', 'category' => 'symbols', 'file' => 'heart_broken.svg'],
-        ['id' => 'sticker_skull', 'name' => 'Calavera', 'category' => 'symbols', 'file' => 'skull.svg'],
-        ['id' => 'sticker_smiley', 'name' => 'Carita Feliz', 'category' => 'symbols', 'file' => 'smiley.svg'],
-        ['id' => 'sticker_fire', 'name' => 'Llama de Fuego', 'category' => 'symbols', 'file' => 'fire.svg'],
-        ['id' => 'sticker_lightning', 'name' => 'Rayo Eléctrico', 'category' => 'symbols', 'file' => 'lightning.svg'],
-
-        // 4. Naturaleza & Escenarios
-        ['id' => 'sticker_tree', 'name' => 'Árbol Pino', 'category' => 'nature', 'file' => 'tree.svg'],
-        ['id' => 'sticker_flower', 'name' => 'Flor Rosa', 'category' => 'nature', 'file' => 'flower.svg'],
-        ['id' => 'sticker_mushroom', 'name' => 'Hongo Rojo', 'category' => 'nature', 'file' => 'mushroom.svg'],
-        ['id' => 'sticker_house', 'name' => 'Casita', 'category' => 'nature', 'file' => 'house.svg'],
-        ['id' => 'sticker_sun', 'name' => 'Sol Radiante', 'category' => 'nature', 'file' => 'sun.svg'],
-        ['id' => 'sticker_moon', 'name' => 'Luna Creciente', 'category' => 'nature', 'file' => 'moon.svg'],
-
-        // 5. Arcade & Gaming
-        ['id' => 'sticker_ghost', 'name' => 'Fantasma Arcade', 'category' => 'arcade', 'file' => 'ghost.svg'],
-        ['id' => 'sticker_alien', 'name' => 'Invasor Espacial', 'category' => 'arcade', 'file' => 'alien.svg'],
-        ['id' => 'sticker_gamepad', 'name' => 'Control Retro', 'category' => 'arcade', 'file' => 'gamepad.svg'],
-        ['id' => 'sticker_bomb', 'name' => 'Bomba', 'category' => 'arcade', 'file' => 'bomb.svg'],
-        ['id' => 'sticker_apple', 'name' => 'Manzana Pixel', 'category' => 'arcade', 'file' => 'apple.svg'],
-        ['id' => 'sticker_cat', 'name' => 'Gatito Pixel', 'category' => 'arcade', 'file' => 'cat.svg']
+        <?php
+    $stickerCategories = [
+        'rpg' => [
+            'title' => 'RPG y Fantasía',
+            'icon' => 'swords',
+            'stickers' => [
+                ['id' => 'sticker_sword_hero', 'name' => 'Espada de Héroe', 'file' => 'sword_hero.svg'],
+                ['id' => 'sticker_shield_royal', 'name' => 'Escudo Real', 'file' => 'shield_royal.svg'],
+                ['id' => 'sticker_battle_axe', 'name' => 'Hacha de Batalla', 'file' => 'battle_axe.svg'],
+                ['id' => 'sticker_potion_health', 'name' => 'Poción de Vida', 'file' => 'potion_health.svg'],
+                ['id' => 'sticker_potion_mana', 'name' => 'Poción de Maná', 'file' => 'potion_mana.svg'],
+                ['id' => 'sticker_treasure_chest', 'name' => 'Cofre del Tesoro', 'file' => 'treasure_chest.svg'],
+                ['id' => 'sticker_magic_wand', 'name' => 'Varita Mágica', 'file' => 'magic_wand.svg'],
+                ['id' => 'sticker_knight_helmet', 'name' => 'Yelmo de Caballero', 'file' => 'knight_helmet.svg'],
+                ['id' => 'sticker_elven_bow', 'name' => 'Arco Élfico', 'file' => 'elven_bow.svg'],
+                ['id' => 'sticker_spell_scroll', 'name' => 'Pergamino Sagrado', 'file' => 'spell_scroll.svg'],
+            ]
+        ],
+        'treasures' => [
+            'title' => 'Tesoros y Riquezas',
+            'icon' => 'diamond',
+            'stickers' => [
+                ['id' => 'sticker_gold_coin', 'name' => 'Moneda de Oro', 'file' => 'gold_coin.svg'],
+                ['id' => 'sticker_ruby_gem', 'name' => 'Gema Rubí', 'file' => 'ruby_gem.svg'],
+                ['id' => 'sticker_golden_crown', 'name' => 'Corona Real', 'file' => 'golden_crown.svg'],
+                ['id' => 'sticker_ancient_key', 'name' => 'Llave Antigua', 'file' => 'ancient_key.svg'],
+                ['id' => 'sticker_champion_trophy', 'name' => 'Trofeo de Campeón', 'file' => 'champion_trophy.svg'],
+                ['id' => 'sticker_gold_ingot', 'name' => 'Lingote de Oro', 'file' => 'gold_ingot.svg'],
+                ['id' => 'sticker_holy_grail', 'name' => 'Cáliz Sagrado', 'file' => 'holy_grail.svg'],
+                ['id' => 'sticker_diamond_ring', 'name' => 'Anillo de Diamante', 'file' => 'diamond_ring.svg'],
+                ['id' => 'sticker_gem_sack', 'name' => 'Bolsa de Gemas', 'file' => 'gem_sack.svg'],
+                ['id' => 'sticker_emerald_crystal', 'name' => 'Esmeralda Mística', 'file' => 'emerald_crystal.svg'],
+            ]
+        ],
+        'characters' => [
+            'title' => 'Personajes y Héroes',
+            'icon' => 'face',
+            'stickers' => [
+                ['id' => 'sticker_hero_knight', 'name' => 'Caballero Valiente', 'file' => 'hero_knight.svg'],
+                ['id' => 'sticker_wise_wizard', 'name' => 'Mago Arcano', 'file' => 'wise_wizard.svg'],
+                ['id' => 'sticker_shadow_rogue', 'name' => 'Pícaro Sombrío', 'file' => 'shadow_rogue.svg'],
+                ['id' => 'sticker_royal_princess', 'name' => 'Princesa Real', 'file' => 'royal_princess.svg'],
+                ['id' => 'sticker_king_monarch', 'name' => 'Rey Soberano', 'file' => 'king_monarch.svg'],
+                ['id' => 'sticker_undead_skeleton', 'name' => 'Esqueleto Guerrero', 'file' => 'undead_skeleton.svg'],
+                ['id' => 'sticker_goblin_scout', 'name' => 'Duende Pícaro', 'file' => 'goblin_scout.svg'],
+                ['id' => 'sticker_baby_dragon', 'name' => 'Dragón Bebé', 'file' => 'baby_dragon.svg'],
+                ['id' => 'sticker_stone_golem', 'name' => 'Gólem de Piedra', 'file' => 'stone_golem.svg'],
+                ['id' => 'sticker_cute_witch', 'name' => 'Brujita Mágica', 'file' => 'cute_witch.svg'],
+            ]
+        ],
+        'creatures' => [
+            'title' => 'Animales y Criaturas',
+            'icon' => 'pets',
+            'stickers' => [
+                ['id' => 'sticker_tabby_cat', 'name' => 'Gatito Naranja', 'file' => 'tabby_cat.svg'],
+                ['id' => 'sticker_happy_dog', 'name' => 'Perrito Feliz', 'file' => 'happy_dog.svg'],
+                ['id' => 'sticker_red_fox', 'name' => 'Zorro Rojo', 'file' => 'red_fox.svg'],
+                ['id' => 'sticker_night_owl', 'name' => 'Búho Nocturno', 'file' => 'night_owl.svg'],
+                ['id' => 'sticker_tree_frog', 'name' => 'Ranita Verde', 'file' => 'tree_frog.svg'],
+                ['id' => 'sticker_white_bunny', 'name' => 'Conejito Blanco', 'file' => 'white_bunny.svg'],
+                ['id' => 'sticker_yellow_chick', 'name' => 'Pollito Pío', 'file' => 'yellow_chick.svg'],
+                ['id' => 'sticker_pink_axolotl', 'name' => 'Ajolote Rosado', 'file' => 'pink_axolotl.svg'],
+                ['id' => 'sticker_cute_penguin', 'name' => 'Pingüino Alegre', 'file' => 'cute_penguin.svg'],
+                ['id' => 'sticker_panda_bear', 'name' => 'Panda Glotón', 'file' => 'panda_bear.svg'],
+            ]
+        ],
+        'food' => [
+            'title' => 'Comida y Bebidas',
+            'icon' => 'restaurant',
+            'stickers' => [
+                ['id' => 'sticker_pizza_slice', 'name' => 'Rebanada de Pizza', 'file' => 'pizza_slice.svg'],
+                ['id' => 'sticker_cheeseburger', 'name' => 'Hamburguesa Clásica', 'file' => 'cheeseburger.svg'],
+                ['id' => 'sticker_glazed_donut', 'name' => 'Dona Glaseada', 'file' => 'glazed_donut.svg'],
+                ['id' => 'sticker_strawberry_cake', 'name' => 'Pastel de Fresa', 'file' => 'strawberry_cake.svg'],
+                ['id' => 'sticker_ice_cream', 'name' => 'Helado Tricolor', 'file' => 'ice_cream.svg'],
+                ['id' => 'sticker_coffee_cup', 'name' => 'Taza de Café', 'file' => 'coffee_cup.svg'],
+                ['id' => 'sticker_ramen_bowl', 'name' => 'Tazón de Ramen', 'file' => 'ramen_bowl.svg'],
+                ['id' => 'sticker_salmon_sushi', 'name' => 'Sushi de Salmón', 'file' => 'salmon_sushi.svg'],
+                ['id' => 'sticker_red_apple', 'name' => 'Manzana Roja', 'file' => 'red_apple.svg'],
+                ['id' => 'sticker_soda_bottle', 'name' => 'Botella de Refresco', 'file' => 'soda_bottle.svg'],
+            ]
+        ],
+        'nature' => [
+            'title' => 'Naturaleza y Plantas',
+            'icon' => 'local_florist',
+            'stickers' => [
+                ['id' => 'sticker_oak_tree', 'name' => 'Árbol de Roble', 'file' => 'oak_tree.svg'],
+                ['id' => 'sticker_pine_tree', 'name' => 'Pino Nevado', 'file' => 'pine_tree.svg'],
+                ['id' => 'sticker_palm_tree', 'name' => 'Palmera Tropical', 'file' => 'palm_tree.svg'],
+                ['id' => 'sticker_sunflower', 'name' => 'Flor Girasol', 'file' => 'sunflower.svg'],
+                ['id' => 'sticker_red_mushroom', 'name' => 'Hongo Rojo Mágico', 'file' => 'red_mushroom.svg'],
+                ['id' => 'sticker_desert_cactus', 'name' => 'Cactus del Desierto', 'file' => 'desert_cactus.svg'],
+                ['id' => 'sticker_four_leaf_clover', 'name' => 'Trébol de la Suerte', 'file' => 'four_leaf_clover.svg'],
+                ['id' => 'sticker_berry_bush', 'name' => 'Arbusto de Bayas', 'file' => 'berry_bush.svg'],
+                ['id' => 'sticker_lotus_flower', 'name' => 'Flor de Loto', 'file' => 'lotus_flower.svg'],
+                ['id' => 'sticker_maple_leaf', 'name' => 'Hoja de Arce', 'file' => 'maple_leaf.svg'],
+            ]
+        ],
+        'space' => [
+            'title' => 'Espacio y Ciencia Ficción',
+            'icon' => 'rocket_launch',
+            'stickers' => [
+                ['id' => 'sticker_space_rocket', 'name' => 'Cohete Espacial', 'file' => 'space_rocket.svg'],
+                ['id' => 'sticker_saturn_planet', 'name' => 'Planeta Anillado', 'file' => 'saturn_planet.svg'],
+                ['id' => 'sticker_alien_ufo', 'name' => 'OVNI Alienígena', 'file' => 'alien_ufo.svg'],
+                ['id' => 'sticker_astronaut_helmet', 'name' => 'Casco Astronauta', 'file' => 'astronaut_helmet.svg'],
+                ['id' => 'sticker_orbit_satellite', 'name' => 'Satélite Orbital', 'file' => 'orbit_satellite.svg'],
+                ['id' => 'sticker_crystal_asteroid', 'name' => 'Asteroide Cristal', 'file' => 'crystal_asteroid.svg'],
+                ['id' => 'sticker_space_telescope', 'name' => 'Telescopio Espacial', 'file' => 'space_telescope.svg'],
+                ['id' => 'sticker_cosmic_portal', 'name' => 'Portal Cósmico', 'file' => 'cosmic_portal.svg'],
+                ['id' => 'sticker_android_robot', 'name' => 'Robot Androide', 'file' => 'android_robot.svg'],
+                ['id' => 'sticker_laser_gun', 'name' => 'Pistola Láser', 'file' => 'laser_gun.svg'],
+            ]
+        ],
+        'arcade' => [
+            'title' => 'Arcade y Videojuegos',
+            'icon' => 'sports_esports',
+            'stickers' => [
+                ['id' => 'sticker_retro_gamepad', 'name' => 'Control Retro', 'file' => 'retro_gamepad.svg'],
+                ['id' => 'sticker_game_cartridge', 'name' => 'Cartucho Clásico', 'file' => 'game_cartridge.svg'],
+                ['id' => 'sticker_arcade_cabinet', 'name' => 'Máquina Arcade', 'file' => 'arcade_cabinet.svg'],
+                ['id' => 'sticker_arcade_ghost', 'name' => 'Fantasma Pixel', 'file' => 'arcade_ghost.svg'],
+                ['id' => 'sticker_8bit_heart', 'name' => 'Corazón 8-Bit', 'file' => '8bit_heart.svg'],
+                ['id' => 'sticker_arcade_coin', 'name' => 'Moneda Arcade', 'file' => 'arcade_coin.svg'],
+                ['id' => 'sticker_power_star', 'name' => 'Estrella de Poder', 'file' => 'power_star.svg'],
+                ['id' => 'sticker_fuse_bomb', 'name' => 'Bomba Explosiva', 'file' => 'fuse_bomb.svg'],
+                ['id' => 'sticker_pixel_sword', 'name' => 'Espada Pixelada', 'file' => 'pixel_sword.svg'],
+                ['id' => 'sticker_victory_cup', 'name' => 'Copa de Victoria', 'file' => 'victory_cup.svg'],
+            ]
+        ],
+        'emotes' => [
+            'title' => 'Emotes y Símbolos',
+            'icon' => 'mood',
+            'stickers' => [
+                ['id' => 'sticker_heart_love', 'name' => 'Corazón Brillante', 'file' => 'heart_love.svg'],
+                ['id' => 'sticker_broken_heart', 'name' => 'Corazón Roto', 'file' => 'broken_heart.svg'],
+                ['id' => 'sticker_pirate_skull', 'name' => 'Calavera Pirata', 'file' => 'pirate_skull.svg'],
+                ['id' => 'sticker_smiley_face', 'name' => 'Carita Feliz', 'file' => 'smiley_face.svg'],
+                ['id' => 'sticker_wink_face', 'name' => 'Carita Guiño', 'file' => 'wink_face.svg'],
+                ['id' => 'sticker_cool_glasses', 'name' => 'Carita con Lentes', 'file' => 'cool_glasses.svg'],
+                ['id' => 'sticker_fire_flame', 'name' => 'Llama Ardiente', 'file' => 'fire_flame.svg'],
+                ['id' => 'sticker_thunder_bolt', 'name' => 'Rayo Trueno', 'file' => 'thunder_bolt.svg'],
+                ['id' => 'sticker_shooting_star', 'name' => 'Estrella Fugaz', 'file' => 'shooting_star.svg'],
+                ['id' => 'sticker_peace_sign', 'name' => 'Símbolo de Paz', 'file' => 'peace_sign.svg'],
+            ]
+        ],
+        'weather' => [
+            'title' => 'Clima y Cielo',
+            'icon' => 'wb_sunny',
+            'stickers' => [
+                ['id' => 'sticker_radiant_sun', 'name' => 'Sol Radiante', 'file' => 'radiant_sun.svg'],
+                ['id' => 'sticker_full_moon', 'name' => 'Luna Llena', 'file' => 'full_moon.svg'],
+                ['id' => 'sticker_crescent_moon', 'name' => 'Luna Creciente', 'file' => 'crescent_moon.svg'],
+                ['id' => 'sticker_rain_cloud', 'name' => 'Nube Lluviosa', 'file' => 'rain_cloud.svg'],
+                ['id' => 'sticker_storm_lightning', 'name' => 'Tormenta Eléctrica', 'file' => 'storm_lightning.svg'],
+                ['id' => 'sticker_magic_rainbow', 'name' => 'Arcoíris Mágico', 'file' => 'magic_rainbow.svg'],
+                ['id' => 'sticker_snow_crystal', 'name' => 'Copo de Nieve', 'file' => 'snow_crystal.svg'],
+                ['id' => 'sticker_wind_gust', 'name' => 'Remolino de Viento', 'file' => 'wind_gust.svg'],
+                ['id' => 'sticker_night_sparkle', 'name' => 'Destello Nocturno', 'file' => 'night_sparkle.svg'],
+                ['id' => 'sticker_fiery_comet', 'name' => 'Cometa de Fuego', 'file' => 'fiery_comet.svg'],
+            ]
+        ],
+        'vehicles' => [
+            'title' => 'Vehículos y Viajes',
+            'icon' => 'directions_car',
+            'stickers' => [
+                ['id' => 'sticker_sports_car', 'name' => 'Auto Deportivo', 'file' => 'sports_car.svg'],
+                ['id' => 'sticker_steam_train', 'name' => 'Tren Clásico', 'file' => 'steam_train.svg'],
+                ['id' => 'sticker_sail_boat', 'name' => 'Barco Velero', 'file' => 'sail_boat.svg'],
+                ['id' => 'sticker_jet_plane', 'name' => 'Avión Comercial', 'file' => 'jet_plane.svg'],
+                ['id' => 'sticker_hot_air_balloon', 'name' => 'Globo Aerostático', 'file' => 'hot_air_balloon.svg'],
+                ['id' => 'sticker_city_bicycle', 'name' => 'Bicicleta Urbana', 'file' => 'city_bicycle.svg'],
+                ['id' => 'sticker_lunar_lander', 'name' => 'Módulo Lunar', 'file' => 'lunar_lander.svg'],
+                ['id' => 'sticker_yellow_submarine', 'name' => 'Submarino Amarillo', 'file' => 'yellow_submarine.svg'],
+                ['id' => 'sticker_wooden_wagon', 'name' => 'Carreta de Madera', 'file' => 'wooden_wagon.svg'],
+                ['id' => 'sticker_skate_board', 'name' => 'Patineta Skater', 'file' => 'skate_board.svg'],
+            ]
+        ],
+        'decor' => [
+            'title' => 'Objetos y Decoración',
+            'icon' => 'auto_awesome',
+            'stickers' => [
+                ['id' => 'sticker_lit_candle', 'name' => 'Vela Encendida', 'file' => 'lit_candle.svg'],
+                ['id' => 'sticker_iron_lantern', 'name' => 'Farol de Hierro', 'file' => 'iron_lantern.svg'],
+                ['id' => 'sticker_hour_glass', 'name' => 'Reloj de Arena', 'file' => 'hour_glass.svg'],
+                ['id' => 'sticker_spell_book', 'name' => 'Libro de Conjuros', 'file' => 'spell_book.svg'],
+                ['id' => 'sticker_potion_flask', 'name' => 'Frasco Alquimia', 'file' => 'potion_flask.svg'],
+                ['id' => 'sticker_magic_mirror', 'name' => 'Espejo Mágico', 'file' => 'magic_mirror.svg'],
+                ['id' => 'sticker_oil_lamp', 'name' => 'Lámpara de Aceite', 'file' => 'oil_lamp.svg'],
+                ['id' => 'sticker_art_painting', 'name' => 'Cuadro de Arte', 'file' => 'art_painting.svg'],
+                ['id' => 'sticker_crystal_ball', 'name' => 'Esfera de Cristal', 'file' => 'crystal_ball.svg'],
+                ['id' => 'sticker_sea_anchor', 'name' => 'Ancla Marina', 'file' => 'sea_anchor.svg'],
+            ]
+        ],
     ];
     ?>
 
@@ -256,37 +409,89 @@ $hasLiveSync = SubscriptionPlanConstants::hasFeature($userTier, 'live_templates'
         </div>
         
         <div class="component-menu-section-parent component-menu-section-parent--scrollable">
-            <div class="component-menu-section-header">
-                <div class="component-menu-header-box">
-                    <span class="material-symbols-rounded">interests</span>
-                    <span class="component-menu-header-title">Colección de Figuras (<span data-ref="stickers-count"><?php echo count($presetStickers); ?></span>)</span>
-                </div>
-            </div>
-            <div class="component-menu-section-body">
-                <div class="component-items-grid component-items-grid--5 active" data-ref="stickers-grid">
-                    <?php foreach ($presetStickers as $stk): ?>
-                    <div class="component-library-card" 
-                         data-action="addStickerToCanvas" 
-                         data-sticker-id="<?php echo htmlspecialchars($stk['id']); ?>" 
-                         data-sticker-category="<?php echo htmlspecialchars($stk['category']); ?>"
-                         data-tooltip="<?php echo htmlspecialchars($stk['name']); ?>" 
-                         data-position="top">
-                        <img class="component-library-card__image image-loaded" 
-                             src="<?php echo ($basePath ?? '') . '/assets/img/stickers/' . htmlspecialchars($stk['file']); ?>" 
-                             alt="<?php echo htmlspecialchars($stk['name']); ?>"
-                             loading="lazy" />
+            <?php foreach ($stickerCategories as $catKey => $catData): 
+                $previewStickers = array_slice($catData['stickers'], 0, 6);
+                $totalCount = count($catData['stickers']);
+            ?>
+            <div class="component-menu-section-parent component-menu-section-parent--bordered">
+                <div class="component-menu-section-header">
+                    <div class="component-menu-link component-menu-link--bordered" data-action="openStickerCategoryMenu" data-category="<?php echo $catKey; ?>" role="button" tabindex="0">
+                        <div class="component-menu-link-icon">
+                            <span class="material-symbols-rounded"><?php echo htmlspecialchars($catData['icon']); ?></span>
+                        </div>
+                        <div class="component-menu-link-text">
+                            <span><?php echo htmlspecialchars($catData['title']); ?> (<?php echo $totalCount; ?>)</span>
+                        </div>
+                        <div class="component-menu-link-icon">
+                            <span class="material-symbols-rounded">chevron_right</span>
+                        </div>
                     </div>
-                    <?php endforeach; ?>
                 </div>
-                <div class="component-empty-state disabled" data-ref="stickers-empty-state">
-                    <span class="material-symbols-rounded component-empty-state-icon">error</span>
-                    <p class="component-empty-state-text"><?php echo __('dt_generic_message'); ?></p>
+                <div class="component-menu-section-body">
+                    <div class="component-items-grid component-items-grid--3 active" data-ref="stickers-preview-grid-<?php echo $catKey; ?>">
+                        <?php foreach ($previewStickers as $stk): 
+                            $svgFile = ($basePath ?? '') . '/assets/img/stickers/' . $stk['file'];
+                        ?>
+                        <div class="component-library-card" 
+                             data-action="addStickerToCanvas" 
+                             data-sticker-id="<?php echo htmlspecialchars($stk['id']); ?>" 
+                             data-sticker-category="<?php echo $catKey; ?>"
+                             data-tooltip="<?php echo htmlspecialchars($stk['name']); ?>" 
+                             data-position="top">
+                            <img class="component-library-card__image image-loaded" 
+                                 src="<?php echo $svgFile; ?>" 
+                                 alt="<?php echo htmlspecialchars($stk['name']); ?>" 
+                                 loading="lazy" />
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
             </div>
+            <?php endforeach; ?>
         </div>
 
         <div class="component-menu-bottom component-menu-bottom--no-border" data-ref="module-promo-bottom-stickers"></div>
     </div>
+
+    <?php foreach ($stickerCategories as $catKey => $catData): ?>
+    <div class="component-menu component-menu--w265 component-menu--h-full component-menu--no-padding disabled" data-ref="menu-stickers-<?php echo $catKey; ?>">
+        <div class="pill-container"><div class="drag-handle"></div></div>
+        
+        <div class="component-menu-header">
+            <div class="component-menu-header-box">
+                <button class="component-button component-button--icon component-button--h30 component-button--back" data-action="backToStickersMainMenu" data-tooltip="<?php echo __('btn_back'); ?>">
+                    <span class="material-symbols-rounded">arrow_back</span>
+                </button>
+                <span class="material-symbols-rounded"><?php echo htmlspecialchars($catData['icon']); ?></span>
+                <span class="component-menu-header-title"><?php echo htmlspecialchars($catData['title']); ?> (<?php echo count($catData['stickers']); ?>)</span>
+            </div>
+        </div>
+
+        <div class="component-menu-section-parent component-menu-section-parent--scrollable">
+            <div class="component-menu-section-body">
+                <div class="component-items-grid component-items-grid--3 active" data-ref="stickers-grid-<?php echo $catKey; ?>">
+                    <?php foreach ($catData['stickers'] as $stk): 
+                        $svgFile = ($basePath ?? '') . '/assets/img/stickers/' . $stk['file'];
+                    ?>
+                    <div class="component-library-card" 
+                         data-action="addStickerToCanvas" 
+                         data-sticker-id="<?php echo htmlspecialchars($stk['id']); ?>" 
+                         data-sticker-category="<?php echo $catKey; ?>"
+                         data-tooltip="<?php echo htmlspecialchars($stk['name']); ?>" 
+                         data-position="top">
+                        <img class="component-library-card__image image-loaded" 
+                             src="<?php echo $svgFile; ?>" 
+                             alt="<?php echo htmlspecialchars($stk['name']); ?>" 
+                             loading="lazy" />
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+
+        <div class="component-menu-bottom component-menu-bottom--no-border"></div>
+    </div>
+    <?php endforeach; ?>
 
     <?php
     $shapeCategories = [

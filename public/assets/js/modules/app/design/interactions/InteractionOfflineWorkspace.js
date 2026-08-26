@@ -1,5 +1,6 @@
 import { ApiRoutes } from '../../../../core/api/ApiRoutes.js';
 import { showMessage, setButtonLoading, restoreButton, closeDropdown, localInputFormatToUtcString, parseUtcToLocalDate, formatLocalDateTimeToInput, getScheduledTimeDetails } from '../../../../core/utils/uiUtils.js';
+import { CanvasStorageEngine } from '../utils/CanvasStorageEngine.js';
 
 export const InteractionOfflineWorkspace = {
     async openOfflineResizeModal() {
@@ -606,6 +607,7 @@ export const InteractionOfflineWorkspace = {
                     try {
                         localStorage.removeItem(`rosaura_layers_${this.canvasIntId}`);
                     } catch (e) {}
+                    CanvasStorageEngine.saveLayersData(this.canvasIntId, { layers: [] }).catch(() => {});
                 }
                 if (typeof this.saveOfflineCanvasState === 'function') {
                     this.saveOfflineCanvasState(false);

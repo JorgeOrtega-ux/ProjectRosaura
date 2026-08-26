@@ -1251,6 +1251,45 @@ export const InteractionEvents = {
             return;
         }
 
+        const btnOpenStickerCategory = e.target.closest('[data-action="openStickerCategoryMenu"]');
+        if (btnOpenStickerCategory) {
+            e.preventDefault();
+            const catKey = btnOpenStickerCategory.getAttribute('data-category');
+            if (catKey) {
+                const moduleEl = document.querySelector('[data-module="moduleDesignTools"]');
+                if (moduleEl) {
+                    moduleEl.querySelectorAll('.component-menu').forEach(m => {
+                        m.classList.remove('active');
+                        m.classList.add('disabled');
+                    });
+                    const targetMenu = moduleEl.querySelector(`[data-ref="menu-stickers-${catKey}"]`);
+                    if (targetMenu) {
+                        targetMenu.classList.remove('disabled');
+                        targetMenu.classList.add('active');
+                    }
+                }
+            }
+            return;
+        }
+
+        const btnBackStickersMain = e.target.closest('[data-action="backToStickersMainMenu"]');
+        if (btnBackStickersMain) {
+            e.preventDefault();
+            const moduleEl = document.querySelector('[data-module="moduleDesignTools"]');
+            if (moduleEl) {
+                moduleEl.querySelectorAll('.component-menu').forEach(m => {
+                    m.classList.remove('active');
+                    m.classList.add('disabled');
+                });
+                const mainMenu = moduleEl.querySelector('[data-ref="menu-stickers"]');
+                if (mainMenu) {
+                    mainMenu.classList.remove('disabled');
+                    mainMenu.classList.add('active');
+                }
+            }
+            return;
+        }
+
         const btnSelectShape = e.target.closest('[data-action="selectGeometricShape"]');
         if (btnSelectShape) {
             e.preventDefault();

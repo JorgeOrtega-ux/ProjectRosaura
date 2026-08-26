@@ -409,12 +409,12 @@ export const DesignTemplates = {
                 id: stickerId,
                 name: fallbackName || 'Figura',
                 dataUrl: fallbackDataUrl,
-                width: 16,
-                height: 16,
+                width: 32,
+                height: 32,
                 sx: 0,
                 sy: 0,
-                sw: 16,
-                sh: 16
+                sw: 32,
+                sh: 32
             };
         }
         if (!sticker) return;
@@ -422,7 +422,7 @@ export const DesignTemplates = {
         const existing = this.templates.find(t => t.id === sticker.id);
         if (existing) {
             if (this.activeTemplateId !== sticker.id) {
-                const targetSize = Math.max(16, Math.min(64, Math.floor(Math.min(this.boardWidth, this.boardHeight) / 3)));
+                const targetSize = Math.max(24, Math.min(128, Math.floor(Math.min(this.boardWidth, this.boardHeight) / 3)));
                 existing.w = targetSize;
                 existing.h = targetSize;
                 existing.x = Math.round((this.boardWidth - targetSize) / 2);
@@ -436,27 +436,30 @@ export const DesignTemplates = {
         }
 
         try {
-            const spriteUrl = sticker.spriteUrl || getStickersSpriteUrl();
-            
-            // Singleton cached sprite image
-            if (!this._stickersSpriteImg || !this._stickersSpriteImg.complete || this._stickersSpriteImg.src !== spriteUrl) {
-                this._stickersSpriteImg = await new Promise((resolve, reject) => {
-                    const img = new Image();
-                    img.onload = () => resolve(img);
-                    img.onerror = () => reject(new Error('Error loading stickers sprite'));
-                    img.src = spriteUrl;
-                });
-            }
-
             const offCanvas = document.createElement('canvas');
-            offCanvas.width = 16;
-            offCanvas.height = 16;
+            const stkDim = sticker.width || 32;
+            offCanvas.width = stkDim;
+            offCanvas.height = stkDim;
             const offCtx = offCanvas.getContext('2d');
             offCtx.imageSmoothingEnabled = false;
 
-            const sx = typeof sticker.sx === 'number' ? sticker.sx : 0;
-            const sy = typeof sticker.sy === 'number' ? sticker.sy : 0;
-            offCtx.drawImage(this._stickersSpriteImg, sx, sy, 16, 16, 0, 0, 16, 16);
+            // Cargar imagen SVG individual o desde Sprite
+            const stickerImgObj = await new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = () => reject(new Error('Error loading sticker SVG'));
+                img.src = sticker.dataUrl || fallbackDataUrl || (sticker.spriteUrl || getStickersSpriteUrl());
+            });
+
+            if (sticker.dataUrl || fallbackDataUrl) {
+                offCtx.drawImage(stickerImgObj, 0, 0, stkDim, stkDim);
+            } else {
+                const sx = typeof sticker.sx === 'number' ? sticker.sx : 0;
+                const sy = typeof sticker.sy === 'number' ? sticker.sy : 0;
+                const sw = sticker.sw || 32;
+                const sh = sticker.sh || 32;
+                offCtx.drawImage(stickerImgObj, sx, sy, sw, sh, 0, 0, stkDim, stkDim);
+            }
 
             let imageBitmap = null;
             if (typeof createImageBitmap === 'function') {
@@ -468,7 +471,7 @@ export const DesignTemplates = {
             const stickerImg = new Image();
             stickerImg.src = offCanvas.toDataURL();
 
-            const targetSize = Math.max(16, Math.min(64, Math.floor(Math.min(this.boardWidth, this.boardHeight) / 3)));
+            const targetSize = Math.max(24, Math.min(128, Math.floor(Math.min(this.boardWidth, this.boardHeight) / 3)));
             const w = targetSize;
             const h = targetSize;
             const x = Math.round((this.boardWidth - w) / 2);

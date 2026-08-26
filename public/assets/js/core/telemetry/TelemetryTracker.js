@@ -9,8 +9,8 @@ class TelemetryTracker {
         
         this.allowTelemetry = options.allowTelemetry !== undefined ? options.allowTelemetry : true;
         this.batch = [];
-        this.batchSizeLimit = 3;
-        this.flushIntervalMs = 3000;
+        this.batchSizeLimit = 15;
+        this.flushIntervalMs = 15000;
         this.intervalId = null;
         this.sessionUUID = null;
         
@@ -85,6 +85,7 @@ class TelemetryTracker {
 
     async flush(isUnloading = false) {
         if (this.batch.length === 0 || !this.allowTelemetry) return;
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
 
         const payload = { 
             events: [...this.batch] 

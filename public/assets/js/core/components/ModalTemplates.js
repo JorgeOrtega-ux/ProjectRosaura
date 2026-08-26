@@ -752,7 +752,6 @@ export const ModalTemplates = {
             const hasActiveSchedule = !isOffline && !!data.resizeActive && !!data.nextResizeAt;
 
             const sizesList = {
-                "16x16": { label: "16x16", icon: "crop_square", tier: 0 },
                 "32x32": { label: "32x32", icon: "crop_square", tier: 0 },
                 "64x64": { label: "64x64", icon: "crop_square", tier: 0 },
                 "128x64": { label: "128x64", icon: "aspect_ratio", tier: 0 },
