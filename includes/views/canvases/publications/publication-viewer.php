@@ -51,100 +51,87 @@ $subBg = $author['subscription_color'] ?? 'var(--text-muted)';
      data-width="<?php echo $pubData['width']; ?>"
      data-height="<?php echo $pubData['height']; ?>">
 
-    <div class="component-wrapper component-wrapper--full no-padding" data-ref="viewer-wrapper">
+    <div class="component-wrapper component-wrapper--full no-padding" data-ref="design-wrapper">
         
         <!-- Top Toolbar / Info -->
-        <div class="component-top" style="z-index: 20;">
-            <div class="component-top-left" style="display: flex; align-items: center; gap: 14px;">
-                <button type="button" class="component-button component-button--icon component-button--h34" data-action="goBackOrHome" data-tooltip="<?php echo __('link_go_back'); ?>" data-position="bottom">
-                    <span class="material-symbols-rounded">arrow_back</span>
-                </button>
-
-                <div style="display: flex; flex-direction: column; gap: 2px;">
-                    <h1 class="component-top-title" style="font-size: 1.1rem; line-height: 1.2;"><?php echo htmlspecialchars($pubData['title']); ?></h1>
-                    
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <a href="/@<?php echo htmlspecialchars($author['identifier']); ?>" data-nav="/@<?php echo htmlspecialchars($author['identifier']); ?>" class="component-publication-author" style="gap: 6px;">
-                            <img src="<?php echo htmlspecialchars($author['avatar_url']); ?>" alt="<?php echo htmlspecialchars($author['username']); ?>" class="component-publication-author__avatar" style="width: 18px; height: 18px;">
-                            <span class="component-publication-author__handle" style="font-size: 0.75rem;"><?php echo htmlspecialchars($author['handle']); ?></span>
-                        </a>
-                        <span class="component-text-muted" style="font-size: 0.7rem;">•</span>
-                        <span class="component-text-muted" style="font-size: 0.7rem;"><?php echo htmlspecialchars($dateFormatted); ?></span>
-                    </div>
-                </div>
+        <div class="component-top">
+            <div class="component-top-left">
+                <h1 class="component-top-title"><?php echo htmlspecialchars($pubData['title']); ?></h1>
             </div>
 
-            <div class="component-top-right" style="display: flex; align-items: center; gap: 8px;">
-                <?php if ($isLoggedIn): ?>
-                    <button type="button" class="component-button component-button--h34 btn-favorite <?php echo $isLiked ? 'is-favorite' : ''; ?>" data-action="togglePublicationLike" data-uuid="<?php echo htmlspecialchars($pubData['uuid']); ?>">
-                        <span class="material-symbols-rounded component-icon--20">favorite</span>
-                        <span data-ref="top-like-count"><?php echo number_format($pubData['likes_count']); ?></span>
+            <div class="component-top-right">
+                <div class="component-actions active">
+                    <?php if ($isLoggedIn): ?>
+                        <button type="button" class="component-button component-button--h34 btn-favorite <?php echo $isLiked ? 'is-favorite' : ''; ?>" data-action="togglePublicationLike" data-uuid="<?php echo htmlspecialchars($pubData['uuid']); ?>" data-tooltip="<?php echo __('publications.like'); ?>" data-position="bottom">
+                            <span class="material-symbols-rounded component-icon--20">favorite</span>
+                            <span data-ref="top-like-count"><?php echo number_format($pubData['likes_count']); ?></span>
+                        </button>
+                    <?php else: ?>
+                        <div class="component-badge">
+                            <span class="material-symbols-rounded component-text-accent">favorite</span>
+                            <span><?php echo number_format($pubData['likes_count']); ?></span>
+                        </div>
+                    <?php endif; ?>
+
+                    <button type="button" class="component-button component-button--icon component-button--h34" data-action="copyPublicationLink" data-tooltip="<?php echo __('btn_share'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">share</span>
                     </button>
-                <?php else: ?>
-                    <div class="component-badge component-badge--glass">
-                        <span class="material-symbols-rounded component-text-accent">favorite</span>
-                        <span><?php echo number_format($pubData['likes_count']); ?></span>
-                    </div>
-                <?php endif; ?>
 
-                <button type="button" class="component-button component-button--icon component-button--h34" data-action="copyPublicationLink" data-tooltip="<?php echo __('btn_share'); ?>" data-position="bottom">
-                    <span class="material-symbols-rounded">share</span>
-                </button>
-
-                <button type="button" class="component-button component-button--icon component-button--h34" data-action="downloadArtwork" data-tooltip="<?php echo __('btn_download'); ?>" data-position="bottom">
-                    <span class="material-symbols-rounded">download</span>
-                </button>
-
-                <?php if ($isOwner): ?>
-                    <button type="button" class="component-button component-button--icon component-button--h34 component-text-danger" data-action="deletePublication" data-uuid="<?php echo htmlspecialchars($pubData['uuid']); ?>" data-tooltip="<?php echo __('btn_delete'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">delete</span>
+                    <button type="button" class="component-button component-button--icon component-button--h34" data-action="downloadArtwork" data-tooltip="<?php echo __('btn_download'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">download</span>
                     </button>
-                <?php endif; ?>
+
+                    <?php if ($isOwner): ?>
+                        <button type="button" class="component-button component-button--icon component-button--h34 component-button--danger" data-action="deletePublication" data-uuid="<?php echo htmlspecialchars($pubData['uuid']); ?>" data-tooltip="<?php echo __('btn_delete'); ?>" data-position="bottom">
+                            <span class="material-symbols-rounded">delete</span>
+                        </button>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
 
         <!-- Main Surface -->
-        <div class="component-bottom" style="position: relative; flex: 1; overflow: hidden;">
+        <div class="component-bottom">
             <canvas class="component-canvas-surface" data-ref="publication-canvas"></canvas>
 
-            <!-- Bottom Floating Toolbar -->
-            <div class="canvas-design-toolbar active" data-ref="viewer-toolbar" style="z-index: 30;">
-                <button type="button" class="component-button component-button--icon component-button--h32" data-action="zoomIn" data-tooltip="<?php echo __('lbl_zoom_in'); ?>" data-position="top">
-                    <span class="material-symbols-rounded">zoom_in</span>
-                </button>
-                <button type="button" class="component-button component-button--icon component-button--h32" data-action="zoomOut" data-tooltip="<?php echo __('lbl_zoom_out'); ?>" data-position="top">
-                    <span class="material-symbols-rounded">zoom_out</span>
-                </button>
-                <button type="button" class="component-button component-button--icon component-button--h32" data-action="resetZoom" data-tooltip="<?php echo __('lbl_reset_zoom'); ?>" data-position="top">
-                    <span class="material-symbols-rounded">center_focus_strong</span>
-                </button>
-                <button type="button" class="component-button component-button--icon component-button--h32 active" data-action="toggleGrid" data-tooltip="<?php echo __('dt_grid'); ?>" data-position="top">
-                    <span class="material-symbols-rounded">grid_on</span>
-                </button>
+            <!-- Unified Top Property Bar / Floating Toolbar -->
+            <div class="component-tools-wrapper component-tools-wrapper--top component-property-bar-wrapper" data-ref="canvas-top-property-bar-wrapper">
+                <div class="component-toolbar component-toolbar--horizontal component-toolbar--top component-property-bar active" data-ref="canvas-top-property-bar">
+                    <button type="button" class="component-button component-button--icon component-button--h32 active" data-action="toggleGrid" data-ref="btn-toggle-grid" data-tooltip="<?php echo __('dt_grid'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">grid_on</span>
+                    </button>
 
-                <div class="component-badge-divider" style="height: 20px;"></div>
+                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleMenuInModule" data-module-target="modulePublicationComments" data-menu-target="menu-comments" data-tooltip="<?php echo __('publications.comments'); ?> [C]" data-position="bottom">
+                        <span class="material-symbols-rounded">chat</span>
+                    </button>
 
-                <!-- Botón de Comentarios -->
-                <button type="button" class="component-button component-button--h32" data-action="toggleCommentsDrawer" data-tooltip="<?php echo __('publications.comments'); ?>" data-position="top">
-                    <span class="material-symbols-rounded">chat</span>
-                    <span><?php echo __('publications.comments'); ?> (<span data-ref="toolbar-comments-count"><?php echo number_format($pubData['comments_count']); ?></span>)</span>
-                </button>
+                    <div class="component-property-bar__divider"></div>
 
-                <button type="button" class="component-button component-button--icon component-button--h32" data-action="downloadArtwork" data-tooltip="<?php echo __('btn_download'); ?>" data-position="top">
-                    <span class="material-symbols-rounded">download</span>
-                </button>
+                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="downloadArtwork" data-tooltip="<?php echo __('btn_download'); ?>" data-position="bottom">
+                        <span class="material-symbols-rounded">download</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Left Coordinate / Resolution Badges -->
-            <div class="canvas-badges-left" data-ref="badges-left" style="z-index: 30;">
+            <div class="component-canvas-badges component-canvas-badges--left" data-ref="badges-left">
+                <a href="/@<?php echo htmlspecialchars($author['identifier']); ?>" data-nav="/@<?php echo htmlspecialchars($author['identifier']); ?>" class="component-badge component-badge--interactive" style="text-decoration: none;">
+                    <img src="<?php echo htmlspecialchars($author['avatar_url']); ?>" alt="<?php echo htmlspecialchars($author['username']); ?>" style="width: 16px; height: 16px; border-radius: 50%; object-fit: cover;">
+                    <span style="font-weight: 600;"><?php echo htmlspecialchars($author['handle']); ?></span>
+                    <span class="component-text-muted">•</span>
+                    <span class="component-text-muted"><?php echo htmlspecialchars($dateFormatted); ?></span>
+                </a>
+
                 <div class="component-badge" data-badge-id="coords">
                     <span class="material-symbols-rounded">aspect_ratio</span>
                     <span><?php echo $pubData['width']; ?> x <?php echo $pubData['height']; ?> px</span>
                 </div>
+
                 <div class="component-badge" data-badge-id="views">
                     <span class="material-symbols-rounded">visibility</span>
                     <span><?php echo number_format($pubData['views_count']); ?> <?php echo __('publications.views'); ?></span>
                 </div>
+
                 <?php if (!empty($pubData['description'])): ?>
                 <div class="component-badge" style="max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="<?php echo htmlspecialchars($pubData['description']); ?>">
                     <span class="material-symbols-rounded">info</span>
@@ -152,48 +139,40 @@ $subBg = $author['subscription_color'] ?? 'var(--text-muted)';
                 </div>
                 <?php endif; ?>
             </div>
+
+            <div class="component-canvas-badges component-canvas-badges--right" data-ref="badges-right"></div>
+
+            <!-- Bottom Dock / Footer -->
+            <div class="component-canvas-bottom-dock" data-ref="canvas-bottom-dock">
+                <div class="component-canvas-footer" data-ref="canvas-design-footer">
+                    <div class="component-canvas-footer-left" data-ref="canvas-design-footer-left">
+                        <button type="button" class="component-button component-button--h32" data-action="toggleMenuInModule" data-module-target="modulePublicationComments" data-menu-target="menu-comments" data-tooltip="<?php echo __('publications.comments'); ?>" data-position="top">
+                            <span class="material-symbols-rounded">chat</span>
+                            <span><?php echo __('publications.comments'); ?> (<span data-ref="footer-comments-count"><?php echo number_format($pubData['comments_count']); ?></span>)</span>
+                        </button>
+                    </div>
+
+                    <div class="component-canvas-footer-right" data-ref="canvas-design-footer-right">
+                        <!-- Zoom Controls identical to design.php -->
+                        <div class="component-canvas-footer-group">
+                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="zoomOutStep" data-tooltip="<?php echo __('lbl_zoom_out'); ?>" data-position="top">
+                                <span class="material-symbols-rounded">remove</span>
+                            </button>
+                            <div class="component-canvas-footer-slider-box">
+                                <input type="range" class="component-range component-range--zoom" data-ref="footer-zoom-slider" min="0" max="1000" step="1" value="400" />
+                            </div>
+                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="zoomInStep" data-tooltip="<?php echo __('lbl_zoom_in'); ?>" data-position="top">
+                                <span class="material-symbols-rounded">add</span>
+                            </button>
+                            <button type="button" class="component-canvas-footer-zoom-tag" data-action="resetZoomFit" data-ref="footer-zoom-label" data-tooltip="<?php echo __('lbl_reset_zoom'); ?>" data-position="top">
+                                100%
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Slide-out Comments Module Drawer -->
-    <div class="component-comments-module" data-ref="comments-drawer">
-        <div class="component-comments-header">
-            <div class="component-comments-title">
-                <span class="material-symbols-rounded">chat</span>
-                <span><?php echo __('publications.comments'); ?> (<span data-ref="drawer-comments-count"><?php echo number_format($pubData['comments_count']); ?></span>)</span>
-            </div>
-            <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleCommentsDrawer">
-                <span class="material-symbols-rounded">close</span>
-            </button>
-        </div>
-
-        <div class="component-comments-list" data-ref="comments-list">
-            <!-- Dynamic comments list will be rendered here -->
-            <div class="component-empty-state" data-ref="comments-loading" style="padding: 40px 20px; text-align: center;">
-                <span class="material-symbols-rounded" style="font-size: 32px; color: var(--text-muted);">hourglass_top</span>
-                <p class="component-text-muted" style="font-size: 0.8rem; margin-top: 8px;">Cargando comentarios...</p>
-            </div>
-        </div>
-
-        <div class="component-comments-composer">
-            <?php if ($isLoggedIn): ?>
-                <div class="component-comments-composer__input-wrapper">
-                    <textarea data-ref="input-comment" placeholder="<?php echo __('publications.write_comment'); ?>" rows="2" maxlength="1000"></textarea>
-                    <button type="button" class="component-button component-button--primary component-button--icon component-button--h36" data-action="submitComment" data-tooltip="<?php echo __('publications.btn_comment'); ?>">
-                        <span class="material-symbols-rounded">send</span>
-                    </button>
-                </div>
-            <?php else: ?>
-                <div style="text-align: center; padding: 6px 0;">
-                    <p class="component-text-muted" style="font-size: 0.8rem; margin-bottom: 8px;">Inicia sesión para dejar un comentario.</p>
-                    <button type="button" class="component-button component-button--primary component-button--full component-button--h34" data-nav="/login">
-                        <span class="material-symbols-rounded">login</span>
-                        <span><?php echo __('link_login'); ?></span>
-                    </button>
-                </div>
-            <?php endif; ?>
-        </div>
-    </div>
-    
-    <div class="component-comments-module__backdrop" data-action="toggleCommentsDrawer"></div>
+    <?php require_once ROOT_PATH . '/includes/modules/modulePublicationComments.php'; ?>
 </div>

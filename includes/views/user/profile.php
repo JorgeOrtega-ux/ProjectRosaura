@@ -121,52 +121,69 @@ $subBg = $user['subscription_color'] ?? 'var(--text-muted)';
         </div>
     </div>
 
-    <!-- Stats Bar -->
-    <div class="component-profile-stats">
-        <div class="component-profile-stat-item">
-            <span class="component-profile-stat-value" data-ref="stat-pubs"><?php echo number_format($stats['total_publications']); ?></span>
-            <span class="component-profile-stat-label"><?php echo __('profile.stats_pubs'); ?></span>
+    <!-- Stats Cards Grid -->
+    <div class="component-profile-stat-grid">
+        <div class="component-card component-stat-card">
+            <div class="component-icon-frame component-stat-card__icon">
+                <span class="material-symbols-rounded">palette</span>
+            </div>
+            <div class="component-stat-card__content">
+                <span class="component-stat-card__title"><?php echo __('profile.stats_pubs'); ?></span>
+                <span class="component-stat-card__value" data-ref="stat-pubs"><?php echo number_format($stats['total_publications']); ?></span>
+            </div>
         </div>
-        <div class="component-badge-divider" style="height: 32px;">|</div>
-        <div class="component-profile-stat-item">
-            <span class="component-profile-stat-value" data-ref="stat-likes"><?php echo number_format($stats['total_likes_received']); ?></span>
-            <span class="component-profile-stat-label"><?php echo __('profile.stats_likes'); ?></span>
+        <div class="component-card component-stat-card">
+            <div class="component-icon-frame component-stat-card__icon">
+                <span class="material-symbols-rounded component-text-accent">favorite</span>
+            </div>
+            <div class="component-stat-card__content">
+                <span class="component-stat-card__title"><?php echo __('profile.stats_likes'); ?></span>
+                <span class="component-stat-card__value" data-ref="stat-likes"><?php echo number_format($stats['total_likes_received']); ?></span>
+            </div>
         </div>
-        <div class="component-badge-divider" style="height: 32px;">|</div>
-        <div class="component-profile-stat-item">
-            <span class="component-profile-stat-value" data-ref="stat-views"><?php echo number_format($stats['total_views_received']); ?></span>
-            <span class="component-profile-stat-label"><?php echo __('profile.stats_views'); ?></span>
+        <div class="component-card component-stat-card">
+            <div class="component-icon-frame component-stat-card__icon">
+                <span class="material-symbols-rounded">visibility</span>
+            </div>
+            <div class="component-stat-card__content">
+                <span class="component-stat-card__title"><?php echo __('profile.stats_views'); ?></span>
+                <span class="component-stat-card__value" data-ref="stat-views"><?php echo number_format($stats['total_views_received']); ?></span>
+            </div>
         </div>
     </div>
 
-    <!-- Navigation Tabs -->
-    <div class="component-profile-tabs">
-        <button type="button" class="component-profile-tab active" data-action="switchProfileTab" data-tab="publications">
-            <span class="material-symbols-rounded">grid_view</span>
-            <span><?php echo __('profile.tab_publications'); ?> (<?php echo count($publications); ?>)</span>
-        </button>
-        <?php if ($liveCanvas): ?>
-        <button type="button" class="component-profile-tab" data-action="switchProfileTab" data-tab="live">
-            <span class="material-symbols-rounded component-text-success">sensors</span>
-            <span><?php echo __('profile.tab_live_canvas'); ?></span>
-        </button>
-        <?php endif; ?>
-        <button type="button" class="component-profile-tab" data-action="switchProfileTab" data-tab="canvases">
-            <span class="material-symbols-rounded">brush</span>
-            <span><?php echo __('profile.tab_canvases'); ?> (<?php echo count($publicCanvases); ?>)</span>
-        </button>
+    <!-- Navigation Tabs as Toggle Pill -->
+    <div style="padding: 0 16px; margin-top: 24px;">
+        <div class="component-toggle-pill component-toggle-pill--profile" data-ref="profile-toggle-pill" data-tab="publications">
+            <div class="component-toggle-pill-glider" data-ref="profile-glider"></div>
+            <button type="button" class="component-button component-button--rounded-pill active" data-action="switchProfileTab" data-tab="publications">
+                <span class="material-symbols-rounded">palette</span>
+                <span><?php echo __('profile.tab_publications'); ?> (<?php echo count($publications); ?>)</span>
+            </button>
+            <?php if ($liveCanvas): ?>
+            <button type="button" class="component-button component-button--rounded-pill" data-action="switchProfileTab" data-tab="live">
+                <span class="material-symbols-rounded">sensors</span>
+                <span><?php echo __('profile.tab_live_canvas'); ?></span>
+            </button>
+            <?php endif; ?>
+            <button type="button" class="component-button component-button--rounded-pill" data-action="switchProfileTab" data-tab="canvases">
+                <span class="material-symbols-rounded">brush</span>
+                <span><?php echo __('profile.tab_canvases'); ?> (<?php echo count($publicCanvases); ?>)</span>
+            </button>
+        </div>
     </div>
 
     <!-- Tab Content: Publications -->
-    <div class="component-profile-tab-content active" data-ref="tab-content-publications" style="padding: 24px;">
+    <div class="component-profile-tab-content active" data-ref="tab-content-publications">
         <?php if (!empty($publications)): ?>
-            <div class="component-grid-gallery" data-ref="profile-publications-grid">
+            <div class="component-grid" data-ref="profile-publications-grid">
                 <?php foreach ($publications as $pub): ?>
                     <div class="component-gallery-card component-publication-card" data-publication-uuid="<?php echo htmlspecialchars($pub['uuid']); ?>">
                         <img src="<?php echo htmlspecialchars($pub['image_url']); ?>" 
                              alt="<?php echo htmlspecialchars($pub['title']); ?>" 
                              class="component-gallery-card__image image-lazy-fade" 
                              loading="lazy" 
+                             decoding="async"
                              onload="this.classList.add('image-loaded')"
                              onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/canvas-default.png'; this.classList.add('image-loaded');">
 
@@ -182,14 +199,10 @@ $subBg = $user['subscription_color'] ?? 'var(--text-muted)';
                             <h3 class="component-gallery-title"><?php echo htmlspecialchars($pub['title']); ?></h3>
                         </div>
 
-                        <div class="component-gallery-actions-wrapper">
-                            <div class="component-publication-author" data-nav="/@<?php echo htmlspecialchars($user['identifier']); ?>">
-                                <img src="<?php echo htmlspecialchars($user['avatar_url']); ?>" alt="<?php echo htmlspecialchars($user['username']); ?>" class="component-publication-author__avatar">
-                                <span class="component-publication-author__handle"><?php echo htmlspecialchars($user['handle']); ?></span>
-                            </div>
+                        <div class="component-gallery-actions-wrapper component-dropdown-wrapper">
                             <div class="component-gallery-actions">
                                 <?php if (!empty($_SESSION['user_id'])): ?>
-                                    <button type="button" class="component-button component-button--icon component-button--h32 btn-favorite <?php echo $pub['is_liked'] ? 'is-favorite' : ''; ?>" data-action="togglePublicationLike" data-uuid="<?php echo htmlspecialchars($pub['uuid']); ?>">
+                                    <button type="button" class="component-button component-button--icon component-button--h32 btn-favorite <?php echo $pub['is_liked'] ? 'is-favorite' : ''; ?>" data-action="togglePublicationLike" data-uuid="<?php echo htmlspecialchars($pub['uuid']); ?>" data-tooltip="<?php echo __('publications.like'); ?>">
                                         <span class="material-symbols-rounded component-icon--20">favorite</span>
                                     </button>
                                 <?php endif; ?>
@@ -208,7 +221,7 @@ $subBg = $user['subscription_color'] ?? 'var(--text-muted)';
 
     <!-- Tab Content: Live Canvas -->
     <?php if ($liveCanvas): ?>
-    <div class="component-profile-tab-content disabled" data-ref="tab-content-live" style="padding: 24px;">
+    <div class="component-profile-tab-content disabled" data-ref="tab-content-live" style="padding: 20px;">
         <div class="component-card component-card--interactive" style="max-width: 600px; padding: 24px; border: 1px solid var(--border-subtle); border-radius: var(--border-radius-lg); background: var(--bg-surface);">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
                 <div class="component-badge component-badge--success">
@@ -240,12 +253,21 @@ $subBg = $user['subscription_color'] ?? 'var(--text-muted)';
     <?php endif; ?>
 
     <!-- Tab Content: Public Canvases -->
-    <div class="component-profile-tab-content disabled" data-ref="tab-content-canvases" style="padding: 24px;">
+    <div class="component-profile-tab-content disabled" data-ref="tab-content-canvases">
         <?php if (!empty($publicCanvases)): ?>
-            <div class="component-grid-gallery" data-ref="profile-canvases-grid">
-                <?php foreach ($publicCanvases as $canv): ?>
+            <div class="component-grid" data-ref="profile-canvases-grid">
+                <?php foreach ($publicCanvases as $canv): 
+                    $thumbnailUrl = !empty($canv['thumbnail_url']) ? $canv['thumbnail_url'] : (APP_URL . '/assets/img/fallbacks/canvas-default.png');
+                ?>
                     <div class="component-gallery-card" data-card-id="<?php echo $canv['id']; ?>">
-                        <img src="<?php echo APP_URL; ?>/assets/img/fallbacks/canvas-default.png" alt="<?php echo htmlspecialchars($canv['name']); ?>" class="component-gallery-card__image">
+                        <img src="<?php echo htmlspecialchars($thumbnailUrl); ?>" 
+                             alt="<?php echo htmlspecialchars($canv['name']); ?>" 
+                             class="component-gallery-card__image image-lazy-fade" 
+                             loading="lazy" 
+                             decoding="async" 
+                             onload="this.classList.add('image-loaded')" 
+                             onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/canvas-default.png'; this.classList.add('image-loaded');">
+
                         <div class="component-badge component-badge--glass component-badge--absolute-tr">
                             <span class="material-symbols-rounded">group</span>
                             <span><?php echo number_format($canv['members_count']); ?></span>
@@ -253,8 +275,19 @@ $subBg = $user['subscription_color'] ?? 'var(--text-muted)';
                             <span class="material-symbols-rounded component-text-accent">favorite</span>
                             <span><?php echo number_format($canv['favorites_count']); ?></span>
                         </div>
+
                         <div data-nav="<?php echo htmlspecialchars($canv['url']); ?>" class="component-gallery-link">
                             <h3 class="component-gallery-title"><?php echo htmlspecialchars($canv['name']); ?></h3>
+                        </div>
+
+                        <div class="component-gallery-actions-wrapper component-dropdown-wrapper">
+                            <div class="component-gallery-actions">
+                                <?php if (!empty($_SESSION['user_id'])): ?>
+                                    <button type="button" class="component-button component-button--icon component-button--h32 btn-favorite <?php echo !empty($canv['is_favorite']) ? 'is-favorite' : ''; ?>" data-action="toggleFavorite" data-id="<?php echo $canv['id']; ?>">
+                                        <span class="material-symbols-rounded component-icon--20">favorite</span>
+                                    </button>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     </div>
                 <?php endforeach; ?>

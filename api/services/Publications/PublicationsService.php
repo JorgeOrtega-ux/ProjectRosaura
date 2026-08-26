@@ -6,6 +6,7 @@ use App\Config\Database\DatabaseManager;
 use App\Core\Interfaces\SessionManagerInterface;
 use App\Core\Interfaces\UserRepositoryInterface;
 use App\Core\Helpers\Utils;
+use App\Core\Helpers\EnvLoader;
 use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
 use PDO;
@@ -103,8 +104,26 @@ class PublicationsService {
         $fullPath = $fullPubDir . '/' . $fileName;
         $relDbPath = $pubRelDir . '/' . $fileName;
 
+        // Guardar copia en disco local
         if (file_put_contents($fullPath, $decodedImage) === false) {
             Logger::error("Failed to save publication image file", ['path' => $fullPath]);
+            return ['success' => false, 'message' => __('publications.save_error')];
+        }
+
+        // Subir a MinIO / Amazon S3
+        $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+        $s3Key = $pubRelDir . '/' . $fileName;
+        try {
+            $s3Client = Utils::getS3Client();
+            $s3Client->putObject([
+                'Bucket' => $bucket,
+                'Key'    => $s3Key,
+                'Body'   => $decodedImage,
+                'ContentType' => 'image/png'
+            ]);
+        } catch (\Throwable $e) {
+            Logger::error("Failed to upload publication image to S3", ['exception' => $e->getMessage(), 'uuid' => $uuid]);
+            @unlink($fullPath);
             return ['success' => false, 'message' => __('publications.save_error')];
         }
 
@@ -139,6 +158,10 @@ class PublicationsService {
             ];
         } catch (\Throwable $e) {
             @unlink($fullPath);
+            try {
+                $s3Client = Utils::getS3Client();
+                $s3Client->deleteObject(['Bucket' => $bucket, 'Key' => $s3Key]);
+            } catch (\Throwable $s3Ex) {}
             Logger::error("Database error inserting publication", ['exception' => $e, 'user_id' => $userId]);
             return ['success' => false, 'message' => __('error.database')];
         }
@@ -656,7 +679,22 @@ class PublicationsService {
                 return ['success' => false, 'message' => __('error.unauthorized')];
             }
 
-            // Eliminar archivo físico
+            // Eliminar de S3 / MinIO
+            if (!empty($pub['image_path'])) {
+                try {
+                    $s3Key = Utils::normalizeStoragePath($pub['image_path']);
+                    $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+                    $s3Client = Utils::getS3Client();
+                    $s3Client->deleteObject([
+                        'Bucket' => $bucket,
+                        'Key'    => $s3Key
+                    ]);
+                } catch (\Throwable $e) {
+                    Logger::error("Failed to delete publication image from S3", ['exception' => $e->getMessage(), 'key' => $pub['image_path']]);
+                }
+            }
+
+            // Eliminar archivo físico local si existe
             if (!empty($pub['image_path'])) {
                 $rootPath = defined('ROOT_PATH') ? ROOT_PATH : dirname(__DIR__, 3);
                 $fullImgPath = $rootPath . '/storage/public/' . ltrim($pub['image_path'], '/');

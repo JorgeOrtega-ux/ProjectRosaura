@@ -8,11 +8,13 @@ export class UserProfileController {
         this.abortController = null;
         this.handleClickBound = this.handleClick.bind(this);
         this.handleChangeBound = this.handleChange.bind(this);
+        this.handleResizeBound = this.handleResize.bind(this);
     }
 
     init() {
         this.abortController = new AbortController();
         this.bindEvents();
+        this.updateGlider();
     }
 
     destroy() {
@@ -22,11 +24,17 @@ export class UserProfileController {
         }
         document.removeEventListener('click', this.handleClickBound);
         document.removeEventListener('change', this.handleChangeBound);
+        window.removeEventListener('resize', this.handleResizeBound);
     }
 
     bindEvents() {
         document.addEventListener('click', this.handleClickBound);
         document.addEventListener('change', this.handleChangeBound);
+        window.addEventListener('resize', this.handleResizeBound);
+    }
+
+    handleResize() {
+        this.updateGlider();
     }
 
     handleClick(e) {
@@ -62,6 +70,14 @@ export class UserProfileController {
             this.toggleLike(pubUuid, likeBtn);
             return;
         }
+
+        // Toggle canvas favorite
+        const favBtn = e.target.closest('[data-action="toggleFavorite"]');
+        if (favBtn) {
+            const canvasId = favBtn.getAttribute('data-id');
+            this.toggleCanvasFavorite(canvasId, favBtn);
+            return;
+        }
     }
 
     handleChange(e) {
@@ -86,6 +102,24 @@ export class UserProfileController {
             targetContent.classList.remove('disabled');
             targetContent.classList.add('active');
         }
+
+        this.updateGlider(activeBtn);
+    }
+
+    updateGlider(activeBtn = null) {
+        const pill = document.querySelector('[data-ref="profile-toggle-pill"]');
+        const glider = document.querySelector('[data-ref="profile-glider"]');
+        if (!pill || !glider) return;
+
+        const target = activeBtn || pill.querySelector('[data-action="switchProfileTab"].active');
+        if (!target) return;
+
+        const pillRect = pill.getBoundingClientRect();
+        const targetRect = target.getBoundingClientRect();
+
+        const offsetLeft = targetRect.left - pillRect.left;
+        glider.style.width = `${targetRect.width}px`;
+        glider.style.transform = `translateX(${offsetLeft - 4}px)`;
     }
 
     async handleBannerFileSelected(e) {
@@ -152,6 +186,22 @@ export class UserProfileController {
             }
         } catch (err) {
             showMessage('Error al procesar Me Gusta', 'error');
+        }
+    }
+
+    async toggleCanvasFavorite(canvasId, buttonEl) {
+        if (!canvasId) return;
+
+        try {
+            const res = await this.api.post(ApiRoutes.Canvases.ToggleFavorite, { canvas_id: canvasId });
+            if (res && res.success) {
+                buttonEl.classList.toggle('is-favorite', res.is_favorite);
+                if (res.message) showMessage(res.message, 'success');
+            } else {
+                if (res && res.message) showMessage(res.message, 'error');
+            }
+        } catch (err) {
+            showMessage('Error al procesar favorito', 'error');
         }
     }
 }

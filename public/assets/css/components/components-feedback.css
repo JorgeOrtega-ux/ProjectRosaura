@@ -261,7 +261,9 @@
 }
 
 .component-wrapper[data-ref="design-wrapper"] .component-bottom,
-.component-wrapper[data-ref="snapshot-wrapper"] .component-bottom {
+.component-wrapper[data-ref="snapshot-wrapper"] .component-bottom,
+.component-wrapper[data-ref="publication-wrapper"] .component-bottom,
+.component-wrapper[data-ref="viewer-wrapper"] .component-bottom {
     flex: 1;
     overflow: hidden;
     position: relative;
@@ -546,7 +548,9 @@
 }
 
 .component-wrapper[data-ref="design-wrapper"] .component-bottom,
-.component-wrapper[data-ref="snapshot-wrapper"] .component-bottom {
+.component-wrapper[data-ref="snapshot-wrapper"] .component-bottom,
+.component-wrapper[data-ref="publication-wrapper"] .component-bottom,
+.component-wrapper[data-ref="viewer-wrapper"] .component-bottom {
     flex: 1;
     overflow: hidden;
     position: relative;

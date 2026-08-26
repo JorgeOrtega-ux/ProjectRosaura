@@ -198,6 +198,7 @@ class UserProfileViewService {
                 'name' => $c['name'],
                 'size' => $c['size'],
                 'tags' => $tags,
+                'thumbnail_url' => Utils::getS3PublicUrl("thumbnails/canvas_" . $c['uuid'] . ".webp"),
                 'is_online_active' => (bool)$c['is_online_active'],
                 'members_count' => (int)$c['members_count'],
                 'favorites_count' => (int)$c['favorites_count'],
