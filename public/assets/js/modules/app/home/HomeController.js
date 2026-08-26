@@ -87,6 +87,9 @@ class HomeController {
         if (this.abortController) this.abortController.abort();
         if (this.feedAbortController) this.feedAbortController.abort();
         document.removeEventListener('click', this.handleGlobalClickBound);
+        if (this._onLocalCanvasSynced) {
+            document.removeEventListener('localCanvasSynced', this._onLocalCanvasSynced);
+        }
         const carousel = document.querySelector('[data-ref="home-tags-carousel"]');
         if (carousel) {
             carousel.removeEventListener('scroll', this.updateCarouselButtonsBound);
@@ -98,6 +101,20 @@ class HomeController {
 
     bindEvents() {
         document.addEventListener('click', this.handleGlobalClickBound);
+
+        // Actualizar allCanvases cuando un lienzo local se sincroniza desde la galería
+        this._onLocalCanvasSynced = (e) => {
+            const { oldUuid, newCanvas } = e.detail || {};
+            if (!oldUuid || !newCanvas) return;
+            const idx = this.allCanvases.findIndex(c => c.uuid === oldUuid || c.id === oldUuid);
+            if (idx !== -1) {
+                this.allCanvases[idx] = newCanvas;
+            } else {
+                // Si el observer no lo tenía registrado, simplemente eliminarlo del tracking
+                this.allCanvases = this.allCanvases.filter(c => c.uuid !== oldUuid && c.id !== oldUuid);
+            }
+        };
+        document.addEventListener('localCanvasSynced', this._onLocalCanvasSynced);
 
         const wrapper = document.querySelector('.component-tags-carousel-wrapper');
         if (wrapper) {

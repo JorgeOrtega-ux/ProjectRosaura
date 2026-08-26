@@ -136,13 +136,19 @@ class AppViewService {
         $activeAccountId = ($session && method_exists($session, 'isLoggedIn') && $session->isLoggedIn()) ? $session->getActiveAccountId() : null;
 
         if (strpos($canvasUuid, 'local_') === 0) {
+            // Leer tamaño desde query param si el cliente lo envió al navegar
+            $localSize = '64x64';
+            if (isset($_GET['size']) && preg_match('/^\d+x\d+$/', $_GET['size'])) {
+                $localSize = htmlspecialchars($_GET['size']);
+            }
+
             return [
                 'isNotFound' => false,
                 'isBanned' => false,
                 'canvasIntId' => $canvasUuid,
                 'canvasUuid' => $canvasUuid,
                 'canvasName' => 'Lienzo Local',
-                'canvasSize' => '64x64',
+                'canvasSize' => $localSize,
                 'canvasPalette' => 'default',
                 'canvasPrivacy' => 'private',
                 'canvasMode' => 'offline',
@@ -172,10 +178,13 @@ class AppViewService {
                 'timerAction' => 'restart',
                 'resizeActive' => '0',
                 'nextResizeAt' => '',
-                'resizeTargetSize' => '64x64',
+                'resizeTargetSize' => $localSize,
                 'resizeTimerAction' => 'restart',
                 'isSnapshot' => false,
-                'isLocalCanvas' => true
+                'isLocalCanvas' => true,
+                'showDesignTools' => true,
+                'activeLiveShareCode' => '',
+                'activeLiveShareData' => null,
             ];
         }
 
@@ -499,7 +508,10 @@ class AppViewService {
             'canModerateChat' => $canModerateChat ?? '0',
             'chatUsername' => $chatUsername ?? __('user'),
             'maxImages' => $maxImages ?? 4,
-            'maxUploadMB' => $maxUploadMB ?? 10
+            'maxUploadMB' => $maxUploadMB ?? 10,
+            'showDesignTools' => ($isMember || $isOwner) && !$isBanned,
+            'ownerTier' => $ownerTier,
+            'isLocalCanvas' => false,
         ];
 
         if (isset($redis) && $redis && !empty($canvasIntId)) {

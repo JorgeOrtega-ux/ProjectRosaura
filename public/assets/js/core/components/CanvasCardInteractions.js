@@ -1161,7 +1161,18 @@ export class CanvasCardInteractions {
                         is_online_active: false
                     };
                     const newCardHtml = CardTemplates.canvasCard(newCanvasObj, { basePath: this.basePath });
-                    card.outerHTML = newCardHtml;
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = newCardHtml;
+                    const newCardEl = tempDiv.firstElementChild;
+                    if (newCardEl) {
+                        card.replaceWith(newCardEl);
+                    } else {
+                        card.remove();
+                    }
+                    // Notificar a HomeController para que actualice allCanvases y el VirtualGridObserver
+                    document.dispatchEvent(new CustomEvent('localCanvasSynced', {
+                        detail: { oldUuid: uuid, newCanvas: newCanvasObj }
+                    }));
                 }
             } else {
                 const errMsg = res?.message || window.__('err_occurred') || 'Error al sincronizar con la nube.';

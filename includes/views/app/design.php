@@ -28,6 +28,12 @@ if ($isLocal) {
     $isSubscriptionLockedInit = false;
     $isOwner = true;
     $isMember = true;
+    $showDesignTools = true;
+}
+
+// Fallback: si showDesignTools no llegó del servicio (cache vieja), calcularlo aquí
+if (!isset($showDesignTools)) {
+    $showDesignTools = !empty($isOwner) || (!empty($isMember) && empty($isBanned));
 }
 ?>
 <script>window.__CANVAS_VIEW_START__ = performance.now();</script>

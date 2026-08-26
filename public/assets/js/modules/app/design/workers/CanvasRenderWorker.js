@@ -736,6 +736,8 @@ async function hydrateState(base64String) {
         
         if (isOfflineMode) {
             const totalPixels = boardWidth * boardHeight;
+            // ✅ Leer desde pixelBuffer DESPUÉS de que se llenó mainImageData.data
+            // pixelBuffer comparte el mismo ArrayBuffer que mainImageData.data (vista Uint32)
             const buf = new Uint32Array(totalPixels);
             if (pixelBuffer) {
                 buf.set(pixelBuffer.subarray(0, Math.min(pixelBuffer.length, totalPixels)));

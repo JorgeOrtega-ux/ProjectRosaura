@@ -517,13 +517,16 @@ class CanvasCreateController {
                 const canvasName = rawName || `${window.__('lbl_local_canvas') || 'Lienzo Local'} ${Date.now().toString().slice(-4)}`;
                 const size = this.formState.size || '64x64';
                 const sizeParts = size.toLowerCase().split('x');
-                const width = parseInt(sizeParts[0], 10) || 64;
+                const width  = parseInt(sizeParts[0], 10) || 64;
+                const height = parseInt(sizeParts[1] ?? sizeParts[0], 10) || 64;
                 let initialBytes = new Uint8ClampedArray(width * height * 4);
                 let initialThumbUrl = null;
 
                 if (this.formState.template_id) {
                     const tpl = (this.templates || []).find(t => String(t.id) === String(this.formState.template_id));
-                    if (tpl && tpl.file_path) {
+                    // El JSON usa image_paths[size], no file_path
+                    const tplImagePath = tpl?.image_paths?.[size] || tpl?.image_paths?.[Object.keys(tpl?.image_paths || {})[0]] || null;
+                    if (tpl && tplImagePath) {
                         try {
                             const img = new Image();
                             img.crossOrigin = 'anonymous';
@@ -541,7 +544,7 @@ class CanvasCreateController {
                                     resolve();
                                 };
                                 img.onerror = () => resolve();
-                                img.src = tpl.file_path;
+                                img.src = tplImagePath;
                             });
                         } catch (e) {}
                     }
@@ -603,9 +606,9 @@ class CanvasCreateController {
                 showMessage(window.__('msg_local_canvas_created') || '¡Lienzo local creado exitosamente!', 'success');
 
                 if (window.spaRouter) {
-                    window.spaRouter.navigate(`${this.basePath}/design/${localUuid}`);
+                    window.spaRouter.navigate(`${this.basePath}/design/${localUuid}?size=${encodeURIComponent(size)}`);
                 } else {
-                    window.location.href = `${this.basePath}/design/${localUuid}`;
+                    window.location.href = `${this.basePath}/design/${localUuid}?size=${encodeURIComponent(size)}`;
                 }
             } catch (err) {
                 restoreButton(btn);

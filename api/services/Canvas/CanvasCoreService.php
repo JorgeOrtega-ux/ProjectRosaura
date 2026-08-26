@@ -310,7 +310,6 @@ class CanvasCoreService {
     }
 
     public function getCanvas(?int $userId, int $canvasId): array {
-        $t0 = microtime(true);
         ini_set('memory_limit', '512M');
         
         $cacheKey = CacheConstants::PREFIX_CANVAS_META . $canvasId . CacheConstants::SUFFIX_CANVAS_META_USER . ($userId ?? 0);
@@ -320,31 +319,16 @@ class CanvasCoreService {
                 $redisInstance = new RedisCache();
                 $redis = $redisInstance->getClient();
                 if ($redis) {
-                    error_log("[DEBUG getCanvas] Redis initialized successfully.");
                     $cached = $redis->get($cacheKey);
                     if ($cached) {
-                        error_log("[DEBUG getCanvas] Found cached metadata in Redis for key: $cacheKey");
                         $cachedData = json_decode($cached, true);
                         if ($cachedData) {
-                            $tEnd = microtime(true);
-                            $cachedData['debug_timing'] = [
-                                'total' => $tEnd - $t0,
-                                'cached' => true
-                            ];
                             return $cachedData;
                         }
-                    } else {
-                        error_log("[DEBUG getCanvas] No cache found for key: $cacheKey");
                     }
-                } else {
-                    error_log("[DEBUG getCanvas] Redis client is null.");
                 }
-            } else {
-                error_log("[DEBUG getCanvas] RedisCache class does not exist.");
             }
-        } catch (\Throwable $e) {
-            error_log("[DEBUG getCanvas] Caching exception: " . $e->getMessage());
-        }
+        } catch (\Throwable $e) {}
 
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
@@ -574,15 +558,11 @@ class CanvasCoreService {
 
             $canvas['is_compressed'] = true;
 
-            $tEnd = microtime(true);
-            $result = ['success' => true, 'data' => $canvas, 'debug_timing' => ['total' => $tEnd - $t0, 'check_perms' => isset($t1) ? ($t1 - $t0) : null, 'redis_init' => isset($t2) ? ($t2 - $t1) : null]];
+            $result = ['success' => true, 'data' => $canvas];
             if ($redis && !$isOnline) {
                 try {
-                    $redis->setex($cacheKey, CacheConstants::TTL_THIRTY_DAYS, json_encode($result)); // Cache permanente para lienzos offline
-                    error_log("[DEBUG getCanvas] Saved metadata cache for key: $cacheKey");
-                } catch (\Throwable $e) {
-                    error_log("[DEBUG getCanvas] Exception saving cache: " . $e->getMessage());
-                }
+                    $redis->setex($cacheKey, CacheConstants::TTL_THIRTY_DAYS, json_encode($result));
+                } catch (\Throwable $e) {}
             }
             return $result;
         } catch (Exception $e) {
@@ -736,6 +716,11 @@ class CanvasCoreService {
                                     $img = null;
                                     if ($ext === 'png') {
                                         $img = @imagecreatefrompng($fullImgPath);
+                                        if ($img) {
+                                            // Preservar canal alpha en GD (sin esto, alpha siempre es 0)
+                                            imagealphablending($img, false);
+                                            imagesavealpha($img, true);
+                                        }
                                     } else if ($ext === 'jpg' || $ext === 'jpeg') {
                                         $img = @imagecreatefromjpeg($fullImgPath);
                                     }
@@ -749,32 +734,49 @@ class CanvasCoreService {
                                             $targetH = (int)$targetH;
                                         }
 
-                                        if (imagesx($img) === $targetW && imagesy($img) === $targetH) {
-                                            $binaryData = '';
-                                            for ($y = 0; $y < $targetH; $y++) {
-                                                for ($x = 0; $x < $targetW; $x++) {
-                                                    $rgbIndex = imagecolorat($img, $x, $y);
-                                                    $colors = imagecolorsforindex($img, $rgbIndex);
-                                                    $r = $colors['red'];
-                                                    $g = $colors['green'];
-                                                    $b = $colors['blue'];
-                                                    $gdAlpha = $colors['alpha'];
-                                                    $a = (int)round((127 - $gdAlpha) * 255 / 127);
-                                                    $binaryData .= pack('C4', $r, $g, $b, $a);
-                                                }
-                                            }
+                                        $srcW = imagesx($img);
+                                        $srcH = imagesy($img);
 
-                                            // Save to Database / S3
-                                            $this->canvasRepository->saveSnapshot($canvasId, $binaryData);
-                                            $hasTemplatePainted = true;
+                                        // Si la imagen no tiene las dimensiones exactas, reescalar
+                                        $workImg = $img;
+                                        if ($srcW !== $targetW || $srcH !== $targetH) {
+                                            $resized = imagecreatetruecolor($targetW, $targetH);
+                                            imagealphablending($resized, false);
+                                            imagesavealpha($resized, true);
+                                            $transparent = imagecolorallocatealpha($resized, 0, 0, 0, 127);
+                                            imagefilledrectangle($resized, 0, 0, $targetW, $targetH, $transparent);
+                                            imagecopyresampled($resized, $img, 0, 0, 0, 0, $targetW, $targetH, $srcW, $srcH);
+                                            $workImg = $resized;
+                                        }
 
-                                            // Enqueue for Python worker to generate thumbnail
-                                            if (class_exists(RedisCache::class)) {
-                                                $thumbRedis = (new RedisCache())->getClient();
-                                                if ($thumbRedis) {
-                                                    $thumbRedis->sAdd('canvases:pending_snapshots', (string)$canvasId);
-                                                }
+                                        $binaryData = '';
+                                        for ($y = 0; $y < $targetH; $y++) {
+                                            for ($x = 0; $x < $targetW; $x++) {
+                                                $rgbIndex = imagecolorat($workImg, $x, $y);
+                                                $colors = imagecolorsforindex($workImg, $rgbIndex);
+                                                $r = $colors['red'];
+                                                $g = $colors['green'];
+                                                $b = $colors['blue'];
+                                                $gdAlpha = $colors['alpha'];
+                                                $a = (int)round((127 - $gdAlpha) * 255 / 127);
+                                                $binaryData .= pack('C4', $r, $g, $b, $a);
                                             }
+                                        }
+
+                                        // Save to Database / S3
+                                        $this->canvasRepository->saveSnapshot($canvasId, $binaryData);
+                                        $hasTemplatePainted = true;
+
+                                        // Enqueue for Python worker to generate thumbnail
+                                        if (class_exists(RedisCache::class)) {
+                                            $thumbRedis = (new RedisCache())->getClient();
+                                            if ($thumbRedis) {
+                                                $thumbRedis->sAdd('canvases:pending_snapshots', (string)$canvasId);
+                                            }
+                                        }
+
+                                        if ($workImg !== $img) {
+                                            imagedestroy($workImg);
                                         }
                                         imagedestroy($img);
                                     }

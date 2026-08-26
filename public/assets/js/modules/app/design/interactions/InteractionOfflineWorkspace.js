@@ -321,6 +321,13 @@ export const InteractionOfflineWorkspace = {
                 wrapper.setAttribute('data-size', newSize);
             }
 
+            // Actualizar URL para que una recarga use el tamaño correcto desde PHP
+            try {
+                const url = new URL(window.location.href);
+                url.searchParams.set('size', newSize);
+                window.history.replaceState({}, '', url.toString());
+            } catch (e) {}
+
             if (this.offscreenCanvas) {
                 const oldCanvas = this.offscreenCanvas;
                 this.offscreenCanvas = document.createElement('canvas');
@@ -459,6 +466,7 @@ export const InteractionOfflineWorkspace = {
 
     async cancelScheduledResize(btn) {
         if (!this.isOwner || this.isSpectator || !this.canvasIntId) return;
+        if (this.isLocalCanvas || (typeof this.canvasIntId === 'string' && this.canvasIntId.startsWith('local_'))) return;
 
         if (btn) setButtonLoading(btn);
 
@@ -531,6 +539,7 @@ export const InteractionOfflineWorkspace = {
 
     async cancelScheduledReset(btn) {
         if (!this.isOwner || this.isSpectator || !this.canvasIntId) return;
+        if (this.isLocalCanvas || (typeof this.canvasIntId === 'string' && this.canvasIntId.startsWith('local_'))) return;
 
         if (btn) setButtonLoading(btn);
 
@@ -573,6 +582,12 @@ export const InteractionOfflineWorkspace = {
     },
 
     async executeScheduledResize(btn) {
+        // Los lienzos locales no tienen backend — el resize scheduled no aplica
+        if (this.isLocalCanvas || (typeof this.canvasIntId === 'string' && this.canvasIntId.startsWith('local_'))) {
+            showMessage(window.__('err_feature_not_available_local') || 'Esta acción no está disponible en lienzos locales.', 'info');
+            return;
+        }
+
         const trigger = document.querySelector('[data-ref="offline-resize-trigger"]') || document.querySelector('[data-ref="scheduled-resize-trigger"]');
         const targetSize = trigger ? trigger.getAttribute('data-value') : '64x64';
         const isActive = true;
@@ -643,10 +658,7 @@ export const InteractionOfflineWorkspace = {
             }
 
             if (this.renderWorker) {
-                this.renderWorker.postMessage({
-                    type: 'DRAW_IMAGE_BUFFER',
-                    payload: { imageBitmap: null }
-                });
+                this.renderWorker.postMessage({ type: 'RESET_BUFFER', payload: {} });
             }
 
             this.selectedPixels.clear();
@@ -716,6 +728,12 @@ export const InteractionOfflineWorkspace = {
     },
 
     async executeScheduledReset(btn) {
+        // Los lienzos locales no tienen backend — el reset scheduled no aplica
+        if (this.isLocalCanvas || (typeof this.canvasIntId === 'string' && this.canvasIntId.startsWith('local_'))) {
+            showMessage(window.__('err_feature_not_available_local') || 'Esta acción no está disponible en lienzos locales.', 'info');
+            return;
+        }
+
         const snapshotCheckbox = document.querySelector('[data-ref="offline_reset_snapshot"]') || document.querySelector('[data-ref="scheduled_reset_snapshot"]');
         const takeSnapshot = snapshotCheckbox ? snapshotCheckbox.checked : false;
         const isActive = true;
@@ -775,6 +793,9 @@ export const InteractionOfflineWorkspace = {
         const uuid = this.canvasId || this.canvasIntId;
         if (!uuid) return;
 
+        // Prevenir doble envío por doble clic
+        if (this._isSyncing) return;
+
         if (!window.activeUserId) {
             showMessage(window.__('msg_sync_login_required') || 'Inicia sesión o crea una cuenta para sincronizar tus lienzos con la nube.', 'info');
             setTimeout(() => {
@@ -788,6 +809,14 @@ export const InteractionOfflineWorkspace = {
             return;
         }
 
+        // Verificar que el canvas todavía existe en IndexedDB (no fue sincronizado ya)
+        const existingMeta = await CanvasStorageEngine.getLocalCanvas(uuid).catch(() => null);
+        if (!existingMeta) {
+            showMessage(window.__('err_local_canvas_not_found') || 'Este lienzo ya fue sincronizado o no existe localmente.', 'info');
+            return;
+        }
+
+        this._isSyncing = true;
         if (btn) setButtonLoading(btn);
 
         try {
@@ -828,6 +857,7 @@ export const InteractionOfflineWorkspace = {
                 showMessage(res?.message || window.__('err_occurred') || 'Error al sincronizar con la nube.', 'error');
             }
         } catch (e) {
+            this._isSyncing = false;
             if (btn) restoreButton(btn);
             showMessage('Error al procesar la sincronización local.', 'error');
         }
