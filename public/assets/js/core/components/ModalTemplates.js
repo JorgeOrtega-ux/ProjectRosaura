@@ -1414,9 +1414,17 @@ export const ModalTemplates = {
     },
 
     verifyPasswordDeleteCanvases: {
-        build: (data) => ModalTemplates.verifyPasswordDialog.build({
+        build: (data = {}) => ModalTemplates.verifyPasswordDialog.build({
             titleKey: 'title_verify_delete_canvases',
-            descHtml: __('desc_verify_delete_canvases').replace(':count', data.count || 0),
+            descHtml: __('desc_verify_delete_canvases').replace(':count', data.count || 1),
+            confirmKey: 'btn_delete_canvas'
+        })
+    },
+
+    verifyPasswordDeleteCanvas: {
+        build: (data = {}) => ModalTemplates.verifyPasswordDialog.build({
+            titleKey: 'title_verify_delete_canvases',
+            descHtml: __('desc_verify_delete_canvases').replace(':count', 1),
             confirmKey: 'btn_delete_canvas'
         })
     },

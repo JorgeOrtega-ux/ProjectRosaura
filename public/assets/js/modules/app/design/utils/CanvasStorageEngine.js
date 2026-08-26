@@ -106,9 +106,20 @@ class CanvasStorageEngineClass {
     async saveCanvasState(canvasId, base64Data, width = 64, height = 64) {
         if (!canvasId || !base64Data) return false;
         const normId = this._normalizeCanvasId(canvasId);
+        console.log('[TemplateDebug][CanvasStorageEngine] saveCanvasState:', {
+            canvasId,
+            normId,
+            base64Length: base64Data?.length,
+            base64Preview: base64Data?.substring(0, 40),
+            width,
+            height
+        });
         try {
             const db = await this.getDB();
-            if (!db) return false;
+            if (!db) {
+                console.warn('[TemplateDebug][CanvasStorageEngine] saveCanvasState failed: DB not available');
+                return false;
+            }
 
             return new Promise((resolve) => {
                 const tx = db.transaction([STORE_STATE], 'readwrite');
@@ -121,10 +132,17 @@ class CanvasStorageEngineClass {
                     timestamp: Date.now()
                 };
                 const req = store.put(record);
-                req.onsuccess = () => resolve(true);
-                req.onerror = () => resolve(false);
+                req.onsuccess = () => {
+                    console.log('[TemplateDebug][CanvasStorageEngine] saveCanvasState SUCCESS for normId:', normId);
+                    resolve(true);
+                };
+                req.onerror = (e) => {
+                    console.error('[TemplateDebug][CanvasStorageEngine] saveCanvasState ERROR for normId:', normId, e);
+                    resolve(false);
+                };
             });
         } catch (e) {
+            console.error('[TemplateDebug][CanvasStorageEngine] saveCanvasState EXCEPTION:', e);
             return false;
         }
     }
@@ -135,18 +153,34 @@ class CanvasStorageEngineClass {
     async getCanvasState(canvasId) {
         if (!canvasId) return null;
         const normId = this._normalizeCanvasId(canvasId);
+        console.log('[TemplateDebug][CanvasStorageEngine] getCanvasState requested for:', { canvasId, normId });
         try {
             const db = await this.getDB();
-            if (!db) return null;
+            if (!db) {
+                console.warn('[TemplateDebug][CanvasStorageEngine] getCanvasState failed: DB not available');
+                return null;
+            }
 
             return new Promise((resolve) => {
                 const tx = db.transaction([STORE_STATE], 'readonly');
                 const store = tx.objectStore(STORE_STATE);
                 const req = store.get(normId);
-                req.onsuccess = () => resolve(req.result || null);
-                req.onerror = () => resolve(null);
+                req.onsuccess = () => {
+                    const res = req.result || null;
+                    console.log('[TemplateDebug][CanvasStorageEngine] getCanvasState SUCCESS for normId:', normId, {
+                        found: !!res,
+                        base64Length: res?.base64?.length,
+                        base64Preview: res?.base64?.substring(0, 40)
+                    });
+                    resolve(res);
+                };
+                req.onerror = (e) => {
+                    console.error('[TemplateDebug][CanvasStorageEngine] getCanvasState ERROR for normId:', normId, e);
+                    resolve(null);
+                };
             });
         } catch (e) {
+            console.error('[TemplateDebug][CanvasStorageEngine] getCanvasState EXCEPTION:', e);
             return null;
         }
     }
@@ -157,6 +191,11 @@ class CanvasStorageEngineClass {
     async saveLayersData(canvasId, layersData) {
         if (!canvasId || !layersData) return false;
         const normId = this._normalizeCanvasId(canvasId);
+        console.log('[TemplateDebug][CanvasStorageEngine] saveLayersData:', {
+            canvasId,
+            normId,
+            layersData
+        });
 
         // Fallback redundante a localStorage
         try {
@@ -178,10 +217,17 @@ class CanvasStorageEngineClass {
                     timestamp: Date.now()
                 };
                 const req = store.put(record);
-                req.onsuccess = () => resolve(true);
-                req.onerror = () => resolve(false);
+                req.onsuccess = () => {
+                    console.log('[TemplateDebug][CanvasStorageEngine] saveLayersData SUCCESS for normId:', normId);
+                    resolve(true);
+                };
+                req.onerror = (e) => {
+                    console.error('[TemplateDebug][CanvasStorageEngine] saveLayersData ERROR for normId:', normId, e);
+                    resolve(false);
+                };
             });
         } catch (e) {
+            console.error('[TemplateDebug][CanvasStorageEngine] saveLayersData EXCEPTION:', e);
             return false;
         }
     }
@@ -192,6 +238,7 @@ class CanvasStorageEngineClass {
     async getLayersData(canvasId) {
         if (!canvasId) return null;
         const normId = this._normalizeCanvasId(canvasId);
+        console.log('[TemplateDebug][CanvasStorageEngine] getLayersData requested for:', { canvasId, normId });
 
         try {
             const db = await this.getDB();
@@ -203,16 +250,24 @@ class CanvasStorageEngineClass {
                     req.onsuccess = () => resolve(req.result ? req.result.layersData : null);
                     req.onerror = () => resolve(null);
                 });
-                if (idbResult) return idbResult;
+                if (idbResult) {
+                    console.log('[TemplateDebug][CanvasStorageEngine] getLayersData returned from IndexedDB for normId:', normId, idbResult);
+                    return idbResult;
+                }
             }
         } catch (e) {}
 
         // Fallback a localStorage
         try {
             const stored = localStorage.getItem(`rosaura_layers_${normId}`);
-            if (stored) return JSON.parse(stored);
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                console.log('[TemplateDebug][CanvasStorageEngine] getLayersData returned from localStorage for normId:', normId, parsed);
+                return parsed;
+            }
         } catch (e) {}
 
+        console.log('[TemplateDebug][CanvasStorageEngine] getLayersData NOT FOUND for normId:', normId);
         return null;
     }
 
@@ -273,7 +328,10 @@ class CanvasStorageEngineClass {
                 const tx = db.transaction([STORE_LOCAL_CANVASES], 'readonly');
                 const store = tx.objectStore(STORE_LOCAL_CANVASES);
                 const req = store.get(uuid);
-                req.onsuccess = () => resolve(req.result || null);
+                req.onsuccess = () => {
+                    console.log('[TemplateDebug][CanvasStorageEngine] getLocalCanvas result for uuid:', uuid, req.result);
+                    resolve(req.result || null);
+                };
                 req.onerror = () => resolve(null);
             });
         } catch (e) {

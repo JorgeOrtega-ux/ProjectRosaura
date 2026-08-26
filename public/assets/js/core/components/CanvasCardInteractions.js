@@ -236,39 +236,48 @@ export class CanvasCardInteractions {
     async deleteCanvas(btn) {
         const id = btn.getAttribute('data-id');
         const uuid = btn.getAttribute('data-uuid');
-        if (!uuid) return;
+        if (!uuid && !id) return;
 
         this.closeDropdowns();
 
         if (window.modalSystem) {
-            const confirm = await window.modalSystem.show('verifyPasswordDeleteCanvas', { uuid: uuid });
-            if (!confirm.confirmed) return;
+            const confirm = await window.modalSystem.show('verifyPasswordDeleteCanvas', { uuid: uuid, count: 1 });
+            if (!confirm || !confirm.confirmed) return;
             
-            const password = confirm.data['modal_verify_password'] ? confirm.data['modal_verify_password'].trim() : '';
-            const credential = confirm.data['credential'] || confirm.data['google_token'] || '';
+            const password = confirm.data && confirm.data['modal_verify_password'] ? confirm.data['modal_verify_password'].trim() : '';
+            const credential = confirm.data ? (confirm.data['credential'] || confirm.data['google_token'] || '') : '';
 
             if (!password && !credential) {
                 showMessage(window.__('err_identity_verification_required') || window.__('err_password_required'), 'error');
                 return;
             }
 
+            const parsedId = parseInt(id, 10);
             const payload = {
-                canvas_ids: [id],
+                canvas_ids: !isNaN(parsedId) ? [parsedId] : [id],
                 password: password,
                 credential: credential,
                 google_token: credential
             };
 
-            const res = await this.api.post(ApiRoutes.Canvases.Delete, payload, this.abortController.signal);
+            const res = await this.api.post(ApiRoutes.Canvases.Delete, payload, this.abortController ? this.abortController.signal : null);
             
-            if (res.aborted) return;
+            if (res && res.aborted) return;
 
-            if (res.success) {
-                showMessage(window.__('msg_canvas_deleted'), 'success');
-                const card = document.querySelector(`.component-gallery-card[data-card-id="${id}"]`);
-                if (card) card.remove();
+            if (res && res.success) {
+                showMessage(window.__('msg_canvases_trashed') || window.__('msg_canvas_deleted') || res.message, 'success');
+                const card = document.querySelector(`.component-gallery-card[data-card-id="${id}"], .component-gallery-card[data-canvas-id="${id}"], .component-gallery-card[data-uuid="${uuid}"]`);
+                if (card) {
+                    const grid = card.closest('.component-card-grid') || card.parentElement;
+                    card.remove();
+                    if (grid && grid.querySelectorAll('.component-gallery-card').length === 0) {
+                        if (window.spaRouter?.currentController && typeof window.spaRouter.currentController.render === 'function') {
+                            window.spaRouter.currentController.render();
+                        }
+                    }
+                }
             } else {
-                showMessage(res.message, 'error');
+                showMessage(res?.message || window.__('err_default'), 'error');
             }
         }
     }

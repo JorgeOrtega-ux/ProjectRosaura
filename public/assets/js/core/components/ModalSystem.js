@@ -1582,6 +1582,11 @@ export class ModalSystem {
         const selectTemplateCardBtn = e.target.closest('[data-action="selectModalTemplateCard"]');
         if (selectTemplateCardBtn && this.activeBox) {
             const templateId = selectTemplateCardBtn.getAttribute('data-template-id') || '';
+            const templateName = selectTemplateCardBtn.getAttribute('data-template-name') || '';
+            console.log('[TemplateDebug][ModalSystem] selectModalTemplateCard clicked:', {
+                templateId,
+                templateName
+            });
             const valEl = this.activeBox.querySelector('[data-ref="selected_template_id"]');
             if (valEl) {
                 valEl.setAttribute('data-value', templateId);

@@ -42,9 +42,15 @@ class CanvasCreateController {
             .then(res => res.ok ? res.json() : [])
             .then(data => {
                 this.templates = data;
+                console.log('[TemplateDebug][CanvasCreateController] Templates loaded from JSON:', {
+                    count: Array.isArray(data) ? data.length : 0,
+                    templates: data
+                });
                 this.updateTemplateTriggerDisplay();
             })
-            .catch(() => {});
+            .catch((err) => {
+                console.error('[TemplateDebug][CanvasCreateController] Error loading canvas_templates.json:', err);
+            });
     }
 
     destroy() {
@@ -185,6 +191,12 @@ class CanvasCreateController {
 
     async openTemplateModal() {
         const availableTemplates = (this.templates || []).filter(tpl => tpl.sizes.includes(this.formState.size));
+        console.log('[TemplateDebug][CanvasCreateController] openTemplateModal:', {
+            currentSize: this.formState.size,
+            allTemplatesCount: (this.templates || []).length,
+            availableTemplatesCount: availableTemplates.length,
+            currentTemplateId: this.formState.template_id
+        });
 
         const res = await window.modalSystem.show('selectCanvasTemplateModal', {
             templates: availableTemplates,
@@ -192,13 +204,20 @@ class CanvasCreateController {
             basePath: this.basePath
         });
 
+        console.log('[TemplateDebug][CanvasCreateController] selectCanvasTemplateModal closed with result:', res);
+
         if (res && res.confirmed) {
             const selectedId = res.data?.selected_template_id || null;
+            console.log('[TemplateDebug][CanvasCreateController] User confirmed template selection:', { selectedId });
             this.setTemplate(selectedId);
         }
     }
 
     setTemplate(templateId) {
+        console.log('[TemplateDebug][CanvasCreateController] setTemplate called with:', {
+            newTemplateId: templateId,
+            previousTemplateId: this.formState.template_id
+        });
         this.formState.template_id = templateId || null;
         
         const templateEl = document.querySelector('[data-ref="canvas_template_id"]');
@@ -508,6 +527,12 @@ class CanvasCreateController {
 
         const isLoggedIn = !!(window.activeUserId || window.ActiveUserId || (window.userData && window.userData.id));
 
+        console.log('[TemplateDebug][CanvasCreateController] submitCanvas started:', {
+            isLoggedIn,
+            formState: JSON.parse(JSON.stringify(this.formState)),
+            templateId: this.formState.template_id
+        });
+
         if (!isLoggedIn) {
             setButtonLoading(btn);
 
@@ -522,16 +547,39 @@ class CanvasCreateController {
                 let initialBytes = new Uint8ClampedArray(width * height * 4);
                 let initialThumbUrl = null;
 
+                console.log('[TemplateDebug][CanvasCreateController] Local canvas prep:', {
+                    localUuid,
+                    canvasName,
+                    size,
+                    width,
+                    height,
+                    template_id: this.formState.template_id
+                });
+
                 if (this.formState.template_id) {
                     const tpl = (this.templates || []).find(t => String(t.id) === String(this.formState.template_id));
+                    console.log('[TemplateDebug][CanvasCreateController] Found template definition:', tpl);
+
                     // El JSON usa image_paths[size], no file_path
                     const tplImagePath = tpl?.image_paths?.[size] || tpl?.image_paths?.[Object.keys(tpl?.image_paths || {})[0]] || null;
+                    const fullSrc = tplImagePath ? `${this.basePath}${tplImagePath.startsWith('/') ? '' : '/'}${tplImagePath}` : null;
+                    console.log('[TemplateDebug][CanvasCreateController] Template image path resolved:', {
+                        tplImagePath,
+                        fullSrc
+                    });
+
                     if (tpl && tplImagePath) {
                         try {
                             const img = new Image();
                             img.crossOrigin = 'anonymous';
                             await new Promise((resolve) => {
                                 img.onload = () => {
+                                    console.log('[TemplateDebug][CanvasCreateController] Template image loaded successfully:', {
+                                        naturalWidth: img.naturalWidth,
+                                        naturalHeight: img.naturalHeight,
+                                        targetWidth: width,
+                                        targetHeight: height
+                                    });
                                     const tempCanvas = document.createElement('canvas');
                                     tempCanvas.width = width;
                                     tempCanvas.height = height;
@@ -541,12 +589,30 @@ class CanvasCreateController {
                                     const imgData = tempCtx.getImageData(0, 0, width, height);
                                     initialBytes = new Uint8ClampedArray(imgData.data.buffer);
                                     initialThumbUrl = tempCanvas.toDataURL('image/png');
+
+                                    let nonZeroCount = 0;
+                                    for (let i = 0; i < initialBytes.length; i += 4) {
+                                        if (initialBytes[i + 3] > 0) nonZeroCount++;
+                                    }
+                                    console.log('[TemplateDebug][CanvasCreateController] Template drawn to tempCanvas:', {
+                                        initialBytesLength: initialBytes.length,
+                                        nonZeroPixels: nonZeroCount,
+                                        first16Bytes: Array.from(initialBytes.subarray(0, 16))
+                                    });
+
                                     resolve();
                                 };
-                                img.onerror = () => resolve();
-                                img.src = `${this.basePath}${tplImagePath.startsWith('/') ? '' : '/'}${tplImagePath}`;
+                                img.onerror = (err) => {
+                                    console.error('[TemplateDebug][CanvasCreateController] Failed to load template image:', fullSrc, err);
+                                    resolve();
+                                };
+                                img.src = fullSrc;
                             });
-                        } catch (e) {}
+                        } catch (e) {
+                            console.error('[TemplateDebug][CanvasCreateController] Exception loading template image:', e);
+                        }
+                    } else {
+                        console.warn('[TemplateDebug][CanvasCreateController] Template or image path not found for template_id:', this.formState.template_id);
                     }
                 }
 
@@ -578,6 +644,7 @@ class CanvasCreateController {
                 };
 
                 // Guardar metadatos en IndexedDB
+                console.log('[TemplateDebug][CanvasCreateController] Saving local canvas metadata to IndexedDB:', localCanvasMeta);
                 await CanvasStorageEngine.saveLocalCanvas(localCanvasMeta);
 
                 // Inicializar estado base64
@@ -588,6 +655,11 @@ class CanvasCreateController {
                 }
                 const blankBase64 = btoa(binaryStr);
 
+                console.log('[TemplateDebug][CanvasCreateController] Saving initial state to IndexedDB:', {
+                    localUuid,
+                    base64Length: blankBase64.length,
+                    base64Preview: blankBase64.substring(0, 50)
+                });
                 await CanvasStorageEngine.saveCanvasState(localUuid, blankBase64, width, height);
 
                 // Capa por defecto con búfer inicial
@@ -606,6 +678,7 @@ class CanvasCreateController {
                     ],
                     activeLayerId: 1
                 };
+                console.log('[TemplateDebug][CanvasCreateController] Saving initial layers to IndexedDB:', initialLayers);
                 await CanvasStorageEngine.saveLayersData(localUuid, initialLayers);
 
                 restoreButton(btn);
@@ -617,6 +690,7 @@ class CanvasCreateController {
                     window.location.href = `${this.basePath}/design/${localUuid}`;
                 }
             } catch (err) {
+                console.error('[TemplateDebug][CanvasCreateController] Error creating local canvas:', err);
                 restoreButton(btn);
                 showMessage('Error al guardar el lienzo localmente en el dispositivo.', 'error');
             }
@@ -625,7 +699,9 @@ class CanvasCreateController {
 
         setButtonLoading(btn);
 
+        console.log('[TemplateDebug][CanvasCreateController] Sending POST create to server:', this.formState);
         const res = await this.api.post(ApiRoutes.Canvases.Create, this.formState, this.abortController.signal);
+        console.log('[TemplateDebug][CanvasCreateController] Server create response:', res);
         if (res.aborted) return;
 
         restoreButton(btn);
