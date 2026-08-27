@@ -766,21 +766,6 @@ if (!isset($showDesignTools)) {
                     <span>- , -</span>
                 </div>
 
-                <div class="component-badge component-badge--warning <?php echo !$isSpectatorInit ? 'disabled' : ''; ?>" data-ref="spectator-status-badge" data-tooltip="<?php echo __('tooltip_spectator'); ?>" data-position="top">
-                    <span class="material-symbols-rounded">visibility</span>
-                    <span><?php echo __('lbl_spectator'); ?></span>
-                </div>
-
-                <div class="component-badge component-badge--danger <?php echo (isset($isSubscriptionLockedInit) && $isSubscriptionLockedInit) ? '' : 'disabled'; ?>" data-ref="premium-status-badge" data-position="top">
-                    <span class="material-symbols-rounded">warning</span>
-                    <span><?php echo __('lbl_requires_subscription'); ?></span>
-                </div>
-
-                <div class="component-badge component-badge--danger <?php echo (!$isBlockedInit || (isset($isSubscriptionLockedInit) && $isSubscriptionLockedInit)) ? 'disabled' : ''; ?>" data-ref="private-status-badge" data-tooltip="<?php echo __('tooltip_not_member'); ?>" data-position="top">
-                    <span class="material-symbols-rounded">lock</span>
-                    <span><?php echo __('lbl_private_canvas'); ?></span>
-                </div>
-
                 <?php if (!$isSnapshot && !empty($isOnlineActive)): ?>
                 <div class="component-badge <?php echo ($isBlockedInit || $isSpectatorInit || $isSubscriptionLockedInit) ? 'disabled' : ''; ?>" data-ref="cooldown-badge">
                     <span class="material-symbols-rounded">bolt</span>

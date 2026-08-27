@@ -158,6 +158,11 @@ class DesignController {
             if (!badge) {
                 badge = document.createElement('div');
                 badge.className = 'component-badge';
+                if (id === 'lock-premium') {
+                    badge.classList.add('component-badge--warning');
+                } else if (id === 'lock-private') {
+                    badge.classList.add('component-badge--danger');
+                }
                 badge.setAttribute('data-badge-id', id);
                 container.appendChild(badge);
             }

@@ -1673,9 +1673,6 @@ export const DesignNetwork = {
         const btnJoin = document.querySelector('[data-ref="btn-join-direct"]');
         const btnRequest = document.querySelector('[data-ref="btn-request-access"]');
         
-        const specBadge = document.querySelector('[data-ref="spectator-status-badge"]');
-        const privBadge = document.querySelector('[data-ref="private-status-badge"]');
-        const premBadge = document.querySelector('[data-ref="premium-status-badge"]');
         const cooldownBadge = document.querySelector('[data-ref="cooldown-badge"]');
         const btnOwnerTools = document.querySelector('[data-ref="btn-owner-tools"]');
 
@@ -1697,17 +1694,11 @@ export const DesignNetwork = {
             }
             if (actionPill) actionPill.classList.add('disabled');
 
-            if (specBadge) specBadge.classList.add('disabled');
             if (cooldownBadge) cooldownBadge.classList.add('disabled');
             if (this.isSubscriptionLocked) {
-                if (privBadge) privBadge.classList.add('disabled');
-                if (premBadge) premBadge.classList.remove('disabled');
                 if (btnJoin) btnJoin.classList.add('disabled');
                 if (btnRequest) btnRequest.classList.add('disabled');
             } else {
-                if (premBadge) premBadge.classList.add('disabled');
-                if (privBadge) privBadge.classList.remove('disabled');
-                
                 if (this.canvasApproval) {
                     if (btnJoin) btnJoin.classList.add('disabled');
                     if (btnRequest) btnRequest.classList.remove('disabled');
@@ -1732,10 +1723,7 @@ export const DesignNetwork = {
             }
             if (actionPill) actionPill.classList.add('disabled');
 
-            if (specBadge) specBadge.classList.add('disabled');
             if (cooldownBadge) cooldownBadge.classList.add('disabled');
-            if (privBadge) privBadge.classList.add('disabled');
-            if (premBadge) premBadge.classList.remove('disabled');
 
             if (btnJoin) btnJoin.classList.add('disabled');
             if (btnRequest) btnRequest.classList.add('disabled');

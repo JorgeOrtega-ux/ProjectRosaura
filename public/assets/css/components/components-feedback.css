@@ -200,6 +200,14 @@
     z-index: 10;
 }
 
+.component-gallery-card.is-subscription-locked {
+    border-color: rgba(245, 158, 11, 0.35);
+}
+
+.component-gallery-card.is-subscription-locked .component-gallery-card__image {
+    filter: brightness(0.85) saturate(0.9);
+}
+
 .component-menu-bottom .component-gallery-card {
     height: 150px;
     width: 100%;

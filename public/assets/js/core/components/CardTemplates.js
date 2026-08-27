@@ -19,6 +19,17 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                  onerror="this.onerror=null; this.src='${fallbackImg}'; this.classList.add('image-loaded');">`;
 
         const isLocal = !!canvas.is_local || (typeof canvas.uuid === 'string' && canvas.uuid.startsWith('local_'));
+        const isLocked = !isLocal && !!(canvas.locked_requires_downgrade || canvas.is_subscription_locked);
+
+        let lockBadgeHtml = '';
+        if (isLocked) {
+            lockBadgeHtml = `
+                <div class="component-badge component-badge--glass component-badge--absolute-tl component-text-notice--warning" data-tooltip="${window.__('badge_subscription_expired') || 'Suscripción Vencida'}" data-position="bottom">
+                    <span class="material-symbols-rounded">lock_reset</span>
+                    <span>${window.__('badge_subscription_expired') || 'Vencido'}</span>
+                </div>
+            `;
+        }
 
         let badgeHtml = '';
         if (isLocal) {
@@ -71,15 +82,16 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                     <span class="material-symbols-rounded component-icon--20">favorite</span>
                 </button>
                 ` : ''}
-                <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleDynamicMenu" data-id="${canvas.id}" data-uuid="${uuid}" data-owner="${canvas.is_owner ? '1' : '0'}" data-locked="${canvas.locked_requires_downgrade ? '1' : '0'}" data-member="${canvas.is_member ? '1' : '0'}" data-online="${isOnline ? '1' : '0'}" data-can-manage="${(canvas.is_owner || canvas.can_manage || (canvas.user_permissions && canvas.user_permissions.length > 0)) ? '1' : '0'}" data-permissions="${escapeHTML(JSON.stringify(canvas.user_permissions || []))}">
+                <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleDynamicMenu" data-id="${canvas.id}" data-uuid="${uuid}" data-owner="${canvas.is_owner ? '1' : '0'}" data-locked="${isLocked ? '1' : '0'}" data-member="${canvas.is_member ? '1' : '0'}" data-online="${isOnline ? '1' : '0'}" data-can-manage="${(canvas.is_owner || canvas.can_manage || (canvas.user_permissions && canvas.user_permissions.length > 0)) ? '1' : '0'}" data-permissions="${escapeHTML(JSON.stringify(canvas.user_permissions || []))}">
                     <span class="material-symbols-rounded">more_vert</span>
                 </button>
             `;
         }
 
         return `
-            <div class="component-gallery-card" data-card-id="${canvas.id}" data-privacy="${canvas.privacy || 'public'}" data-owner="${canvas.is_owner ? '1' : '0'}" data-can-manage="${(canvas.is_owner || canvas.can_manage || (canvas.user_permissions && canvas.user_permissions.length > 0)) ? '1' : '0'}" data-permissions="${escapeHTML(JSON.stringify(canvas.user_permissions || []))}">
+            <div class="component-gallery-card ${isLocked ? 'is-subscription-locked' : ''}" data-card-id="${canvas.id}" data-privacy="${canvas.privacy || 'public'}" data-owner="${canvas.is_owner ? '1' : '0'}" data-locked="${isLocked ? '1' : '0'}" data-can-manage="${(canvas.is_owner || canvas.can_manage || (canvas.user_permissions && canvas.user_permissions.length > 0)) ? '1' : '0'}" data-permissions="${escapeHTML(JSON.stringify(canvas.user_permissions || []))}">
                 ${imgHtml}
+                ${lockBadgeHtml}
                 ${badgeHtml}
 
                 <div ${navAction} class="component-gallery-link ${linkClass}">

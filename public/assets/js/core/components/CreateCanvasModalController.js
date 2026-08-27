@@ -117,7 +117,6 @@ export class CreateCanvasModalController {
                 <span class="component-modal-template-check material-symbols-rounded">check_circle</span>
                 <div class="component-modal-template-info">
                     <span class="component-modal-template-name">${t('lbl_empty_canvas', 'Lienzo en blanco')}</span>
-                    <span class="component-modal-template-desc">${t('desc_empty_canvas', 'Lienzo limpio sin diseño previo.')}</span>
                 </div>
             </div>
         `;
@@ -125,7 +124,6 @@ export class CreateCanvasModalController {
         (this.templates || []).forEach(tpl => {
             const isSelected = this.formState.template_id === tpl.id;
             const name = t(tpl.name_key, tpl.id);
-            const desc = t(tpl.description_key, 'Plantilla predefinida con arte base.');
             const thumbnailSrc = `${this.basePath}${tpl.thumbnail}`;
 
             html += `
@@ -134,7 +132,6 @@ export class CreateCanvasModalController {
                     <span class="component-modal-template-check material-symbols-rounded">check_circle</span>
                     <div class="component-modal-template-info">
                         <span class="component-modal-template-name">${escapeHTML(name)}</span>
-                        <span class="component-modal-template-desc">${escapeHTML(desc)}</span>
                     </div>
                 </div>
             `;
