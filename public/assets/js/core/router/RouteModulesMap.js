@@ -76,7 +76,6 @@ export const RouteModulesMap = {
     '/canvases/create': { path: './modules/canvases/core/CanvasCreateController.js', className: 'CanvasCreateController', skeletonType: 'layout-table' },
     '/canvases/trash': { path: './modules/canvases/core/CanvasTrashController.js', className: 'CanvasTrashController', skeletonType: 'layout-grid' },
 
-    '/canvases/manage/requests/:uuid': { path: './modules/canvases/team/CanvasRequestsController.js', className: 'CanvasRequestsController', skeletonType: 'layout-basic' },
     '/canvases/edit/:uuid': { path: './modules/canvases/workspace/CanvasEditController.js', className: 'CanvasEditController', skeletonType: 'layout-basic' },
     
     '/canvases/manage/roles/:uuid': { path: './modules/canvases/team/CanvasRolesController.js', className: 'CanvasRolesController', skeletonType: 'layout-basic' },
@@ -85,8 +84,6 @@ export const RouteModulesMap = {
     '/canvases/manage/sanctions/:uuid': { path: './modules/canvases/team/CanvasSanctionsController.js', className: 'CanvasSanctionsController', skeletonType: 'layout-table' },
     '/canvases/manage/role-permissions/:uuid': { path: './modules/canvases/team/CanvasRolePermissionsController.js', className: 'CanvasRolePermissionsController', skeletonType: 'layout-basic' },
     '/canvases/manage/role-permissions/:uuid/:role_uuid': { path: './modules/canvases/team/CanvasRolePermissionsController.js', className: 'CanvasRolePermissionsController', skeletonType: 'layout-basic' },
-
-    '/canvases/members/:uuid': { path: './modules/canvases/team/CanvasMembersController.js', className: 'CanvasMembersController', skeletonType: 'layout-table' },
     
     '/canvases/manage/invites/:uuid': { path: './modules/canvases/team/CanvasInvitesController.js', className: 'CanvasInvitesController', skeletonType: 'layout-table' },
 

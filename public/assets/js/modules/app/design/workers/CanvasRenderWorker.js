@@ -44,6 +44,9 @@ let interactionMode = 'normal';
 let textPosition = null;
 let activePixelText = null;
 
+let remoteCursorsMap = new Map();
+let areAllCursorsHidden = false;
+
 let isOfflineMode = false;
 let isSeamlessTileMode = false;
 let isMirrorMode = false;
@@ -1970,6 +1973,8 @@ function render() {
     if (isEyedropperActive && hoveredPixelKey !== -1) {
         drawEyedropperLoupe();
     }
+
+    drawRemoteCursors();
 }
 
 let sampleOffscreenCanvas = null;
@@ -2119,10 +2124,168 @@ function drawEyedropperLoupe() {
     ctx.restore();
 }
 
+function drawRemoteCursors() {
+    if (!remoteCursorsMap || remoteCursorsMap.size === 0 || areAllCursorsHidden) return;
+    if (!ctx || !canvas) return;
+
+    ctx.save();
+    ctx.scale(dpr, dpr);
+
+    let hasMoving = false;
+
+    for (const cursor of remoteCursorsMap.values()) {
+        if (!cursor) continue;
+
+        // Smooth LERP interpolation (0.35 factor per frame)
+        const dx = cursor.targetX - cursor.currentX;
+        const dy = cursor.targetY - cursor.currentY;
+        if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01) {
+            cursor.currentX += dx * 0.35;
+            cursor.currentY += dy * 0.35;
+            hasMoving = true;
+        } else {
+            cursor.currentX = cursor.targetX;
+            cursor.currentY = cursor.targetY;
+        }
+
+        const currX = cursor.currentX;
+        const currY = cursor.currentY;
+
+        // Convert board coords to screen coords (sub-pixel floating precision)
+        const screenX = transform.x + (currX + 0.5) * transform.scale;
+        const screenY = transform.y + (currY + 0.5) * transform.scale;
+
+        // Viewport culling
+        const padding = 150;
+        const maxW = canvas.width / dpr;
+        const maxH = canvas.height / dpr;
+        if (screenX < -padding || screenX > maxW + padding ||
+            screenY < -padding || screenY > maxH + padding) {
+            continue;
+        }
+
+        const color = cursor.color || '#3b82f6';
+        const username = cursor.username || 'Artista';
+        const isDrawing = !!cursor.isDrawing;
+
+        ctx.save();
+        ctx.translate(screenX, screenY);
+
+        // 1. Draw Cursor Arrow (SVG-like path)
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetX = 1;
+        ctx.shadowOffsetY = 2;
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, 16);
+        ctx.lineTo(4, 12);
+        ctx.lineTo(8, 20);
+        ctx.lineTo(11, 18.5);
+        ctx.lineTo(7, 10.5);
+        ctx.lineTo(13, 10.5);
+        ctx.closePath();
+
+        ctx.fillStyle = color;
+        ctx.fill();
+
+        ctx.shadowColor = 'transparent';
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        // 2. Draw Username Badge Pill
+        const labelText = (isDrawing ? '✏️ ' : '') + username;
+        ctx.font = '600 11px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        const textMetrics = ctx.measureText(labelText);
+        const textWidth = textMetrics.width;
+        const pillWidth = textWidth + 12;
+        const pillHeight = 20;
+        const pillX = 14;
+        const pillY = 12;
+        const radius = 6;
+
+        // Pill background
+        ctx.beginPath();
+        if (typeof ctx.roundRect === 'function') {
+            ctx.roundRect(pillX, pillY, pillWidth, pillHeight, radius);
+        } else {
+            ctx.rect(pillX, pillY, pillWidth, pillHeight);
+        }
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Pill text
+        ctx.fillStyle = '#ffffff';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(labelText, pillX + 6, pillY + pillHeight / 2);
+
+        ctx.restore();
+    }
+
+    ctx.restore();
+
+    if (hasMoving) {
+        requestRender();
+    }
+}
+
 self.onmessage = async function (e) {
     const { type, payload } = e.data;
 
     switch (type) {
+        case 'UPDATE_REMOTE_CURSORS': {
+            areAllCursorsHidden = !!payload.areAllCursorsHidden;
+            const incomingList = payload.remoteCursors || [];
+            const incomingIds = new Set();
+
+            for (let i = 0; i < incomingList.length; i++) {
+                const item = incomingList[i];
+                if (!item || !item.id) continue;
+                incomingIds.add(String(item.id));
+
+                const uid = String(item.id);
+                let existing = remoteCursorsMap.get(uid);
+                if (!existing) {
+                    existing = {
+                        id: uid,
+                        currentX: typeof item.x === 'number' ? item.x : 0,
+                        currentY: typeof item.y === 'number' ? item.y : 0,
+                        targetX: typeof item.x === 'number' ? item.x : 0,
+                        targetY: typeof item.y === 'number' ? item.y : 0,
+                        color: item.color || '#3b82f6',
+                        username: item.username || 'Artista',
+                        isDrawing: !!item.isDrawing,
+                        lastTimestamp: item.t || 0
+                    };
+                    remoteCursorsMap.set(uid, existing);
+                } else {
+                    if (!item.t || item.t >= (existing.lastTimestamp || 0)) {
+                        existing.targetX = typeof item.x === 'number' ? item.x : existing.targetX;
+                        existing.targetY = typeof item.y === 'number' ? item.y : existing.targetY;
+                        existing.color = item.color || existing.color;
+                        existing.username = item.username || existing.username;
+                        existing.isDrawing = !!item.isDrawing;
+                        if (item.t) existing.lastTimestamp = item.t;
+                    }
+                }
+            }
+
+            // Cleanup untracked cursors
+            for (const id of remoteCursorsMap.keys()) {
+                if (!incomingIds.has(id)) {
+                    remoteCursorsMap.delete(id);
+                }
+            }
+
+            requestRender();
+            break;
+        }
+
         case 'INIT_CANVAS':
             canvas = payload.canvas;
             ctx = canvas.getContext('2d', { alpha: false });

@@ -10,6 +10,9 @@ pub struct WsMessage {
     pub user_id: Option<String>,
     pub username: Option<String>,
     pub is_typing: Option<bool>,
+    pub is_drawing: Option<bool>,
+    pub role: Option<String>,
+    pub t: Option<u64>,
     
     // Pixel / Area
     pub x: Option<i32>,

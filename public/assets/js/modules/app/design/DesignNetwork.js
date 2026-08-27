@@ -68,6 +68,38 @@ export const DesignNetwork = {
                         this.requestRender();
                     }
                 }
+            } else if (data.type === 'presence_announce') {
+                const myUid = this.getEffectiveUserId();
+                if (data.user_id && String(data.user_id) !== String(myUid)) {
+                    this.handleUserJoined(data);
+                    // Reply to the new peer with our current presence info
+                    CanvasSyncChannel.broadcast({
+                        type: 'presence_reply',
+                        canvasId: this.canvasIntId || this.canvasId,
+                        user_id: myUid,
+                        username: this.getEffectiveUsername(),
+                        role: this.isOwner ? 'owner' : (this.isSpectator ? 'spectator' : 'member'),
+                        color: this.currentColor || '#3b82f6',
+                        status: 'online'
+                    });
+                }
+            } else if (data.type === 'presence_reply') {
+                const myUid = this.getEffectiveUserId();
+                if (data.user_id && String(data.user_id) !== String(myUid)) {
+                    this.handleUserJoined(data);
+                }
+            } else if (data.type === 'cursor_move' || data.type === 'user_cursor') {
+                const myUid = this.getEffectiveUserId();
+                if (data.user_id && String(data.user_id) !== String(myUid)) {
+                    this.handleRemoteCursor(data);
+                }
+            } else if (data.type === 'user_left') {
+                const myUid = this.getEffectiveUserId();
+                if (data.user_id && String(data.user_id) !== String(myUid)) {
+                    this.handleUserLeft(data);
+                }
+            } else if (data.type === 'host_summon') {
+                this.handleHostSummon(data);
             }
         });
     },
@@ -153,6 +185,9 @@ export const DesignNetwork = {
             
             this.wsManager.on('open', () => {
                 this.wsManager.send({ type: 'init', userId: uid, version: '2.0.3' });
+                if (typeof this.initLivePresenceState === 'function') {
+                    this.initLivePresenceState();
+                }
                 if (this.liveShareCode) {
                     this.wsManager.send({ type: 'join_live_share', code: this.liveShareCode });
 
@@ -595,6 +630,21 @@ export const DesignNetwork = {
                 }
                 else if (data.type === 'canvas_mode_changed') {
                     this.handleCanvasModeChanged(data);
+                }
+                else if (data.type === 'cursor_move' || data.type === 'user_cursor' || data.type === 'cursor_pos') {
+                    this.handleRemoteCursor(data);
+                }
+                else if (data.type === 'room_presence' || data.type === 'presence_list') {
+                    this.handleRoomPresence(data);
+                }
+                else if (data.type === 'user_joined') {
+                    this.handleUserJoined(data);
+                }
+                else if (data.type === 'user_left') {
+                    this.handleUserLeft(data);
+                }
+                else if (data.type === 'host_summon') {
+                    this.handleHostSummon(data);
                 }
             });
 
@@ -2144,5 +2194,560 @@ export const DesignNetwork = {
             this._offlineSavePromise = performSave();
         }, 1200);
         return true;
+    },
+
+    /* ==========================================================================
+       LIVE MULTIPLAYER PRESENCE & CURSOR MANAGEMENT (CAP OF 24)
+       ========================================================================== */
+
+    getEffectiveUserId() {
+        if (this._effectiveUserId) return this._effectiveUserId;
+        const metaUid = document.querySelector('meta[name="user-id"]')?.content;
+        const activeUid = window.activeUserId;
+        if (activeUid && String(activeUid).trim() !== '' && activeUid !== 'usr_local') {
+            this._effectiveUserId = String(activeUid);
+        } else if (metaUid && metaUid.trim() !== '' && metaUid !== 'usr_local') {
+            this._effectiveUserId = String(metaUid);
+        } else {
+            let guestId = sessionStorage.getItem('rosaura_session_uid');
+            if (!guestId) {
+                guestId = 'usr_' + (this.isOwner ? 'owner_' : 'guest_') + Math.random().toString(36).substring(2, 9);
+                sessionStorage.setItem('rosaura_session_uid', guestId);
+            }
+            this._effectiveUserId = guestId;
+        }
+        return this._effectiveUserId;
+    },
+
+    getEffectiveUsername() {
+        const appUserName = window.APP_USER?.name;
+        if (appUserName && String(appUserName).trim() !== '') return String(appUserName);
+        const activeUname = window.activeUsername;
+        if (activeUname && String(activeUname).trim() !== '') return String(activeUname);
+        const metaUname = document.querySelector('meta[name="username"]')?.content;
+        if (metaUname && metaUname.trim() !== '') return metaUname;
+        return this.isOwner ? 'Dueño' : 'Artista';
+    },
+
+    initLivePresenceState() {
+        const uid = this.getEffectiveUserId();
+        const username = this.getEffectiveUsername();
+        const role = this.isOwner ? 'owner' : (this.isSpectator ? 'spectator' : 'member');
+        
+        if (!this.onlineMembers) this.onlineMembers = new Map();
+        
+        this.onlineMembers.set(String(uid), {
+            id: String(uid),
+            username: username,
+            avatar: null,
+            role: role,
+            isSelf: true,
+            color: this.currentColor || '#3b82f6',
+            status: 'online',
+            isDrawing: false,
+            x: 0,
+            y: 0,
+            lastSeen: Date.now()
+        });
+
+        // 1. WebSocket presence ping
+        if (this.wsManager) {
+            this.wsManager.send({
+                type: 'presence_ping',
+                canvas_id: String(this.canvasIntId || this.canvasId),
+                user_id: uid,
+                username: username,
+                role: role,
+                color: this.currentColor || '#3b82f6'
+            });
+        }
+
+        // 2. BroadcastChannel presence announce for instant multi-window / tabs sync
+        CanvasSyncChannel.broadcast({
+            type: 'presence_announce',
+            canvasId: this.canvasIntId || this.canvasId,
+            user_id: uid,
+            username: username,
+            role: role,
+            color: this.currentColor || '#3b82f6'
+        });
+
+        this.renderLiveMembersList();
+        this.updateCursorQuotaUI();
+    },
+
+    sendCursorPosition(exactX, exactY, isDrawing = false) {
+        if (this.isOfflineMode) return;
+
+        const now = Date.now();
+        // Throttle to 35ms (~30 updates/sec max) for butter-smooth live tracking
+        if (now - (this.lastCursorSendTime || 0) < 35) return;
+        this.lastCursorSendTime = now;
+
+        const uid = this.getEffectiveUserId();
+        const username = this.getEffectiveUsername();
+
+        const payload = {
+            type: 'cursor_move',
+            canvas_id: String(this.canvasIntId || this.canvasId),
+            canvasId: this.canvasIntId || this.canvasId,
+            user_id: uid,
+            username: username,
+            x: Math.round(exactX),
+            y: Math.round(exactY),
+            color: this.currentColor || '#3b82f6',
+            is_drawing: !!isDrawing,
+            t: now
+        };
+
+        if (this.wsManager && this.wsManager.ws && this.wsManager.ws.readyState === WebSocket.OPEN) {
+            this.wsManager.send(payload);
+        } else {
+            CanvasSyncChannel.broadcast(payload);
+        }
+    },
+
+    handleRemoteCursor(data) {
+        if (!data || !data.user_id) return;
+        const uid = String(data.user_id);
+        const myUid = String(this.getEffectiveUserId());
+        if (uid === myUid) return;
+
+        const x = typeof data.x === 'number' ? data.x : parseInt(data.x, 10) || 0;
+        const y = typeof data.y === 'number' ? data.y : parseInt(data.y, 10) || 0;
+        const username = data.username || `Usuario_${uid.slice(-4)}`;
+        const color = data.color || '#3b82f6';
+        const isDrawing = !!data.is_drawing;
+        const timestamp = data.t || Date.now();
+
+        // 1. Update or add to onlineMembers
+        if (!this.onlineMembers) this.onlineMembers = new Map();
+        let member = this.onlineMembers.get(uid);
+        if (!member) {
+            member = {
+                id: uid,
+                username: username,
+                avatar: data.avatar || null,
+                role: data.role || 'member',
+                color: color,
+                status: isDrawing ? 'drawing' : 'online',
+                isDrawing: isDrawing,
+                x: x,
+                y: y,
+                lastSeen: timestamp
+            };
+            this.onlineMembers.set(uid, member);
+            this.renderLiveMembersList();
+            this.updateCursorQuotaUI();
+        } else {
+            // Ignore older out-of-order packets
+            if (member.lastSeen && timestamp < member.lastSeen) return;
+            member.x = x;
+            member.y = y;
+            member.color = color;
+            member.isDrawing = isDrawing;
+            member.status = isDrawing ? 'drawing' : 'online';
+            member.lastSeen = timestamp;
+        }
+
+        // 2. If user is being tracked, update remoteCursors state
+        if (this.trackedCursorUserIds && this.trackedCursorUserIds.has(uid) && !this.areAllCursorsHidden) {
+            let cursor = this.remoteCursors.get(uid);
+            if (!cursor) {
+                cursor = {
+                    targetX: x,
+                    targetY: y,
+                    color: color,
+                    username: username,
+                    isDrawing: isDrawing,
+                    t: timestamp
+                };
+                this.remoteCursors.set(uid, cursor);
+            } else {
+                cursor.targetX = x;
+                cursor.targetY = y;
+                cursor.color = color;
+                cursor.username = username;
+                cursor.isDrawing = isDrawing;
+                cursor.t = timestamp;
+            }
+            this.syncRemoteCursorsToWorker();
+            this.requestRender();
+        }
+    },
+
+    syncRemoteCursorsToWorker() {
+        if (!this.renderWorker) return;
+        const list = [];
+        if (this.trackedCursorUserIds && this.remoteCursors && !this.areAllCursorsHidden) {
+            for (const uid of this.trackedCursorUserIds) {
+                const c = this.remoteCursors.get(uid);
+                if (c) {
+                    list.push({
+                        id: uid,
+                        x: typeof c.targetX === 'number' ? c.targetX : (c.x || 0),
+                        y: typeof c.targetY === 'number' ? c.targetY : (c.y || 0),
+                        color: c.color || '#3b82f6',
+                        username: c.username || 'Artista',
+                        isDrawing: !!c.isDrawing,
+                        t: c.t || 0
+                    });
+                }
+            }
+        }
+        this.renderWorker.postMessage({
+            type: 'UPDATE_REMOTE_CURSORS',
+            payload: {
+                remoteCursors: list,
+                areAllCursorsHidden: !!this.areAllCursorsHidden
+            }
+        });
+    },
+
+    handleRoomPresence(data) {
+        if (!data || !Array.isArray(data.members)) return;
+        if (!this.onlineMembers) this.onlineMembers = new Map();
+
+        const myUid = String(this.getEffectiveUserId());
+        
+        data.members.forEach(m => {
+            if (!m || !m.id) return;
+            const uid = String(m.id);
+            const isSelf = uid === myUid;
+            this.onlineMembers.set(uid, {
+                id: uid,
+                username: m.username || `Usuario_${uid.slice(-4)}`,
+                avatar: m.avatar || null,
+                role: m.role || 'member',
+                color: m.color || '#3b82f6',
+                status: m.status || 'online',
+                isDrawing: !!m.is_drawing,
+                x: m.x || 0,
+                y: m.y || 0,
+                isSelf: isSelf,
+                lastSeen: Date.now()
+            });
+        });
+
+        this.renderLiveMembersList();
+        this.updateCursorQuotaUI();
+    },
+
+    handleUserJoined(data) {
+        if (!data || !data.user_id) return;
+        const uid = String(data.user_id);
+        const myUid = String(this.getEffectiveUserId());
+        if (uid === myUid) return;
+
+        if (!this.onlineMembers) this.onlineMembers = new Map();
+        const existing = this.onlineMembers.get(uid);
+        this.onlineMembers.set(uid, {
+            id: uid,
+            username: data.username || existing?.username || `Usuario_${uid.slice(-4)}`,
+            avatar: data.avatar || existing?.avatar || null,
+            role: data.role || existing?.role || 'member',
+            color: data.color || existing?.color || '#3b82f6',
+            status: data.status || 'online',
+            isDrawing: false,
+            x: data.x || existing?.x || 0,
+            y: data.y || existing?.y || 0,
+            lastSeen: Date.now()
+        });
+
+        this.renderLiveMembersList();
+        this.updateCursorQuotaUI();
+    },
+
+    handleUserLeft(data) {
+        if (!data || !data.user_id) return;
+        const uid = String(data.user_id);
+        const myUid = String(this.getEffectiveUserId());
+        if (uid === myUid) return;
+
+        if (this.onlineMembers) {
+            this.onlineMembers.delete(uid);
+        }
+        if (this.trackedCursorUserIds) {
+            this.trackedCursorUserIds.delete(uid);
+        }
+        if (this.remoteCursors) {
+            this.remoteCursors.delete(uid);
+        }
+        this.syncRemoteCursorsToWorker();
+        this.renderLiveMembersList();
+        this.updateCursorQuotaUI();
+        this.requestRender();
+    },
+
+    handleHostSummon(data) {
+        if (!data || data.x === undefined || data.y === undefined) return;
+        const targetX = parseInt(data.x, 10);
+        const targetY = parseInt(data.y, 10);
+        
+        showMessage(`El anfitrión ha reunido a todos en (${targetX}, ${targetY})`, 'info');
+        
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        this.transform.x = centerX - (targetX + 0.5) * this.transform.scale;
+        this.transform.y = centerY - (targetY + 0.5) * this.transform.scale;
+        this.requestRender();
+    },
+
+    async openManageMembersModal(initialTab = 'live') {
+        window.activeDesignNetwork = this;
+        if (window.modalSystem && window.modalSystem.show) {
+            const titleEl = document.querySelector('.component-top-title') || document.querySelector('[data-ref="canvas-title-header"]');
+            const title = titleEl ? titleEl.textContent.trim() : (this.canvasName || 'Miembros del Lienzo');
+            await window.modalSystem.show('manageCanvasMembersModal', {
+                canvasUuid: this.canvasUuid || this.canvasId,
+                canvasId: this.canvasIntId || this.canvasId,
+                title: title || 'Miembros del Lienzo',
+                initialTab: initialTab,
+                isOwner: !!this.isOwner,
+                designNetwork: this
+            });
+        }
+    },
+
+    toggleLiveMembersDrawer() {
+        this.openManageMembersModal('live');
+    },
+
+    toggleTrackUserCursor(userId) {
+        if (!userId) return;
+        const uid = String(userId);
+        if (!this.trackedCursorUserIds) this.trackedCursorUserIds = new Set();
+        if (!this.remoteCursors) this.remoteCursors = new Map();
+
+        if (this.trackedCursorUserIds.has(uid)) {
+            this.trackedCursorUserIds.delete(uid);
+            this.remoteCursors.delete(uid);
+            console.log('[LiveCursor:Untrack]', { userId: uid, remaining: Array.from(this.trackedCursorUserIds) });
+            this.syncRemoteCursorsToWorker();
+            this.requestRender();
+        } else {
+            // Check Cap of 24
+            if (this.trackedCursorUserIds.size >= (this.maxTrackedCursors || 24)) {
+                showMessage(`Has alcanzado el límite máximo de ${this.maxTrackedCursors || 24} cursores simultáneos.`, 'warning');
+                return;
+            }
+
+            this.trackedCursorUserIds.add(uid);
+            const member = this.onlineMembers ? this.onlineMembers.get(uid) : null;
+            const cursorObj = {
+                x: member?.x || 0,
+                y: member?.y || 0,
+                currentX: member?.x || 0,
+                currentY: member?.y || 0,
+                targetX: member?.x || 0,
+                targetY: member?.y || 0,
+                color: member?.color || '#3b82f6',
+                username: member?.username || 'Usuario',
+                isDrawing: !!member?.isDrawing,
+                lastUpdate: Date.now()
+            };
+            this.remoteCursors.set(uid, cursorObj);
+            console.log('[LiveCursor:Track]', { userId: uid, cursorObj, trackedList: Array.from(this.trackedCursorUserIds) });
+            this.syncRemoteCursorsToWorker();
+            this.requestRender();
+        }
+
+        this.updateCursorQuotaUI();
+        this.renderLiveMembersList();
+    },
+
+    toggleAllRemoteCursors() {
+        if (!this.trackedCursorUserIds) this.trackedCursorUserIds = new Set();
+        if (!this.remoteCursors) this.remoteCursors = new Map();
+
+        const btn = document.querySelector('[data-ref="btn-toggle-all-cursors"]');
+
+        if (this.areAllCursorsHidden || this.trackedCursorUserIds.size === 0) {
+            // Activar hasta 24 personas
+            this.areAllCursorsHidden = false;
+            let added = 0;
+            if (this.onlineMembers) {
+                for (const [uid, member] of this.onlineMembers.entries()) {
+                    if (member.isSelf) continue;
+                    if (added >= (this.maxTrackedCursors || 24)) break;
+                    this.trackedCursorUserIds.add(uid);
+                    this.remoteCursors.set(uid, {
+                        x: member.x || 0,
+                        y: member.y || 0,
+                        currentX: member.x || 0,
+                        currentY: member.y || 0,
+                        targetX: member.x || 0,
+                        targetY: member.y || 0,
+                        color: member.color || '#3b82f6',
+                        username: member.username || 'Usuario',
+                        isDrawing: !!member.isDrawing,
+                        lastUpdate: Date.now()
+                    });
+                    added++;
+                }
+            }
+            if (btn) {
+                btn.innerHTML = '<span class="material-symbols-rounded msr-visibility">visibility</span><span>Ocultar Todos</span>';
+            }
+            showMessage(`Mostrando ${this.trackedCursorUserIds.size} cursores en vivo.`, 'info');
+        } else {
+            // Ocultar todos
+            this.areAllCursorsHidden = true;
+            this.trackedCursorUserIds.clear();
+            this.remoteCursors.clear();
+            if (btn) {
+                btn.innerHTML = '<span class="material-symbols-rounded msr-visibility_off">visibility_off</span><span>Mostrar Todos</span>';
+            }
+            showMessage('Todos los cursores remotos han sido ocultados.', 'info');
+        }
+
+        this.syncRemoteCursorsToWorker();
+        this.updateCursorQuotaUI();
+        this.renderLiveMembersList();
+        this.requestRender();
+    },
+
+    summonEveryone() {
+        if (!this.isOwner) {
+            showMessage('Solo el anfitrión puede convocar a todos.', 'warning');
+            return;
+        }
+
+        const centerX = Math.round(this.boardWidth / 2);
+        const centerY = Math.round(this.boardHeight / 2);
+
+        const payload = {
+            type: 'host_summon',
+            canvas_id: String(this.canvasIntId || this.canvasId),
+            canvasId: this.canvasIntId || this.canvasId,
+            x: centerX,
+            y: centerY
+        };
+
+        if (this.wsManager) {
+            this.wsManager.send(payload);
+        }
+
+        CanvasSyncChannel.broadcast(payload);
+
+        showMessage('Has convocado a todos los participantes a tu posición.', 'success');
+    },
+
+    teleportToUser(userId) {
+        if (!userId || !this.onlineMembers) return;
+        const member = this.onlineMembers.get(String(userId));
+        if (!member) {
+            showMessage('El usuario ya no se encuentra en línea.', 'warning');
+            return;
+        }
+
+        const targetX = member.x || 0;
+        const targetY = member.y || 0;
+
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        this.transform.x = centerX - (targetX + 0.5) * this.transform.scale;
+        this.transform.y = centerY - (targetY + 0.5) * this.transform.scale;
+
+        this.requestRender();
+        showMessage(`Cámara centrada en ${member.username}`, 'info');
+    },
+
+    updateCursorQuotaUI() {
+        const quotaVal = document.querySelector('[data-ref="cursor-quota-val"]');
+        const quotaBox = document.querySelector('[data-ref="cursor-quota-box"]');
+        const watchingCountLabel = document.querySelector('[data-ref="live-watching-count"]');
+        const totalCountBadge = document.querySelector('[data-ref="live-members-count-badge"]');
+
+        const activeCount = this.trackedCursorUserIds ? this.trackedCursorUserIds.size : 0;
+        const max = this.maxTrackedCursors || 24;
+
+        if (quotaVal) quotaVal.textContent = `${activeCount} / ${max}`;
+        if (watchingCountLabel) watchingCountLabel.textContent = `${activeCount}`;
+        if (quotaBox) {
+            if (activeCount >= max) {
+                quotaBox.classList.add('full');
+            } else {
+                quotaBox.classList.remove('full');
+            }
+        }
+
+        const totalOnline = this.onlineMembers ? this.onlineMembers.size : 1;
+        if (totalCountBadge) {
+            totalCountBadge.textContent = `${totalOnline} en línea`;
+        }
+    },
+
+    filterLiveMembers(query = '', filter = 'all') {
+        this.liveMemberSearchQuery = (query || '').toLowerCase().trim();
+        this.activeLiveMemberFilter = filter || 'all';
+        this.renderLiveMembersList();
+    },
+
+    renderLiveMembersList() {
+        window.dispatchEvent(new CustomEvent('canvasPresenceUpdated'));
+
+        const container = document.querySelector('[data-ref="live-members-scroll"]');
+        if (!container) return;
+
+        if (!this.onlineMembers || this.onlineMembers.size === 0) {
+            this.initLivePresenceState();
+        }
+
+        const query = this.liveMemberSearchQuery || '';
+        const filter = this.activeLiveMemberFilter || 'all';
+        const myUid = String(window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || 'usr_local');
+
+        let html = '';
+
+        for (const [uid, member] of this.onlineMembers.entries()) {
+            const name = member.username || `Usuario_${uid.slice(-4)}`;
+            const isSelf = member.isSelf || uid === myUid;
+            const isWatching = this.trackedCursorUserIds && this.trackedCursorUserIds.has(uid);
+            const isDrawing = !!member.isDrawing;
+            const userColor = member.color || '#3b82f6';
+            const initial = (name.charAt(0) || 'U').toUpperCase();
+
+            // Filter check
+            if (query && !name.toLowerCase().includes(query)) continue;
+            if (filter === 'watching' && !isWatching) continue;
+            if (filter === 'drawing' && !isDrawing) continue;
+
+            const isOwner = member.role === 'owner';
+            const statusClass = isDrawing ? 'drawing' : (member.status === 'idle' ? 'idle' : 'online');
+            const statusLabel = isDrawing ? '✏️ Dibujando...' : (isOwner ? '👑 Dueño del lienzo' : 'En línea');
+
+            html += `
+            <div class="component-member-item ${isWatching ? 'is-watching' : ''} ${isOwner ? 'is-owner' : ''}" data-user-id="${uid}" style="--user-color: ${userColor};">
+                <div class="component-member-item__avatar">
+                    ${member.avatar ? `<img src="${member.avatar}" alt="${name}" onerror="this.remove()">` : ''}
+                    <span class="component-member-item__initial">${initial}</span>
+                    <span class="component-live-status-dot ${statusClass}" title="${statusLabel}"></span>
+                </div>
+                <div class="component-member-item__info">
+                    <div class="component-member-item__name-row">
+                        <span class="component-member-item__name">${name} ${isSelf ? '(Tú)' : ''}</span>
+                        ${isOwner ? '<span class="component-role-badge owner">👑 Dueño</span>' : ''}
+                    </div>
+                    <span class="component-member-item__status-text ${isDrawing ? 'drawing' : ''}">${statusLabel}</span>
+                </div>
+                <div class="component-member-item__actions">
+                    ${!isSelf ? `
+                    <button type="button" class="component-button component-button--icon component-button--h28" data-action="teleportToUser" data-user-id="${uid}" data-tooltip="Ir a su posición" data-position="top">
+                        <span class="material-symbols-rounded msr-my_location">my_location</span>
+                    </button>
+                    <button type="button" class="component-button component-button--icon component-button--h28 ${isWatching ? 'active' : ''}" data-action="toggleUserCursor" data-user-id="${uid}" data-tooltip="${isWatching ? 'Dejar de ver cursor' : 'Ver cursor en vivo'}" data-position="top">
+                        <span class="material-symbols-rounded msr-${isWatching ? 'near_me' : 'near_me_disabled'}">${isWatching ? 'near_me' : 'near_me_disabled'}</span>
+                    </button>
+                    ` : ''}
+                </div>
+            </div>`;
+        }
+
+        if (!html) {
+            html = `<div style="padding: 16px 8px; text-align: center; font-size: 0.75rem; color: rgba(255, 255, 255, 0.4);">No se encontraron miembros activos.</div>`;
+        }
+
+        container.innerHTML = html;
     }
 };

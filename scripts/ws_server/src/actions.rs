@@ -289,6 +289,109 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 }
             }
         }
+        "presence_ping" => {
+            let effective_uid = if !uid_str.is_empty() {
+                uid_str.clone()
+            } else if let Some(ref m_uid) = msg.user_id {
+                if !m_uid.is_empty() { m_uid.clone() } else { connection_id.to_string() }
+            } else {
+                connection_id.to_string()
+            };
+
+            let mut redis_conn = match state.redis_pool.get().await {
+                Ok(c) => c,
+                Err(_) => return,
+            };
+            let presence_key = format!("canvas:{}:presence", canvas_id);
+            let u_name = msg.username.clone().unwrap_or_else(|| {
+                if !effective_uid.is_empty() {
+                    format!("Usuario_{}", &effective_uid[..effective_uid.len().min(4)])
+                } else {
+                    "Artista".to_string()
+                }
+            });
+            let u_color = msg.color.clone().unwrap_or_else(|| "#3b82f6".to_string());
+            let u_role = if !uid_str.is_empty() && db::check_is_canvas_owner(state, &uid_str, canvas_id).await {
+                "owner".to_string()
+            } else {
+                msg.role.clone().unwrap_or_else(|| "member".to_string())
+            };
+
+            let user_info = serde_json::json!({
+                "id": &effective_uid,
+                "username": &u_name,
+                "role": &u_role,
+                "color": &u_color,
+                "status": "online"
+            });
+
+            let _: () = redis_conn.hset(&presence_key, &effective_uid, user_info.to_string()).await.unwrap_or(());
+            let _: () = redis_conn.expire(&presence_key, 3600).await.unwrap_or(());
+
+            // Broadcast user_joined to other clients in room
+            let joined_msg = serde_json::json!({
+                "type": "user_joined",
+                "user_id": &effective_uid,
+                "username": &u_name,
+                "role": &u_role,
+                "color": &u_color
+            }).to_string();
+            helpers::broadcast_to_room_excluding(state, canvas_id, &joined_msg, connection_id).await;
+
+            // Send full presence list back to the sender
+            let all_members_map: std::collections::HashMap<String, String> = redis_conn.hgetall(&presence_key).await.unwrap_or_default();
+            let mut members_vec = Vec::new();
+            for (_, val_str) in all_members_map {
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&val_str) {
+                    members_vec.push(v);
+                }
+            }
+
+            let presence_list_msg = serde_json::json!({
+                "type": "presence_list",
+                "members": members_vec
+            }).to_string();
+            helpers::send_to_client(state, connection_id, &presence_list_msg).await;
+        }
+        "cursor_move" => {
+            let effective_uid = if !uid_str.is_empty() {
+                uid_str.clone()
+            } else if let Some(ref m_uid) = msg.user_id {
+                if !m_uid.is_empty() { m_uid.clone() } else { connection_id.to_string() }
+            } else {
+                connection_id.to_string()
+            };
+
+            let move_msg = serde_json::json!({
+                "type": "user_cursor",
+                "user_id": &effective_uid,
+                "username": msg.username.clone().unwrap_or_default(),
+                "x": msg.x.unwrap_or(0),
+                "y": msg.y.unwrap_or(0),
+                "color": msg.color.clone().unwrap_or_else(|| "#3b82f6".to_string()),
+                "is_drawing": msg.is_drawing.unwrap_or(false),
+                "t": msg.t.unwrap_or(0)
+            }).to_string();
+            helpers::broadcast_to_room_excluding(state, canvas_id, &move_msg, connection_id).await;
+        }
+        "host_summon" => {
+            let effective_uid = if !uid_str.is_empty() {
+                uid_str.clone()
+            } else if let Some(ref m_uid) = msg.user_id {
+                if !m_uid.is_empty() { m_uid.clone() } else { connection_id.to_string() }
+            } else {
+                connection_id.to_string()
+            };
+
+            if (!effective_uid.is_empty() && db::check_is_canvas_owner(state, &effective_uid, canvas_id).await) || msg.role.as_deref() == Some("owner") {
+                let summon_msg = serde_json::json!({
+                    "type": "host_summon",
+                    "x": msg.x.unwrap_or(0),
+                    "y": msg.y.unwrap_or(0)
+                }).to_string();
+                helpers::broadcast_to_room_excluding(state, canvas_id, &summon_msg, connection_id).await;
+            }
+        }
         "update_live_share" => {
             if let Some(code) = msg.code.clone() {
                 if let Some(existing_task) = state.grace_sessions.get(&code) {
@@ -981,6 +1084,9 @@ pub async fn handle_binary_action(bin: Vec<u8>, canvas_id: &str, connection_id: 
                 user_id: None,
                 username: None,
                 is_typing: None,
+                is_drawing: None,
+                role: None,
+                t: None,
                 x: Some(x),
                 y: Some(y),
                 x1: None, y1: None, x2: None, y2: None, width: None, height: None,
@@ -1026,6 +1132,9 @@ pub async fn handle_binary_action(bin: Vec<u8>, canvas_id: &str, connection_id: 
                 user_id: None,
                 username: None,
                 is_typing: None,
+                is_drawing: None,
+                role: None,
+                t: None,
                 x: None, y: None, x1: None, y1: None, x2: None, y2: None, width: None, height: None,
                 color: Some(color),
                 pixels: Some(pixels),

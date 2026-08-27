@@ -812,6 +812,131 @@ export const DesignRender = {
         if (this.interactionMode === 'offline_eyedropper' && this.hoveredPixel) {
             this.drawEyedropperLoupe(this.ctx);
         }
+
+        if (typeof this.drawRemoteCursors === 'function') {
+            this.drawRemoteCursors(this.ctx);
+        }
+    },
+
+    drawRemoteCursors(ctx) {
+        if (!this.trackedCursorUserIds || this.trackedCursorUserIds.size === 0 || !this.remoteCursors || this.areAllCursorsHidden) return;
+        if (!ctx || !this.canvas) return;
+
+        const dpr = window.devicePixelRatio || 1;
+        ctx.save();
+        ctx.scale(dpr, dpr);
+
+        let hasMovingCursors = false;
+
+        for (const uid of this.trackedCursorUserIds) {
+            const cursor = this.remoteCursors.get(uid);
+            if (!cursor) continue;
+
+            // LERP interpolation towards target position (smooth 60fps movement)
+            if (cursor.targetX !== undefined && cursor.targetY !== undefined) {
+                const dx = cursor.targetX - (cursor.currentX !== undefined ? cursor.currentX : cursor.targetX);
+                const dy = cursor.targetY - (cursor.currentY !== undefined ? cursor.currentY : cursor.targetY);
+                if (Math.abs(dx) > 0.05 || Math.abs(dy) > 0.05) {
+                    cursor.currentX = (cursor.currentX !== undefined ? cursor.currentX : cursor.targetX) + dx * 0.25;
+                    cursor.currentY = (cursor.currentY !== undefined ? cursor.currentY : cursor.targetY) + dy * 0.25;
+                    hasMovingCursors = true;
+                } else {
+                    cursor.currentX = cursor.targetX;
+                    cursor.currentY = cursor.targetY;
+                }
+            }
+
+            const currX = cursor.currentX !== undefined ? cursor.currentX : (cursor.x || 0);
+            const currY = cursor.currentY !== undefined ? cursor.currentY : (cursor.y || 0);
+
+            // Convert board coords to screen coords
+            const screenX = this.transform.x + (currX + 0.5) * this.transform.scale;
+            const screenY = this.transform.y + (currY + 0.5) * this.transform.scale;
+
+            if (!cursor._logged) {
+                cursor._logged = true;
+                console.log('[LiveCursor:Drawing]', { uid, username: cursor.username, currX, currY, screenX, screenY, scale: this.transform.scale });
+            }
+
+            // Viewport culling: only draw if near screen
+            const padding = 150;
+            if (screenX < -padding || screenX > (this.canvas.width / dpr) + padding ||
+                screenY < -padding || screenY > (this.canvas.height / dpr) + padding) {
+                if (!cursor._culledLog) {
+                    cursor._culledLog = true;
+                    console.warn('[LiveCursor:Culled]', { uid, screenX, screenY, maxW: (this.canvas.width / dpr), maxH: (this.canvas.height / dpr) });
+                }
+                continue;
+            }
+
+            const color = cursor.color || '#3b82f6';
+            const username = cursor.username || 'Artista';
+            const isDrawing = !!cursor.isDrawing;
+
+            ctx.save();
+            ctx.translate(screenX, screenY);
+
+            // 1. Draw Cursor Arrow (SVG-like path)
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+            ctx.shadowBlur = 5;
+            ctx.shadowOffsetX = 1;
+            ctx.shadowOffsetY = 2;
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, 16);
+            ctx.lineTo(4, 12);
+            ctx.lineTo(8, 20);
+            ctx.lineTo(11, 18.5);
+            ctx.lineTo(7, 10.5);
+            ctx.lineTo(13, 10.5);
+            ctx.closePath();
+
+            ctx.fillStyle = color;
+            ctx.fill();
+
+            ctx.shadowColor = 'transparent';
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+
+            // 2. Draw Username Badge Pill
+            const labelText = (isDrawing ? '✏️ ' : '') + username;
+            ctx.font = '600 11px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            const textMetrics = ctx.measureText(labelText);
+            const textWidth = textMetrics.width;
+            const pillWidth = textWidth + 12;
+            const pillHeight = 20;
+            const pillX = 14;
+            const pillY = 12;
+            const radius = 6;
+
+            // Pill background
+            ctx.beginPath();
+            if (typeof ctx.roundRect === 'function') {
+                ctx.roundRect(pillX, pillY, pillWidth, pillHeight, radius);
+            } else {
+                ctx.rect(pillX, pillY, pillWidth, pillHeight);
+            }
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Pill text
+            ctx.fillStyle = '#ffffff';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(labelText, pillX + 6, pillY + pillHeight / 2);
+
+            ctx.restore();
+        }
+
+        ctx.restore();
+
+        if (hasMovingCursors) {
+            this.requestRender();
+        }
     },
 
     drawEyedropperLoupe(ctx) {

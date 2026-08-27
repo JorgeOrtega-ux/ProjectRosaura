@@ -120,6 +120,17 @@ class DesignController {
         this.uiLiveInputX = null;
         this.uiLiveInputY = null;
         this.uiLiveInputOpacity = null;
+
+        // Multiplayer Presence & Live Cursors State (Cap of 24)
+        this.onlineMembers = new Map();
+        this.trackedCursorUserIds = new Set();
+        this.maxTrackedCursors = 24;
+        this.remoteCursors = new Map();
+        this.isLiveMembersDrawerOpen = false;
+        this.activeLiveMemberFilter = 'all';
+        this.liveMemberSearchQuery = '';
+        this.lastCursorSendTime = 0;
+        this.areAllCursorsHidden = false;
         
         this.handleWheelBound = this.handleWheel.bind(this);
         this.handleMouseDownBound = this.handleMouseDown.bind(this);
@@ -276,6 +287,9 @@ class DesignController {
             }
             if (!this.isLocalCanvas) {
                 this.chat = new DesignChat(this);
+            }
+            if (!this.isOfflineMode && typeof this.initLivePresenceState === 'function') {
+                this.initLivePresenceState();
             }
         }
         if (typeof this.updateTemplateUI === 'function') {

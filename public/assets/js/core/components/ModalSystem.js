@@ -1,6 +1,7 @@
 import { ModalTemplates } from './ModalTemplates.js';
 import { CalendarSystem } from './CalendarSystem.js';
 import { BannerCropperSystem } from './BannerCropperSystem.js';
+import { ManageCanvasMembersModalController } from './ManageCanvasMembersModalController.js';
 import { getEventCoords, hexToHsv, hsvToHex, restoreButton, setButtonLoading, showMessage, initCarouselScroll, closeDropdown, localInputFormatToUtcString, parseUtcToLocalDate, formatLocalDateTimeToInput, getScheduledTimeDetails, copyToClipboard } from '../utils/uiUtils.js';
 import { ApiService } from '../api/ApiService.js';
 import { ApiRoutes } from '../api/ApiRoutes.js';
@@ -15,6 +16,7 @@ export class ModalSystem {
         this.activeBox = null;
         this.calendarSystem = null;
         this.bannerCropper = null;
+        this.activeMembersModalController = null;
         this.modalStack = [];
         this.activeOnConfirm = null;
         this.activeAsyncConfirm = false;
@@ -112,6 +114,8 @@ export class ModalSystem {
                     wrapper: this.activeWrapper,
                     box: this.activeBox,
                     calendarSystem: this.calendarSystem,
+                    bannerCropper: this.bannerCropper,
+                    membersModalController: this.activeMembersModalController,
                     dragState: Object.assign({}, this.dragState),
                     onConfirm: this.activeOnConfirm,
                     asyncConfirm: this.activeAsyncConfirm
@@ -121,6 +125,8 @@ export class ModalSystem {
                 this.activeWrapper = null;
                 this.activeBox = null;
                 this.calendarSystem = null;
+                this.bannerCropper = null;
+                this.activeMembersModalController = null;
                 this.activeOnConfirm = null;
                 this.activeAsyncConfirm = false;
             }
@@ -257,6 +263,11 @@ export class ModalSystem {
                 }
             }
 
+            if (templateName === 'manageCanvasMembersModal') {
+                this.activeMembersModalController = new ManageCanvasMembersModalController(this.activeBox, data);
+                this.activeMembersModalController.init();
+            }
+
             this.activeResolveFn = resolve;
         });
     }
@@ -353,6 +364,18 @@ export class ModalSystem {
         if (closeBtn) {
             this.closeCurrent(false);
             return;
+        }
+
+        const saveCanvasMemberRoleSubmitBtn = e.target.closest('[data-action="saveCanvasMemberRoleSubmit"]');
+        if (saveCanvasMemberRoleSubmitBtn && this.activeBox) {
+            e.preventDefault();
+            this.submitCanvasMemberRoleUpdate(saveCanvasMemberRoleSubmitBtn);
+            return;
+        }
+
+        const roleCheckbox = e.target.closest('.admin-role-checkbox');
+        if (roleCheckbox && this.activeBox && this.activeBox.querySelector('[data-ref="change-role-wrapper"]')) {
+            this.updateCanvasRolesDropdownText();
         }
 
         const btnConfirmBannerCrop = e.target.closest('[data-ref="btn-confirm-banner-crop"]');
@@ -2100,6 +2123,11 @@ export class ModalSystem {
             this.bannerCropper = null;
         }
 
+        if (this.activeMembersModalController) {
+            this.activeMembersModalController.destroy();
+            this.activeMembersModalController = null;
+        }
+
         this.activeResolveFn = null;
         this.activeOverlay = null;
         this.activeWrapper = null;
@@ -2121,6 +2149,8 @@ export class ModalSystem {
             this.activeWrapper = prevModal.wrapper;
             this.activeBox = prevModal.box;
             this.calendarSystem = prevModal.calendarSystem;
+            this.bannerCropper = prevModal.bannerCropper;
+            this.activeMembersModalController = prevModal.membersModalController || null;
             this.dragState = prevModal.dragState;
             this.activeOnConfirm = prevModal.onConfirm;
             this.activeAsyncConfirm = prevModal.asyncConfirm;
@@ -2802,6 +2832,59 @@ export class ModalSystem {
                 infoContainer.className = 'component-alert component-alert--info active';
                 if (iconEl) iconEl.textContent = 'schedule';
             }
+        }
+    }
+
+    async submitCanvasMemberRoleUpdate(btn) {
+        const modalBody = this.activeBox ? this.activeBox.querySelector('[data-ref="change-role-wrapper"]') : null;
+        if (!modalBody) return;
+        const canvasId = modalBody.getAttribute('data-canvas-id');
+        const targetUserId = modalBody.getAttribute('data-target-user-id');
+        
+        const selectedRoleInputs = modalBody.querySelectorAll('input[name="new_member_roles[]"]:checked');
+        if (selectedRoleInputs.length === 0) {
+            showMessage(typeof window.__ === 'function' ? window.__('err_select_role') : 'Debes seleccionar al menos un rol.', 'warning');
+            return;
+        }
+        const selectedRoles = Array.from(selectedRoleInputs).map(input => input.value);
+        
+        setButtonLoading(btn);
+        try {
+            const api = new ApiService();
+            const response = await api.post(ApiRoutes.Canvases.AssignMemberRole, {
+                canvas_id: canvasId,
+                target_user_id: targetUserId,
+                roles: selectedRoles
+            });
+            
+            if (response.success) {
+                showMessage(response.message || 'Roles actualizados correctamente.', "success");
+                this.closeCurrent(true);
+                window.dispatchEvent(new CustomEvent('canvasMemberRoleUpdated', { detail: { canvasId, targetUserId, roles: selectedRoles } }));
+            } else {
+                showMessage(response.message || 'Error al actualizar roles.', "error");
+                restoreButton(btn);
+            }
+        } catch (error) {
+            showMessage(typeof window.__ === 'function' ? window.__('err_connection_role') : 'Error al conectar.', "error");
+            restoreButton(btn);
+        }
+    }
+
+    updateCanvasRolesDropdownText() {
+        if (!this.activeBox) return;
+        const dropdownText = this.activeBox.querySelector('[data-module="dropdownCanvasRolesList"]')?.closest('.component-dropdown-wrapper')?.querySelector('.component-dropdown-text');
+        if (!dropdownText) return;
+        const checkedCheckboxes = this.activeBox.querySelectorAll('input[name="new_member_roles[]"]:checked');
+        if (checkedCheckboxes.length === 0) {
+            dropdownText.textContent = typeof window.__ === 'function' ? window.__('lbl_select_roles') : 'Seleccionar roles';
+        } else {
+            const names = Array.from(checkedCheckboxes).map(cb => {
+                const label = cb.closest('label');
+                const span = label ? label.querySelector('.component-menu-link-text span') : null;
+                return span ? span.textContent.trim() : '';
+            }).filter(Boolean);
+            dropdownText.textContent = names.join(', ');
         }
     }
 }

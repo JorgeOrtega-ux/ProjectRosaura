@@ -324,8 +324,12 @@ if (!isset($showDesignTools)) {
                                 $chatLock = \App\Core\System\SubscriptionFeatureConfig::getLockDetails($userTier ?? 0, 'feat_chat_restriction', 'button');
                             }
                         ?>
-                        <button type="button" class="component-button component-button--icon component-button--h32 <?php echo $chatLock['class']; ?>" data-action="toggleMenuInModule" data-module-target="moduleLiveChat" data-menu-target="menu-chat" data-tooltip="<?php echo __('tooltip_live_chat'); ?> [H]" data-position="bottom" <?php echo $chatLock['attributes']; ?>>
+                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleMenuInModule" data-module-target="moduleLiveChat" data-menu-target="menu-chat" data-tooltip="<?php echo __('tooltip_live_chat'); ?> [H]" data-position="bottom" <?php echo $chatLock['attributes']; ?>>
                             <span class="material-symbols-rounded msr-chat">chat</span>
+                        </button>
+                        <!-- Gestión de miembros y presencia en vivo -->
+                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="openManageMembersModal" data-ref="btn-live-members-toggle" data-tooltip="<?php echo __('tooltip_manage_members') ?? 'Gestionar miembros'; ?> [M]" data-position="bottom">
+                            <span class="material-symbols-rounded msr-group">group</span>
                         </button>
                         <div class="component-property-bar__divider"></div>
                         <?php endif; ?>

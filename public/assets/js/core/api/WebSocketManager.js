@@ -143,6 +143,10 @@ export class WebSocketManager {
         }
     }
 
+    isConnected() {
+        return !!(this.ws && this.ws.readyState === WebSocket.OPEN);
+    }
+
     send(payload) {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             if (payload instanceof ArrayBuffer || ArrayBuffer.isView(payload)) {

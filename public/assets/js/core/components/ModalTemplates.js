@@ -2485,6 +2485,158 @@ export const ModalTemplates = {
         }
     },
 
+    manageCanvasMembersModal: {
+        medium: true,
+        customBoxClass: 'component-modal-box--members',
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            const canvasTitle = data.title || __('canvases_members_title') || 'Miembros del Lienzo';
+            const canvasUuid = data.canvasUuid || data.uuid || '';
+            const canvasId = data.canvasId || data.id || '';
+            const initialTab = data.initialTab || (data.designNetwork ? 'live' : 'members');
+            const isOwner = !!data.isOwner;
+
+            return `
+                <div class="pill-container"><div class="drag-handle"></div></div>
+                <div class="component-modal-header component-modal-header--with-icon">
+                    <div class="component-modal-header-icon">
+                        <span class="material-symbols-rounded">group</span>
+                    </div>
+                    <div class="component-modal-header-text">
+                        <h2 class="component-modal-title">${escapeHTML(canvasTitle)}</h2>
+                        <p class="component-modal-desc">${__('canvases_members_modal_desc') || 'Gestiona presencia en vivo, colaboradores y solicitudes de acceso.'}</p>
+                    </div>
+                </div>
+
+                <!-- Segmented Tabs Navigation -->
+                <div class="component-tool-segmented component-modal-tabs" data-ref="canvas-members-modal-tabs" style="width: 100%; margin: 6px 0 10px 0;">
+                    <div class="component-tool-segmented-glider"></div>
+                    <button type="button" class="component-tool-segmented-btn ${initialTab === 'live' ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="live">
+                        <span class="material-symbols-rounded">sensors</span>
+                        <span>${__('tab_live_presence') || 'En vivo'}</span>
+                        <span class="component-badge component-badge--online component-badge--sm" data-ref="modal-live-count-badge">0</span>
+                    </button>
+                    <button type="button" class="component-tool-segmented-btn ${initialTab === 'members' ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="members">
+                        <span class="material-symbols-rounded">group</span>
+                        <span>${__('lbl_members') || 'Miembros'}</span>
+                        <span class="component-badge component-badge--sm" data-ref="modal-members-count-badge">0</span>
+                    </button>
+                    <button type="button" class="component-tool-segmented-btn ${initialTab === 'requests' ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="requests">
+                        <span class="material-symbols-rounded">front_hand</span>
+                        <span>${__('lbl_requests') || 'Solicitudes'}</span>
+                        <span class="component-badge component-badge--warning component-badge--sm" data-ref="modal-requests-count-badge">0</span>
+                    </button>
+                </div>
+
+                <div class="component-modal-body component-modal-body--scrollable" data-ref="canvas-members-modal-body" data-canvas-uuid="${escapeHTML(canvasUuid)}" data-canvas-id="${escapeHTML(canvasId)}" data-is-owner="${isOwner ? '1' : '0'}" style="max-height: 440px; min-height: 280px; padding: 0 4px;">
+                    
+                    <!-- TAB 1: EN VIVO -->
+                    <div class="component-modal-tab-content ${initialTab === 'live' ? 'active' : 'disabled'}" data-ref="tab-content-live">
+                        <!-- Quota & Host Actions -->
+                        <div class="component-live-modal-top" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+                            <div class="component-live-search-box" style="flex: 1; min-width: 180px;">
+                                <span class="material-symbols-rounded msr-search">search</span>
+                                <input type="text" class="component-live-search-input" placeholder="${__('search_member_placeholder') || 'Buscar en vivo...'}" data-action="filterModalLiveMembers">
+                            </div>
+                            <div class="component-live-quota" data-ref="modal-cursor-quota-box" data-tooltip="Límite de cursores simultáneos para rendimiento óptimo" data-position="bottom">
+                                <span class="material-symbols-rounded msr-near_me">near_me</span>
+                                <span class="component-live-quota__label">Cursores:</span>
+                                <span class="component-live-quota__val" data-ref="modal-cursor-quota-val">0 / 24</span>
+                            </div>
+                        </div>
+
+                        ${isOwner ? `
+                        <div class="component-live-host-controls" data-ref="modal-owner-live-controls" style="margin-bottom: 12px;">
+                            <div class="component-live-host-tag">
+                                <span class="material-symbols-rounded msr-shield_person">shield_person</span>
+                                <span>Panel de Anfitrión</span>
+                            </div>
+                            <div class="component-live-host-actions">
+                                <button type="button" class="component-button component-button--h28" data-action="modalToggleAllCursors" data-ref="modal-btn-toggle-all-cursors">
+                                    <span class="material-symbols-rounded msr-visibility">visibility</span>
+                                    <span>Ocultar Todos</span>
+                                </button>
+                                <button type="button" class="component-button component-button--h28" data-action="modalSummonEveryone" data-tooltip="Convocar la vista de todos a tu posición">
+                                    <span class="material-symbols-rounded msr-campaign">campaign</span>
+                                    <span>Reunir a todos</span>
+                                </button>
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <!-- Live Members Scroll List -->
+                        <div class="component-live-members-list" data-ref="modal-live-members-scroll">
+                            <!-- Populated dynamically via controller -->
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: TODOS LOS MIEMBROS -->
+                    <div class="component-modal-tab-content ${initialTab === 'members' ? 'active' : 'disabled'}" data-ref="tab-content-members">
+                        <div class="component-members-modal-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px;">
+                            <div class="component-search-box" style="flex: 1;">
+                                <span class="material-symbols-rounded">search</span>
+                                <input type="text" class="component-input-field component-input-field--sm" data-ref="modal-all-members-search" placeholder="${__('search_member_placeholder') || 'Buscar miembro...'}">
+                            </div>
+                            <div class="component-actions disabled" data-ref="modal-member-selection-actions" style="display: flex; gap: 6px;">
+                                <button type="button" class="component-button component-button--icon component-button--h32" data-action="modalChangeMemberRole" data-tooltip="${__('tooltip_change_role') || 'Cambiar rol'}">
+                                    <span class="material-symbols-rounded">manage_accounts</span>
+                                </button>
+                                <button type="button" class="component-button component-button--icon component-button--h32 component-button--danger" data-action="modalRemoveMember" data-tooltip="${__('tooltip_remove_member') || 'Expulsar'}">
+                                    <span class="material-symbols-rounded">person_remove</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- All Members Table -->
+                        <div class="component-table-wrapper" data-ref="modal-members-table-wrapper" style="max-height: 280px; overflow-y: auto;">
+                            <table class="component-table">
+                                <thead>
+                                    <tr>
+                                        <th>${__('table_header_member') || 'Miembro'}</th>
+                                        <th>${__('table_header_role') || 'Rol'}</th>
+                                        <th>${__('table_header_joined') || 'Fecha'}</th>
+                                        <th style="width: 72px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody data-ref="modal-members-table-body">
+                                    <!-- Populated via API -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination Footer -->
+                        <div class="component-modal-pagination" data-ref="modal-members-pagination" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+                            <!-- Pagination controls -->
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: SOLICITUDES -->
+                    <div class="component-modal-tab-content ${initialTab === 'requests' ? 'active' : 'disabled'}" data-ref="tab-content-requests">
+                        <div class="component-table-wrapper" data-ref="modal-requests-table-wrapper" style="max-height: 300px; overflow-y: auto;">
+                            <table class="component-table">
+                                <thead>
+                                    <tr>
+                                        <th>${__('table_header_user') || 'Usuario'}</th>
+                                        <th>${__('table_header_date') || 'Fecha'}</th>
+                                        <th style="text-align: right; width: 80px;">${__('table_header_actions') || 'Acciones'}</th>
+                                    </tr>
+                                </thead>
+                                <tbody data-ref="modal-requests-table-body">
+                                    <!-- Populated via API -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="component-modal-actions">
+                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_close') || 'Cerrar'}</button>
+                </div>
+            `;
+        }
+    },
+
     changeCanvasRoleModal: {
         build: (data = {}) => {
             const __ = (typeof window.__ === 'function') ? window.__ : (k => k);

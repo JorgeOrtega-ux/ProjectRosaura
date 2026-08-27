@@ -338,6 +338,13 @@ export const InteractionPointer = {
     },
 
     handleMouseMove(e) {
+        if (!this.isOfflineMode && typeof this.sendCursorPosition === 'function') {
+            const exact = typeof this.getExactBoardCoords === 'function' ? this.getExactBoardCoords(e.clientX, e.clientY) : null;
+            if (exact) {
+                this.sendCursorPosition(exact.x, exact.y, !!this.isSelecting);
+            }
+        }
+
         if (this.isDraggingCustomPicker) {
             const picker = document.querySelector('[data-ref="customColorPicker"]');
             if (picker) {

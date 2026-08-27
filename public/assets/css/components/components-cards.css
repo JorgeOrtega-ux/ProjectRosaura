@@ -1757,44 +1757,14 @@ html.dark-theme .component-tab-close:hover,
 }
 
 .component-notifications-menu {
-    width: 400px;
-    height: 600px;
+    width: 380px;
+    max-width: calc(100vw - 32px);
+    height: 520px;
     max-height: calc(100vh - 80px);
     display: flex;
     flex-direction: column;
     overflow: hidden;
     padding: 0;
-}
-
-.component-notifications-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
-    flex-shrink: 0;
-    gap: 12px;
-}
-
-.component-notifications-top__left {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-}
-
-.component-notifications-title {
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin: 0;
-    color: var(--text-primary);
-    white-space: nowrap;
-}
-
-.component-notifications-top__right {
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
 }
 
 .component-notifications-bottom {
@@ -1803,37 +1773,54 @@ html.dark-theme .component-tab-close:hover,
     display: flex;
     flex-direction: column;
     min-height: 0;
+    padding: 8px;
 }
 
 .component-notifications-list {
     display: flex;
     flex-direction: column;
+    gap: 8px;
+    width: 100%;
 }
 
 .component-notification-item {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.05));
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background-color: var(--bg-surface);
     cursor: pointer;
-    transition: background-color 0.15s ease;
+    transition: all 0.2s ease;
     position: relative;
     text-decoration: none;
     color: inherit;
+    box-sizing: border-box;
+    width: 100%;
 }
 
 .component-notification-item:hover {
-    background-color: var(--bg-surface-alt, rgba(255, 255, 255, 0.04));
+    background-color: var(--surface-hover);
+    border-color: var(--text-primary);
 }
 
 .component-notification-item--unread {
-    background-color: rgba(99, 102, 241, 0.06);
+    background-color: var(--bg-surface);
 }
 
 .component-notification-item__avatar-wrapper {
     position: relative;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.component-notification-item .component-button--profile {
+    margin: 0;
+    width: 36px;
+    height: 36px;
 }
 
 .component-notification-item__icon-badge {
@@ -1847,8 +1834,9 @@ html.dark-theme .component-tab-close:hover,
     align-items: center;
     justify-content: center;
     background: var(--bg-surface, #18181b);
-    border: 1.5px solid var(--bg-surface, #18181b);
+    border: 1.5px solid var(--border-color);
     font-size: 11px;
+    z-index: 3;
 }
 
 .component-notification-item__icon-badge--user_follow {
@@ -1903,45 +1891,20 @@ html.dark-theme .component-tab-close:hover,
 }
 
 .component-notification-item__dot {
-    width: 7px;
-    height: 7px;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
-    background-color: var(--primary, #6366f1);
-    flex-shrink: 0;
-    margin-left: auto;
+    background-color: var(--accent-color, #3b82f6);
+    pointer-events: none;
+    z-index: 2;
 }
 
-.component-notifications-empty,
-.component-notifications-loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 48px 24px;
-    text-align: center;
-    color: var(--text-secondary);
-    gap: 10px;
-    margin: auto;
-}
-
-.component-notifications-empty .material-symbols-rounded {
-    font-size: 40px;
-    opacity: 0.4;
-}
-
-.component-notifications-empty h4 {
-    margin: 0;
-    font-size: 0.92rem;
-    color: var(--text-primary);
-    font-weight: 600;
-}
-
-.component-notifications-empty p {
-    margin: 0;
-    font-size: 0.8rem;
-    line-height: 1.4;
-    color: var(--text-secondary);
-    max-width: 260px;
+.component-skeleton-notification {
+    pointer-events: none;
+    cursor: default;
 }
 
 .btn-header-notifications {

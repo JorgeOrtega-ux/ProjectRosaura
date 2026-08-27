@@ -72,6 +72,9 @@ export class CanvasCardInteractions {
         } else if (action === 'openCardResetModal') {
             this.openCardResetModal(btn);
             return true;
+        } else if (action === 'openManageMembersModal') {
+            this.openManageMembersModal(btn);
+            return true;
         }
         return false;
     }
@@ -568,7 +571,7 @@ export class CanvasCardInteractions {
                             <div class="component-menu-link-text"><span>${window.__('btn_create_captura')}</span></div>
                         </button>
                         <div class="component-menu-divider"></div>
-                        <button type="button" class="component-menu-link" data-nav="${this.basePath}/canvases/members/${uuid}">
+                        <button type="button" class="component-menu-link" data-action="openManageMembersModal" data-id="${id}" data-uuid="${uuid}">
                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">group</span></div>
                             <div class="component-menu-link-text"><span>${window.__('tooltip_manage_members')}</span></div>
                         </button>
@@ -1086,6 +1089,26 @@ export class CanvasCardInteractions {
                 }
             }
         });
+    }
+
+    async openManageMembersModal(btn) {
+        const uuid = btn.getAttribute('data-uuid');
+        const id = btn.getAttribute('data-id');
+        if (!uuid && !id) return;
+        this.closeDropdowns();
+
+        const card = document.querySelector(`[data-card-id="${id}"]`) || btn.closest('.component-card');
+        const title = card ? (card.querySelector('.component-card__title')?.textContent?.trim()) : '';
+
+        if (window.modalSystem && window.modalSystem.show) {
+            await window.modalSystem.show('manageCanvasMembersModal', {
+                canvasUuid: uuid,
+                canvasId: id,
+                title: title || '',
+                initialTab: 'members',
+                isOwner: true
+            });
+        }
     }
 
     async syncLocalCanvasToCloud(btn) {

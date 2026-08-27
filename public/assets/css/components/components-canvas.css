@@ -4058,6 +4058,326 @@
     -webkit-filter: invert(1) !important;
 }
 
+/* ==========================================================================
+   LIVE MULTIPLAYER MEMBERS & CURSORS HUB (DRAWER & CONTROLS)
+   ========================================================================== */
+
+.component-live-hub {
+    position: absolute;
+    top: 58px;
+    right: 16px;
+    width: 330px;
+    max-width: calc(100vw - 32px);
+    z-index: 55;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.18s ease, visibility 0.18s;
+}
+
+.component-live-hub.disabled {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-8px) scale(0.97);
+}
+
+.component-live-drawer {
+    background: rgba(18, 18, 24, 0.92);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 14px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.component-live-drawer__header {
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.component-live-drawer__title-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.component-live-drawer__title {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.component-live-drawer__actions-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.component-live-quota {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 9999px;
+    background: rgba(59, 130, 246, 0.14);
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #60a5fa;
+    font-family: var(--sl-font-mono, monospace);
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.component-live-quota.full {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #f87171;
+}
+
+.component-live-quota .material-symbols-rounded {
+    font-size: 0.9rem;
+}
+
+.component-live-drawer__search {
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.component-live-search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.component-live-search-box .material-symbols-rounded {
+    position: absolute;
+    left: 10px;
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.4);
+    pointer-events: none;
+}
+
+.component-live-search-input {
+    width: 100%;
+    height: 30px;
+    padding: 0 10px 0 32px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 0.78rem;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.component-live-search-input:focus {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(59, 130, 246, 0.6);
+}
+
+.component-live-segmented {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+.component-live-host-controls {
+    padding: 8px 12px;
+    background: rgba(245, 158, 11, 0.08);
+    border-bottom: 1px solid rgba(245, 158, 11, 0.16);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.component-live-host-tag {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #fbbf24;
+}
+
+.component-live-host-tag .material-symbols-rounded {
+    font-size: 0.95rem;
+}
+
+.component-live-host-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.component-live-members-list {
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    scrollbar-width: thin;
+}
+
+.component-member-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.component-member-item:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.component-member-item.is-watching {
+    background: rgba(59, 130, 246, 0.09);
+    border-color: rgba(59, 130, 246, 0.32);
+}
+
+.component-member-item__avatar {
+    position: relative;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--user-color, #3b82f6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: #ffffff;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    border: 2px solid rgba(255, 255, 255, 0.18);
+}
+
+.component-member-item__avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.component-live-status-dot {
+    position: absolute;
+    bottom: -1px;
+    right: -1px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 1.5px solid #121218;
+}
+
+.component-live-status-dot.online {
+    background: #10b981;
+}
+
+.component-live-status-dot.drawing {
+    background: #3b82f6;
+    box-shadow: 0 0 6px #3b82f6;
+}
+
+.component-live-status-dot.idle {
+    background: #6b7280;
+}
+
+.component-member-item__info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+    margin: 0 8px;
+}
+
+.component-member-item__name-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.component-member-item__name {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #f3f4f6;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.component-role-badge.owner {
+    font-size: 0.62rem;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    font-weight: 600;
+}
+
+.component-member-item__status-text {
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.45);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.component-member-item__status-text.drawing {
+    color: #60a5fa;
+    font-weight: 500;
+}
+
+.component-member-item__actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.component-member-item__actions .component-button.active {
+    background: rgba(59, 130, 246, 0.25);
+    border-color: #3b82f6;
+    color: #60a5fa;
+}
+
+.component-live-drawer__footer {
+    padding: 8px 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.component-live-drawer__hint {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.component-live-drawer__hint .material-symbols-rounded {
+    font-size: 0.88rem;
+}
+
+
 
 
 

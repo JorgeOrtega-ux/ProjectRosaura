@@ -298,6 +298,18 @@ async fn handle_socket(mut socket: WebSocket, canvas_id: String, ticket: String,
     state.tx_channels.remove(&connection_id);
     info!("Client {} disconnected. Remaining global total: {}", connection_id, state.ws_meta.len());
 
+    // Presence disconnect cleanup
+    let disconnect_uid = if !uid_str.is_empty() { uid_str.clone() } else { connection_id.clone() };
+    if let Ok(mut c) = state.redis_pool.get().await {
+        let presence_key = format!("canvas:{}:presence", canvas_id);
+        let _: () = c.hdel(&presence_key, &disconnect_uid).await.unwrap_or(());
+    }
+    let left_msg = serde_json::json!({
+        "type": "user_left",
+        "user_id": &disconnect_uid
+    }).to_string();
+    helpers::broadcast_to_room(&state, &canvas_id, &left_msg).await;
+
     // Live share disconnect cleanup
     let codes: Vec<String> = state.live_rooms.iter().map(|kv| kv.key().clone()).collect();
     for code in codes {

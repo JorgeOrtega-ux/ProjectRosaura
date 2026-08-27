@@ -118,6 +118,70 @@ export const InteractionEvents = {
             }
         }
 
+        const btnToggleLiveMembers = e.target.closest('[data-action="openManageMembersModal"], [data-action="toggleLiveMembersDrawer"]');
+        if (btnToggleLiveMembers) {
+            e.preventDefault();
+            if (typeof this.openManageMembersModal === 'function') {
+                this.openManageMembersModal();
+            } else if (typeof this.toggleLiveMembersDrawer === 'function') {
+                this.toggleLiveMembersDrawer();
+            }
+            return;
+        }
+
+        const btnToggleUserCursor = e.target.closest('[data-action="toggleUserCursor"]');
+        if (btnToggleUserCursor) {
+            e.preventDefault();
+            const targetUid = btnToggleUserCursor.getAttribute('data-user-id') || btnToggleUserCursor.closest('[data-user-id]')?.getAttribute('data-user-id');
+            if (targetUid && typeof this.toggleTrackUserCursor === 'function') {
+                this.toggleTrackUserCursor(targetUid);
+            }
+            return;
+        }
+
+        const btnTeleportUser = e.target.closest('[data-action="teleportToUser"]');
+        if (btnTeleportUser) {
+            e.preventDefault();
+            const targetUid = btnTeleportUser.getAttribute('data-user-id') || btnTeleportUser.closest('[data-user-id]')?.getAttribute('data-user-id');
+            if (targetUid && typeof this.teleportToUser === 'function') {
+                this.teleportToUser(targetUid);
+            }
+            return;
+        }
+
+        const btnToggleAllCursors = e.target.closest('[data-action="toggleAllCursors"]');
+        if (btnToggleAllCursors) {
+            e.preventDefault();
+            if (typeof this.toggleAllRemoteCursors === 'function') {
+                this.toggleAllRemoteCursors();
+            }
+            return;
+        }
+
+        const btnSummonEveryone = e.target.closest('[data-action="summonEveryone"]');
+        if (btnSummonEveryone) {
+            e.preventDefault();
+            if (typeof this.summonEveryone === 'function') {
+                this.summonEveryone();
+            }
+            return;
+        }
+
+        const btnFilterLiveTab = e.target.closest('[data-action="filterLiveMembersTab"]');
+        if (btnFilterLiveTab) {
+            e.preventDefault();
+            const filterType = btnFilterLiveTab.getAttribute('data-filter') || 'all';
+            const parentSegmented = btnFilterLiveTab.closest('.component-live-segmented');
+            if (parentSegmented) {
+                parentSegmented.querySelectorAll('.component-tool-segmented-btn').forEach(b => b.classList.remove('active'));
+                btnFilterLiveTab.classList.add('active');
+            }
+            if (typeof this.filterLiveMembers === 'function') {
+                this.filterLiveMembers(this.liveMemberSearchQuery || '', filterType);
+            }
+            return;
+        }
+
         const btnEyedropper = e.target.closest('[data-action="toggleEyedropper"]');
         if (btnEyedropper) {
             e.preventDefault();
@@ -2055,6 +2119,15 @@ export const InteractionEvents = {
                     }, 100);
                 }
             }
+        } else if (keyUpper === 'M') {
+            if (!this.isOfflineMode) {
+                e.preventDefault();
+                if (typeof this.openManageMembersModal === 'function') {
+                    this.openManageMembersModal();
+                } else if (typeof this.toggleLiveMembersDrawer === 'function') {
+                    this.toggleLiveMembersDrawer();
+                }
+            }
         } else if (keyUpper === 'U') {
             e.preventDefault();
             if (this.isOfflineMode && typeof this.toggleOfflineQuickShapes === 'function') {
@@ -2340,6 +2413,14 @@ export const InteractionEvents = {
         if (isStabilizerInput) {
             if (typeof this.setStabilizerRange === 'function') {
                 this.setStabilizerRange(e.target.value);
+            }
+            return;
+        }
+
+        const isLiveMembersSearch = e.target.matches('[data-action="filterLiveMembersInput"]');
+        if (isLiveMembersSearch) {
+            if (typeof this.filterLiveMembers === 'function') {
+                this.filterLiveMembers(e.target.value, this.activeLiveMemberFilter || 'all');
             }
             return;
         }

@@ -16,26 +16,6 @@ export class OnboardingTourManager {
         this.pendingTourTimeout = null;
         
         this.tours = {
-            '/canvases/members/:uuid': {
-                modalId: 'onboarding-canvas-members',
-                flagKey: 'onboarding_canvas_members_seen',
-                steps: [
-                    {
-                        titleKey: 'onboarding_canvas_members_step1_title',
-                        defaultTitle: 'Colaboradores Activos',
-                        descKey: 'onboarding_canvas_members_step1_desc',
-                        defaultDesc: 'Verifica quién está colaborando, edita sus permisos asignándoles roles o desvincula cuentas.',
-                        icons: ['group']
-                    },
-                    {
-                        titleKey: 'onboarding_canvas_members_step2_title',
-                        defaultTitle: 'Moderación',
-                        descKey: 'onboarding_canvas_members_step2_desc',
-                        defaultDesc: 'Restringe el acceso o suspende miembros que infrinjan las normas.',
-                        icons: ['gavel']
-                    }
-                ]
-            },
             '/canvases/manage/roles/:uuid': {
                 modalId: 'onboarding-canvas-roles',
                 flagKey: 'onboarding_canvas_roles_seen',
@@ -93,26 +73,6 @@ export class OnboardingTourManager {
                         descKey: 'onboarding_canvas_sanctions_step2_desc',
                         defaultDesc: 'Aplica restricciones temporales o permanentes y levanta sanciones ingresando tu contraseña.',
                         icons: ['key', 'gavel']
-                    }
-                ]
-            },
-            '/canvases/manage/requests/:uuid': {
-                modalId: 'onboarding-canvas-requests',
-                flagKey: 'onboarding_canvas_requests_seen',
-                steps: [
-                    {
-                        titleKey: 'onboarding_canvas_requests_step1_title',
-                        defaultTitle: 'Aprobación de Miembros',
-                        descKey: 'onboarding_canvas_requests_step1_desc',
-                        defaultDesc: 'Para lienzos privados, revisa la lista de usuarios interesados en unirse.',
-                        icons: ['person_add']
-                    },
-                    {
-                        titleKey: 'onboarding_canvas_requests_step2_title',
-                        defaultTitle: 'Aceptar o Denegar Miembros',
-                        descKey: 'onboarding_canvas_requests_step2_desc',
-                        defaultDesc: 'Selecciona solicitudes de la lista y aprueba o rechaza el acceso en lote.',
-                        icons: ['group_add']
                     }
                 ]
             },

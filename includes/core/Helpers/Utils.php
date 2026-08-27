@@ -1234,6 +1234,35 @@ class Utils {
                     </g>
                 </svg>';
 
+            case 'notifications':
+            case 'notification':
+            case 'notifications_off':
+            case 'bell':
+                return '<svg class="component-empty-state-svg" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="bellGradMain" x1="30" y1="25" x2="110" y2="105" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#71717a"/>
+                            <stop offset="50%" stop-color="#52525b"/>
+                            <stop offset="100%" stop-color="#27272a"/>
+                        </linearGradient>
+                        <linearGradient id="bellGradRim" x1="30" y1="78" x2="110" y2="88" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#a1a1aa"/>
+                            <stop offset="50%" stop-color="#71717a"/>
+                            <stop offset="100%" stop-color="#3f3f46"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M64 34 C64 28 76 28 76 34" stroke="#71717a" stroke-width="3" stroke-linecap="round" fill="none"/>
+                    <circle cx="70" cy="94" r="7" fill="#3f3f46" stroke="#71717a" stroke-width="1.5"/>
+                    <path d="M46 78 C46 62 48 44 70 44 C92 44 94 62 94 78 Z" fill="url(#bellGradMain)" stroke="#71717a" stroke-width="2"/>
+                    <rect x="38" y="78" width="64" height="8" rx="4" fill="url(#bellGradRim)" stroke="#71717a" stroke-width="1.5"/>
+                    <circle cx="70" cy="56" r="3" fill="#e4e4e7" opacity="0.6"/>
+                    <g>
+                        <path d="M116 26 L117.5 30.5 L122 32 L117.5 33.5 L116 38 L114.5 33.5 L110 32 L114.5 30.5 Z" fill="#e4e4e7"/>
+                        <path d="M22 50 L23 53 L26 54 L23 55 L22 58 L21 55 L18 54 L21 53 Z" fill="#a1a1aa"/>
+                        <path d="M98 104 L99 106 L101 107 L99 108 L98 110 L97 108 L95 107 L97 106 Z" fill="#71717a"/>
+                    </g>
+                </svg>';
+
             case 'canvas':
             case 'home':
             case 'palette':

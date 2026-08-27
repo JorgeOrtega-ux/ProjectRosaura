@@ -121,6 +121,24 @@ class CanvasAccessController extends BaseController {
         }
     }
 
+    public function get_members($input) {
+        try {
+            if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
+            $canvasUuid = $input['canvas_uuid'] ?? $input['uuid'] ?? $input['canvas_id'] ?? null;
+            if (!$canvasUuid) return $this->respond(['success' => false, 'message' => __('err_canvas_not_provided')]);
+
+            $page = (int)($input['page'] ?? 1);
+            $canvasViewService = new \App\Api\Services\Canvas\CanvasViewService();
+            $data = $canvasViewService->getCanvasMembersData((string)$canvasUuid, $page);
+            if (!empty($data['unauthorized'])) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized')]);
+            }
+            return $this->respond(['success' => true, 'data' => $data]);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
     public function get_member_role_data($input) {
         try {
             if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);

@@ -29,6 +29,9 @@ export const SkeletonTemplates = {
                 return this.designSkeleton();
             case 'detailsSkeleton':
                 return this.detailsSkeleton();
+            case 'notifications':
+            case 'notificationsSkeleton':
+                return this.notificationsSkeleton();
             default:
                 return this.basicSkeleton();
         }
@@ -619,6 +622,27 @@ export const SkeletonTemplates = {
                         </div>
                     </div>
                 </div>
+            </div>
+        `;
+    },
+
+    notificationsSkeleton(count = 5) {
+        let items = '';
+        for (let i = 0; i < count; i++) {
+            items += `
+            <div class="component-notification-item component-skeleton-notification">
+                <div class="component-notification-item__avatar-wrapper">
+                    <div class="component-skeleton component-skeleton--avatar-sm"></div>
+                </div>
+                <div class="component-notification-item__content">
+                    <div class="component-skeleton component-skeleton--title-sm"></div>
+                    <div class="component-skeleton component-skeleton--desc-xs"></div>
+                </div>
+            </div>`;
+        }
+        return `
+            <div class="component-notifications-list">
+                ${items}
             </div>
         `;
     }

@@ -1,6 +1,7 @@
 import { ApiRoutes } from '../api/ApiRoutes.js';
 import { ApiService } from '../api/ApiService.js';
 import { CardTemplates } from '../components/CardTemplates.js';
+import { SkeletonTemplates } from '../components/SkeletonTemplates.js';
 import { formatNumber, showMessage } from '../utils/uiUtils.js';
 
 export class NotificationManager {
@@ -106,11 +107,7 @@ export class NotificationManager {
         if (!listContainer) return;
 
         if (!this.hasLoadedOnce) {
-            listContainer.innerHTML = `
-                <div class="component-notifications-loading">
-                    <span class="material-symbols-rounded spin">sync</span>
-                </div>
-            `;
+            listContainer.innerHTML = SkeletonTemplates.get('notifications');
         }
 
         this.isLoading = true;
@@ -125,34 +122,30 @@ export class NotificationManager {
                 this.hasLoadedOnce = true;
 
                 if (notifications.length === 0) {
-                    listContainer.innerHTML = `
-                        <div class="component-notifications-empty">
-                            <span class="material-symbols-rounded">notifications_off</span>
-                            <h4>${window.__('notifications.empty_title') || 'Sin notificaciones'}</h4>
-                            <p>${window.__('notifications.empty_desc') || 'Aquí verás tus notificaciones cuando alguien interactúe contigo.'}</p>
-                        </div>
-                    `;
+                    listContainer.innerHTML = CardTemplates.emptyState({
+                        type: 'notifications',
+                        title: (typeof window.__ === 'function' ? window.__('notifications.empty_title') : 'Sin notificaciones') || 'Sin notificaciones',
+                        message: (typeof window.__ === 'function' ? window.__('notifications.empty_desc') : 'Aquí verás cuando alguien te siga, comente o le dé like a tus publicaciones.') || 'Aquí verás cuando alguien te siga, comente o le dé like a tus publicaciones.'
+                    });
                 } else {
                     listContainer.innerHTML = notifications
                         .map(n => CardTemplates.notificationItem(n, { basePath: this.basePath }))
                         .join('');
                 }
             } else {
-                listContainer.innerHTML = `
-                    <div class="component-notifications-empty">
-                        <span class="material-symbols-rounded">error</span>
-                        <p>${res.message || 'Error al cargar notificaciones'}</p>
-                    </div>
-                `;
+                listContainer.innerHTML = CardTemplates.emptyState({
+                    type: 'error',
+                    title: (typeof window.__ === 'function' ? window.__('error') : 'Error') || 'Error',
+                    message: res?.message || 'Error al cargar notificaciones'
+                });
             }
         } catch (err) {
             if (err.name !== 'AbortError') {
-                listContainer.innerHTML = `
-                    <div class="component-notifications-empty">
-                        <span class="material-symbols-rounded">error</span>
-                        <p>Error de conexión al cargar notificaciones</p>
-                    </div>
-                `;
+                listContainer.innerHTML = CardTemplates.emptyState({
+                    type: 'error',
+                    title: (typeof window.__ === 'function' ? window.__('error') : 'Error') || 'Error',
+                    message: 'Error de conexión al cargar notificaciones'
+                });
             }
         } finally {
             this.isLoading = false;
@@ -201,8 +194,11 @@ export class NotificationManager {
         }
 
         const moduleManager = window.mainController ? window.mainController.moduleManager : null;
-        if (moduleManager && typeof moduleManager.closeModule === 'function') {
-            moduleManager.closeModule('moduleNotifications');
+        if (moduleManager) {
+            const notifModule = document.querySelector('.component-module[data-module="moduleNotifications"]');
+            if (notifModule && typeof moduleManager.close === 'function') {
+                moduleManager.close(notifModule);
+            }
         }
 
         if (targetUrl) {

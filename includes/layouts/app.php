@@ -300,10 +300,13 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
         window.APP_PALETTES = <?php echo $palettesJson; ?>;
         window.APP_CUSTOM_PALETTES = <?php echo $customPalettesJson; ?>;
         window.activeUserId = <?php echo isset($_SESSION['active_account']) ? json_encode((string)$_SESSION['active_account']) : 'null'; ?>;
-        
+        window.activeUsername = <?php echo isset($_SESSION['accounts'][$activeAccountId]['user_name']) ? json_encode($_SESSION['accounts'][$activeAccountId]['user_name']) : 'null'; ?>;
+        window.activeUserAvatar = <?php echo isset($_SESSION['accounts'][$activeAccountId]['user_pic']) ? json_encode($_SESSION['accounts'][$activeAccountId]['user_pic']) : 'null'; ?>;
 
         window.APP_USER = {
             id: <?php echo isset($_SESSION['active_account']) ? json_encode((string)$_SESSION['active_account']) : 'null'; ?>,
+            name: <?php echo isset($_SESSION['accounts'][$activeAccountId]['user_name']) ? json_encode($_SESSION['accounts'][$activeAccountId]['user_name']) : 'null'; ?>,
+            avatar: <?php echo isset($_SESSION['accounts'][$activeAccountId]['user_pic']) ? json_encode($_SESSION['accounts'][$activeAccountId]['user_pic']) : 'null'; ?>,
             subscription_tier: <?php echo $subscriptionTier; ?>,
             permissions: <?php echo json_encode($userPermissions ?? []); ?>,
             is_google: <?php echo $isGoogleUser ? 'true' : 'false'; ?>,

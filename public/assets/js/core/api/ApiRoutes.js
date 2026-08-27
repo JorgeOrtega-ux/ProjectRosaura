@@ -170,6 +170,7 @@ export const ApiRoutes = {
         ApproveRequest: 'canvases.approve_request',
         RejectRequest: 'canvases.reject_request',
         GetPendingRequests: 'canvases.get_pending_requests',
+        GetMembers: 'canvases.get_members',
         GetMemberRoleData: 'canvases.get_member_role_data',
 
         GetResetSettings: 'canvases.get_reset_settings',
