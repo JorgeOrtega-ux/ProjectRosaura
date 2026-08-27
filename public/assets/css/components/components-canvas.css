@@ -44,25 +44,27 @@
 .component-canvas-badges--left,
 .canvas-badges-left {
     position: absolute;
-    top: 16px;
+    top: 60px;
     left: 16px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
     pointer-events: none;
+    z-index: 35;
 }
 
 .component-canvas-badges--right,
 .canvas-badges-right {
     position: absolute;
-    top: 16px;
+    top: 60px;
     right: 16px;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     gap: 8px;
     pointer-events: none;
+    z-index: 35;
 }
 
 .component-canvas-badges--left .component-badge,
@@ -228,28 +230,15 @@
 .canvas-top-property-bar-wrapper,
 [data-ref="canvas-top-property-bar-wrapper"] {
     position: absolute;
-    top: 12px;
-    left: 50%;
-    transform: translateX(-50%);
-    max-width: calc(100vw - 140px);
+    top: 10px;
+    left: 12px;
+    right: 12px;
+    width: calc(100% - 24px);
+    max-width: calc(100% - 24px);
+    transform: none;
     display: flex;
     align-items: center;
-    gap: 6px;
-    pointer-events: none;
-    z-index: 45;
-}
-
-.component-vertical-toolbar-wrapper,
-.canvas-vertical-toolbar-wrapper,
-[data-ref="canvas-vertical-tools-wrapper"] {
-    position: absolute;
-    top: 50%;
-    left: 16px;
-    transform: translateY(-50%);
-    max-height: calc(100vh - 120px);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    justify-content: flex-start;
     gap: 6px;
     pointer-events: none;
     z-index: 45;
@@ -261,12 +250,10 @@
     .canvas-top-property-bar-wrapper,
     [data-ref="canvas-top-property-bar-wrapper"] {
         top: 8px;
-        max-width: calc(100vw - 20px);
-    }
-    .component-vertical-toolbar-wrapper,
-    .canvas-vertical-toolbar-wrapper,
-    [data-ref="canvas-vertical-tools-wrapper"] {
         left: 8px;
+        right: 8px;
+        width: calc(100% - 16px);
+        max-width: calc(100% - 16px);
     }
 }
 
@@ -450,11 +437,21 @@
 .canvas-horizontal-tools-wrapper {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     gap: 4px;
     margin-bottom: 8px;
-    max-width: calc(100vw - 32px);
+    width: calc(100% - 24px);
+    max-width: calc(100% - 24px);
     pointer-events: auto;
     transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+@media (max-width: 768px) {
+    .component-tools-wrapper--horizontal,
+    .canvas-horizontal-tools-wrapper {
+        width: calc(100% - 16px);
+        max-width: calc(100% - 16px);
+    }
 }
 
 .component-tools-wrapper--horizontal .component-toolbar--horizontal,
@@ -464,6 +461,7 @@
     left: auto;
     transform: none;
     pointer-events: auto;
+    width: 100%;
     max-width: 100%;
     min-width: 0;
     flex-shrink: 1;
@@ -472,6 +470,7 @@
 .component-toolbar {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     background: #0d0d10;
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 9999px;
@@ -486,11 +485,14 @@
 .canvas-design-toolbar-horizontal {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     gap: 4px;
-    padding: 0 5px;
+    padding: 0 6px;
     height: 42px;
     min-height: 42px;
     max-height: 42px;
+    width: 100%;
+    max-width: 100%;
     background: #0d0d10;
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 9999px;
@@ -501,7 +503,6 @@
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    max-width: calc(100vw - 80px);
     user-select: none;
 }
 
@@ -2052,15 +2053,22 @@
 }
 
 .component-layers-preview-container {
-    padding: 8px 10px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-    background: #0d0d10;
+    background: transparent;
 }
 
 .component-layers-preview-box {
     display: flex;
     align-items: center;
     gap: 10px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
 }
 
 .component-layers-preview-canvas {
@@ -2109,21 +2117,21 @@
     min-height: 90px;
     max-height: 220px;
     overflow-y: auto;
-    padding: 6px 8px;
+    padding: 8px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    background: #0d0d10;
+    gap: 6px;
+    background: transparent;
 }
 
 .component-layer-item {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 8px;
-    border-radius: 9999px;
+    padding: 8px;
+    border-radius: 12px;
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     transition: background 0.15s ease, border-color 0.15s ease;
     user-select: none;
     cursor: pointer;
@@ -2833,18 +2841,20 @@
 .canvas-top-property-bar,
 .component-toolbar--top,
 [data-ref="canvas-top-property-bar"] {
-    position: absolute;
-    top: 12px;
-    left: 50%;
-    transform: translateX(-50%);
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
     height: 42px;
     min-height: 42px;
     max-height: 42px;
-    max-width: calc(100% - 140px);
+    width: 100%;
+    max-width: 100%;
     display: none;
     align-items: center;
+    justify-content: flex-start;
     gap: 4px;
-    padding: 0 5px;
+    padding: 0 6px;
     background: rgba(13, 13, 16, 0.94);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
@@ -3266,17 +3276,17 @@
 .component-sidebar--right,
 .canvas-right-unified-sidebar {
     position: absolute;
-    top: 50%;
-    right: 64px;
-    transform: translateY(-50%) translateX(0);
+    top: 58px;
+    right: 12px;
+    transform: translateY(0);
     width: 275px;
-    max-height: calc(100% - 64px);
+    max-height: calc(100% - 110px);
     background: rgba(13, 13, 16, 0.94);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 24px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+    border-radius: 20px;
+    box-shadow: none !important;
     display: flex;
     flex-direction: column;
     z-index: 50;
@@ -3288,12 +3298,23 @@
     overflow: hidden;
 }
 
+@media (max-width: 768px) {
+    .component-sidebar--right,
+    .canvas-right-unified-sidebar {
+        top: 54px;
+        right: 8px;
+        width: calc(100vw - 16px);
+        max-width: 320px;
+        max-height: calc(100% - 100px);
+    }
+}
+
 .component-sidebar--right.disabled,
 .canvas-right-unified-sidebar.disabled {
     opacity: 0 !important;
     visibility: hidden !important;
     pointer-events: none !important;
-    transform: translateY(-50%) translateX(12px) !important;
+    transform: translateY(-8px) !important;
     display: none !important;
 }
 
@@ -3322,7 +3343,7 @@
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 50px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: none !important;
     transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
     z-index: 1;
     pointer-events: none;
@@ -3404,10 +3425,10 @@
 /* ── Sidebar: Tool Settings Panel ── */
 .component-tool-settings-panel,
 .canvas-tool-settings-panel {
-    padding: 12px;
+    padding: 8px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 8px;
 }
 
 .component-tool-settings-header,
@@ -3415,8 +3436,10 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
 }
 
 .component-tool-settings-badge,
@@ -3466,7 +3489,7 @@
 .canvas-tool-settings-section {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
 }
 
 .component-tool-settings-section.disabled,
@@ -3479,6 +3502,10 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
 }
 
 .component-tool-field__header,
@@ -3515,10 +3542,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 6px 8px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
 }
 
 /* ── Tool Slider & Number Input Controls (Universal Slider System) ── */
@@ -3878,11 +3905,11 @@
 /* Minimap Tab in Sidebar */
 .component-minimap-panel,
 .canvas-minimap-panel {
-    padding: 12px;
+    padding: 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .component-minimap-canvas-wrapper,
@@ -3898,7 +3925,7 @@
         linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%);
     background-size: 8px 8px;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
+    border-radius: 12px;
     overflow: hidden;
     cursor: crosshair;
 }
@@ -3931,6 +3958,11 @@
     gap: 6px;
     width: 100%;
     justify-content: center;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    box-sizing: border-box;
 }
 
 .component-minimap-stats,
@@ -3939,12 +3971,14 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: 6px 10px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
     font-size: 0.72rem;
     font-family: var(--sl-font-mono, monospace);
     color: rgba(255, 255, 255, 0.7);
+    box-sizing: border-box;
 }
 
 .component-minimap-stat-item,

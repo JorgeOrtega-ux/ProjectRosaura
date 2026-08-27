@@ -331,24 +331,47 @@ if (!isset($showDesignTools)) {
                         <?php endif; ?>
 
                         <?php if (!$isOnlineModeActive): ?>
-                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleTileGrid" data-tooltip="<?php echo __('tooltip_tile_grid'); ?>" data-position="bottom">
-                            <span class="material-symbols-rounded msr-grid_on">grid_on</span>
-                        </button>
-                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="undo" data-tooltip="<?php echo __('tooltip_undo'); ?>" data-position="bottom">
-                            <span class="material-symbols-rounded msr-undo">undo</span>
-                        </button>
-                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="redo" data-tooltip="<?php echo __('tooltip_redo'); ?>" data-position="bottom">
-                            <span class="material-symbols-rounded msr-redo">redo</span>
-                        </button>
+                            <?php if (isset($isOwner) && $isOwner): ?>
+                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="manualSaveOffline" data-ref="btn-save-offline" data-tooltip="<?php echo __('tooltip_save_offline'); ?>" data-position="bottom">
+                                <span class="material-symbols-rounded msr-save">save</span>
+                            </button>
+                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleOnlineMode" data-tooltip="<?php echo __('tooltip_activate_online'); ?>" data-position="bottom">
+                                <span class="material-symbols-rounded msr-sensors">sensors</span>
+                            </button>
+                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="openOfflineResizeModal" data-tooltip="<?php echo __('tooltip_resize_canvas'); ?>" data-position="bottom">
+                                <span class="material-symbols-rounded msr-aspect_ratio">aspect_ratio</span>
+                            </button>
+                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="openOfflineResetModal" data-tooltip="<?php echo __('tooltip_manage_resets'); ?>" data-position="bottom">
+                                <span class="material-symbols-rounded msr-restart_alt">restart_alt</span>
+                            </button>
+                            <?php endif; ?>
+                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="generateOfflineSnapshot" data-tooltip="<?php echo __('btn_create_captura'); ?>" data-position="bottom">
+                                <span class="material-symbols-rounded msr-photo_camera">photo_camera</span>
+                            </button>
+                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleTileGrid" data-tooltip="<?php echo __('tooltip_tile_grid'); ?>" data-position="bottom">
+                                <span class="material-symbols-rounded msr-grid_on">grid_on</span>
+                            </button>
+                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="undo" data-tooltip="<?php echo __('tooltip_undo'); ?>" data-position="bottom">
+                                <span class="material-symbols-rounded msr-undo">undo</span>
+                            </button>
+                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="redo" data-tooltip="<?php echo __('tooltip_redo'); ?>" data-position="bottom">
+                                <span class="material-symbols-rounded msr-redo">redo</span>
+                            </button>
+                            <div class="component-property-bar__divider"></div>
+                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="openLayersTab" data-ref="btn-toggle-layers" data-tooltip="<?php echo __('tooltip_layers'); ?> [L]" data-position="bottom">
+                                <span class="material-symbols-rounded msr-layers">layers</span>
+                            </button>
+                            <button type="button" class="component-button component-button--icon component-button--h32" data-action="openMinimapTab" data-tooltip="<?php echo __('lbl_minimap'); ?>" data-position="bottom">
+                                <span class="material-symbols-rounded msr-explore">explore</span>
+                            </button>
+                            <button type="button" class="component-button component-button--icon component-button--h32 property-bar-btn--sidebar-toggle" data-action="toggleUnifiedSidebar" data-ref="btn-top-sidebar-toggle" data-tooltip="<?php echo __('tooltip_toggle_sidebar'); ?>" data-position="bottom">
+                                <span class="material-symbols-rounded msr-view_sidebar">view_sidebar</span>
+                            </button>
+                            <div class="component-property-bar__divider"></div>
                         <?php endif; ?>
                         <button type="button" class="component-button component-button--icon component-button--h32" data-action="openPublishModal" data-ref="btn-publish-artwork" data-tooltip="<?php echo __('publications.btn_publish'); ?>" data-position="bottom">
                             <span class="material-symbols-rounded msr-rocket_launch component-text-accent">rocket_launch</span>
                         </button>
-                        <?php if (!$isOnlineModeActive): ?>
-                        <button type="button" class="component-button component-button--icon component-button--h32 property-bar-btn--sidebar-toggle" data-action="toggleUnifiedSidebar" data-ref="btn-top-sidebar-toggle" data-tooltip="<?php echo __('tooltip_toggle_sidebar'); ?>" data-position="bottom">
-                            <span class="material-symbols-rounded msr-view_sidebar">view_sidebar</span>
-                        </button>
-                        <?php endif; ?>
                     </div>
 
                     <button type="button" class="component-button component-button--icon component-button--h32 component-toolbar__nav-btn component-toolbar__nav-btn--right disabled" data-action="scrollCanvasToolbarRight" data-tooltip="<?php echo __('btn_scroll_right'); ?>" data-position="bottom">
@@ -357,76 +380,6 @@ if (!isset($showDesignTools)) {
                 </div>
             </div>
             <?php endif; ?>
-
-            <div class="component-toolbar component-toolbar--vertical component-toolbar--right <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="workspace-tools-vertical-right">
-                <button type="button" class="component-button component-button--icon component-button--h32 component-toolbar__nav-btn component-toolbar__nav-btn--up disabled" data-action="scrollVerticalToolsUp" data-tooltip="<?php echo __('lbl_scroll_up', 'Desplazar arriba'); ?>" data-position="left">
-                    <span class="material-symbols-rounded">keyboard_arrow_up</span>
-                </button>
-
-                <?php if (!$isOnlineModeActive): ?>
-                    <?php if (isset($isOwner) && $isOwner): ?>
-                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="manualSaveOffline" data-ref="btn-save-offline" data-tooltip="<?php echo __('tooltip_save_offline'); ?>" data-position="left">
-                        <span class="material-symbols-rounded">save</span>
-                    </button>
-                    <?php endif; ?>
-
-                    <button type="button" class="component-button component-button--icon component-button--h32 component-color-indicator" data-ref="btn-color-palette" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-colors" data-tooltip="<?php echo __('tooltip_color_palette'); ?> [C]" data-position="left">
-                        <span class="material-symbols-rounded">palette</span>
-                    </button>
-
-                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-templates" data-tooltip="<?php echo __('tooltip_templates'); ?> [T]" data-position="left">
-                        <span class="material-symbols-rounded">photo_library</span>
-                    </button>
-
-                    <?php if (isset($isOwner) && $isOwner): ?>
-                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleOnlineMode" data-tooltip="<?php echo __('tooltip_activate_online'); ?>" data-position="left">
-                        <span class="material-symbols-rounded">sensors</span>
-                    </button>
-                    <?php endif; ?>
-
-                    <div class="component-property-bar__divider"></div>
-
-                    <button class="component-button component-button--icon component-button--h32" data-action="openToolSettings" data-ref="btn-sidebar-tool-settings" data-tooltip="<?php echo __('lbl_tool_settings'); ?>" data-position="left">
-                        <span class="material-symbols-rounded">tune</span>
-                    </button>
-
-                    <button class="component-button component-button--icon component-button--h32" data-action="openLayersTab" data-ref="btn-toggle-layers" data-tooltip="<?php echo __('tooltip_layers'); ?> [L]" data-position="left">
-                        <span class="material-symbols-rounded">layers</span>
-                    </button>
-
-                    <button class="component-button component-button--icon component-button--h32" data-action="openMinimapTab" data-tooltip="<?php echo __('lbl_minimap'); ?>" data-position="left">
-                        <span class="material-symbols-rounded">explore</span>
-                    </button>
-
-                    <?php if (isset($isOwner) && $isOwner): ?>
-                    <button class="component-button component-button--icon component-button--h32" data-action="openOfflineResizeModal" data-tooltip="<?php echo __('tooltip_resize_canvas'); ?>" data-position="left">
-                        <span class="material-symbols-rounded">aspect_ratio</span>
-                    </button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="generateOfflineSnapshot" data-tooltip="<?php echo __('btn_create_captura'); ?>" data-position="left">
-                        <span class="material-symbols-rounded">photo_camera</span>
-                    </button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="openOfflineResetModal" data-tooltip="<?php echo __('tooltip_manage_resets'); ?>" data-position="left">
-                        <span class="material-symbols-rounded">restart_alt</span>
-                    </button>
-                    <?php endif; ?>
-                <?php else: ?>
-                    <?php if (isset($isOwner) && $isOwner): ?>
-                    <button class="component-button component-button--icon component-button--h32" data-action="openOfflineResizeModal" data-tooltip="<?php echo __('tooltip_resize_canvas'); ?>" data-position="left">
-                        <span class="material-symbols-rounded">aspect_ratio</span>
-                    </button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="generateOfflineSnapshot" data-tooltip="<?php echo __('btn_create_captura'); ?>" data-position="left">
-                        <span class="material-symbols-rounded">photo_camera</span>
-                    </button>
-                    <button class="component-button component-button--icon component-button--h32" data-action="openOfflineResetModal" data-tooltip="<?php echo __('tooltip_manage_resets'); ?>" data-position="left">
-                        <span class="material-symbols-rounded">restart_alt</span>
-                    </button>
-                    <?php endif; ?>
-                <?php endif; ?>
-
-                <button type="button" class="component-button component-button--icon component-button--h32 component-toolbar__nav-btn component-toolbar__nav-btn--down disabled" data-action="scrollVerticalToolsDown" data-tooltip="<?php echo __('lbl_scroll_down', 'Desplazar abajo'); ?>" data-position="left">
-                    <span class="material-symbols-rounded">keyboard_arrow_down</span>
-                </button>
-            </div>
 
             <!-- Unified Right Sidebar with Tabs (Capas, Minimapa, Herramienta) -->
             <?php if (!$isOnlineModeActive): ?>
@@ -891,6 +844,18 @@ if (!isset($showDesignTools)) {
 
                     <button type="button" class="component-button component-button--icon component-button--h32" data-action="resetDefaultColors" data-tooltip="<?php echo __('tooltip_reset_colors'); ?>" data-position="top">
                         <span class="material-symbols-rounded">contrast</span>
+                    </button>
+
+                    <div class="component-property-bar__divider"></div>
+
+                    <!-- Paleta de colores del lienzo -->
+                    <button type="button" class="component-button component-button--icon component-button--h32 component-color-indicator" data-ref="btn-color-palette" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-colors" data-tooltip="<?php echo __('tooltip_color_palette'); ?> [C]" data-position="top">
+                        <span class="material-symbols-rounded msr-palette">palette</span>
+                    </button>
+
+                    <!-- Plantillas de lienzo -->
+                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-templates" data-tooltip="<?php echo __('tooltip_templates'); ?> [T]" data-position="top">
+                        <span class="material-symbols-rounded msr-photo_library">photo_library</span>
                     </button>
 
                     <button type="button" class="component-button component-button--icon component-button--h32 component-toolbar__nav-btn component-toolbar__nav-btn--right disabled" data-action="scrollToolsRight" data-tooltip="<?php echo __('btn_scroll_right'); ?>" data-position="top">
