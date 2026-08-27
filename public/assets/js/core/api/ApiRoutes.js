@@ -275,3 +275,6 @@ export const ApiRoutes = {
         MarkAllRead: 'notifications.mark_all_read'
     }
 };
+
+// Aliases for compatibility
+ApiRoutes.Canvas = ApiRoutes.Canvases;

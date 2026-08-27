@@ -539,13 +539,14 @@ export class CreateCanvasModalController {
         setButtonLoading(btn, 'Creando lienzo...');
 
         try {
-            const res = await this.api.post(ApiRoutes.Canvas.Create, this.formState);
+            const res = await this.api.post(ApiRoutes.Canvases.Create, this.formState);
             if (res && res.success) {
                 showMessage(res.message || 'Lienzo creado con éxito.', 'success');
                 if (window.modalSystem) {
                     window.modalSystem.closeCurrent(true);
                 }
-                const redirectUrl = res.redirect_url || (res.uuid ? `${this.basePath}/c/${res.uuid}` : `${this.basePath}/`);
+                const canvasUuid = res.uuid || (res.data && res.data.uuid);
+                const redirectUrl = res.redirect_url || (canvasUuid ? `${this.basePath}/design/${canvasUuid}` : `${this.basePath}/`);
                 window.location.href = redirectUrl;
             } else {
                 restoreButton(btn);
@@ -553,6 +554,7 @@ export class CreateCanvasModalController {
             }
         } catch (err) {
             restoreButton(btn);
+            console.error('Error creating canvas:', err);
             showMessage('Error de conexión al crear el lienzo.', 'error');
         }
     }

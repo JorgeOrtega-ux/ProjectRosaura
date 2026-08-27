@@ -310,14 +310,21 @@ export const DesignSetup = {
 
 
         if (this.isSubscriptionLocked) {
-            this.setCanvasBadge('lock-premium', 'warning', __('badge_subscription_expired'), 'left');
+            this.setCanvasBadge('lock-premium', 'warning', __('badge_subscription_expired') || 'Suscripción Vencida', 'left');
             this.removeCanvasBadge('lock-private', 'left');
+            this.removeCanvasBadge('spectator', 'left');
         } else if (this.isPrivateBlocked) {
-            this.setCanvasBadge('lock-private', 'lock', __('badge_member_required'), 'left');
+            this.setCanvasBadge('lock-private', 'lock', __('badge_member_required') || 'Lienzo Privado', 'left');
             this.removeCanvasBadge('lock-premium', 'left');
+            this.removeCanvasBadge('spectator', 'left');
+        } else if (this.isSpectator) {
+            this.setCanvasBadge('spectator', 'visibility', __('lbl_spectator') || 'Espectador', 'left');
+            this.removeCanvasBadge('lock-premium', 'left');
+            this.removeCanvasBadge('lock-private', 'left');
         } else {
             this.removeCanvasBadge('lock-private', 'left');
             this.removeCanvasBadge('lock-premium', 'left');
+            this.removeCanvasBadge('spectator', 'left');
         }
     },
 

@@ -1743,10 +1743,7 @@ export const DesignNetwork = {
             }
             if (actionPill) actionPill.classList.add('disabled');
             
-            if (specBadge) specBadge.classList.remove('disabled');
             if (cooldownBadge) cooldownBadge.classList.add('disabled');
-            if (privBadge) privBadge.classList.add('disabled');
-            if (premBadge) premBadge.classList.add('disabled');
 
             if (this.canvasApproval) {
                 if (btnJoin) btnJoin.classList.add('disabled');
@@ -1777,9 +1774,6 @@ export const DesignNetwork = {
                 }
             }
             if (cooldownBadge) cooldownBadge.classList.remove('disabled');
-            if (specBadge) specBadge.classList.add('disabled');
-            if (privBadge) privBadge.classList.add('disabled');
-            if (premBadge) premBadge.classList.add('disabled');
 
             if (btnOwnerTools) {
                 if (this.isOwner) {
