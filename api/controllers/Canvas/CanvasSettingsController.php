@@ -193,81 +193,118 @@ class CanvasSettingsController extends BaseController {
     }
 
     public function get_roles($request) {
-        if (!$this->session->isLoggedIn()) return ['success' => false, 'message' => __('err_unauthorized')];
-        $userId = $this->session->getActiveAccountId();
-        $canvasId = $request['canvas_id'] ?? null;
-        if (!$canvasId) return ['success' => false, 'message' => __('err_canvas_not_specified')];
+        if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized')]);
+        $canvasUuid = $request['canvas_uuid'] ?? $request['uuid'] ?? $request['canvas_id'] ?? null;
+        if (!$canvasUuid) return $this->respond(['success' => false, 'message' => __('err_canvas_not_specified')]);
         
-        $result = $this->canvasServices->getCanvasRoles($userId, (int)$canvasId);
-        return $result;
+        $canvasViewService = new \App\Api\Services\Canvas\CanvasViewService();
+        $result = $canvasViewService->getCanvasRolesData((string)$canvasUuid);
+        if (!empty($result['unauthorized'])) {
+            return $this->respond(['success' => false, 'message' => __('err_unauthorized')]);
+        }
+        return $this->respond(['success' => true, 'data' => $result]);
     }
 
     public function get_permissions($request) {
-        if (!$this->session->isLoggedIn()) return ['success' => false, 'message' => __('err_unauthorized')];
+        if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized')]);
         $userId = $this->session->getActiveAccountId();
-        $canvasId = $request['canvas_id'] ?? null;
-        if (!$canvasId) return ['success' => false, 'message' => __('err_canvas_not_specified')];
+        $canvasTarget = $request['canvas_id'] ?? $request['canvas_uuid'] ?? $request['uuid'] ?? null;
+        if (!$canvasTarget) return $this->respond(['success' => false, 'message' => __('err_canvas_not_specified')]);
         
-        $result = $this->canvasServices->getCanvasPermissions($userId, (int)$canvasId);
-        return $result;
+        $canvasId = (int)$canvasTarget;
+        if (!is_numeric($canvasTarget)) {
+            $canvasRepo = new \App\Core\Repositories\CanvasRepository();
+            $canvas = $canvasRepo->getByUuid((string)$canvasTarget);
+            if ($canvas) $canvasId = (int)$canvas['id'];
+        }
+
+        $result = $this->canvasServices->getCanvasPermissions($userId, $canvasId);
+        return $this->respond($result);
     }
 
     public function create_role($request) {
-        if (!$this->session->isLoggedIn()) return ['success' => false, 'message' => __('err_unauthorized')];
+        if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized')]);
         $userId = $this->session->getActiveAccountId();
         
-        $canvasId = $request['canvas_id'] ?? null;
+        $canvasTarget = $request['canvas_id'] ?? $request['canvas_uuid'] ?? $request['uuid'] ?? null;
         $name = $request['name'] ?? null;
         $permissions = $request['permissions'] ?? [];
         $weight = isset($request['weight']) ? (int)$request['weight'] : 10;
         
-        if (!$canvasId || !$name) return ['success' => false, 'message' => __('err_missing_required_params')];
+        if (!$canvasTarget || !$name) return $this->respond(['success' => false, 'message' => __('err_missing_required_params')]);
         
-        $result = $this->canvasServices->createCanvasRole($userId, (int)$canvasId, $name, $permissions, $weight);
-        return $result;
+        $canvasId = (int)$canvasTarget;
+        if (!is_numeric($canvasTarget)) {
+            $canvasRepo = new \App\Core\Repositories\CanvasRepository();
+            $canvas = $canvasRepo->getByUuid((string)$canvasTarget);
+            if ($canvas) $canvasId = (int)$canvas['id'];
+        }
+
+        $result = $this->canvasServices->createCanvasRole($userId, $canvasId, $name, $permissions, $weight);
+        return $this->respond($result);
     }
 
     public function update_role($request) {
-        if (!$this->session->isLoggedIn()) return ['success' => false, 'message' => __('err_unauthorized')];
+        if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized')]);
         $userId = $this->session->getActiveAccountId();
         
         $roleId = $request['role_id'] ?? null;
-        $canvasId = $request['canvas_id'] ?? null;
+        $canvasTarget = $request['canvas_id'] ?? $request['canvas_uuid'] ?? $request['uuid'] ?? null;
         $name = $request['name'] ?? null;
         $permissions = isset($request['permissions']) ? $request['permissions'] : null;
         $weight = isset($request['weight']) ? (int)$request['weight'] : 10;
         
-        if (!$roleId || !$canvasId || !$name) return ['success' => false, 'message' => __('err_missing_required_params')];
+        if (!$roleId || !$canvasTarget || !$name) return $this->respond(['success' => false, 'message' => __('err_missing_required_params')]);
         
-        $result = $this->canvasServices->updateCanvasRole($userId, (int)$roleId, (int)$canvasId, $name, $permissions, $weight);
-        return $result;
+        $canvasId = (int)$canvasTarget;
+        if (!is_numeric($canvasTarget)) {
+            $canvasRepo = new \App\Core\Repositories\CanvasRepository();
+            $canvas = $canvasRepo->getByUuid((string)$canvasTarget);
+            if ($canvas) $canvasId = (int)$canvas['id'];
+        }
+
+        $result = $this->canvasServices->updateCanvasRole($userId, (int)$roleId, $canvasId, $name, $permissions, $weight);
+        return $this->respond($result);
     }
 
     public function update_role_permissions($request) {
-        if (!$this->session->isLoggedIn()) return ['success' => false, 'message' => __('err_unauthorized')];
+        if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized')]);
         $userId = $this->session->getActiveAccountId();
         
         $roleId = $request['role_id'] ?? null;
-        $canvasId = $request['canvas_id'] ?? null;
+        $canvasTarget = $request['canvas_id'] ?? $request['canvas_uuid'] ?? $request['uuid'] ?? null;
         $permissions = $request['permissions'] ?? [];
         
-        if (!$roleId || !$canvasId) return ['success' => false, 'message' => __('err_missing_required_params')];
+        if (!$roleId || !$canvasTarget) return $this->respond(['success' => false, 'message' => __('err_missing_required_params')]);
         
+        $canvasId = (int)$canvasTarget;
+        if (!is_numeric($canvasTarget)) {
+            $canvasRepo = new \App\Core\Repositories\CanvasRepository();
+            $canvas = $canvasRepo->getByUuid((string)$canvasTarget);
+            if ($canvas) $canvasId = (int)$canvas['id'];
+        }
 
-        $result = $this->canvasServices->updateCanvasRolePermissions($userId, (int)$roleId, (int)$canvasId, $permissions);
-        return $result;
+        $result = $this->canvasServices->updateCanvasRolePermissions($userId, (int)$roleId, $canvasId, $permissions);
+        return $this->respond($result);
     }
 
     public function delete_role($request) {
-        if (!$this->session->isLoggedIn()) return ['success' => false, 'message' => __('err_unauthorized')];
+        if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized')]);
         $userId = $this->session->getActiveAccountId();
         
         $roleId = $request['role_id'] ?? null;
-        $canvasId = $request['canvas_id'] ?? null;
+        $canvasTarget = $request['canvas_id'] ?? $request['canvas_uuid'] ?? $request['uuid'] ?? null;
         
-        if (!$roleId || !$canvasId) return ['success' => false, 'message' => __('err_missing_required_params')];
+        if (!$roleId || !$canvasTarget) return $this->respond(['success' => false, 'message' => __('err_missing_required_params')]);
         
-        $result = $this->canvasServices->deleteCanvasRole($userId, (int)$roleId, (int)$canvasId);
-        return $result;
+        $canvasId = (int)$canvasTarget;
+        if (!is_numeric($canvasTarget)) {
+            $canvasRepo = new \App\Core\Repositories\CanvasRepository();
+            $canvas = $canvasRepo->getByUuid((string)$canvasTarget);
+            if ($canvas) $canvasId = (int)$canvas['id'];
+        }
+
+        $result = $this->canvasServices->deleteCanvasRole($userId, (int)$roleId, $canvasId);
+        return $this->respond($result);
     }
 }

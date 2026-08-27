@@ -263,7 +263,7 @@ export class ModalSystem {
                 }
             }
 
-            if (templateName === 'manageCanvasMembersModal') {
+            if (templateName === 'manageCanvasMembersModal' || templateName === 'canvasSettingsModal') {
                 this.activeMembersModalController = new ManageCanvasMembersModalController(this.activeBox, data);
                 this.activeMembersModalController.init();
             }

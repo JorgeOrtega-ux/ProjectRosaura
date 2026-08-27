@@ -906,6 +906,22 @@ return [
             ],
         ],
     ],
+    'canvases.get_sanctions' => [
+        'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasAccessController',
+        'action' => 'get_sanctions',
+        'middleware' => [
+            [
+                'type' => 'Telemetry',
+            ],
+            [
+                'type' => 'RateLimit',
+                'key' => 'canvas_get_sanctions',
+                'max' => 30,
+                'time' => 1,
+                'identifier' => 'user_id',
+            ],
+        ],
+    ],
     'canvases.get_snapshots_gallery' => [
         'controller' => 'App\\Api\\Controllers\\Canvas\\CanvasMediaController',
         'action' => 'get_snapshots_gallery',

@@ -2486,152 +2486,1204 @@ export const ModalTemplates = {
     },
 
     manageCanvasMembersModal: {
-        medium: true,
+        medium: false,
+        hideCloseBtn: false,
         customBoxClass: 'component-modal-box--members',
         build: (data = {}) => {
-            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
-            const canvasTitle = data.title || __('canvases_members_title') || 'Miembros del Lienzo';
+            const t = (k, f) => {
+                if (typeof window.__ === 'function') {
+                    const r = window.__(k);
+                    if (r && r !== k) return r;
+                }
+                return f || k;
+            };
+            const canvasTitle = data.title || t('canvases_members_title', 'Miembros del Lienzo');
             const canvasUuid = data.canvasUuid || data.uuid || '';
             const canvasId = data.canvasId || data.id || '';
+            const currentSize = data.currentSize || '64x64';
+            const userTier = parseInt(data.userTier ?? (window.APP_USER?.subscription_tier ?? 0), 10);
+            const isOffline = data.isOfflineMode !== false && (data.isOffline || false);
             const initialTab = data.initialTab || (data.designNetwork ? 'live' : 'members');
             const isOwner = !!data.isOwner;
 
+            const sizesList = {
+                "32x32": { label: "32x32", icon: "crop_square", tier: 0 },
+                "64x64": { label: "64x64", icon: "crop_square", tier: 0 },
+                "128x64": { label: "128x64", icon: "aspect_ratio", tier: 0 },
+                "128x128": { label: "128x128", icon: "aspect_ratio", tier: 1 },
+                "256x128": { label: "256x128", icon: "aspect_ratio", tier: 1 },
+                "256x256": { label: "256x256", icon: "grid_4x4", tier: 1 },
+                "512x256": { label: "512x256", icon: "aspect_ratio", tier: 1 },
+                "512x512": { label: "512x512", icon: "grid_on", tier: 1 },
+                "1024x512": { label: "1024x512", icon: "aspect_ratio", tier: 2 },
+                "1024x1024": { label: "1024x1024", icon: "grid_on", tier: 2 },
+                "2048x1024": { label: "2048x1024", icon: "aspect_ratio", tier: 2 },
+                "2048x2048": { label: "2048x2048", icon: "grid_on", tier: 2 },
+                "4096x2048": { label: "4096x2048", icon: "aspect_ratio", tier: 3 },
+                "4096x4096": { label: "4096x4096", icon: "grid_on", tier: 3 }
+            };
+
+            const currentMeta = sizesList[currentSize] || { label: currentSize, icon: "aspect_ratio", tier: 0 };
+
+            let instantSizesHtml = '';
+            for (const [val, meta] of Object.entries(sizesList)) {
+                const reqTier = meta.tier ?? 0;
+                const isAllowed = userTier >= reqTier;
+                const disabledClass = isAllowed ? '' : 'disabled-interaction';
+                const tierName = getDynamicTierName(reqTier);
+                const lockBadge = !isAllowed
+                    ? `<span class="component-badge component-badge--sm"><span class="material-symbols-rounded">stars</span> ${escapeHTML(tierName)}</span>`
+                    : '';
+
+                const isInstantActive = (val === currentSize && isAllowed);
+                instantSizesHtml += `
+                    <div class="component-menu-link ${isInstantActive ? 'active' : ''} ${disabledClass}"
+                         data-action="${isAllowed ? 'selectOfflineResizeSize' : ''}"
+                         data-value="${escapeHTML(val)}"
+                         data-label="${escapeHTML(meta.label)}"
+                         data-icon="${escapeHTML(meta.icon)}">
+                        <div class="component-menu-link-icon"><span class="material-symbols-rounded">${escapeHTML(meta.icon)}</span></div>
+                        <div class="component-menu-link-text">
+                            <span>${escapeHTML(meta.label)}</span>
+                        </div>
+                        ${lockBadge}
+                    </div>
+                `;
+            }
+
+            const defaultDateObj = new Date(Date.now() + 86400000);
+            defaultDateObj.setHours(23, 59, 0, 0);
+            const defaultIso = formatLocalDateTimeToInput(defaultDateObj);
+            const defaultSchedDetails = getScheduledTimeDetails(defaultDateObj);
+            const pad = n => String(n).padStart(2, '0');
+            const hh = pad(defaultDateObj.getHours());
+            const mm = pad(defaultDateObj.getMinutes());
+
             return `
-                <div class="pill-container"><div class="drag-handle"></div></div>
-                <div class="component-modal-header component-modal-header--with-icon">
-                    <div class="component-modal-header-icon">
-                        <span class="material-symbols-rounded">group</span>
+                <div class="component-modal-settings-container" data-canvas-uuid="${escapeHTML(canvasUuid)}" data-canvas-id="${escapeHTML(canvasId)}" data-is-owner="${isOwner ? '1' : '0'}">
+                    <!-- MOBILE DRAG HANDLE -->
+                    <div class="pill-container"><div class="drag-handle"></div></div>
+
+                    <!-- UNIFIED TOP HEADER -->
+                    <div class="component-modal-settings-header">
+                        <div class="component-modal-settings-header-left">
+                            <div class="component-modal-header-icon">
+                                <span class="material-symbols-rounded">tune</span>
+                            </div>
+                            <div class="component-modal-header-text">
+                                <h2 class="component-modal-title">${escapeHTML(canvasTitle)}</h2>
+                                <p class="component-modal-desc">${t('canvases_members_modal_desc', 'Gestiona miembros, solicitudes, enlaces, roles y opciones.')}</p>
+                            </div>
+                        </div>
+
+                        <div class="component-modal-settings-header-right">
+                            <!-- Search Bar for Tables & Lists -->
+                            <div class="component-search component-search--w-full component-search--h32 ${(initialTab === 'resize' || initialTab === 'reset' || initialTab === 'edit' || initialTab === 'general' || initialTab === 'danger' || initialTab === 'critical') ? 'disabled' : ''}" data-ref="modal-search-container">
+                                <div class="component-search-icon">
+                                    <span class="material-symbols-rounded msr-search">search</span>
+                                </div>
+                                <div class="component-search-input">
+                                    <input type="text" data-ref="modal-members-search" placeholder="${t('search_member_placeholder', 'Buscar...')}" autocomplete="off">
+                                </div>
+                            </div>
+
+                            <!-- Section Title for Edit, Resize, Reset & Critical Options -->
+                            <div class="component-modal-settings-header__title ${(initialTab === 'resize' || initialTab === 'reset' || initialTab === 'edit' || initialTab === 'general' || initialTab === 'danger' || initialTab === 'critical') ? '' : 'disabled'}" data-ref="modal-section-title-container">
+                                <span class="material-symbols-rounded" data-ref="modal-section-title-icon">${(initialTab === 'danger' || initialTab === 'critical') ? 'warning' : (initialTab === 'reset' ? 'restart_alt' : ((initialTab === 'edit' || initialTab === 'general') ? 'tune' : 'aspect_ratio'))}</span>
+                                <span data-ref="modal-section-title-text">${(initialTab === 'danger' || initialTab === 'critical') ? t('tab_danger_zone', 'Opciones Críticas') : (initialTab === 'reset' ? t('canvas_resets_title', 'Reiniciar Lienzo') : ((initialTab === 'edit' || initialTab === 'general') ? t('canvas_edit_title', 'Editar Lienzo') : t('canvas_resize_title', 'Expandir Lienzo')))}</span>
+                            </div>
+
+                            <div class="component-modal-settings-header__actions">
+                                <!-- Contextual Actions: Members Table Selection -->
+                                <div class="component-modal-top-actions disabled" data-ref="modal-member-selection-actions">
+                                    <div class="component-badge component-badge--sm" data-ref="modal-selected-count-badge">
+                                        <span>0 seleccionados</span>
+                                    </div>
+                                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="modalChangeMemberRole" data-tooltip="${t('tooltip_change_role', 'Cambiar rol')}" data-position="bottom">
+                                        <span class="material-symbols-rounded msr-manage_accounts">manage_accounts</span>
+                                    </button>
+                                    <button type="button" class="component-button component-button--icon component-button--h32 component-button--danger" data-action="modalRemoveMember" data-tooltip="${t('tooltip_remove_member', 'Expulsar')}" data-position="bottom">
+                                        <span class="material-symbols-rounded msr-person_remove">person_remove</span>
+                                    </button>
+                                </div>
+
+                                <!-- Contextual Actions: Requests Tab Selection -->
+                                <div class="component-modal-top-actions ${initialTab === 'requests' ? '' : 'disabled'}" data-ref="modal-requests-actions">
+                                    <div class="component-modal-top-actions disabled" data-ref="modal-requests-selection-actions">
+                                        <div class="component-badge component-badge--sm" data-ref="modal-requests-selected-badge">
+                                            <span>0 seleccionados</span>
+                                        </div>
+                                        <button type="button" class="component-button component-button--icon component-button--h32 component-button--success" data-action="modalApproveSelectedRequests" data-tooltip="${t('tooltip_approve_request', 'Aprobar')}" data-position="bottom">
+                                            <span class="material-symbols-rounded msr-check">check</span>
+                                        </button>
+                                        <button type="button" class="component-button component-button--icon component-button--h32 component-button--danger" data-action="modalRejectSelectedRequests" data-tooltip="${t('tooltip_reject_request', 'Rechazar')}" data-position="bottom">
+                                            <span class="material-symbols-rounded msr-close">close</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Contextual Actions: Live Cursors Dropdown -->
+                                <div class="component-dropdown-wrapper ${initialTab === 'live' ? '' : 'disabled'}" data-ref="modal-live-actions">
+                                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleModule" data-target="moduleModalLiveActions" data-tooltip="${t('lbl_more_options', 'Opciones')}" data-position="bottom">
+                                        <span class="material-symbols-rounded">more_vert</span>
+                                    </button>
+                                    <div class="component-module component-module--dropdown component-module--right disabled" data-module="moduleModalLiveActions">
+                                        <div class="component-menu component-menu--w-auto component-menu--h-auto">
+                                            <div class="component-menu-list">
+                                                <div class="component-menu-link" data-action="modalToggleAllCursors" data-ref="modal-btn-toggle-all-cursors">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded" data-ref="modal-btn-toggle-cursors-icon">visibility</span></div>
+                                                    <div class="component-menu-link-text"><span data-ref="modal-btn-toggle-cursors-text">${t('lbl_hide_all_cursors', 'Ocultar Todos')}</span></div>
+                                                </div>
+                                                ${isOwner ? `
+                                                <div class="component-menu-link" data-action="modalSummonEveryone">
+                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded">campaign</span></div>
+                                                    <div class="component-menu-link-text"><span>${t('lbl_summon_everyone', 'Reunir a todos')}</span></div>
+                                                </div>
+                                                ` : ''}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Contextual Actions: Invites Tab -->
+                                <div class="component-modal-top-actions ${initialTab === 'invites' ? '' : 'disabled'}" data-ref="modal-invites-actions">
+                                    <div class="component-modal-top-actions disabled" data-ref="modal-invites-selection-actions">
+                                        <div class="component-badge component-badge--sm" data-ref="modal-invites-selected-badge">
+                                            <span>0 seleccionados</span>
+                                        </div>
+                                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="modalCopySelectedInvite" data-tooltip="${t('lbl_copy_code', 'Copiar Código')}" data-position="bottom">
+                                            <span class="material-symbols-rounded">content_copy</span>
+                                        </button>
+                                        <button type="button" class="component-button component-button--icon component-button--h32 component-button--danger" data-action="modalRevokeSelectedInvite" data-tooltip="${t('lbl_revoke', 'Revocar')}" data-position="bottom">
+                                            <span class="material-symbols-rounded">link_off</span>
+                                        </button>
+                                    </div>
+                                    <button type="button" class="component-button component-button--primary component-button--h32" data-action="modalOpenGenerateInvite">
+                                        <span class="material-symbols-rounded">add_link</span>
+                                        <span>${t('lbl_generate_invite', 'Generar Invitación')}</span>
+                                    </button>
+                                </div>
+
+                                <!-- Contextual Actions: Roles Tab -->
+                                <div class="component-modal-top-actions ${initialTab === 'roles' ? '' : 'disabled'}" data-ref="modal-roles-actions">
+                                    <div class="component-modal-top-actions disabled" data-ref="modal-roles-selection-actions">
+                                        <div class="component-badge component-badge--sm" data-ref="modal-roles-selected-badge">
+                                            <span>0 seleccionados</span>
+                                        </div>
+                                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="modalEditSelectedRole" data-tooltip="${t('btn_edit', 'Editar')}" data-position="bottom">
+                                            <span class="material-symbols-rounded">edit</span>
+                                        </button>
+                                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="modalEditSelectedRolePermissions" data-tooltip="${t('dt_permissions', 'Permisos')}" data-position="bottom">
+                                            <span class="material-symbols-rounded">tune</span>
+                                        </button>
+                                        <button type="button" class="component-button component-button--icon component-button--h32 component-button--danger" data-action="modalDeleteSelectedRole" data-tooltip="${t('btn_delete', 'Eliminar')}" data-position="bottom">
+                                            <span class="material-symbols-rounded">delete</span>
+                                        </button>
+                                    </div>
+                                    <button type="button" class="component-button component-button--primary component-button--h32" data-action="modalCreateRole" data-ref="modal-btn-create-role">
+                                        <span class="material-symbols-rounded">add</span>
+                                        <span>${t('btn_create_role', 'Crear Rol')}</span>
+                                    </button>
+                                </div>
+
+                                <!-- Contextual Actions: Sanctions Tab -->
+                                <div class="component-modal-top-actions ${initialTab === 'sanctions' ? '' : 'disabled'}" data-ref="modal-sanctions-actions">
+                                    <div class="component-modal-top-actions disabled" data-ref="modal-sanctions-selection-actions">
+                                        <div class="component-badge component-badge--sm" data-ref="modal-sanctions-selected-badge">
+                                            <span>0 seleccionados</span>
+                                        </div>
+                                        <button type="button" class="component-button component-button--icon component-button--h32" data-action="modalEditSelectedSanction" data-tooltip="${t('btn_edit', 'Editar')}" data-position="bottom">
+                                            <span class="material-symbols-rounded">gavel</span>
+                                        </button>
+                                        <button type="button" class="component-button component-button--icon component-button--h32 component-button--success" data-action="modalLiftSelectedSanction" data-tooltip="${t('lbl_unrestricted', 'Sin Restricción')}" data-position="bottom">
+                                            <span class="material-symbols-rounded">lock_open</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="component-modal-header-text">
-                        <h2 class="component-modal-title">${escapeHTML(canvasTitle)}</h2>
-                        <p class="component-modal-desc">${__('canvases_members_modal_desc') || 'Gestiona presencia en vivo, colaboradores y solicitudes de acceso.'}</p>
+
+                    <!-- MAIN BODY -->
+                    <div class="component-modal-settings-body">
+                        <!-- LEFT: NAV LINKS -->
+                        <div class="component-modal-settings-sidebar">
+                            <div class="component-modal-settings-tabs" data-ref="canvas-members-modal-tabs">
+                                <div class="component-menu-link nav-item ${(initialTab === 'edit' || initialTab === 'general') ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="edit">
+                                    <div class="component-menu-link-icon">
+                                        <span class="material-symbols-rounded">tune</span>
+                                    </div>
+                                    <div class="component-menu-link-text">
+                                        <span>${t('canvas_edit_title', 'Editar Lienzo')}</span>
+                                    </div>
+                                </div>
+
+                                <div class="component-menu-link nav-item ${initialTab === 'members' ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="members">
+                                    <div class="component-menu-link-icon">
+                                        <span class="material-symbols-rounded msr-group">group</span>
+                                    </div>
+                                    <div class="component-menu-link-text">
+                                        <span>${t('tab_members', 'Miembros')}</span>
+                                    </div>
+                                    <span class="component-badge component-badge--sm" data-ref="modal-members-count-badge">0</span>
+                                </div>
+
+                                <div class="component-menu-link nav-item ${initialTab === 'requests' ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="requests">
+                                    <div class="component-menu-link-icon">
+                                        <span class="material-symbols-rounded msr-front_hand">front_hand</span>
+                                    </div>
+                                    <div class="component-menu-link-text">
+                                        <span>${t('tab_requests', 'Solicitudes')}</span>
+                                    </div>
+                                    <span class="component-badge component-badge--warning component-badge--sm" data-ref="modal-requests-count-badge">0</span>
+                                </div>
+
+                                <div class="component-menu-link nav-item ${initialTab === 'live' ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="live">
+                                    <div class="component-menu-link-icon">
+                                        <span class="material-symbols-rounded msr-sensors">sensors</span>
+                                    </div>
+                                    <div class="component-menu-link-text">
+                                        <span>${t('tab_live_presence', 'Colaboradores en vivo')}</span>
+                                    </div>
+                                    <span class="component-badge component-badge--online component-badge--sm" data-ref="modal-live-nav-count-badge">0</span>
+                                </div>
+
+                                <div class="component-menu-link nav-item ${initialTab === 'invites' ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="invites">
+                                    <div class="component-menu-link-icon">
+                                        <span class="material-symbols-rounded">link</span>
+                                    </div>
+                                    <div class="component-menu-link-text">
+                                        <span>${t('tab_invites', 'Invitaciones')}</span>
+                                    </div>
+                                    <span class="component-badge component-badge--sm" data-ref="modal-invites-count-badge">0</span>
+                                </div>
+
+                                <div class="component-menu-link nav-item ${initialTab === 'roles' ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="roles">
+                                    <div class="component-menu-link-icon">
+                                        <span class="material-symbols-rounded">shield_person</span>
+                                    </div>
+                                    <div class="component-menu-link-text">
+                                        <span>${t('tab_roles_permissions', 'Roles y permisos')}</span>
+                                    </div>
+                                    <span class="component-badge component-badge--sm" data-ref="modal-roles-count-badge">0</span>
+                                </div>
+
+                                <div class="component-menu-link nav-item ${initialTab === 'sanctions' ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="sanctions">
+                                    <div class="component-menu-link-icon">
+                                        <span class="material-symbols-rounded">gavel</span>
+                                    </div>
+                                    <div class="component-menu-link-text">
+                                        <span>${t('tab_sanctions_suspensions', 'Sanciones')}</span>
+                                    </div>
+                                    <span class="component-badge component-badge--danger component-badge--sm" data-ref="modal-sanctions-count-badge">0</span>
+                                </div>
+
+                                <div class="component-menu-link nav-item ${initialTab === 'resize' ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="resize">
+                                    <div class="component-menu-link-icon">
+                                        <span class="material-symbols-rounded msr-aspect_ratio">aspect_ratio</span>
+                                    </div>
+                                    <div class="component-menu-link-text">
+                                        <span>${t('tab_resize_expansion', 'Expandir lienzo')}</span>
+                                    </div>
+                                    <span class="component-badge component-badge--sm" data-ref="modal-resize-current-badge">${escapeHTML(currentSize)}</span>
+                                </div>
+
+                                <div class="component-menu-link nav-item ${initialTab === 'reset' ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="reset">
+                                    <div class="component-menu-link-icon">
+                                        <span class="material-symbols-rounded msr-restart_alt">restart_alt</span>
+                                    </div>
+                                    <div class="component-menu-link-text">
+                                        <span>${t('tab_resets_cleaning', 'Reiniciar lienzo')}</span>
+                                    </div>
+                                    <span class="component-badge component-badge--warning component-badge--sm disabled" data-ref="modal-reset-active-badge">Activo</span>
+                                </div>
+
+                                ${isOwner ? `
+                                <div class="component-menu-divider"></div>
+                                <div class="component-menu-link nav-item ${(initialTab === 'danger' || initialTab === 'critical') ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="danger">
+                                    <div class="component-menu-link-icon">
+                                        <span class="material-symbols-rounded">warning</span>
+                                    </div>
+                                    <div class="component-menu-link-text">
+                                        <span>${t('tab_danger_zone', 'Opciones críticas')}</span>
+                                    </div>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <!-- RIGHT: CONTENT AREA + BOTTOM BAR -->
+                        <div class="component-modal-settings-main">
+                            <div class="component-modal-settings-content-wrapper" data-ref="canvas-members-modal-body">
+                                <!-- TAB 0: EDITAR LIENZO -->
+                                <div class="component-modal-tab-content ${(initialTab === 'edit' || initialTab === 'general') ? 'active' : 'disabled'}" data-ref="tab-content-edit">
+                                    <div class="component-modal-settings-content">
+                                        <!-- 1. General Info Accordion -->
+                                        <div class="component-card--grouped component-accordion active">
+                                            <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
+                                                <div class="component-card__content">
+                                                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                                                        <span class="material-symbols-rounded">info</span>
+                                                    </div>
+                                                    <div class="component-card__text">
+                                                        <h2 class="component-card__title">${t('canvas_accordion_general_title', 'Información General')}</h2>
+                                                        <p class="component-card__description">${t('canvas_accordion_general_desc', 'Información general y datos básicos.')}</p>
+                                                    </div>
+                                                </div>
+                                                <div class="component-card__actions component-card__actions--end">
+                                                    <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
+                                                </div>
+                                            </div>
+                                            <div class="component-accordion-body">
+                                                <div class="component-accordion-content">
+                                                    <!-- 1.1 Título del Lienzo -->
+                                                    <div class="component-group-item component-group-item--stateful">
+                                                        <div class="active component-state-box" data-state="canvasname-view">
+                                                            <div class="component-card__content">
+                                                                <div class="component-card__text">
+                                                                    <h2 class="component-card__title">${t('canvas_name_title', 'Título del Lienzo')}</h2>
+                                                                    <span class="component-display-value" data-ref="display-canvasname">${escapeHTML(canvasTitle)}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="component-card__actions component-card__actions--stretch">
+                                                                <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="canvasname">${t('btn_edit', 'Editar')}</button>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="disabled component-state-box" data-state="canvasname-edit">
+                                                            <div class="component-card__content">
+                                                                <div class="component-card__text">
+                                                                    <h2 class="component-card__title">${t('canvas_name_title', 'Título del Lienzo')}</h2>
+                                                                    <div class="component-edit-row">
+                                                                        <div class="component-input-group component-input-group--h34">
+                                                                            <input type="text" data-ref="input-canvasname" class="component-input-field component-input-field--simple" value="${escapeHTML(canvasTitle)}" data-original-value="${escapeHTML(canvasTitle)}" placeholder="${t('ph_canvas_name', 'Nombre del lienzo')}">
+                                                                        </div>
+                                                                        <div class="component-card__actions component-card__actions--stretch">
+                                                                            <button type="button" class="component-button component-button--h34" data-action="toggleEditState" data-target="canvasname">${t('btn_cancel', 'Cancelar')}</button>
+                                                                            <button type="button" class="component-button component-button--h34" data-action="saveCanvasName">${t('btn_save', 'Guardar')}</button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <hr class="component-divider">
+
+                                                    <!-- 1.2 Etiquetas del Lienzo -->
+                                                    <div class="component-group-item component-group-item--stacked">
+                                                        <div class="component-card__content">
+                                                            <div class="component-card__text">
+                                                                <h2 class="component-card__title">${t('canvas_tags_title', 'Etiquetas')}</h2>
+                                                                <p class="component-card__description">${t('canvas_tags_desc', 'Selecciona hasta 8 etiquetas temáticas.')}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="component-card__actions component-card__actions--start">
+                                                            <div class="component-dropdown-wrapper" data-dropdown-type="multiple" data-max="8">
+                                                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownEditTags">
+                                                                    <span class="material-symbols-rounded">label</span>
+                                                                    <span class="component-dropdown-text" data-ref="text-tags">${t('ph_select_tags', 'Seleccionar etiquetas')}</span>
+                                                                    <span class="material-symbols-rounded">expand_more</span>
+                                                                </div>
+                                                                <div class="component-module component-module--dropdown disabled" data-module="dropdownEditTags">
+                                                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                                                        <div class="component-menu-list" data-ref="modal-edit-tags-list">
+                                                                            ${['art', 'gaming', 'anime', 'flags', 'memes', 'pixelart', 'community', 'nature', 'scifi', 'fantasy', 'music', 'sports', 'popculture'].map(tag => `
+                                                                                <div class="component-menu-link" data-action="toggleEditTag" data-value="${tag}" data-label="${t('tag_' + tag, tag)}">
+                                                                                    <div class="component-menu-link-icon"><span class="material-symbols-rounded" data-ref="icon-check">check_box_outline_blank</span></div>
+                                                                                    <div class="component-menu-link-text"><span>${t('tag_' + tag, tag)}</span></div>
+                                                                                </div>
+                                                                            `).join('')}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- 2. Configuración Accordion -->
+                                        <div class="component-card--grouped component-accordion">
+                                            <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
+                                                <div class="component-card__content">
+                                                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                                                        <span class="material-symbols-rounded">settings</span>
+                                                    </div>
+                                                    <div class="component-card__text">
+                                                        <h2 class="component-card__title">${t('canvas_accordion_config_title', 'Configuración')}</h2>
+                                                        <p class="component-card__description">${t('canvas_accordion_config_desc', 'Ajusta la privacidad, capacidad y límites de interacción.')}</p>
+                                                    </div>
+                                                </div>
+                                                <div class="component-card__actions component-card__actions--end">
+                                                    <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
+                                                </div>
+                                            </div>
+                                            <div class="component-accordion-body">
+                                                <div class="component-accordion-content">
+                                                    <!-- 2.1 Tamaño del Lienzo (Bloqueado) -->
+                                                    <div class="component-group-item component-group-item--stacked disabled-interaction" data-tooltip="${t('canvas_size_locked_tooltip', 'El tamaño no se puede cambiar directamente aquí.')}" data-position="top">
+                                                        <div class="component-card__content">
+                                                            <div class="component-card__text">
+                                                                <h2 class="component-card__title">
+                                                                    ${t('canvas_size_title', 'Tamaño del Lienzo')}
+                                                                    <span class="component-badge component-badge--sm"><span class="material-symbols-rounded">lock</span> ${t('lbl_not_available', 'No disponible')}</span>
+                                                                </h2>
+                                                                <p class="component-card__description">${t('canvas_size_desc', 'Dimensiones del lienzo en píxeles.')}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="component-card__actions component-card__actions--start">
+                                                            <div class="component-dropdown-wrapper">
+                                                                <div class="component-dropdown-trigger">
+                                                                    <span class="material-symbols-rounded">crop_square</span>
+                                                                    <span class="component-dropdown-text" data-ref="text-size">${escapeHTML(currentSize)}</span>
+                                                                    <span class="material-symbols-rounded">expand_more</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <hr class="component-divider">
+
+                                                    <!-- 2.2 Privacidad -->
+                                                    <div class="component-group-item component-group-item--stacked">
+                                                        <div class="component-card__content">
+                                                            <div class="component-card__text">
+                                                                <h2 class="component-card__title">${t('canvas_privacy_title', 'Privacidad')}</h2>
+                                                                <p class="component-card__description">${t('canvas_privacy_desc', 'Define quién puede ver y participar en el lienzo.')}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="component-card__actions component-card__actions--start">
+                                                            <div class="component-dropdown-wrapper">
+                                                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownEditPrivacy">
+                                                                    <span class="material-symbols-rounded" data-ref="icon-privacy">lock</span>
+                                                                    <span class="component-dropdown-text" data-ref="text-privacy">${t('canvas_privacy_private', 'Privado')}</span>
+                                                                    <span class="material-symbols-rounded">expand_more</span>
+                                                                </div>
+                                                                <div class="component-module component-module--dropdown disabled" data-module="dropdownEditPrivacy">
+                                                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                                                        <div class="component-menu-list">
+                                                                            <div class="component-menu-link" data-action="selectEditValue" data-type="privacy" data-value="public" data-label="canvas_privacy_public" data-icon="public">
+                                                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">public</span></div>
+                                                                                <div class="component-menu-link-text"><span>${t('canvas_privacy_public', 'Público')}</span></div>
+                                                                            </div>
+                                                                            <div class="component-menu-link active" data-action="selectEditValue" data-type="privacy" data-value="private" data-label="canvas_privacy_private" data-icon="lock">
+                                                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">lock</span></div>
+                                                                                <div class="component-menu-link-text"><span>${t('canvas_privacy_private', 'Privado')}</span></div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <hr class="component-divider">
+
+                                                    <!-- 2.3 Aprobación -->
+                                                    <div class="component-group-item component-group-item--stacked">
+                                                        <div class="component-card__content">
+                                                            <div class="component-card__text">
+                                                                <h2 class="component-card__title">${t('canvas_approval_title', 'Aprobación de Ingreso')}</h2>
+                                                                <p class="component-card__description">${t('canvas_approval_desc', 'Requiere aprobación del administrador para nuevos colaboradores.')}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="component-card__actions component-card__actions--start">
+                                                            <div class="component-dropdown-wrapper">
+                                                                <div class="component-dropdown-trigger" data-action="toggleModule" data-target="dropdownEditApproval">
+                                                                    <span class="material-symbols-rounded" data-ref="icon-approval">no_accounts</span>
+                                                                    <span class="component-dropdown-text" data-ref="text-approval">${t('canvas_approval_false', 'Libre (sin aprobación)')}</span>
+                                                                    <span class="material-symbols-rounded">expand_more</span>
+                                                                </div>
+                                                                <div class="component-module component-module--dropdown disabled" data-module="dropdownEditApproval">
+                                                                    <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                                                        <div class="pill-container"><div class="drag-handle"></div></div>
+                                                                        <div class="component-menu-list">
+                                                                            <div class="component-menu-link active" data-action="selectEditValue" data-type="requires_approval" data-value="false" data-label="canvas_approval_false" data-icon="no_accounts">
+                                                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">no_accounts</span></div>
+                                                                                <div class="component-menu-link-text"><span>${t('canvas_approval_false', 'Libre (sin aprobación)')}</span></div>
+                                                                            </div>
+                                                                            <div class="component-menu-link" data-action="selectEditValue" data-type="requires_approval" data-value="true" data-label="canvas_approval_true" data-icon="front_hand">
+                                                                                <div class="component-menu-link-icon"><span class="material-symbols-rounded">front_hand</span></div>
+                                                                                <div class="component-menu-link-text"><span>${t('canvas_approval_true', 'Requiere aprobación')}</span></div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <hr class="component-divider">
+
+                                                    <!-- 2.4 Píxeles por Lote -->
+                                                    <div class="component-group-item component-group-item--stacked">
+                                                        <div class="component-card__content">
+                                                            <div class="component-card__text">
+                                                                <h2 class="component-card__title">${t('canvas_cooldown_batch_title', 'Píxeles por Lote')}</h2>
+                                                                <p class="component-card__description">${t('canvas_cooldown_batch_desc', 'Cantidad de píxeles acumulables antes de esperar.')}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="component-card__actions component-card__actions--start">
+                                                            <div class="component-inline-control component-inline-control--fixed">
+                                                                <div class="component-inline-control__group">
+                                                                    <button type="button" class="component-inline-control__btn" data-action="adjustEditCooldownBatch" data-step="-5">
+                                                                        <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                                                    </button>
+                                                                    <button type="button" class="component-inline-control__btn" data-action="adjustEditCooldownBatch" data-step="-1">
+                                                                        <span class="material-symbols-rounded">chevron_left</span>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="component-inline-control__center" data-ref="val_cooldown_batch" data-value="5">5</div>
+                                                                <div class="component-inline-control__group">
+                                                                    <button type="button" class="component-inline-control__btn" data-action="adjustEditCooldownBatch" data-step="1">
+                                                                        <span class="material-symbols-rounded">chevron_right</span>
+                                                                    </button>
+                                                                    <button type="button" class="component-inline-control__btn" data-action="adjustEditCooldownBatch" data-step="5">
+                                                                        <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <hr class="component-divider">
+
+                                                    <!-- 2.5 Cooldown en Segundos -->
+                                                    <div class="component-group-item component-group-item--stacked">
+                                                        <div class="component-card__content">
+                                                            <div class="component-card__text">
+                                                                <h2 class="component-card__title">${t('canvas_cooldown_seconds_title', 'Tiempo de Espera')}</h2>
+                                                                <p class="component-card__description">${t('canvas_cooldown_seconds_desc', 'Tiempo en segundos entre recargas de píxeles.')}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="component-card__actions component-card__actions--start">
+                                                            <div class="component-inline-control component-inline-control--fixed">
+                                                                <div class="component-inline-control__group">
+                                                                    <button type="button" class="component-inline-control__btn" data-action="adjustEditCooldownSeconds" data-step="-10">
+                                                                        <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                                                    </button>
+                                                                    <button type="button" class="component-inline-control__btn" data-action="adjustEditCooldownSeconds" data-step="-1">
+                                                                        <span class="material-symbols-rounded">chevron_left</span>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="component-inline-control__center" data-ref="val_cooldown_seconds" data-value="10">10</div>
+                                                                <div class="component-inline-control__group">
+                                                                    <button type="button" class="component-inline-control__btn" data-action="adjustEditCooldownSeconds" data-step="1">
+                                                                        <span class="material-symbols-rounded">chevron_right</span>
+                                                                    </button>
+                                                                    <button type="button" class="component-inline-control__btn" data-action="adjustEditCooldownSeconds" data-step="10">
+                                                                        <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <hr class="component-divider">
+
+                                                    <!-- 2.6 Límite de Miembros -->
+                                                    <div class="component-group-item component-group-item--stacked">
+                                                        <div class="component-card__content">
+                                                            <div class="component-card__text">
+                                                                <h2 class="component-card__title">${t('canvas_limit_title', 'Límite de Miembros')}</h2>
+                                                                <p class="component-card__description">${t('canvas_limit_desc', 'Límite máximo de participantes simultáneos.')}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="component-card__actions component-card__actions--start">
+                                                            <div class="component-inline-control component-inline-control--fixed">
+                                                                <div class="component-inline-control__group">
+                                                                    <button type="button" class="component-inline-control__btn" data-action="adjustEditLimit" data-step="-50">
+                                                                        <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                                                    </button>
+                                                                    <button type="button" class="component-inline-control__btn" data-action="adjustEditLimit" data-step="-10">
+                                                                        <span class="material-symbols-rounded">chevron_left</span>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="component-inline-control__center" data-ref="val_limit" data-value="10">10</div>
+                                                                <div class="component-inline-control__group">
+                                                                    <button type="button" class="component-inline-control__btn" data-action="adjustEditLimit" data-step="10">
+                                                                        <span class="material-symbols-rounded">chevron_right</span>
+                                                                    </button>
+                                                                    <button type="button" class="component-inline-control__btn" data-action="adjustEditLimit" data-step="50">
+                                                                        <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- 3. Funciones Accordion -->
+                                        <div class="component-card--grouped component-accordion">
+                                            <div class="component-group-item component-accordion-header" data-action="toggleAccordion">
+                                                <div class="component-card__content">
+                                                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                                                        <span class="material-symbols-rounded">extension</span>
+                                                    </div>
+                                                    <div class="component-card__text">
+                                                        <h2 class="component-card__title">${t('canvas_accordion_features_title', 'Características')}</h2>
+                                                        <p class="component-card__description">${t('canvas_accordion_features_desc', 'Paletas de colores y funciones avanzadas del lienzo.')}</p>
+                                                    </div>
+                                                </div>
+                                                <div class="component-card__actions component-card__actions--end">
+                                                    <span class="material-symbols-rounded component-accordion-icon">expand_more</span>
+                                                </div>
+                                            </div>
+                                            <div class="component-accordion-body">
+                                                <div class="component-accordion-content">
+                                                    <!-- 3.1 Paleta de Colores -->
+                                                    <div class="component-group-item component-group-item--stacked">
+                                                        <div class="component-card__content">
+                                                            <div class="component-card__text">
+                                                                <h2 class="component-card__title">${t('canvas_palette_title', 'Paleta del Lienzo')}</h2>
+                                                                <p class="component-card__description">${t('canvas_palette_desc', 'Paleta de colores disponible para dibujar en este lienzo.')}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="component-card__actions component-card__actions--start">
+                                                            <div class="component-dropdown-trigger" data-action="openCanvasEditPaletteModal" data-ref="palette_dropdown_trigger">
+                                                                <span class="material-symbols-rounded" data-ref="icon-palette">palette</span>
+                                                                <span class="component-dropdown-text" data-ref="text-palette" data-current-palette="default">Default</span>
+                                                                <span class="material-symbols-rounded">dashboard_customize</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <hr class="component-divider">
+
+                                                    <!-- 3.2 Chat en Vivo -->
+                                                    <div class="component-group-item" data-ref="group-allow-chat">
+                                                        <div class="component-card__content">
+                                                            <div class="component-card__text">
+                                                                <h2 class="component-card__title">
+                                                                    ${t('lbl_allow_live_chat', 'Chat en vivo')}
+                                                                </h2>
+                                                                <p class="component-card__description">${t('desc_allow_live_chat', 'Permitir a los colaboradores comunicarse por chat.')}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="component-card__actions component-card__actions--end">
+                                                            <label class="component-toggle-switch">
+                                                                <input type="checkbox" data-ref="val_allow_chat">
+                                                                <span class="component-toggle-slider"></span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- TAB 1: GESTIONAR MIEMBROS -->
+                                <div class="component-modal-tab-content ${initialTab === 'members' ? 'active' : 'disabled'}" data-ref="tab-content-members">
+                                    <div class="component-modal-table-container component-members-table-container" data-ref="modal-members-table-container">
+                                        <!-- Table or Empty state inserted dynamically -->
+                                    </div>
+                                </div>
+
+                                <!-- TAB 2: GESTIONAR PETICIONES -->
+                                <div class="component-modal-tab-content ${initialTab === 'requests' ? 'active' : 'disabled'}" data-ref="tab-content-requests">
+                                    <div class="component-modal-table-container component-requests-table-container" data-ref="modal-requests-table-container">
+                                        <!-- Table or Empty state inserted dynamically -->
+                                    </div>
+                                </div>
+
+                                <!-- TAB 3: GESTIONAR CURSORES (EN VIVO) -->
+                                <div class="component-modal-tab-content ${initialTab === 'live' ? 'active' : 'disabled'}" data-ref="tab-content-live">
+                                    <div class="component-modal-list-container component-live-members-list" data-ref="modal-live-members-scroll">
+                                        <!-- Populated dynamically via controller -->
+                                    </div>
+                                </div>
+
+                                <!-- TAB 4: INVITACIONES -->
+                                <div class="component-modal-tab-content ${initialTab === 'invites' ? 'active' : 'disabled'}" data-ref="tab-content-invites">
+                                    <div class="component-modal-table-container component-invites-table-container" data-ref="modal-invites-table-container">
+                                        <!-- Populated dynamically via controller -->
+                                    </div>
+                                </div>
+
+                                <!-- TAB 5: ROLES Y PERMISOS -->
+                                <div class="component-modal-tab-content ${initialTab === 'roles' ? 'active' : 'disabled'}" data-ref="tab-content-roles">
+                                    <!-- SUBVIEW 1: ROLES TABLE -->
+                                    <div class="component-modal-table-container component-roles-table-container" data-ref="modal-roles-table-container">
+                                        <!-- Populated dynamically via controller -->
+                                    </div>
+
+                                    <!-- SUBVIEW 2: ROLE BUILDER FORM -->
+                                    <div class="component-modal-subview disabled" data-ref="modal-role-builder-subview">
+                                        <!-- Role builder form inserted dynamically -->
+                                    </div>
+
+                                    <!-- SUBVIEW 3: ROLE PERMISSIONS -->
+                                    <div class="component-modal-subview disabled" data-ref="modal-role-permissions-subview">
+                                        <!-- Role permissions matrix inserted dynamically -->
+                                    </div>
+                                </div>
+
+                                <!-- TAB 6: SANCIONES Y SUSPENSIONES -->
+                                <div class="component-modal-tab-content ${initialTab === 'sanctions' ? 'active' : 'disabled'}" data-ref="tab-content-sanctions">
+                                    <div class="component-modal-table-container component-sanctions-table-container" data-ref="modal-sanctions-table-container">
+                                        <!-- Populated dynamically via controller -->
+                                    </div>
+                                </div>
+
+                                <!-- TAB 7: EXPANDIR LIENZO (GROUPED CARDS) -->
+                                <div class="component-modal-tab-content ${initialTab === 'resize' ? 'active' : 'disabled'}" data-ref="tab-content-resize">
+                                    <div class="component-modal-settings-content">
+                                        <!-- Active Schedule Banner -->
+                                        <div data-ref="modal-resize-active-schedule-container" class="disabled"></div>
+
+                                        <!-- STEP 1: Tipo de Expansión & Fecha si es programada -->
+                                        <div class="component-modal-step active" data-ref="offline-resize-step-1" data-selected-type="instant">
+                                            <div class="component-card--grouped">
+                                                <div class="component-group-item component-group-item--stacked">
+                                                    <div class="component-card__content">
+                                                        <div class="component-card__text">
+                                                            <h2 class="component-card__title">${t('canvas_resize_title', 'Expandir Lienzo')}</h2>
+                                                            <p class="component-card__description">${t('canvas_resize_desc', 'Aumenta el espacio disponible para dibujar píxeles.')}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="component-card__actions component-card__actions--start">
+                                                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                                                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleOfflineResizeType" data-ref="offline-resize-type-trigger" data-value="instant">
+                                                                <span class="material-symbols-rounded" data-ref="offline-resize-type-icon">flash_on</span>
+                                                                <span class="component-dropdown-text" data-ref="offline-resize-type-label">${t('canvas_resize_now_title', 'Inmediata')}</span>
+                                                                <span class="material-symbols-rounded">expand_more</span>
+                                                            </div>
+                                                            <div class="component-module component-module--dropdown disabled" data-module="moduleOfflineResizeType">
+                                                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                                                    <div class="component-menu-list">
+                                                                        <div class="component-menu-link active" data-action="selectResizeTypeOption" data-value="instant" data-label="${t('canvas_resize_now_title', 'Inmediata')}" data-icon="flash_on">
+                                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">flash_on</span></div>
+                                                                            <div class="component-menu-link-text"><span>${t('canvas_resize_now_title', 'Inmediata')}</span></div>
+                                                                        </div>
+                                                                        <div class="component-menu-link ${isOffline ? 'disabled-interaction' : ''}" data-action="${isOffline ? '' : 'selectResizeTypeOption'}" data-value="scheduled" data-label="${t('canvas_resize_active_title', 'Programada')}" data-icon="schedule">
+                                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">schedule</span></div>
+                                                                            <div class="component-menu-link-text"><span>${t('canvas_resize_active_title', 'Programada')}</span></div>
+                                                                            ${isOffline ? `<span class="component-badge component-badge--warning component-badge--sm"><span class="material-symbols-rounded">block</span><span>${t('lbl_offline_not_available', 'No disponible')}</span></span>` : ''}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Trigger para abrir la etapa del calendario -->
+                                                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full component-modal-schedule-box disabled" data-ref="offline-resize-scheduled-date-container">
+                                                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="offlineResizeDateStep" data-ref="offline-resize-datetime-trigger" data-value="${defaultIso}">
+                                                                <span class="material-symbols-rounded">calendar_month</span>
+                                                                <span class="component-dropdown-text" data-ref="offline-resize-datetime-text">${defaultSchedDetails.formattedDateShort || defaultSchedDetails.formattedDate}</span>
+                                                                <span class="material-symbols-rounded">expand_more</span>
+                                                            </div>
+
+                                                            <!-- Resumen informativo de fecha, zona horaria y tiempo restante -->
+                                                            <div class="component-alert component-alert--info component-modal-schedule-box active" data-ref="offline-resize-schedule-info">
+                                                                <div class="component-alert-icon">
+                                                                    <span class="material-symbols-rounded" data-ref="offline-resize-info-icon">schedule</span>
+                                                                </div>
+                                                                <div class="component-alert-text">
+                                                                    <div class="component-modal-schedule-date" data-ref="offline-resize-info-date">${defaultSchedDetails.formattedDate}</div>
+                                                                    <div class="component-text-muted component-modal-schedule-time" data-ref="offline-resize-info-time">
+                                                                        <span data-ref="offline-resize-info-relative">${defaultSchedDetails.relativeTimeStr}</span> · <span data-ref="offline-resize-info-tz">${defaultSchedDetails.timezoneString} (${t('lbl_timezone_local', 'Hora local')})</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- STEP CALENDAR: Etapa de Selección de Fecha -->
+                                        <div class="component-modal-step disabled" data-ref="offline-resize-step-calendar">
+                                            <div class="component-card--grouped">
+                                                <div class="component-group-item component-group-item--stacked">
+                                                    <div class="component-card__content">
+                                                        <div class="component-card__text">
+                                                            <h2 class="component-card__title">${t('calendar_modal_title', 'Seleccionar fecha')}</h2>
+                                                            <p class="component-card__description">${t('lbl_scheduled_datetime', 'Fecha y hora exacta en la que se aplicará el ajuste.')}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="component-card__actions component-card__actions--start">
+                                                        <div class="component-calendar">
+                                                            <div class="component-calendar-header">
+                                                                <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarPrevMonth">
+                                                                    <span class="material-symbols-rounded">chevron_left</span>
+                                                                </button>
+                                                                <div class="component-calendar-title" data-ref="calendar-title">${t('calendar_month_year', 'Mes Año')}</div>
+                                                                <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarNextMonth">
+                                                                    <span class="material-symbols-rounded">chevron_right</span>
+                                                                </button>
+                                                            </div>
+                                                            <div class="component-calendar-weekdays">
+                                                                <span>${t('cal_su', 'Do')}</span><span>${t('cal_mo', 'Lu')}</span><span>${t('cal_tu', 'Ma')}</span><span>${t('cal_we', 'Mi')}</span><span>${t('cal_th', 'Ju')}</span><span>${t('cal_fr', 'Vi')}</span><span>${t('cal_sa', 'Sá')}</span>
+                                                            </div>
+                                                            <div class="component-calendar-days" data-ref="calendar-days"></div>
+                                                        </div>
+
+                                                        <!-- Trigger compacto para ajustar hora -->
+                                                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full component-modal-control-gap">
+                                                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="offlineResizeTimeStep" data-ref="offline-resize-time-trigger">
+                                                                <span class="material-symbols-rounded">schedule</span>
+                                                                <span class="component-dropdown-text"><span class="component-text-muted component-modal-time-label-prefix">${t('lbl_configured_time', 'Hora')}:</span> <strong data-ref="offline-resize-time-text">${hh}:${mm}</strong></span>
+                                                                <span class="component-badge component-badge--sm">${defaultSchedDetails.timezoneString}</span>
+                                                                <span class="material-symbols-rounded">chevron_right</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- STEP TIME: Etapa de Ajuste de Hora y Minutos -->
+                                        <div class="component-modal-step disabled" data-ref="offline-resize-step-time">
+                                            <div class="component-card--grouped">
+                                                <div class="component-group-item component-group-item--stacked">
+                                                    <div class="component-card__content">
+                                                        <div class="component-card__text">
+                                                            <h2 class="component-card__title">${t('lbl_time_picker_title', 'Ajustar hora')}</h2>
+                                                            <p class="component-card__description">${t('lbl_time_picker_desc', 'Define la hora y minutos exactos para la ejecución.')}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="component-card__actions component-card__actions--start">
+                                                        <div class="calendar-modal-controls">
+                                                            <div class="calendar-control-column">
+                                                                <div class="calendar-control-label">${t('lbl_hours', 'Horas')}</div>
+                                                                <div class="component-inline-control component-inline-control--full">
+                                                                    <div class="component-inline-control__group">
+                                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-5">
+                                                                            <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                                                        </button>
+                                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-1">
+                                                                            <span class="material-symbols-rounded">chevron_left</span>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-value="${hh}">${hh}</div>
+                                                                    <div class="component-inline-control__group">
+                                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="1">
+                                                                            <span class="material-symbols-rounded">chevron_right</span>
+                                                                        </button>
+                                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="5">
+                                                                            <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="calendar-control-column">
+                                                                <div class="calendar-control-label">${t('lbl_minutes', 'Minutos')}</div>
+                                                                <div class="component-inline-control component-inline-control--full">
+                                                                    <div class="component-inline-control__group">
+                                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-5">
+                                                                            <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                                                        </button>
+                                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-1">
+                                                                            <span class="material-symbols-rounded">chevron_left</span>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-value="${mm}">${mm}</div>
+                                                                    <div class="component-inline-control__group">
+                                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="1">
+                                                                            <span class="material-symbols-rounded">chevron_right</span>
+                                                                        </button>
+                                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="5">
+                                                                            <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- STEP 2: Selección del nuevo tamaño -->
+                                        <div class="component-modal-step disabled" data-ref="offline-resize-step-2">
+                                            <div class="component-card--grouped">
+                                                <div class="component-group-item component-group-item--stacked">
+                                                    <div class="component-card__content">
+                                                        <div class="component-card__text">
+                                                            <h2 class="component-card__title">${t('canvas_resize_instant_size_title', 'Nuevo tamaño')}</h2>
+                                                            <p class="component-card__description">${t('canvas_resize_instant_size_desc', 'Selecciona el tamaño deseado para el lienzo.')}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="component-card__actions component-card__actions--start">
+                                                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                                                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleOfflineResizeSizes" data-ref="offline-resize-trigger" data-value="${escapeHTML(currentSize)}">
+                                                                <span class="material-symbols-rounded" data-ref="offline-resize-icon">${escapeHTML(currentMeta.icon)}</span>
+                                                                <span class="component-dropdown-text" data-ref="offline-resize-label">${escapeHTML(currentMeta.label)}</span>
+                                                                <span class="material-symbols-rounded">expand_more</span>
+                                                            </div>
+
+                                                            <div class="component-module component-module--dropdown disabled" data-module="moduleOfflineResizeSizes">
+                                                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                                                    <div class="component-menu-list">
+                                                                        ${instantSizesHtml}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="component-alert-error component-modal-schedule-box disabled" data-ref="offline-resize-shrink-warning">
+                                                            ${t('canvas_resize_warning_desc', 'Al reducir el tamaño se podrían recortar trazos fuera del límite.')}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- TAB 8: REINICIAR LIENZO (GROUPED CARDS) -->
+                                <div class="component-modal-tab-content ${initialTab === 'reset' ? 'active' : 'disabled'}" data-ref="tab-content-reset">
+                                    <div class="component-modal-settings-content">
+                                        <!-- Active Schedule Banner -->
+                                        <div data-ref="modal-reset-active-schedule-container" class="disabled"></div>
+
+                                        <!-- STEP 1: Tipo de Reinicio & Fecha si es programada -->
+                                        <div class="component-modal-step active" data-ref="offline-reset-step-1" data-selected-type="instant">
+                                            <div class="component-card--grouped">
+                                                <div class="component-group-item component-group-item--stacked">
+                                                    <div class="component-card__content">
+                                                        <div class="component-card__text">
+                                                            <h2 class="component-card__title">${t('canvas_resets_title', 'Reiniciar Lienzo')}</h2>
+                                                            <p class="component-card__description">${t('canvas_resets_desc', 'Limpia los trazos del lienzo o programa un reinicio.')}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="component-card__actions component-card__actions--start">
+                                                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                                                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleOfflineResetType" data-ref="offline-reset-type-trigger" data-value="instant">
+                                                                <span class="material-symbols-rounded" data-ref="offline-reset-type-icon">flash_on</span>
+                                                                <span class="component-dropdown-text" data-ref="offline-reset-type-label">${t('canvas_reset_now_title', 'Inmediato')}</span>
+                                                                <span class="material-symbols-rounded">expand_more</span>
+                                                            </div>
+                                                            <div class="component-module component-module--dropdown disabled" data-module="moduleOfflineResetType">
+                                                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                                                    <div class="component-menu-list">
+                                                                        <div class="component-menu-link active" data-action="selectResetTypeOption" data-value="instant" data-label="${t('canvas_reset_now_title', 'Inmediato')}" data-icon="flash_on">
+                                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">flash_on</span></div>
+                                                                            <div class="component-menu-link-text"><span>${t('canvas_reset_now_title', 'Inmediato')}</span></div>
+                                                                        </div>
+                                                                        <div class="component-menu-link ${isOffline ? 'disabled-interaction' : ''}" data-action="${isOffline ? '' : 'selectResetTypeOption'}" data-value="scheduled" data-label="${t('canvas_reset_active_title', 'Programado')}" data-icon="schedule">
+                                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">schedule</span></div>
+                                                                            <div class="component-menu-link-text"><span>${t('canvas_reset_active_title', 'Programado')}</span></div>
+                                                                            ${isOffline ? `<span class="component-badge component-badge--warning component-badge--sm"><span class="material-symbols-rounded">block</span><span>${t('lbl_offline_not_available', 'No disponible')}</span></span>` : ''}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Trigger para abrir la etapa del calendario -->
+                                                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full component-modal-schedule-box disabled" data-ref="offline-reset-scheduled-date-container">
+                                                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="offlineResetDateStep" data-ref="offline-reset-datetime-trigger" data-value="${defaultIso}">
+                                                                <span class="material-symbols-rounded">calendar_month</span>
+                                                                <span class="component-dropdown-text" data-ref="offline-reset-datetime-text">${defaultSchedDetails.formattedDateShort || defaultSchedDetails.formattedDate}</span>
+                                                                <span class="material-symbols-rounded">expand_more</span>
+                                                            </div>
+
+                                                            <!-- Resumen informativo de fecha, zona horaria y tiempo restante -->
+                                                            <div class="component-alert component-alert--info component-modal-schedule-box active" data-ref="offline-reset-schedule-info">
+                                                                <div class="component-alert-icon">
+                                                                    <span class="material-symbols-rounded" data-ref="offline-reset-info-icon">schedule</span>
+                                                                </div>
+                                                                <div class="component-alert-text">
+                                                                    <div class="component-modal-schedule-date" data-ref="offline-reset-info-date">${defaultSchedDetails.formattedDate}</div>
+                                                                    <div class="component-text-muted component-modal-schedule-time" data-ref="offline-reset-info-time">
+                                                                        <span data-ref="offline-reset-info-relative">${defaultSchedDetails.relativeTimeStr}</span> · <span data-ref="offline-reset-info-tz">${defaultSchedDetails.timezoneString} (${t('lbl_timezone_local', 'Hora local')})</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- STEP CALENDAR: Etapa de Selección de Fecha -->
+                                        <div class="component-modal-step disabled" data-ref="offline-reset-step-calendar">
+                                            <div class="component-card--grouped">
+                                                <div class="component-group-item component-group-item--stacked">
+                                                    <div class="component-card__content">
+                                                        <div class="component-card__text">
+                                                            <h2 class="component-card__title">${t('calendar_modal_title', 'Seleccionar fecha')}</h2>
+                                                            <p class="component-card__description">${t('lbl_scheduled_datetime', 'Fecha y hora exacta en la que se ejecutará el reinicio.')}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="component-card__actions component-card__actions--start">
+                                                        <div class="component-calendar">
+                                                            <div class="component-calendar-header">
+                                                                <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarPrevMonth">
+                                                                    <span class="material-symbols-rounded">chevron_left</span>
+                                                                </button>
+                                                                <div class="component-calendar-title" data-ref="calendar-title">${t('calendar_month_year', 'Mes Año')}</div>
+                                                                <button type="button" class="component-button component-button--icon component-button--h30" data-action="calendarNextMonth">
+                                                                    <span class="material-symbols-rounded">chevron_right</span>
+                                                                </button>
+                                                            </div>
+                                                            <div class="component-calendar-weekdays">
+                                                                <span>${t('cal_su', 'Do')}</span><span>${t('cal_mo', 'Lu')}</span><span>${t('cal_tu', 'Ma')}</span><span>${t('cal_we', 'Mi')}</span><span>${t('cal_th', 'Ju')}</span><span>${t('cal_fr', 'Vi')}</span><span>${t('cal_sa', 'Sá')}</span>
+                                                            </div>
+                                                            <div class="component-calendar-days" data-ref="calendar-days"></div>
+                                                        </div>
+
+                                                        <!-- Trigger compacto para ajustar hora -->
+                                                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full component-modal-control-gap">
+                                                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="offlineResetTimeStep" data-ref="offline-reset-time-trigger">
+                                                                <span class="material-symbols-rounded">schedule</span>
+                                                                <span class="component-dropdown-text"><span class="component-text-muted component-modal-time-label-prefix">${t('lbl_configured_time', 'Hora')}:</span> <strong data-ref="offline-reset-time-text">${hh}:${mm}</strong></span>
+                                                                <span class="component-badge component-badge--sm">${defaultSchedDetails.timezoneString}</span>
+                                                                <span class="material-symbols-rounded">chevron_right</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- STEP TIME: Etapa de Ajuste de Hora y Minutos -->
+                                        <div class="component-modal-step disabled" data-ref="offline-reset-step-time">
+                                            <div class="component-card--grouped">
+                                                <div class="component-group-item component-group-item--stacked">
+                                                    <div class="component-card__content">
+                                                        <div class="component-card__text">
+                                                            <h2 class="component-card__title">${t('lbl_time_picker_title', 'Ajustar hora')}</h2>
+                                                            <p class="component-card__description">${t('lbl_time_picker_desc', 'Define la hora y minutos exactos para la ejecución.')}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="component-card__actions component-card__actions--start">
+                                                        <div class="calendar-modal-controls">
+                                                            <div class="calendar-control-column">
+                                                                <div class="calendar-control-label">${t('lbl_hours', 'Horas')}</div>
+                                                                <div class="component-inline-control component-inline-control--full">
+                                                                    <div class="component-inline-control__group">
+                                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-5">
+                                                                            <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                                                        </button>
+                                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="-1">
+                                                                            <span class="material-symbols-rounded">chevron_left</span>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div class="component-inline-control__center" data-ref="calendar-modal-hours-val" data-value="${hh}">${hh}</div>
+                                                                    <div class="component-inline-control__group">
+                                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="1">
+                                                                            <span class="material-symbols-rounded">chevron_right</span>
+                                                                        </button>
+                                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarHours" data-step="5">
+                                                                            <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="calendar-control-column">
+                                                                <div class="calendar-control-label">${t('lbl_minutes', 'Minutos')}</div>
+                                                                <div class="component-inline-control component-inline-control--full">
+                                                                    <div class="component-inline-control__group">
+                                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-5">
+                                                                            <span class="material-symbols-rounded">keyboard_double_arrow_left</span>
+                                                                        </button>
+                                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="-1">
+                                                                            <span class="material-symbols-rounded">chevron_left</span>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div class="component-inline-control__center" data-ref="calendar-modal-minutes-val" data-value="${mm}">${mm}</div>
+                                                                    <div class="component-inline-control__group">
+                                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="1">
+                                                                            <span class="material-symbols-rounded">chevron_right</span>
+                                                                        </button>
+                                                                        <button type="button" class="component-inline-control__btn" data-action="adjustCalendarMinutes" data-step="5">
+                                                                            <span class="material-symbols-rounded">keyboard_double_arrow_right</span>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- STEP 2: Selección de Captura Previa -->
+                                        <div class="component-modal-step disabled" data-ref="offline-reset-step-2">
+                                            <div class="component-card--grouped">
+                                                <div class="component-group-item component-group-item--stacked">
+                                                    <div class="component-card__content">
+                                                        <div class="component-card__text">
+                                                            <h2 class="component-card__title">${t('canvas_reset_captura_title', 'Captura previa')}</h2>
+                                                            <p class="component-card__description">${t('canvas_reset_captura_desc', '¿Deseas guardar una captura de pantalla antes de reiniciar el lienzo?')}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="component-card__actions component-card__actions--start">
+                                                        <div class="component-dropdown-wrapper component-dropdown-wrapper--full">
+                                                            <div class="component-dropdown-trigger component-dropdown-trigger--full" data-action="toggleModule" data-target="moduleOfflineResetSnapshot" data-ref="offline-reset-snapshot-trigger" data-value="1">
+                                                                <span class="material-symbols-rounded" data-ref="offline-reset-snapshot-icon">photo_camera</span>
+                                                                <span class="component-dropdown-text" data-ref="offline-reset-snapshot-label">${t('canvas_reset_captura_title', 'Crear captura previa')} (${t('lbl_enabled', 'Activada')})</span>
+                                                                <span class="material-symbols-rounded">expand_more</span>
+                                                            </div>
+
+                                                            <div class="component-module component-module--dropdown disabled" data-module="moduleOfflineResetSnapshot">
+                                                                <div class="component-menu component-menu--w-full component-menu--h-auto component-menu--limited">
+                                                                    <div class="pill-container"><div class="drag-handle"></div></div>
+                                                                    <div class="component-menu-list">
+                                                                        <div class="component-menu-link active" data-action="toggleResetSnapshotOption" data-value="1" data-label="${t('canvas_reset_captura_title', 'Crear captura previa')} (${t('lbl_enabled', 'Activada')})" data-icon="photo_camera">
+                                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">photo_camera</span></div>
+                                                                            <div class="component-menu-link-text"><span>${t('canvas_reset_captura_title', 'Crear captura previa')} (${t('lbl_enabled', 'Activada')})</span></div>
+                                                                        </div>
+                                                                        <div class="component-menu-link" data-action="toggleResetSnapshotOption" data-value="0" data-label="${t('canvas_reset_captura_title', 'Captura previa')} (${t('lbl_disabled', 'Desactivada')})" data-icon="photo_camera_off">
+                                                                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">photo_camera_off</span></div>
+                                                                            <div class="component-menu-link-text"><span>${t('canvas_reset_captura_title', 'Captura previa')} (${t('lbl_disabled', 'Desactivada')})</span></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- TAB 9: OPCIONES CRÍTICAS (DANGER ZONE) -->
+                                <div class="component-modal-tab-content ${(initialTab === 'danger' || initialTab === 'critical') ? 'active' : 'disabled'}" data-ref="tab-content-danger">
+                                    <div class="component-modal-settings-content">
+                                        <div class="component-card--grouped">
+                                            <div class="component-group-item">
+                                                <div class="component-card__content">
+                                                    <div class="component-card__icon-container component-card__icon-container--bordered">
+                                                        <span class="material-symbols-rounded">delete</span>
+                                                    </div>
+                                                    <div class="component-card__text">
+                                                        <h2 class="component-card__title">${t('canvas_delete_title', 'Eliminar lienzo')}</h2>
+                                                        <p class="component-card__description">${t('canvas_delete_desc', 'Enviar este lienzo a la papelera. Podrás restaurarlo o se eliminará de forma permanente tras 30 días junto con todas sus capas y registros.')}</p>
+                                                    </div>
+                                                </div>
+                                                <div class="component-card__actions component-card__actions--end">
+                                                    <button type="button" class="component-button component-button--h36 component-button--danger" data-action="modalDeleteCanvas">
+                                                        <span class="material-symbols-rounded">delete</span>
+                                                        <span>${t('btn_delete_canvas', 'Eliminar lienzo')}</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- RIGHT BOTTOM: Action / Pagination Bar (Buttons Only) -->
+                            <div class="component-modal-settings-bottom ${initialTab === 'members' ? '' : 'disabled'}" data-ref="modal-members-bottom-bar">
+                                <div class="component-modal-pagination" data-ref="modal-members-pagination"></div>
+                                <div class="component-modal-actions" data-ref="modal-bottom-actions"></div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-
-                <!-- Segmented Tabs Navigation -->
-                <div class="component-tool-segmented component-modal-tabs" data-ref="canvas-members-modal-tabs" style="width: 100%; margin: 6px 0 10px 0;">
-                    <div class="component-tool-segmented-glider"></div>
-                    <button type="button" class="component-tool-segmented-btn ${initialTab === 'live' ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="live">
-                        <span class="material-symbols-rounded">sensors</span>
-                        <span>${__('tab_live_presence') || 'En vivo'}</span>
-                        <span class="component-badge component-badge--online component-badge--sm" data-ref="modal-live-count-badge">0</span>
-                    </button>
-                    <button type="button" class="component-tool-segmented-btn ${initialTab === 'members' ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="members">
-                        <span class="material-symbols-rounded">group</span>
-                        <span>${__('lbl_members') || 'Miembros'}</span>
-                        <span class="component-badge component-badge--sm" data-ref="modal-members-count-badge">0</span>
-                    </button>
-                    <button type="button" class="component-tool-segmented-btn ${initialTab === 'requests' ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="requests">
-                        <span class="material-symbols-rounded">front_hand</span>
-                        <span>${__('lbl_requests') || 'Solicitudes'}</span>
-                        <span class="component-badge component-badge--warning component-badge--sm" data-ref="modal-requests-count-badge">0</span>
-                    </button>
-                </div>
-
-                <div class="component-modal-body component-modal-body--scrollable" data-ref="canvas-members-modal-body" data-canvas-uuid="${escapeHTML(canvasUuid)}" data-canvas-id="${escapeHTML(canvasId)}" data-is-owner="${isOwner ? '1' : '0'}" style="max-height: 440px; min-height: 280px; padding: 0 4px;">
-                    
-                    <!-- TAB 1: EN VIVO -->
-                    <div class="component-modal-tab-content ${initialTab === 'live' ? 'active' : 'disabled'}" data-ref="tab-content-live">
-                        <!-- Quota & Host Actions -->
-                        <div class="component-live-modal-top" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
-                            <div class="component-live-search-box" style="flex: 1; min-width: 180px;">
-                                <span class="material-symbols-rounded msr-search">search</span>
-                                <input type="text" class="component-live-search-input" placeholder="${__('search_member_placeholder') || 'Buscar en vivo...'}" data-action="filterModalLiveMembers">
-                            </div>
-                            <div class="component-live-quota" data-ref="modal-cursor-quota-box" data-tooltip="Límite de cursores simultáneos para rendimiento óptimo" data-position="bottom">
-                                <span class="material-symbols-rounded msr-near_me">near_me</span>
-                                <span class="component-live-quota__label">Cursores:</span>
-                                <span class="component-live-quota__val" data-ref="modal-cursor-quota-val">0 / 24</span>
-                            </div>
-                        </div>
-
-                        ${isOwner ? `
-                        <div class="component-live-host-controls" data-ref="modal-owner-live-controls" style="margin-bottom: 12px;">
-                            <div class="component-live-host-tag">
-                                <span class="material-symbols-rounded msr-shield_person">shield_person</span>
-                                <span>Panel de Anfitrión</span>
-                            </div>
-                            <div class="component-live-host-actions">
-                                <button type="button" class="component-button component-button--h28" data-action="modalToggleAllCursors" data-ref="modal-btn-toggle-all-cursors">
-                                    <span class="material-symbols-rounded msr-visibility">visibility</span>
-                                    <span>Ocultar Todos</span>
-                                </button>
-                                <button type="button" class="component-button component-button--h28" data-action="modalSummonEveryone" data-tooltip="Convocar la vista de todos a tu posición">
-                                    <span class="material-symbols-rounded msr-campaign">campaign</span>
-                                    <span>Reunir a todos</span>
-                                </button>
-                            </div>
-                        </div>
-                        ` : ''}
-
-                        <!-- Live Members Scroll List -->
-                        <div class="component-live-members-list" data-ref="modal-live-members-scroll">
-                            <!-- Populated dynamically via controller -->
-                        </div>
-                    </div>
-
-                    <!-- TAB 2: TODOS LOS MIEMBROS -->
-                    <div class="component-modal-tab-content ${initialTab === 'members' ? 'active' : 'disabled'}" data-ref="tab-content-members">
-                        <div class="component-members-modal-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px;">
-                            <div class="component-search-box" style="flex: 1;">
-                                <span class="material-symbols-rounded">search</span>
-                                <input type="text" class="component-input-field component-input-field--sm" data-ref="modal-all-members-search" placeholder="${__('search_member_placeholder') || 'Buscar miembro...'}">
-                            </div>
-                            <div class="component-actions disabled" data-ref="modal-member-selection-actions" style="display: flex; gap: 6px;">
-                                <button type="button" class="component-button component-button--icon component-button--h32" data-action="modalChangeMemberRole" data-tooltip="${__('tooltip_change_role') || 'Cambiar rol'}">
-                                    <span class="material-symbols-rounded">manage_accounts</span>
-                                </button>
-                                <button type="button" class="component-button component-button--icon component-button--h32 component-button--danger" data-action="modalRemoveMember" data-tooltip="${__('tooltip_remove_member') || 'Expulsar'}">
-                                    <span class="material-symbols-rounded">person_remove</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- All Members Table -->
-                        <div class="component-table-wrapper" data-ref="modal-members-table-wrapper" style="max-height: 280px; overflow-y: auto;">
-                            <table class="component-table">
-                                <thead>
-                                    <tr>
-                                        <th>${__('table_header_member') || 'Miembro'}</th>
-                                        <th>${__('table_header_role') || 'Rol'}</th>
-                                        <th>${__('table_header_joined') || 'Fecha'}</th>
-                                        <th style="width: 72px;"></th>
-                                    </tr>
-                                </thead>
-                                <tbody data-ref="modal-members-table-body">
-                                    <!-- Populated via API -->
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Pagination Footer -->
-                        <div class="component-modal-pagination" data-ref="modal-members-pagination" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 8px;">
-                            <!-- Pagination controls -->
-                        </div>
-                    </div>
-
-                    <!-- TAB 3: SOLICITUDES -->
-                    <div class="component-modal-tab-content ${initialTab === 'requests' ? 'active' : 'disabled'}" data-ref="tab-content-requests">
-                        <div class="component-table-wrapper" data-ref="modal-requests-table-wrapper" style="max-height: 300px; overflow-y: auto;">
-                            <table class="component-table">
-                                <thead>
-                                    <tr>
-                                        <th>${__('table_header_user') || 'Usuario'}</th>
-                                        <th>${__('table_header_date') || 'Fecha'}</th>
-                                        <th style="text-align: right; width: 80px;">${__('table_header_actions') || 'Acciones'}</th>
-                                    </tr>
-                                </thead>
-                                <tbody data-ref="modal-requests-table-body">
-                                    <!-- Populated via API -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div class="component-modal-actions">
-                    <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_close') || 'Cerrar'}</button>
                 </div>
             `;
         }

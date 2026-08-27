@@ -131,7 +131,7 @@ export class AccountManager {
                     const uuid = response.data?.uuid;
                     setTimeout(() => {
                         const basePath = window.AppBasePath || '';
-                        window.location.href = `${basePath}/canvases/edit/${uuid}`;
+                        window.location.href = `${basePath}/design/${uuid}`;
                     }, 1000);
                 } else {
                     restoreButton(btn);

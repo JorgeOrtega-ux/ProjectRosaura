@@ -10,28 +10,48 @@ export const InteractionOfflineWorkspace = {
         const userTier = wrapper ? parseInt(wrapper.getAttribute('data-user-tier') || '0', 10) : (window.APP_USER?.subscription_tier ?? 0);
         const currentSize = `${this.boardWidth || 64}x${this.boardHeight || 64}`;
 
-        await window.modalSystem.show('offlineResizeModal', {
+        await window.modalSystem.show('manageCanvasMembersModal', {
             canvasId: this.canvasIntId,
+            canvasUuid: this.canvasUuid || '',
+            title: this.canvasTitle || '',
             currentSize,
             userTier,
-            boardWidth: this.boardWidth || 64,
-            boardHeight: this.boardHeight || 64,
             isOfflineMode: !!this.isOfflineMode,
-            resizeActive: !!this.resizeActive,
-            nextResizeAt: this.nextResizeAt || '',
-            resizeTargetSize: this.resizeTargetSize || currentSize
+            initialTab: 'resize',
+            isOwner: !!this.isOwner,
+            designNetwork: this.designNetwork || window.activeDesignNetwork || null,
+            onSuccess: (data) => {
+                if (data.type === 'resize' && data.size && typeof this.applyNewCanvasSize === 'function') {
+                    this.applyNewCanvasSize(data.size);
+                } else if (data.type === 'reset' && typeof this.clearCanvasPixels === 'function') {
+                    this.clearCanvasPixels();
+                }
+            }
         });
     },
 
     async openOfflineResetModal() {
         if (!this.isOwner || this.isSpectator) return;
 
-        await window.modalSystem.show('offlineResetModal', {
+        const wrapper = document.querySelector('[data-ref="design-wrapper"]');
+        const userTier = wrapper ? parseInt(wrapper.getAttribute('data-user-tier') || '0', 10) : (window.APP_USER?.subscription_tier ?? 0);
+        const currentSize = `${this.boardWidth || 64}x${this.boardHeight || 64}`;
+
+        await window.modalSystem.show('manageCanvasMembersModal', {
             canvasId: this.canvasIntId,
-            canTakeSnapshot: true,
+            canvasUuid: this.canvasUuid || '',
+            title: this.canvasTitle || '',
+            currentSize,
+            userTier,
             isOfflineMode: !!this.isOfflineMode,
-            resetActive: !!this.resetActive,
-            nextResetAt: this.nextResetAt || ''
+            initialTab: 'reset',
+            isOwner: !!this.isOwner,
+            designNetwork: this.designNetwork || window.activeDesignNetwork || null,
+            onSuccess: (data) => {
+                if (data.type === 'reset' && typeof this.clearCanvasPixels === 'function') {
+                    this.clearCanvasPixels();
+                }
+            }
         });
     },
 

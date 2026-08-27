@@ -206,12 +206,18 @@ export const ApiRoutes = {
         AddRecentColor: 'canvases.add_recent_color',
 
         JoinViaInvite: 'canvases.join_via_invite',
+        ListInvites: 'canvases.list_invites',
         RevokeInvite: 'canvases.revoke_invite',
         GenerateInvite: 'canvases.generate_invite',
         AssignMemberRole: 'canvases.assign_member_role',
         RemoveMember: 'canvases.remove_member',
+        GetRoles: 'canvases.get_roles',
+        GetPermissions: 'canvases.get_permissions',
+        CreateRole: 'canvases.create_role',
+        UpdateRole: 'canvases.update_role',
         UpdateRolePermissions: 'canvases.update_role_permissions',
-        DeleteRole: 'canvases.delete_role'
+        DeleteRole: 'canvases.delete_role',
+        GetSanctions: 'canvases.get_sanctions'
     },
     Search: {
         Query: 'search.query'

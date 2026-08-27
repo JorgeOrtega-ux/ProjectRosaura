@@ -66,6 +66,9 @@ export class CanvasCardInteractions {
         } else if (action === 'toggleCardOnlineMode') {
             this.toggleCardOnlineMode(btn);
             return true;
+        } else if (action === 'openCardEditModal') {
+            this.openCanvasSettingsModal(btn, 'edit');
+            return true;
         } else if (action === 'openCardResizeModal') {
             this.openCardResizeModal(btn);
             return true;
@@ -74,6 +77,15 @@ export class CanvasCardInteractions {
             return true;
         } else if (action === 'openManageMembersModal') {
             this.openManageMembersModal(btn);
+            return true;
+        } else if (action === 'openManageRolesModal') {
+            this.openCanvasSettingsModal(btn, 'roles');
+            return true;
+        } else if (action === 'openManageInvitesModal') {
+            this.openCanvasSettingsModal(btn, 'invites');
+            return true;
+        } else if (action === 'openManageSanctionsModal') {
+            this.openCanvasSettingsModal(btn, 'sanctions');
             return true;
         }
         return false;
@@ -554,8 +566,8 @@ export class CanvasCardInteractions {
                             <div class="component-menu-link-text"><span>Volver</span></div>
                         </button>
                         <div class="component-menu-divider"></div>
-                        <button type="button" class="component-menu-link" data-nav="${this.basePath}/canvases/edit/${uuid}">
-                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">edit</span></div>
+                        <button type="button" class="component-menu-link" data-action="openCardEditModal" data-id="${id}" data-uuid="${uuid}">
+                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">tune</span></div>
                             <div class="component-menu-link-text"><span>${window.__('tooltip_edit_canvas')}</span></div>
                         </button>
                         <button type="button" class="component-menu-link" data-action="openCardResizeModal" data-id="${id}" data-uuid="${uuid}">
@@ -575,15 +587,15 @@ export class CanvasCardInteractions {
                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">group</span></div>
                             <div class="component-menu-link-text"><span>${window.__('tooltip_manage_members')}</span></div>
                         </button>
-                        <button type="button" class="component-menu-link${rolesClass}" data-nav="${rolesNav}"${rolesAttrs}>
+                        <button type="button" class="component-menu-link${rolesClass}" data-action="openManageRolesModal" data-id="${id}" data-uuid="${uuid}"${rolesAttrs}>
                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">shield_person</span></div>
                             <div class="component-menu-link-text"><span>${window.__('tooltip_manage_roles')}</span>${rolesBadge}</div>
                         </button>
-                        <button type="button" class="component-menu-link" data-nav="${this.basePath}/canvases/manage/invites/${uuid}">
+                        <button type="button" class="component-menu-link" data-action="openManageInvitesModal" data-id="${id}" data-uuid="${uuid}">
                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">link</span></div>
                             <div class="component-menu-link-text"><span>${window.__('tooltip_manage_invites')}</span></div>
                         </button>
-                        <button type="button" class="component-menu-link" data-nav="${this.basePath}/canvases/manage/sanctions/${uuid}">
+                        <button type="button" class="component-menu-link" data-action="openManageSanctionsModal" data-id="${id}" data-uuid="${uuid}">
                             <div class="component-menu-link-icon"><span class="material-symbols-rounded">gavel</span></div>
                             <div class="component-menu-link-text"><span>${window.__('tooltip_manage_sanctions')}</span></div>
                         </button>
@@ -941,7 +953,7 @@ export class CanvasCardInteractions {
         }
     }
 
-    async openCardResizeModal(btn) {
+    async openCanvasSettingsModal(btn, initialTab = 'resize') {
         const id = btn.getAttribute('data-id');
         const uuid = btn.getAttribute('data-uuid');
         if (!id) return;
@@ -951,164 +963,35 @@ export class CanvasCardInteractions {
         const isOffline = card ? card.getAttribute('data-mode') === 'offline' : false;
         const currentSize = card ? card.getAttribute('data-size') || '64x64' : '64x64';
         const userTier = window.APP_USER?.subscription_tier ?? 0;
+        const title = card?.querySelector('.component-card__title')?.textContent?.trim() || '';
 
-        let resizeActive = false;
-        let nextResizeAt = '';
-        let targetSize = currentSize;
-
-        try {
-            const res = await this.api.post(ApiRoutes.Canvases.GetResizeSettings, { id: parseInt(id, 10) });
-            if (res && res.success && res.data) {
-                resizeActive = !!res.data.is_active;
-                nextResizeAt = res.data.next_resize_at || '';
-                targetSize = res.data.target_size || currentSize;
-            }
-        } catch (e) {
-            // fallback
-        }
-
-        await window.modalSystem.show('offlineResizeModal', {
+        await window.modalSystem.show('manageCanvasMembersModal', {
             canvasId: id,
+            canvasUuid: uuid,
+            title,
             currentSize,
             userTier,
             isOfflineMode: isOffline,
-            resizeActive,
-            nextResizeAt,
-            resizeTargetSize: targetSize,
-            onConfirm: async (payload, submitBtn) => {
-                if (submitBtn) setButtonLoading(submitBtn);
-                try {
-                    let result;
-                    if (payload.mode === 'cancel_schedule') {
-                        result = await this.api.post(ApiRoutes.Canvases.UpdateResizeSettings, {
-                            id: parseInt(id, 10),
-                            is_active: false,
-                            next_resize_at: null,
-                            target_size: targetSize
-                        });
-                        if (result && result.success) {
-                            window.modalSystem.closeCurrent(true);
-                            showMessage(result.message || window.__('msg_scheduled_resize_cancelled'), 'success');
-                            return;
-                        }
-                    } else if (payload.mode === 'instant') {
-                        result = await this.api.post(ApiRoutes.Canvases.Resize, { id: parseInt(id, 10), size: payload.size });
-                        if (result && result.success && card) {
-                            card.setAttribute('data-size', payload.size);
-                        }
-                    } else {
-                        result = await this.api.post(ApiRoutes.Canvases.UpdateResizeSettings, {
-                            id: parseInt(id, 10),
-                            is_active: payload.isActive,
-                            next_resize_at: payload.nextResizeAt,
-                            target_size: payload.targetSize
-                        });
-                    }
-                    if (result && result.success) {
-                        window.modalSystem.closeCurrent(true);
-                        showMessage(result.message || window.__('msg_resize_settings_updated'), 'success');
-                    } else {
-                        showMessage(result?.message || window.__('err_occurred'), 'error');
-                    }
-                } catch (err) {
-                    showMessage(window.__('general_save_network_error') || window.__('err_occurred'), 'error');
-                } finally {
-                    if (submitBtn) restoreButton(submitBtn);
+            initialTab,
+            isOwner: true,
+            onSuccess: (data) => {
+                if (data && data.type === 'resize' && card && data.size) {
+                    card.setAttribute('data-size', data.size);
                 }
             }
         });
+    }
+
+    async openCardResizeModal(btn) {
+        return this.openCanvasSettingsModal(btn, 'resize');
     }
 
     async openCardResetModal(btn) {
-        const id = btn.getAttribute('data-id');
-        const uuid = btn.getAttribute('data-uuid');
-        if (!id) return;
-        this.closeDropdowns();
-
-        const card = document.querySelector(`[data-card-id="${id}"]`) || btn.closest('.component-card');
-        const isOffline = card ? card.getAttribute('data-mode') === 'offline' : false;
-
-        let resetActive = false;
-        let nextResetAt = '';
-
-        try {
-            const res = await this.api.post(ApiRoutes.Canvases.GetResetSettings, { id: parseInt(id, 10) });
-            if (res && res.success && res.data) {
-                resetActive = !!res.data.is_active;
-                nextResetAt = res.data.next_reset_at || '';
-            }
-        } catch (e) {
-            // fallback
-        }
-
-        await window.modalSystem.show('offlineResetModal', {
-            canvasId: id,
-            canTakeSnapshot: true,
-            isOfflineMode: isOffline,
-            resetActive,
-            nextResetAt,
-            onConfirm: async (payload, submitBtn) => {
-                if (submitBtn) setButtonLoading(submitBtn);
-                try {
-                    let result;
-                    if (payload.mode === 'cancel_schedule') {
-                        result = await this.api.post(ApiRoutes.Canvases.UpdateResetSettings, {
-                            id: parseInt(id, 10),
-                            is_active: false,
-                            next_reset_at: null,
-                            take_snapshot: false
-                        });
-                        if (result && result.success) {
-                            window.modalSystem.closeCurrent(true);
-                            showMessage(result.message || window.__('msg_scheduled_reset_cancelled'), 'success');
-                            return;
-                        }
-                    } else if (payload.mode === 'instant') {
-                        result = await this.api.post(ApiRoutes.Canvases.ResetNow, {
-                            id: parseInt(id, 10),
-                            take_snapshot: payload.takeSnapshot
-                        });
-                    } else {
-                        result = await this.api.post(ApiRoutes.Canvases.UpdateResetSettings, {
-                            id: parseInt(id, 10),
-                            is_active: payload.isActive,
-                            next_reset_at: payload.nextResetAt,
-                            take_snapshot: payload.takeSnapshot
-                        });
-                    }
-                    if (result && result.success) {
-                        window.modalSystem.closeCurrent(true);
-                        showMessage(result.message || window.__('msg_reset_settings_updated'), 'success');
-                    } else {
-                        showMessage(result?.message || window.__('err_occurred'), 'error');
-                    }
-                } catch (err) {
-                    showMessage(window.__('general_save_network_error') || window.__('err_occurred'), 'error');
-                } finally {
-                    if (submitBtn) restoreButton(submitBtn);
-                }
-            }
-        });
+        return this.openCanvasSettingsModal(btn, 'reset');
     }
 
     async openManageMembersModal(btn) {
-        const uuid = btn.getAttribute('data-uuid');
-        const id = btn.getAttribute('data-id');
-        if (!uuid && !id) return;
-        this.closeDropdowns();
-
-        const card = document.querySelector(`[data-card-id="${id}"]`) || btn.closest('.component-card');
-        const title = card ? (card.querySelector('.component-card__title')?.textContent?.trim()) : '';
-
-        if (window.modalSystem && window.modalSystem.show) {
-            await window.modalSystem.show('manageCanvasMembersModal', {
-                canvasUuid: uuid,
-                canvasId: id,
-                title: title || '',
-                initialTab: 'members',
-                isOwner: true
-            });
-        }
+        return this.openCanvasSettingsModal(btn, 'members');
     }
 
     async syncLocalCanvasToCloud(btn) {

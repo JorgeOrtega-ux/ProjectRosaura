@@ -992,7 +992,8 @@ textarea.component-input-field::placeholder {
     border-color: var(--text-primary);
 }
 
-.component-search--full {
+.component-search--full,
+.component-search--w-full {
     width: 100%;
 }
 

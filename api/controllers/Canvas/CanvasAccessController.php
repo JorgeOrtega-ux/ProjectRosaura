@@ -240,6 +240,24 @@ class CanvasAccessController extends BaseController {
         }
     }
 
+    public function get_sanctions($input) {
+        try {
+            if (!$this->session->isLoggedIn()) return $this->respond(['success' => false, 'message' => __('err_unauthorized'), 'http_code' => \App\Core\System\HttpConstants::UNAUTHORIZED]);
+            $canvasUuid = $input['canvas_uuid'] ?? $input['uuid'] ?? $input['canvas_id'] ?? null;
+            if (!$canvasUuid) return $this->respond(['success' => false, 'message' => __('err_canvas_not_provided')]);
+
+            $page = (int)($input['page'] ?? 1);
+            $canvasViewService = new \App\Api\Services\Canvas\CanvasViewService();
+            $data = $canvasViewService->getCanvasSanctionsData((string)$canvasUuid, $page);
+            if (!empty($data['unauthorized'])) {
+                return $this->respond(['success' => false, 'message' => __('err_unauthorized')]);
+            }
+            return $this->respond(['success' => true, 'data' => $data]);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
     public function generate_invite($input) {
         try {
             if (!$this->session->isLoggedIn()) {
@@ -247,12 +265,21 @@ class CanvasAccessController extends BaseController {
             }
             $userId = $this->session->getActiveAccountId();
 
-            $canvasId = $input['canvas_id'] ?? null;
+            $canvasTarget = $input['canvas_id'] ?? $input['canvas_uuid'] ?? $input['uuid'] ?? null;
             $role = $input['role'] ?? null;
             $expiresAt = $input['expires_at'] ?? null;
 
-            if (!$canvasId || !$role) {
+            if (!$canvasTarget || !$role) {
                 return $this->respond(['success' => false, 'message' => __('err_incomplete_invite_data')]);
+            }
+
+            $canvasId = (int)$canvasTarget;
+            if (!is_numeric($canvasTarget)) {
+                $canvasRepo = new \App\Core\Repositories\CanvasRepository();
+                $canvas = $canvasRepo->getByUuid((string)$canvasTarget);
+                if ($canvas) {
+                    $canvasId = (int)$canvas['id'];
+                }
             }
 
             // Sanitize max_uses: must be a positive integer or null
@@ -282,9 +309,18 @@ class CanvasAccessController extends BaseController {
             }
             $userId = $this->session->getActiveAccountId();
 
-            $canvasId = $input['canvas_id'] ?? null;
-            if (!$canvasId) {
+            $canvasTarget = $input['canvas_id'] ?? $input['canvas_uuid'] ?? $input['uuid'] ?? null;
+            if (!$canvasTarget) {
                 return $this->respond(['success' => false, 'message' => __('err_canvas_not_provided')]);
+            }
+
+            $canvasId = (int)$canvasTarget;
+            if (!is_numeric($canvasTarget)) {
+                $canvasRepo = new \App\Core\Repositories\CanvasRepository();
+                $canvas = $canvasRepo->getByUuid((string)$canvasTarget);
+                if ($canvas) {
+                    $canvasId = (int)$canvas['id'];
+                }
             }
 
             $result = $this->canvasServices->listInvites($userId, (int)$canvasId);
@@ -301,11 +337,20 @@ class CanvasAccessController extends BaseController {
             }
             $userId = $this->session->getActiveAccountId();
 
-            $canvasId = $input['canvas_id'] ?? null;
+            $canvasTarget = $input['canvas_id'] ?? $input['canvas_uuid'] ?? $input['uuid'] ?? null;
             $inviteId = $input['invite_id'] ?? null;
 
-            if (!$canvasId || !$inviteId) {
+            if (!$canvasTarget || !$inviteId) {
                 return $this->respond(['success' => false, 'message' => __('err_incomplete_revoke_data')]);
+            }
+
+            $canvasId = (int)$canvasTarget;
+            if (!is_numeric($canvasTarget)) {
+                $canvasRepo = new \App\Core\Repositories\CanvasRepository();
+                $canvas = $canvasRepo->getByUuid((string)$canvasTarget);
+                if ($canvas) {
+                    $canvasId = (int)$canvas['id'];
+                }
             }
 
             $result = $this->canvasServices->revokeInvite($userId, (int)$canvasId, (int)$inviteId);

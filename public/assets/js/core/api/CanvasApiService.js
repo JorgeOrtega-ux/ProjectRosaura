@@ -37,4 +37,84 @@ export class CanvasApiService extends HttpClient {
     async rejectCanvasRequest(requestId) {
         return await this.post(ApiRoutes.Canvases.RejectRequest, { request_id: requestId });
     }
+
+    async listInvites(canvasTarget) {
+        return await this.post(ApiRoutes.Canvases.ListInvites, { canvas_id: canvasTarget, canvas_uuid: canvasTarget });
+    }
+
+    async generateInvite(canvasTarget, role, maxUses = null, expiresAt = null) {
+        return await this.post(ApiRoutes.Canvases.GenerateInvite, {
+            canvas_id: canvasTarget,
+            canvas_uuid: canvasTarget,
+            role: role,
+            max_uses: maxUses,
+            expires_at: expiresAt
+        });
+    }
+
+    async revokeInvite(canvasTarget, inviteId) {
+        return await this.post(ApiRoutes.Canvases.RevokeInvite, {
+            canvas_id: canvasTarget,
+            canvas_uuid: canvasTarget,
+            invite_id: inviteId
+        });
+    }
+
+    async getRoles(canvasTarget) {
+        return await this.post(ApiRoutes.Canvases.GetRoles, { canvas_id: canvasTarget, canvas_uuid: canvasTarget });
+    }
+
+    async getPermissions(canvasTarget) {
+        return await this.post(ApiRoutes.Canvases.GetPermissions, { canvas_id: canvasTarget, canvas_uuid: canvasTarget });
+    }
+
+    async createRole(canvasTarget, name, permissions = [], weight = 10) {
+        return await this.post(ApiRoutes.Canvases.CreateRole, {
+            canvas_id: canvasTarget,
+            canvas_uuid: canvasTarget,
+            name: name,
+            permissions: permissions,
+            weight: weight
+        });
+    }
+
+    async updateRole(canvasTarget, roleId, name, permissions = null, weight = 10) {
+        return await this.post(ApiRoutes.Canvases.UpdateRole, {
+            canvas_id: canvasTarget,
+            canvas_uuid: canvasTarget,
+            role_id: roleId,
+            name: name,
+            permissions: permissions,
+            weight: weight
+        });
+    }
+
+    async updateRolePermissions(canvasTarget, roleId, permissions = []) {
+        return await this.post(ApiRoutes.Canvases.UpdateRolePermissions, {
+            canvas_id: canvasTarget,
+            canvas_uuid: canvasTarget,
+            role_id: roleId,
+            permissions: permissions
+        });
+    }
+
+    async deleteRole(canvasTarget, roleId) {
+        return await this.post(ApiRoutes.Canvases.DeleteRole, {
+            canvas_id: canvasTarget,
+            canvas_uuid: canvasTarget,
+            role_id: roleId
+        });
+    }
+
+    async getSanctions(canvasTarget, page = 1) {
+        return await this.post(ApiRoutes.Canvases.GetSanctions, {
+            canvas_uuid: canvasTarget,
+            canvas_id: canvasTarget,
+            page: page
+        });
+    }
+
+    async updateSanction(payload, signal = null) {
+        return await this.post(ApiRoutes.Canvases.UpdateChatRestriction, payload, signal);
+    }
 }
