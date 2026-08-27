@@ -24,6 +24,7 @@ use App\Core\System\RateLimitConstants;
 use App\Core\System\SessionConstants;
 use App\Core\System\PermissionsConstants;
 use App\Core\System\ModerationConstants;
+use App\Core\System\SubscriptionPlanConstants;
 
 class AdminService {
     private $userRepository;
@@ -787,246 +788,42 @@ class AdminService {
         $featNoAds = empty($featuresData['feat_no_ads']) ? 0 : 1;
         $featExportTimelapse = (!empty($featuresData['feat_export_timelapse']) || !empty($featuresData['feat_download_4k'])) ? 1 : 0;
 
-        try {
-            $db = new \App\Config\Database\DatabaseManager();
-            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
-            
-            // Check if column is feat_export_timelapse or feat_download_4k
-            $colName = 'feat_export_timelapse';
-            try {
-                $checkCol = $pdo->query("SHOW COLUMNS FROM subscription_tiers LIKE 'feat_export_timelapse'");
-                if (!$checkCol || !$checkCol->fetch()) {
-                    $checkColLegacy = $pdo->query("SHOW COLUMNS FROM subscription_tiers LIKE 'feat_download_4k'");
-                    if ($checkColLegacy && $checkColLegacy->fetch()) {
-                        $colName = 'feat_download_4k';
-                    }
-                }
-            } catch (\Throwable $e) {}
-
-            if (!empty($uuid)) {
-                // Update
-                if ($colorString !== null) {
-                    $stmt = $pdo->prepare("UPDATE subscription_tiers SET name = ?, tier_level = ?, is_active = ?, color = ?, stripe_price_id_monthly = ?, stripe_price_id_yearly = ?, price_monthly = ?, price_yearly = ?, max_canvases = ?, max_storage_mb = ?, max_snapshots_per_canvas = ?, max_members_per_canvas = ?, max_custom_palettes = ?, feat_advanced_roles = ?, feat_chat_restriction = ?, feat_custom_palettes = ?, feat_unlimited_exports = ?, feat_inject_templates = ?, feat_live_share = ?, feat_no_ads = ?, {$colName} = ?, max_template_tokens = ?, max_upload_mb = ?, max_pixels_per_batch = ? WHERE uuid = ?");
-                    $stmt->execute([$name, $tier_level, $is_active, $colorString, $stripeMonthly, $stripeYearly, $priceMonthly, $priceYearly, $maxCanvases, $maxStorageMb, $maxSnapshots, $maxMembers, $maxCustomPalettes, $featAdvancedRoles, $featChatRestriction, $featCustomPalettes, $featUnlimitedExports, $featInjectTemplates, $featLiveShare, $featNoAds, $featExportTimelapse, $maxTemplateTokens, $maxUploadMb, $maxPixelsPerBatch, $uuid]);
-                } else {
-                    $stmt = $pdo->prepare("UPDATE subscription_tiers SET name = ?, tier_level = ?, is_active = ?, stripe_price_id_monthly = ?, stripe_price_id_yearly = ?, price_monthly = ?, price_yearly = ?, max_canvases = ?, max_storage_mb = ?, max_snapshots_per_canvas = ?, max_members_per_canvas = ?, max_custom_palettes = ?, feat_advanced_roles = ?, feat_chat_restriction = ?, feat_custom_palettes = ?, feat_unlimited_exports = ?, feat_inject_templates = ?, feat_live_share = ?, feat_no_ads = ?, {$colName} = ?, max_template_tokens = ?, max_upload_mb = ?, max_pixels_per_batch = ? WHERE uuid = ?");
-                    $stmt->execute([$name, $tier_level, $is_active, $stripeMonthly, $stripeYearly, $priceMonthly, $priceYearly, $maxCanvases, $maxStorageMb, $maxSnapshots, $maxMembers, $maxCustomPalettes, $featAdvancedRoles, $featChatRestriction, $featCustomPalettes, $featUnlimitedExports, $featInjectTemplates, $featLiveShare, $featNoAds, $featExportTimelapse, $maxTemplateTokens, $maxUploadMb, $maxPixelsPerBatch, $uuid]);
-                }
-
-                try {
-                    $redisCache = new \App\Config\Database\RedisCache();
-                    $redis = $redisCache->getClient();
-                    $invalidator = new \App\Core\System\CacheInvalidator($redis);
-                    $invalidator->allUsers();
-                    $invalidator->subscriptionTiers();
-                } catch (\Throwable $t) {}
-
-                return ['success' => true, 'message' => __('admin.subscription_updated')];
-            } else {
-                // Insert
-                $finalColor = $colorString ?? '{"type":"solid","colors":[{"hex":"#808080","percentage":100}]}';
-                $uuid = \App\Core\Helpers\Utils::generateUUID();
-                $stmt = $pdo->prepare("INSERT INTO subscription_tiers (uuid, name, tier_level, is_active, color, stripe_price_id_monthly, stripe_price_id_yearly, price_monthly, price_yearly, max_canvases, max_storage_mb, max_snapshots_per_canvas, max_members_per_canvas, max_custom_palettes, feat_advanced_roles, feat_chat_restriction, feat_custom_palettes, feat_unlimited_exports, feat_inject_templates, feat_live_share, feat_no_ads, {$colName}, max_template_tokens, max_upload_mb, max_pixels_per_batch) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$name, $tier_level, $is_active, $finalColor, $stripeMonthly, $stripeYearly, $priceMonthly, $priceYearly, $maxCanvases, $maxStorageMb, $maxSnapshots, $maxMembers, $maxCustomPalettes, $featAdvancedRoles, $featChatRestriction, $featCustomPalettes, $featUnlimitedExports, $featInjectTemplates, $featLiveShare, $featNoAds, $featExportTimelapse, $maxTemplateTokens, $maxUploadMb, $maxPixelsPerBatch]);
-                
-                try {
-                    $redisCache = new \App\Config\Database\RedisCache();
-                    $redis = $redisCache->getClient();
-                    $invalidator = new \App\Core\System\CacheInvalidator($redis);
-                    $invalidator->allUsers();
-                    $invalidator->subscriptionTiers();
-                } catch (\Throwable $t) {}
-
-                return ['success' => true, 'message' => __('admin.subscription_created'), 'data' => ['uuid' => $uuid]];
-            }
-        } catch (\Throwable $e) {
-            return ['success' => false, 'message' => $e->getMessage()];
-        }
+        return [
+            'success' => true,
+            'message' => 'Los planes se gestionan centralizadamente en config/subscriptions.php y las variables de Stripe en el .env.'
+        ];
     }
 
     public function saveSubscriptionColor($data) {
         if (!$this->hasPermission(PermissionsConstants::ACCESS_ADMIN_PANEL)) return ['success' => false, 'message' => __('error.unauthorized')];
-        $uuid = Utils::sanitizeText($data['uuid'] ?? '');
-        if (empty($uuid)) return ['success' => false, 'message' => 'UUID requerido'];
-
-        $rawColors = $data['colors'] ?? [];
-        if (!is_array($rawColors) || empty($rawColors)) {
-            return ['success' => false, 'message' => __('msg_subscription_min_colors')];
-        }
-
-        $validColors = [];
-        $totalPercentage = 0;
-        foreach ($rawColors as $c) {
-            $hex = strtoupper(trim(is_array($c) ? ($c['hex'] ?? '') : (string)$c));
-            if (!str_starts_with($hex, '#')) $hex = '#' . $hex;
-            $pct = is_array($c) ? (int)($c['percentage'] ?? 0) : 0;
-            if (preg_match('/^#[0-9A-F]{6}$/', $hex)) {
-                $validColors[] = ['hex' => $hex, 'percentage' => $pct];
-                $totalPercentage += $pct;
-            }
-        }
-
-        if (empty($validColors)) {
-            return ['success' => false, 'message' => __('msg_subscription_min_colors')];
-        }
-
-        $angle = (int)($data['angle'] ?? 0);
-        if ($angle < 0) $angle = 0;
-        if ($angle > 360) $angle = 360;
-
-        $count = count($validColors);
-        $type = $count === 1 ? 'solid' : 'gradient';
-
-        if ($type === 'solid') {
-            $validColors = [['hex' => $validColors[0]['hex'], 'percentage' => 100]];
-            $angle = 0;
-        } else {
-            if ($totalPercentage !== 100) {
-                $base = floor(100 / $count);
-                $rem = 100 % $count;
-                foreach ($validColors as $idx => &$c) {
-                    $c['percentage'] = (int)($base + ($idx < $rem ? 1 : 0));
-                }
-                unset($c);
-            }
-        }
-
-        $colorJson = json_encode(['type' => $type, 'angle' => $angle, 'colors' => $validColors]);
-
-        try {
-            $db = new \App\Config\Database\DatabaseManager();
-            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
-            $stmt = $pdo->prepare("UPDATE subscription_tiers SET color = ? WHERE uuid = ?");
-            $stmt->execute([$colorJson, $uuid]);
-
-            try {
-                $redisCache = new \App\Config\Database\RedisCache();
-                $redis = $redisCache->getClient();
-                $invalidator = new \App\Core\System\CacheInvalidator($redis);
-                $invalidator->allUsers();
-                $invalidator->subscriptionTiers();
-            } catch (\Throwable $t) {}
-
-            return ['success' => true, 'message' => __('admin_subscription_color_updated')];
-        } catch (\Throwable $e) {
-            return ['success' => false, 'message' => $e->getMessage()];
-        }
+        return [
+            'success' => true,
+            'message' => 'Los colores se gestionan centralizadamente en config/subscriptions.php.'
+        ];
     }
 
     public function toggleSubscriptionVisibility($data) {
         if (!$this->hasPermission(PermissionsConstants::ACCESS_ADMIN_PANEL)) return ['success' => false, 'message' => __('error.unauthorized')];
-        $uuid = Utils::sanitizeText($data['uuid'] ?? '');
-        if (empty($uuid)) return ['success' => false, 'message' => 'UUID requerido'];
-
-        try {
-            $db = new \App\Config\Database\DatabaseManager();
-            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
-            $stmt = $pdo->prepare("UPDATE subscription_tiers SET is_active = NOT is_active WHERE uuid = ?");
-            $stmt->execute([$uuid]);
-
-            try {
-                $redisCache = new \App\Config\Database\RedisCache();
-                (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->subscriptionTiers();
-            } catch (\Throwable $t) {}
-
-            return ['success' => true, 'message' => 'Visibilidad actualizada'];
-        } catch (\PDOException $e) {
-            Logger::error("toggleSubscriptionVisibility Error", ['exception' => $e]);
-            return ['success' => false, 'message' => 'Error de base de datos'];
-        }
+        return [
+            'success' => true,
+            'message' => 'El estado de los planes se gestiona en config/subscriptions.php.'
+        ];
     }
 
     public function setSubscriptionPopular($data) {
         if (!$this->hasPermission(PermissionsConstants::ACCESS_ADMIN_PANEL)) return ['success' => false, 'message' => __('error.unauthorized')];
-        $uuid = Utils::sanitizeText($data['uuid'] ?? '');
-        if (empty($uuid)) return ['success' => false, 'message' => 'UUID requerido'];
-
-        try {
-            $db = new \App\Config\Database\DatabaseManager();
-            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
-            $pdo->beginTransaction();
-            // Reset all to 0
-            $pdo->query("UPDATE subscription_tiers SET is_popular = 0");
-            // Set selected to 1
-            $stmt = $pdo->prepare("UPDATE subscription_tiers SET is_popular = 1 WHERE uuid = ?");
-            $stmt->execute([$uuid]);
-            $pdo->commit();
-
-            try {
-                $redisCache = new \App\Config\Database\RedisCache();
-                (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->subscriptionTiers();
-            } catch (\Throwable $t) {}
-
-            return ['success' => true, 'message' => 'Popularidad actualizada'];
-        } catch (\PDOException $e) {
-            if (isset($pdo) && $pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
-            Logger::error("setSubscriptionPopular Error", ['exception' => $e]);
-            return ['success' => false, 'message' => 'Error de base de datos'];
-        }
+        return [
+            'success' => true,
+            'message' => 'El plan destacado se gestiona en config/subscriptions.php.'
+        ];
     }
 
     public function deleteSubscription($data) {
         if (!$this->hasPermission(PermissionsConstants::ACCESS_ADMIN_PANEL)) return ['success' => false, 'message' => __('error.unauthorized')];
-        $uuid = Utils::sanitizeText($data['uuid'] ?? '');
-        if (empty($uuid)) return ['success' => false, 'message' => 'UUID requerido'];
-
-        try {
-            $db = new \App\Config\Database\DatabaseManager();
-            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
-            
-            // Protect system tiers from deletion and get tier info
-            $stmtCheck = $pdo->prepare("SELECT id, tier_level, is_active FROM subscription_tiers WHERE uuid = ?");
-            $stmtCheck->execute([$uuid]);
-            $tierInfo = $stmtCheck->fetch(\PDO::FETCH_ASSOC);
-            
-            if (!$tierInfo) return ['success' => false, 'message' => 'Suscripción no encontrada'];
-            
-            $tierId = (int)$tierInfo['id'];
-            $tierLevel = (int)$tierInfo['tier_level'];
-            
-            if ($tierId > 0 && $tierId <= 1) return ['success' => false, 'message' => __('admin.cannot_delete_base_role')];
-
-            // Check if there are users with this tier
-            $stmtUsers = $pdo->prepare("SELECT COUNT(id) FROM users WHERE subscription_tier = ?");
-            $stmtUsers->execute([$tierLevel]);
-            $usersCount = (int)$stmtUsers->fetchColumn();
-
-            if ($usersCount > 0) {
-                // Soft Delete (Archive)
-                if ((int)$tierInfo['is_active'] === 0) {
-                    return ['success' => false, 'message' => 'La suscripción ya está archivada y tiene usuarios activos. No se puede eliminar.'];
-                }
-                
-                $stmt = $pdo->prepare("UPDATE subscription_tiers SET is_active = 0 WHERE uuid = ?");
-                $stmt->execute([$uuid]);
-
-                try {
-                    $redisCache = new \App\Config\Database\RedisCache();
-                    (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->subscriptionTiers();
-                } catch (\Throwable $t) {}
-
-                return [
-                    'success' => true, 
-                    'message' => 'Suscripción archivada. Tiene ' . $usersCount . ' usuario(s) asignados y no puede ser eliminada permanentemente.'
-                ];
-            } else {
-                // Hard Delete
-                $stmt = $pdo->prepare("DELETE FROM subscription_tiers WHERE uuid = ?");
-                $stmt->execute([$uuid]);
-
-                try {
-                    $redisCache = new \App\Config\Database\RedisCache();
-                    (new \App\Core\System\CacheInvalidator($redisCache->getClient()))->subscriptionTiers();
-                } catch (\Throwable $t) {}
-
-                return ['success' => true, 'message' => 'Suscripción eliminada permanentemente'];
-            }
-        } catch (\PDOException $e) {
-            Logger::error("deleteSubscription Error", ['exception' => $e]);
-            return ['success' => false, 'message' => 'Error al eliminar'];
-        }
+        return [
+            'success' => false,
+            'message' => 'Los planes del sistema están definidos en código (config/subscriptions.php) y no pueden eliminarse desde la BD.'
+        ];
     }
 
 
@@ -2154,12 +1951,11 @@ class AdminService {
                         $priceId = $activeSub->items->data[0]->price->id ?? null;
 
                         if ($priceId) {
-                            $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
-                            $stmt = $pdo->prepare("SELECT tier_level FROM subscription_tiers WHERE stripe_price_id_monthly = ? OR stripe_price_id_yearly = ? LIMIT 1");
-                            $stmt->execute([$priceId, $priceId]);
-                            $tierLevel = $stmt->fetchColumn();
+                            $tierInfo = SubscriptionPlanConstants::getTierByPriceId($priceId);
+                            $tierLevel = $tierInfo['tier'] ?? null;
 
-                            if ($tierLevel !== false) {
+                            if ($tierLevel !== null) {
+                                $pdo = $this->dbManager->getConnection(DB::CONN_IDENTITY);
                                 $upd = $pdo->prepare("UPDATE " . DB::TBL_USERS . " SET subscription_tier = ? WHERE id = ?");
                                 $upd->execute([(int)$tierLevel, (int)$user['id']]);
 

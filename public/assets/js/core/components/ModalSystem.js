@@ -2,6 +2,7 @@ import { ModalTemplates } from './ModalTemplates.js';
 import { CalendarSystem } from './CalendarSystem.js';
 import { BannerCropperSystem } from './BannerCropperSystem.js';
 import { ManageCanvasMembersModalController } from './ManageCanvasMembersModalController.js';
+import { CreateCanvasModalController } from './CreateCanvasModalController.js';
 import { getEventCoords, hexToHsv, hsvToHex, restoreButton, setButtonLoading, showMessage, initCarouselScroll, closeDropdown, localInputFormatToUtcString, parseUtcToLocalDate, formatLocalDateTimeToInput, getScheduledTimeDetails, copyToClipboard } from '../utils/uiUtils.js';
 import { ApiService } from '../api/ApiService.js';
 import { ApiRoutes } from '../api/ApiRoutes.js';
@@ -17,6 +18,7 @@ export class ModalSystem {
         this.calendarSystem = null;
         this.bannerCropper = null;
         this.activeMembersModalController = null;
+        this.activeCreateCanvasModalController = null;
         this.upgradeModalState = null;
         this.modalStack = [];
         this.activeOnConfirm = null;
@@ -117,6 +119,7 @@ export class ModalSystem {
                     calendarSystem: this.calendarSystem,
                     bannerCropper: this.bannerCropper,
                     membersModalController: this.activeMembersModalController,
+                    createCanvasModalController: this.activeCreateCanvasModalController,
                     upgradeModalState: this.upgradeModalState ? Object.assign({}, this.upgradeModalState) : null,
                     dragState: Object.assign({}, this.dragState),
                     onConfirm: this.activeOnConfirm,
@@ -129,6 +132,7 @@ export class ModalSystem {
                 this.calendarSystem = null;
                 this.bannerCropper = null;
                 this.activeMembersModalController = null;
+                this.activeCreateCanvasModalController = null;
                 this.upgradeModalState = null;
                 this.activeOnConfirm = null;
                 this.activeAsyncConfirm = false;
@@ -269,6 +273,11 @@ export class ModalSystem {
             if (templateName === 'manageCanvasMembersModal' || templateName === 'canvasSettingsModal') {
                 this.activeMembersModalController = new ManageCanvasMembersModalController(this.activeBox, data);
                 this.activeMembersModalController.init();
+            }
+
+            if (templateName === 'createCanvasModal') {
+                this.activeCreateCanvasModalController = new CreateCanvasModalController(this.activeBox, data);
+                this.activeCreateCanvasModalController.init();
             }
 
             if (templateName === 'upgradePlansModal' || templateName === 'upgradeModal') {
@@ -2178,6 +2187,11 @@ export class ModalSystem {
             this.activeMembersModalController = null;
         }
 
+        if (this.activeCreateCanvasModalController) {
+            this.activeCreateCanvasModalController.destroy();
+            this.activeCreateCanvasModalController = null;
+        }
+
         this.upgradeModalState = null;
 
         this.activeResolveFn = null;
@@ -2203,6 +2217,7 @@ export class ModalSystem {
             this.calendarSystem = prevModal.calendarSystem;
             this.bannerCropper = prevModal.bannerCropper;
             this.activeMembersModalController = prevModal.membersModalController || null;
+            this.activeCreateCanvasModalController = prevModal.createCanvasModalController || null;
             this.upgradeModalState = prevModal.upgradeModalState || null;
             this.dragState = prevModal.dragState;
             this.activeOnConfirm = prevModal.onConfirm;

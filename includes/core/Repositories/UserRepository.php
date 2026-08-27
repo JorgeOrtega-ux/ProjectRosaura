@@ -10,6 +10,7 @@ use App\Core\System\DatabaseConstants as DB;
 use App\Core\System\SecurityConstants;
 use App\Core\System\CacheConstants;
 use App\Core\System\CacheInvalidator;
+use App\Core\System\SubscriptionPlanConstants;
 use App\Core\Security\DataCipher;
 use App\Core\Helpers\Utils;
 use App\Config\Database\RedisCache;
@@ -59,11 +60,9 @@ class UserRepository implements UserRepositoryInterface {
                     u.two_factor_secret, u.two_factor_enabled, u.two_factor_recovery_codes, u.deletion_scheduled_at, u.created_at,
                     u.template_tokens_used, u.template_tokens_reset_at,
                     ur.is_suspended, ur.suspension_type, ur.suspension_reason, ur.suspension_end_date, 
-                    ur.deleted_by, ur.deleted_reason, ur.admin_notes,
-                    st.color as subscription_color
+                    ur.deleted_by, ur.deleted_reason, ur.admin_notes
                 FROM {$tblUsers} u 
                 LEFT JOIN {$tblUserRestr} ur ON u.id = ur.user_id 
-                LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
                 WHERE u.{$column} = ?
                 LIMIT 1
             ");
@@ -126,7 +125,7 @@ class UserRepository implements UserRepositoryInterface {
             $user['permissions'] = !empty($permissionsArray) ? implode(',', $permissionsArray) : null;
 
             $user['real_subscription_tier'] = (int)($user['subscription_tier'] ?? 0);
-            // subscription_color ya viene del LEFT JOIN en la query principal
+            $user['subscription_color'] = SubscriptionPlanConstants::getTierColor((int)($user['subscription_tier'] ?? 0));
 
             if ($cacheKey && $this->redisClient) {
                 $this->redisClient->setex($cacheKey, CacheConstants::TTL_ONE_DAY, json_encode($user));
@@ -148,11 +147,9 @@ class UserRepository implements UserRepositoryInterface {
         try {
             $stmtUsers = $this->pdo->prepare("
                 SELECT u.id, u.uuid, u.username, u.email, u.subscription_tier, u.profile_picture, u.created_at,
-                       ur.is_suspended, ur.suspension_type,
-                       st.color as subscription_color
+                       ur.is_suspended, ur.suspension_type
                 FROM {$tblUsers} u
                 LEFT JOIN {$tblUserRestr} ur ON u.id = ur.user_id
-                LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
                 ORDER BY u.id DESC
                 LIMIT :limit OFFSET :offset
             ");
@@ -185,6 +182,7 @@ class UserRepository implements UserRepositoryInterface {
 
             foreach ($users as &$user) {
                 $uid = $user['id'];
+                $user['subscription_color'] = SubscriptionPlanConstants::getTierColor((int)($user['subscription_tier'] ?? 0));
                 if (isset($rolesByUser[$uid])) {
                     $mainRole = $rolesByUser[$uid][0];
                     $user['role_name'] = $mainRole['name'];

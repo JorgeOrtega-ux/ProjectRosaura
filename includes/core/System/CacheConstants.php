@@ -34,7 +34,6 @@ class CacheConstants {
     public const KEY_SYSTEM_RESTORING = 'system_status:restoring';
     public const KEY_SYSTEM_PANIC_MODE = 'system_status:panic_mode';
     public const KEY_SERVER_CONFIG = 'system:server_config';
-    public const KEY_SUBSCRIPTION_TIERS_ALL = 'system:subscription_tiers:all';
     public const PREFIX_CHAT_CANVAS_RECENT = 'chat:canvas:recent:';
     public const PREFIX_CANVAS_PUBLIC_PAGE = 'canvases:public:page:';
     public const PREFIX_CANVAS_HOME_FEED = 'canvases:home:feed:';

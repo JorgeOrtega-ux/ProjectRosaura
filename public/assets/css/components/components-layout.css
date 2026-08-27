@@ -1001,12 +1001,28 @@ textarea.component-input-field::placeholder {
     width: auto;
 }
 
+.component-search--w220 {
+    width: 220px;
+}
+
+.component-search--w240 {
+    width: 240px;
+}
+
 .component-search--w260 {
     width: 260px;
 }
 
 .component-search--h36 {
     height: 36px;
+}
+
+.component-search--h34 {
+    height: 34px;
+}
+
+.component-search--h32 {
+    height: 32px;
 }
 
 .component-search-icon {

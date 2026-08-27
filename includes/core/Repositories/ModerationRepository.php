@@ -8,6 +8,7 @@ use App\Config\Database\CassandraManager;
 use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
 use App\Core\System\ModerationConstants;
+use App\Core\System\SubscriptionPlanConstants;
 use PDO;
 use PDOException;
 
@@ -101,12 +102,11 @@ class ModerationRepository implements ModerationRepositoryInterface {
                         ml.reason,
                         u.username as admin_username,
                         u.profile_picture as admin_profile_picture,
+                        u.subscription_tier as admin_subscription_tier,
                         admin_roles.top_role_name as admin_role,
-                        st.color as admin_subscription_color,
                         admin_roles.top_role_color as admin_role_color
                     FROM {$tblModLogs} ml
                     LEFT JOIN {$tblUsers} u ON ml.admin_id = u.id
-                    LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
                     LEFT JOIN (
                         SELECT ur_top.user_id,
                                SUBSTRING_INDEX(GROUP_CONCAT(r_top.name ORDER BY r_top.weight DESC), ',', 1) as top_role_name,
@@ -127,6 +127,7 @@ class ModerationRepository implements ModerationRepositoryInterface {
                 
                 $mysqlLogs = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 foreach ($mysqlLogs as $row) {
+                    $row['admin_subscription_color'] = SubscriptionPlanConstants::getTierColor((int)($row['admin_subscription_tier'] ?? 0));
                     $mergedLogs[] = $row;
                 }
             } catch (PDOException $e) {

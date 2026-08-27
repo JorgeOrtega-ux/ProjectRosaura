@@ -271,13 +271,12 @@ class CacheInvalidator {
     }
 
     public function subscriptionTiers(): void {
+        if (class_exists(SubscriptionPlanConstants::class)) {
+            SubscriptionPlanConstants::resetCache();
+        }
         if (!$this->redis) return;
         try {
-            $this->redis->del(CacheConstants::KEY_SUBSCRIPTION_TIERS_ALL);
             $this->deleteByPattern('subscription:tiers:*');
-            if (class_exists(SubscriptionPlanConstants::class)) {
-                SubscriptionPlanConstants::resetCache();
-            }
         } catch (\Throwable $e) {}
     }
 

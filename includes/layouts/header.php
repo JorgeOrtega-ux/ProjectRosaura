@@ -86,7 +86,9 @@ if ($isLoggedIn) {
                 <input type="text" id="global-search-input" name="global-search-input" data-ref="global-search-input" placeholder="<?php echo __('search_placeholder'); ?>" autocomplete="off">
             </div>
             <div class="component-search-dropdown disabled" data-ref="global-search-dropdown">
-                <div class="component-search-dropdown__content" data-ref="global-search-dropdown-content"></div>
+                <div class="component-menu component-menu--w-full component-menu--h-auto active">
+                    <div class="component-menu-list" data-ref="global-search-dropdown-content"></div>
+                </div>
             </div>
         </div>
     </div>

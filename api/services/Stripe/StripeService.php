@@ -14,77 +14,12 @@ class StripeService {
     private $subscriptionRepo;
     private $userRepo;
 
-    private const PRICE_MAP = [
-        1 => [ 
-            'monthly' => 'STRIPE_PRICE_PLUS_MONTHLY',
-            'yearly'  => 'STRIPE_PRICE_PLUS_YEARLY'
-        ],
-        2 => [ 
-            'monthly' => 'STRIPE_PRICE_PRO_MONTHLY',
-            'yearly'  => 'STRIPE_PRICE_PRO_YEARLY'
-        ],
-        3 => [ 
-            'monthly' => 'STRIPE_PRICE_ULTRA_MONTHLY',
-            'yearly'  => 'STRIPE_PRICE_ULTRA_YEARLY'
-        ]
-    ];
-
-
-
     private function resolvePriceId(int $tier, string $billingPeriod): ?string {
-        // 1. Try environment variable mapping
-        $envKey = self::PRICE_MAP[$tier][$billingPeriod] ?? null;
-        if ($envKey && !empty($_ENV[$envKey])) {
-            return $_ENV[$envKey];
-        }
-
-        // 2. Fallback: check subscription_tiers database table
-        try {
-            $db = new \App\Config\Database\DatabaseManager();
-            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
-            $col = ($billingPeriod === 'yearly') ? 'stripe_price_id_yearly' : 'stripe_price_id_monthly';
-            $stmt = $pdo->prepare("SELECT {$col} FROM subscription_tiers WHERE tier_level = ? AND is_active = 1 LIMIT 1");
-            $stmt->execute([$tier]);
-            $priceId = $stmt->fetchColumn();
-            if (!empty($priceId)) {
-                return $priceId;
-            }
-        } catch (\Throwable $e) {
-            Logger::error("Error resolving Stripe price ID from DB", ['tier' => $tier, 'error' => $e->getMessage()]);
-        }
-
-        return null;
+        return SubscriptionPlanConstants::resolvePriceId($tier, $billingPeriod);
     }
 
     private function getPriceToTierMap(): array {
-        $map = [];
-        foreach (self::PRICE_MAP as $tier => $periods) {
-            foreach ($periods as $period => $envKey) {
-                $priceId = $_ENV[$envKey] ?? ($_ENV['STRIPE_PRICE_ADVANCED_' . strtoupper($period)] ?? null);
-                if ($priceId) {
-                    $map[$priceId] = ['tier' => $tier, 'period' => $period];
-                }
-            }
-        }
-
-        try {
-            $db = new \App\Config\Database\DatabaseManager();
-            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
-            $stmt = $pdo->query("SELECT tier_level, stripe_price_id_monthly, stripe_price_id_yearly FROM subscription_tiers WHERE is_active = 1");
-            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-                $tLevel = (int)$row['tier_level'];
-                if (!empty($row['stripe_price_id_monthly'])) {
-                    $map[$row['stripe_price_id_monthly']] = ['tier' => $tLevel, 'period' => 'monthly'];
-                }
-                if (!empty($row['stripe_price_id_yearly'])) {
-                    $map[$row['stripe_price_id_yearly']] = ['tier' => $tLevel, 'period' => 'yearly'];
-                }
-            }
-        } catch (\Throwable $e) {
-            // Silently continue if database is unreachable
-        }
-
-        return $map;
+        return SubscriptionPlanConstants::getPriceToTierMap();
     }
 
     private function getBaseUrl(array $input): string {
@@ -970,17 +905,7 @@ class StripeService {
 
                         $this->subscriptionRepo->updateUserTier($userId, $tier);
 
-                        $subColor = '{"type":"solid","colors":[{"hex":"var(--text-muted)"}]}';
-                        try {
-                            $db = new \App\Config\Database\DatabaseManager();
-                            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
-                            $stmtCol = $pdo->prepare("SELECT color FROM subscription_tiers WHERE tier_level = ? LIMIT 1");
-                            $stmtCol->execute([$tier]);
-                            $rowCol = $stmtCol->fetch(\PDO::FETCH_ASSOC);
-                            if ($rowCol && !empty($rowCol['color'])) {
-                                $subColor = $rowCol['color'];
-                            }
-                        } catch (\Throwable $e) {}
+                        $subColor = SubscriptionPlanConstants::getTierColor($tier);
 
                         $accounts = $this->sessionManager->getLinkedAccounts();
                         if (isset($accounts[$userId])) {
@@ -1083,20 +1008,7 @@ class StripeService {
             'has_feature' => ($maxTokens > 0)
         ];
 
-        $subscriptionColor = '{"type":"solid","colors":[{"hex":"var(--text-muted)"}]}';
-        if ($userTier > 0) {
-            try {
-                $db = new \App\Config\Database\DatabaseManager();
-                $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
-                $stmtCol = $pdo->prepare("SELECT color FROM subscription_tiers WHERE tier_level = ? LIMIT 1");
-                $stmtCol->execute([$userTier]);
-                $rowCol = $stmtCol->fetch(\PDO::FETCH_ASSOC);
-                if ($rowCol && !empty($rowCol['color'])) {
-                    $subscriptionColor = $rowCol['color'];
-                }
-            } catch (\Throwable $e) {}
-        }
-        $subscription['color'] = $subscriptionColor;
+        $subscription['color'] = SubscriptionPlanConstants::getTierColor($userTier);
 
         return [
             'success' => true,

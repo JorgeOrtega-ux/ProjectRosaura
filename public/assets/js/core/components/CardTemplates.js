@@ -322,70 +322,72 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         const fallbackAvatar = `${basePath}/assets/img/fallbacks/avatar-default.png`;
         const avatarUrl = user.avatar_url ? escapeHTML(user.avatar_url) : fallbackAvatar;
         const bannerUrl = user.banner_url ? escapeHTML(user.banner_url) : '';
+        const fallbackBanner = `${basePath}/assets/img/fallbacks/canvas-default.png`;
         const bio = escapeHTML(user.bio || '');
         const followersCount = parseInt(user.followers_count || 0, 10);
         const hasSubscription = parseInt(user.subscription_tier || 0, 10) > 0;
         const subBg = user.subscription_bg ? escapeHTML(user.subscription_bg) : '';
         const isSelf = !!user.is_self;
         const isFollowing = !!user.is_following;
-        const roleName = user.role_name && user.role_name.toLowerCase() !== 'user' && user.role_name.toLowerCase() !== 'usuario' ? escapeHTML(user.role_name) : '';
 
-        const bannerHtml = bannerUrl
-            ? `<img src="${bannerUrl}" alt="${name}" class="component-user-card__banner-img image-lazy-fade" loading="lazy" onload="this.classList.add('image-loaded')">`
-            : `<div class="component-user-card__banner-placeholder"></div>`;
+        const bannerImgHtml = bannerUrl
+            ? `<img src="${bannerUrl}" alt="Banner de ${name}" class="component-gallery-card__image image-lazy-fade" loading="lazy" decoding="async" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${fallbackBanner}'; this.classList.add('image-loaded');">`
+            : `<div class="component-gallery-card__image component-user-card__banner-placeholder"></div>`;
 
         let actionBtnHtml = '';
         if (!isSelf) {
             if (window.activeUserId) {
-                const btnClass = isFollowing ? 'component-button--secondary' : 'component-button--primary';
+                const isFollowingClass = isFollowing ? 'is-following component-button--active' : '';
                 const iconName = isFollowing ? 'person_remove' : 'person_add';
-                const textVal = isFollowing ? (window.__('profile.unfollow') || 'Dejar de seguir') : (window.__('profile.follow') || 'Seguir');
+                const tooltipText = isFollowing ? (window.__('profile.unfollow') || 'Dejar de seguir') : (window.__('profile.follow') || 'Seguir');
                 actionBtnHtml = `
-                    <button type="button" class="component-button ${btnClass} component-button--h32 btn-follow" data-action="toggleUserFollow" data-user-id="${user.id}">
-                        <span class="material-symbols-rounded component-icon--18">${iconName}</span>
-                        <span class="btn-text">${textVal}</span>
+                    <button type="button" class="component-button component-button--icon component-button--h32 btn-follow ${isFollowingClass}" data-action="toggleUserFollow" data-user-id="${user.id}" data-tooltip="${tooltipText}" data-position="bottom">
+                        <span class="material-symbols-rounded component-icon--20">${iconName}</span>
                     </button>
                 `;
             } else {
                 actionBtnHtml = `
-                    <button type="button" class="component-button component-button--primary component-button--h32" data-nav="${basePath}/login">
-                        <span class="material-symbols-rounded component-icon--18">person_add</span>
-                        <span>${window.__('profile.follow') || 'Seguir'}</span>
+                    <button type="button" class="component-button component-button--icon component-button--h32" data-nav="${basePath}/login" data-tooltip="${window.__('profile.follow') || 'Seguir'}" data-position="bottom">
+                        <span class="material-symbols-rounded component-icon--20">person_add</span>
                     </button>
                 `;
             }
         }
 
         return `
-            <div class="component-user-card" data-user-id="${user.id}" data-identifier="${identifier}">
-                <div data-nav="${profileUrl}" class="component-user-card__banner">
-                    ${bannerHtml}
+            <div class="component-gallery-card component-user-card" data-user-id="${user.id}" data-identifier="${identifier}">
+                ${bannerImgHtml}
+
+                <div class="component-badge component-badge--glass component-badge--absolute-tr">
+                    <span class="material-symbols-rounded">group</span>
+                    <span class="user-followers-count">${formatNumber(followersCount)}</span>
+                    <span>${window.__('profile.followers') || 'seguidores'}</span>
                 </div>
-                <div class="component-user-card__body">
-                    <div class="component-user-card__avatar-row">
-                        <div data-nav="${profileUrl}" class="component-avatar component-avatar--56 ${hasSubscription && subBg ? 'subscription-dynamic' : ''}" ${hasSubscription && subBg ? `data-sub-bg="${subBg}" style="--active-subscription-bg: ${subBg};"` : ''}>
-                            <img src="${avatarUrl}" alt="${name}" class="image-lazy-fade" loading="lazy" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${fallbackAvatar}'; this.classList.add('image-loaded');">
-                        </div>
-                        <div class="component-user-card__actions">
-                            ${actionBtnHtml}
-                        </div>
-                    </div>
-                    <div data-nav="${profileUrl}" class="component-user-card__info">
-                        <div class="component-user-card__name-row">
-                            <h3 class="component-user-card__name">${name}</h3>
-                            <span class="component-user-card__handle">@${identifier}</span>
-                            ${roleName ? `<span class="component-badge component-badge--accent">${roleName}</span>` : ''}
-                        </div>
-                        ${bio ? `<p class="component-user-card__bio">${bio}</p>` : ''}
-                        <div class="component-user-card__stats">
-                            <span class="component-badge">
-                                <span class="material-symbols-rounded">group</span>
-                                <span class="user-followers-count">${formatNumber(followersCount)}</span>
-                                <span>${window.__('profile.followers') || 'Seguidores'}</span>
-                            </span>
+
+                <div data-nav="${profileUrl}" class="component-gallery-link component-user-card__link">
+                    <div class="component-user-card__content">
+                        <div class="component-user-card__header">
+                            <div class="component-avatar component-avatar--40 ${hasSubscription && subBg ? 'subscription-dynamic' : ''}" ${hasSubscription && subBg ? `data-sub-bg="${subBg}" style="--active-subscription-bg: ${subBg};"` : ''}>
+                                <img src="${avatarUrl}" alt="${name}" class="image-lazy-fade" loading="lazy" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${fallbackAvatar}'; this.classList.add('image-loaded');">
+                            </div>
+                            <div class="component-user-card__meta">
+                                <div class="component-user-card__name-row">
+                                    <h3 class="component-user-card__name">${name}</h3>
+                                    <span class="component-user-card__handle">@${identifier}</span>
+                                </div>
+                                ${bio ? `<p class="component-user-card__bio">${bio}</p>` : ''}
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                ${actionBtnHtml ? `
+                <div class="component-gallery-actions-wrapper component-dropdown-wrapper">
+                    <div class="component-gallery-actions">
+                        ${actionBtnHtml}
+                    </div>
+                </div>
+                ` : ''}
             </div>
         `;
     },
@@ -444,6 +446,35 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                         <span>${name}</span>
                     </div>
                     <span class="component-search-dropdown-item__sub">${subText}</span>
+                </div>
+                <span class="material-symbols-rounded component-search-dropdown-item__arrow">navigate_next</span>
+            </div>
+        `;
+    },
+
+    publicationSearchItem: (pub, config = {}) => {
+        const title = escapeHTML(pub.title || 'Publicación');
+        const uuid = escapeHTML(pub.uuid || '');
+        const basePath = config.basePath || '';
+        const pubUrl = `${basePath}/publication/${uuid}`;
+        const fallbackThumb = `${basePath}/assets/img/fallbacks/canvas-default.png`;
+        const thumbUrl = pub.thumbnail_url || pub.image_url ? escapeHTML(pub.thumbnail_url || pub.image_url) : fallbackThumb;
+        const authorName = escapeHTML(pub.author && pub.author.username ? pub.author.username : 'Usuario');
+        const likesCount = parseInt(pub.likes_count || 0, 10);
+
+        return `
+            <div class="component-search-dropdown-item component-search-dropdown-item--publication" data-nav="${pubUrl}">
+                <img src="${thumbUrl}" alt="${title}" class="component-search-dropdown-item__thumb image-lazy-fade" loading="lazy" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${fallbackThumb}'; this.classList.add('image-loaded');">
+                <div class="component-search-dropdown-item__text">
+                    <div class="component-search-dropdown-item__title">
+                        <span>${title}</span>
+                    </div>
+                    <div class="component-search-dropdown-item__meta">
+                        <span>${authorName}</span>
+                        <span>•</span>
+                        <span class="material-symbols-rounded component-icon--14">favorite</span>
+                        <span>${formatNumber(likesCount)}</span>
+                    </div>
                 </div>
                 <span class="material-symbols-rounded component-search-dropdown-item__arrow">navigate_next</span>
             </div>

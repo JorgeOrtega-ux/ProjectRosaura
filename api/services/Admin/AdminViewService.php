@@ -204,12 +204,10 @@ class AdminViewService {
             $sql = "
                 SELECT 
                     u.id, u.uuid, u.username, u.email, u.profile_picture, u.created_at, u.subscription_tier,
-                    st.color as subscription_color,
                     (SELECT is_suspended FROM {$tblUserRestr} ur WHERE ur.user_id = u.id AND ur.is_suspended = 1 AND (ur.suspension_end_date IS NULL OR ur.suspension_end_date > NOW()) LIMIT 1) as is_suspended,
                     (SELECT suspension_type FROM {$tblUserRestr} ur WHERE ur.user_id = u.id AND ur.is_suspended = 1 AND (ur.suspension_end_date IS NULL OR ur.suspension_end_date > NOW()) LIMIT 1) as suspension_type,
                     (SELECT suspension_end_date FROM {$tblUserRestr} ur WHERE ur.user_id = u.id AND ur.is_suspended = 1 AND (ur.suspension_end_date IS NULL OR ur.suspension_end_date > NOW()) LIMIT 1) as restriction_expires_at
                 FROM {$tblUsers} u
-                LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
                 {$whereClause}
                 ORDER BY u.id DESC
                 LIMIT :limit OFFSET :offset
@@ -256,7 +254,8 @@ class AdminViewService {
                         $uRow['role_ids'] = null;
                         $uRow['role_names'] = null;
                     }
-                    $uRow['sub_bg'] = self::parseSubscriptionColor($uRow['subscription_color'] ?? null);
+                    $uRow['subscription_color'] = SubscriptionPlanConstants::getTierColor((int)($uRow['subscription_tier'] ?? 0));
+                    $uRow['sub_bg'] = self::parseSubscriptionColor($uRow['subscription_color']);
                 }
                 unset($uRow);
             }
@@ -490,7 +489,7 @@ class AdminViewService {
                     ml.admin_id,
                     u_adm.username AS admin_username,
                     u_adm.profile_picture AS admin_profile_picture,
-                    st_adm.color AS admin_subscription_color,
+                    u_adm.subscription_tier AS admin_subscription_tier,
                     r_adm.color AS admin_role_color,
                     r_adm.name AS admin_role,
                     NULL AS ip_address,
@@ -503,8 +502,6 @@ class AdminViewService {
                 LEFT JOIN users u_adm ON ml.admin_id = u_adm.id
                 LEFT JOIN user_roles ur_adm ON u_adm.id = ur_adm.user_id
                 LEFT JOIN roles r_adm ON ur_adm.role_id = r_adm.id
-                LEFT JOIN subscriptions s_adm ON u_adm.id = s_adm.user_id AND s_adm.status = 'active'
-                LEFT JOIN subscription_tiers st_adm ON s_adm.subscription_tier_id = st_adm.id
                 WHERE ml.user_id = :uid {$modFilter}
             ";
         }
@@ -527,7 +524,7 @@ class AdminViewService {
                     NULL AS admin_id,
                     'user_action' AS admin_username,
                     NULL AS admin_profile_picture,
-                    NULL AS admin_subscription_color,
+                    NULL AS admin_subscription_tier,
                     NULL AS admin_role_color,
                     'user' AS admin_role,
                     pcl.ip_address,
@@ -553,7 +550,7 @@ class AdminViewService {
                     NULL AS admin_id,
                     'user_action' AS admin_username,
                     NULL AS admin_profile_picture,
-                    NULL AS admin_subscription_color,
+                    NULL AS admin_subscription_tier,
                     NULL AS admin_role_color,
                     'user' AS admin_role,
                     NULL AS ip_address,
@@ -579,7 +576,7 @@ class AdminViewService {
                     NULL AS admin_id,
                     'user_action' AS admin_username,
                     NULL AS admin_profile_picture,
-                    NULL AS admin_subscription_color,
+                    NULL AS admin_subscription_tier,
                     NULL AS admin_role_color,
                     'user' AS admin_role,
                     at.ip_address,
@@ -620,6 +617,14 @@ class AdminViewService {
                 $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
                 $stmt->execute();
                 $historyItems = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+                foreach ($historyItems as &$hItem) {
+                    if (isset($hItem['admin_subscription_tier']) && $hItem['admin_subscription_tier'] !== null) {
+                        $hItem['admin_subscription_color'] = SubscriptionPlanConstants::getTierColor((int)$hItem['admin_subscription_tier']);
+                    } else {
+                        $hItem['admin_subscription_color'] = null;
+                    }
+                }
+                unset($hItem);
             } catch (\Throwable $e) {
                 Logger::error("getUserHistoryData historyItems error: " . $e->getMessage(), ['exception' => $e]);
             }
@@ -648,51 +653,25 @@ class AdminViewService {
         $userPerms = $_SESSION['user_permissions'] ?? [];
         $canManageTiers = in_array(PermissionsConstants::MANAGE_SUBSCRIPTIONS, $userPerms);
 
-        $db = $this->dbManager;
-        $pdo = $db->getConnection(DB::CONN_IDENTITY);
-
-        $tblTiers = 'subscription_tiers';
         $searchQuery = trim($searchQuery ?? '');
         $limit = 25;
         if ($page < 1) $page = 1;
 
-        $searchCondition = "";
-        $searchParams = [];
+        $allTiers = SubscriptionPlanConstants::getAllTiers();
+
         if ($searchQuery !== '') {
-            $searchCondition = "WHERE name LIKE :search";
-            $searchParams[':search'] = '%' . $searchQuery . '%';
+            $allTiers = array_values(array_filter($allTiers, function($t) use ($searchQuery) {
+                return stripos($t['name'] ?? '', $searchQuery) !== false;
+            }));
         }
 
-        $totalTiers = 0;
-        try {
-            $stmtCount = $pdo->prepare("SELECT COUNT(id) FROM {$tblTiers} {$searchCondition}");
-            foreach ($searchParams as $key => $val) {
-                $stmtCount->bindValue($key, $val);
-            }
-            $stmtCount->execute();
-            $totalTiers = (int)$stmtCount->fetchColumn();
-        } catch (\Throwable $e) {
-            Logger::error("getManageSubscriptionsData totalTiers error: " . $e->getMessage(), ['exception' => $e]);
-        }
-
-        $totalPages = ceil($totalTiers / $limit);
+        $totalTiers = count($allTiers);
+        $totalPages = (int)ceil($totalTiers / $limit);
         if ($totalPages < 1) $totalPages = 1;
         if ($page > $totalPages) $page = $totalPages;
         $offset = ($page - 1) * $limit;
 
-        $tiers = [];
-        try {
-            $stmt = $pdo->prepare("SELECT id, uuid, is_active, is_popular, name, color, tier_level, created_at FROM {$tblTiers} {$searchCondition} ORDER BY tier_level ASC LIMIT :limit OFFSET :offset");
-            foreach ($searchParams as $key => $val) {
-                $stmt->bindValue($key, $val);
-            }
-            $stmt->bindValue(':limit', (int)$limit, \PDO::PARAM_INT);
-            $stmt->bindValue(':offset', (int)$offset, \PDO::PARAM_INT);
-            $stmt->execute();
-            $tiers = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        } catch (\Throwable $e) {
-            Logger::error("getManageSubscriptionsData tiers error: " . $e->getMessage(), ['exception' => $e]);
-        }
+        $tiers = array_slice($allTiers, $offset, $limit);
 
         return [
             'canManageTiers' => $canManageTiers,
@@ -759,22 +738,13 @@ class AdminViewService {
             return ['error' => __('err_unauthorized')];
         }
 
-        $db = $this->dbManager;
-        $pdo = $db->getConnection(DB::CONN_IDENTITY);
-
         $isEdit = false;
         $tier = null;
 
         if (!empty($targetUuid)) {
-            try {
-                $stmt = $pdo->prepare("SELECT * FROM subscription_tiers WHERE uuid = :uuid LIMIT 1");
-                $stmt->execute(['uuid' => $targetUuid]);
-                $tier = $stmt->fetch(\PDO::FETCH_ASSOC);
-                if ($tier) {
-                    $isEdit = true;
-                }
-            } catch (\Throwable $e) {
-                Logger::error("getSubscriptionBuilderData error: " . $e->getMessage(), ['exception' => $e]);
+            $tier = SubscriptionPlanConstants::getTierByUuid($targetUuid);
+            if ($tier) {
+                $isEdit = true;
             }
         }
 

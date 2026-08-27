@@ -995,6 +995,42 @@ html.dark-theme .component-menu-header.shadow {
     border: 1px solid var(--border-color);
 }
 
+.component-menu-link--danger {
+    color: var(--action-danger);
+    border: 1px solid var(--action-danger) !important;
+    background-color: transparent;
+}
+
+.component-menu-link--danger:hover,
+.component-menu-link--danger.active {
+    background-color: var(--action-danger-hover) !important;
+    border-color: var(--action-danger) !important;
+    color: var(--action-danger);
+}
+
+.component-menu-link--danger .material-symbols-rounded {
+    color: var(--action-danger);
+}
+
+.component-menu-category-title,
+.component-menu-category-header {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+    padding: 10px 12px 4px 12px;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    line-height: 1;
+}
+
+.component-menu-category-title:first-child,
+.component-menu-category-header:first-child {
+    padding-top: 2px;
+}
+
 .component-menu-divider {
     width: 100%;
     height: 1px;

@@ -678,15 +678,15 @@ class CanvasViewService {
 
                 $inQuery = implode(',', array_fill(0, count($userIds), '?'));
                 $stmtUsers = $pdoIdentity->prepare("
-                    SELECT u.id, u.uuid, u.username, u.profile_picture, st.color as subscription_color
+                    SELECT u.id, u.uuid, u.username, u.profile_picture, u.subscription_tier
                     FROM users u
-                    LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
                     WHERE u.id IN ({$inQuery})
                 ");
                 $stmtUsers->execute($userIds);
 
                 while ($row = $stmtUsers->fetch(\PDO::FETCH_ASSOC)) {
-                    $row['sub_bg'] = self::parseSubscriptionColor($row['subscription_color'] ?? null);
+                    $row['subscription_color'] = SubscriptionPlanConstants::getTierColor((int)($row['subscription_tier'] ?? 0));
+                    $row['sub_bg'] = self::parseSubscriptionColor($row['subscription_color']);
                     $userDetails[$row['id']] = $row;
                 }
             } catch (\Throwable $e) {
@@ -1166,9 +1166,8 @@ class CanvasViewService {
             $connNameIdentity = defined('\App\Core\System\DatabaseConstants::CONN_IDENTITY') ? \App\Core\System\DatabaseConstants::CONN_IDENTITY : 'identity';
             $pdoIdentity = $db->getConnection($connNameIdentity);
             $stmtUser = $pdoIdentity->prepare("
-                SELECT u.id, u.username, u.profile_picture, st.color as subscription_color 
+                SELECT u.id, u.username, u.profile_picture, u.subscription_tier 
                 FROM users u
-                LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
                 WHERE u.uuid = :uuid LIMIT 1
             ");
             $stmtUser->execute(['uuid' => $targetUserUuid]);
@@ -1180,7 +1179,8 @@ class CanvasViewService {
                 if (!empty($userData['profile_picture'])) {
                     $targetAvatar = $userData['profile_picture'];
                 }
-                $targetSubscriptionColor = self::parseSubscriptionColor($userData['subscription_color'] ?? null);
+                $userData['subscription_color'] = SubscriptionPlanConstants::getTierColor((int)($userData['subscription_tier'] ?? 0));
+                $targetSubscriptionColor = self::parseSubscriptionColor($userData['subscription_color']);
             } else {
                 return ['error' => __('err_invalid_user')];
             }
@@ -1731,14 +1731,14 @@ class CanvasViewService {
                 $pdoIdentity = $db->getConnection($connNameIdentity);
                 $inQueryUsers = implode(',', array_fill(0, count($pageUserIds), '?'));
                 $stmtUsers = $pdoIdentity->prepare("
-                    SELECT u.id, u.uuid, u.username, u.email, u.profile_picture, st.color as subscription_color
+                    SELECT u.id, u.uuid, u.username, u.email, u.profile_picture, u.subscription_tier
                     FROM users u
-                    LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
                     WHERE u.id IN ({$inQueryUsers})
                 ");
                 $stmtUsers->execute($pageUserIds);
                 while ($row = $stmtUsers->fetch(\PDO::FETCH_ASSOC)) {
-                    $row['sub_bg'] = self::parseSubscriptionColor($row['subscription_color'] ?? null);
+                    $row['subscription_color'] = SubscriptionPlanConstants::getTierColor((int)($row['subscription_tier'] ?? 0));
+                    $row['sub_bg'] = self::parseSubscriptionColor($row['subscription_color']);
                     $userDetails[$row['id']] = $row;
                 }
             }

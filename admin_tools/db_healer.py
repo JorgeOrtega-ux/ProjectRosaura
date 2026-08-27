@@ -109,7 +109,6 @@ def run_database_healer(project_root):
         ('db_identity', 'user_flags', 'idx_uf_created', '`created_at` DESC'),
         ('db_identity', 'user_preferences', 'idx_up_created', '`created_at` DESC'),
         ('db_identity', 'roles', 'idx_roles_created', '`created_at` DESC'),
-        ('db_identity', 'subscription_tiers', 'idx_st_created', '`created_at` DESC'),
         ('db_identity', 'subscriptions', 'idx_subs_created', '`created_at` DESC'),
         
         # db_canvases

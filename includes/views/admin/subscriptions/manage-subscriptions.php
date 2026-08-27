@@ -100,7 +100,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
                     </thead>
                     <tbody data-ref="tiers-table-body">
                         <?php foreach ($tiers as $tier): 
-                            $colorData = json_decode($tier['color'], true);
+                            $colorData = is_array($tier['color'] ?? null) ? $tier['color'] : (json_decode($tier['color'] ?? '[]', true) ?: []);
                             if (!$colorData || !isset($colorData['colors'])) {
                                 $colorData = ['type' => 'solid', 'colors' => [['hex' => '#808080', 'stop' => 0]]];
                             }
@@ -125,8 +125,8 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
 
                             $rawName = $tier['name'] ?? '';
                             
-                            $createdAt = explode(' ', $tier['created_at'])[0];
-                            $isSystemFlag = ($tier['id'] <= 1) ? 1 : 0;
+                            $createdAt = !empty($tier['created_at']) ? explode(' ', $tier['created_at'])[0] : __('lbl_system_config', [], 'Configuración');
+                            $isSystemFlag = 1;
                         ?>
                         <tr class="component-table-row clickable" 
                             data-action="selectTierRow" 

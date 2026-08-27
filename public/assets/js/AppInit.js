@@ -215,6 +215,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let _searchDebounceTimer = null;
     let _searchAbortController = null;
     const _searchApiService = new ApiService();
+    const _searchClientCache = new Map();
+    let _searchLastResults = { query: '', users: [], canvases: [], publications: [] };
 
     const hideSearchDropdown = () => {
         const dropdown = document.querySelector('[data-ref="global-search-dropdown"]');
@@ -223,11 +225,96 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const renderSearchDropdown = (query, data) => {
+        const dropdown = document.querySelector('[data-ref="global-search-dropdown"]');
+        const dropdownContent = document.querySelector('[data-ref="global-search-dropdown-content"]');
+        if (!dropdown || !dropdownContent) return;
+
+        const allUsers = data.users || [];
+        const allCanvases = data.canvases || data.data || [];
+        const allPublications = data.publications || [];
+        const basePath = window.AppBasePath || '';
+
+        const maxTotal = 8;
+        const items = [];
+
+        // Users
+        for (const u of allUsers) {
+            const identifier = u.identifier || u.username;
+            const name = u.username && u.username !== identifier ? `${u.username} (@${identifier})` : `@${identifier}`;
+            const targetUrl = `${basePath}/@${identifier}`;
+            items.push({
+                text: name,
+                url: targetUrl
+            });
+        }
+
+        // Canvases
+        for (const c of allCanvases) {
+            const name = c.name || 'Lienzo';
+            const targetUrl = `${basePath}/design/${c.uuid}`;
+            items.push({
+                text: name,
+                url: targetUrl
+            });
+        }
+
+        // Publications
+        for (const p of allPublications) {
+            const title = p.title || 'Publicación';
+            const targetUrl = `${basePath}/publication/${p.uuid}`;
+            items.push({
+                text: title,
+                url: targetUrl
+            });
+        }
+
+        const visibleItems = items.slice(0, maxTotal);
+
+        if (visibleItems.length === 0) {
+            dropdownContent.innerHTML = `
+                <div class="component-menu-link" style="cursor: default; opacity: 0.6;">
+                    <div class="component-menu-link-icon">
+                        <span class="material-symbols-rounded">search_off</span>
+                    </div>
+                    <div class="component-menu-link-text">
+                        <span>${window.__('search_empty_no_results_title') || 'Sin resultados'}</span>
+                    </div>
+                </div>
+            `;
+            dropdown.classList.remove('disabled');
+            return;
+        }
+
+        const escapeFn = (str) => {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        };
+
+        let html = '';
+        for (const it of visibleItems) {
+            const escapedText = escapeFn(it.text);
+            html += `
+                <div class="component-menu-link nav-item" data-nav="${it.url}">
+                    <div class="component-menu-link-icon">
+                        <span class="material-symbols-rounded">search</span>
+                    </div>
+                    <div class="component-menu-link-text">
+                        <span>${escapedText}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        dropdownContent.innerHTML = html;
+        dropdown.classList.remove('disabled');
+    };
+
     document.body.addEventListener('input', (e) => {
         if (e.target.matches('[data-ref="global-search-input"]')) {
             const query = e.target.value.trim();
             const dropdown = document.querySelector('[data-ref="global-search-dropdown"]');
-            const dropdownContent = document.querySelector('[data-ref="global-search-dropdown-content"]');
 
             if (_searchDebounceTimer) {
                 clearTimeout(_searchDebounceTimer);
@@ -244,77 +331,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // Instant Client Cache (0ms)
+            const cached = _searchClientCache.get(query);
+            if (cached && (Date.now() - cached.timestamp < 30000)) {
+                _searchLastResults = { query, ...cached.data };
+                renderSearchDropdown(query, _searchLastResults);
+                return;
+            }
+
             _searchDebounceTimer = setTimeout(async () => {
                 _searchAbortController = new AbortController();
                 try {
                     const res = await _searchApiService.post(ApiRoutes.Search.Query, {
                         q: query,
-                        page: 1,
-                        limit: 5
+                        autocomplete: true,
+                        limit: 8
                     }, _searchAbortController.signal);
 
-                    if (!dropdown || !dropdownContent) return;
-
                     if (res && res.success) {
-                        const users = res.users || [];
-                        const canvases = res.data || [];
-
-                        if (users.length === 0 && canvases.length === 0) {
-                            dropdownContent.innerHTML = `
-                                <div class="component-search-dropdown__empty">
-                                    <span>${window.__('search_empty_no_results_title') || 'Sin resultados'}</span>
-                                </div>
-                            `;
-                            dropdown.classList.remove('disabled');
-                            return;
-                        }
-
-                        let html = '';
-                        if (users.length > 0) {
-                            html += `
-                                <div class="component-search-dropdown__group">
-                                    <div class="component-search-dropdown__group-title">
-                                        <span class="material-symbols-rounded">group</span>
-                                        <span>${window.__('search_section_users') || 'Usuarios'}</span>
-                                    </div>
-                                    <div class="component-search-dropdown__group-list">
-                                        ${users.map(u => CardTemplates.userSearchItem(u, { basePath: window.AppBasePath || '' })).join('')}
-                                    </div>
-                                </div>
-                            `;
-                        }
-
-                        if (canvases.length > 0) {
-                            html += `
-                                <div class="component-search-dropdown__group">
-                                    <div class="component-search-dropdown__group-title">
-                                        <span class="material-symbols-rounded">palette</span>
-                                        <span>${window.__('search_section_canvases') || 'Lienzos'}</span>
-                                    </div>
-                                    <div class="component-search-dropdown__group-list">
-                                        ${canvases.map(c => CardTemplates.canvasSearchItem(c, { basePath: window.AppBasePath || '' })).join('')}
-                                    </div>
-                                </div>
-                            `;
-                        }
-
-                        const viewAllText = (window.__('search_view_all_results', { query: query }) || `Ver todos los resultados para "${query}"`).replace(':query', query);
-                        html += `
-                            <div class="component-search-dropdown__footer nav-item" data-nav="/search?q=${encodeURIComponent(query)}">
-                                <span class="material-symbols-rounded">search</span>
-                                <span>${viewAllText}</span>
-                            </div>
-                        `;
-
-                        dropdownContent.innerHTML = html;
-                        dropdown.classList.remove('disabled');
+                        const searchData = {
+                            users: res.users || [],
+                            canvases: res.data || [],
+                            publications: res.publications || []
+                        };
+                        _searchClientCache.set(query, { timestamp: Date.now(), data: searchData });
+                        _searchLastResults = { query, ...searchData };
+                        renderSearchDropdown(query, _searchLastResults);
                     }
                 } catch (err) {
                     if (err.name !== 'AbortError') {
                         hideSearchDropdown();
                     }
                 }
-            }, 250);
+            }, 120);
         }
     });
 
@@ -335,6 +384,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.body.addEventListener('click', (e) => {
+        if (e.target.closest('[data-ref="global-search-dropdown"] [data-nav]')) {
+            hideSearchDropdown();
+            return;
+        }
+
         if (!e.target.closest('[data-ref="global-search-container"]')) {
             hideSearchDropdown();
         }

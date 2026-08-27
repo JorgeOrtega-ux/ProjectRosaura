@@ -13,7 +13,7 @@ $canJoinCanvas = in_array('join_canvas', $userPermissions);
         <div class="component-menu-list">
             
             <?php if ($canCreateCanvas): ?>
-            <div class="component-menu-link nav-item" data-nav="<?php echo APP_URL; ?>/canvases/create">
+            <div class="component-menu-link nav-item" data-action="openCreateCanvasModal">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">add_circle</span>
                 </div>

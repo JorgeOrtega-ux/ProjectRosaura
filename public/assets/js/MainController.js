@@ -340,6 +340,12 @@ export class MainController {
             else if (action === 'switchAccount') { e.preventDefault(); this.accountManager.handleSwitchAccount(btn.getAttribute('data-id'), btn); }
             else if (action === 'logoutAll') { e.preventDefault(); this.accountManager.handleLogoutAll(btn); }
             else if (action === 'openJoinCanvasModal') { e.preventDefault(); this.accountManager.handleOpenJoinCanvasModal(btn); }
+            else if (action === 'openCreateCanvasModal') {
+                e.preventDefault();
+                if (window.modalSystem) {
+                    window.modalSystem.show('createCanvasModal');
+                }
+            }
             
             else if (action === 'showSubMenu') {
                 e.preventDefault();

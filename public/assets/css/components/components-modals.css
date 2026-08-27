@@ -168,60 +168,10 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     height: 100%;
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 16px;
+    padding: 0 12px;
     border-right: 1px solid var(--border-color);
     box-sizing: border-box;
     flex-shrink: 0;
-}
-
-.component-modal-settings-header-left .component-modal-header-icon,
-.component-modal-members-top-left .component-modal-header-icon {
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg-hover-light, rgba(255, 255, 255, 0.05));
-    border-radius: 8px;
-    flex-shrink: 0;
-}
-
-.component-modal-settings-header-left .component-modal-header-icon span,
-.component-modal-members-top-left .component-modal-header-icon span {
-    font-size: 18px;
-    color: var(--text-primary);
-}
-
-.component-modal-settings-header-left .component-modal-header-text,
-.component-modal-members-top-left .component-modal-header-text {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    overflow: hidden;
-}
-
-.component-modal-settings-header-left .component-modal-title,
-.component-modal-members-top-left .component-modal-title {
-    font-size: 0.88rem;
-    font-weight: 600;
-    margin: 0;
-    color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.2;
-}
-
-.component-modal-settings-header-left .component-modal-desc,
-.component-modal-members-top-left .component-modal-desc {
-    font-size: 0.68rem;
-    color: var(--text-muted);
-    margin: 1px 0 0 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.2;
 }
 
 .component-modal-settings-header-right,
@@ -232,9 +182,25 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px !important;
+    padding: 0 12px !important;
     gap: 8px;
     box-sizing: border-box;
+}
+
+.component-modal-settings-header-right .component-top-left,
+.component-modal-members-top-right .component-top-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.component-modal-settings-header-right .component-top-right,
+.component-modal-members-top-right .component-top-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
 }
 
 .component-modal-settings-header__search,
@@ -301,21 +267,39 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     gap: 0 !important;
     box-sizing: border-box;
     position: relative;
-    overflow-y: auto;
+    overflow: hidden;
     flex-shrink: 0;
 }
 
+.component-modal-settings-sidebar-top,
 .component-modal-settings-tabs,
 .component-modal-members-nav {
+    flex: 1 1 auto;
     display: flex;
     flex-direction: column;
     gap: 4px;
     width: 100%;
-    padding: 12px 12px;
+    padding: 12px;
     box-sizing: border-box;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.component-modal-settings-sidebar-bottom {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    padding: 12px;
+    border-top: 1px solid var(--border-color);
+    box-sizing: border-box;
+    margin-top: auto;
 }
 
 .component-modal-settings-tabs .component-menu-link,
+.component-modal-settings-sidebar .component-menu-link,
 .component-modal-members-nav .component-menu-link {
     display: flex;
     align-items: center;
@@ -329,6 +313,8 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
 
 .component-modal-settings-tabs .component-menu-link:hover,
 .component-modal-settings-tabs .component-menu-link.active,
+.component-modal-settings-sidebar .component-menu-link:hover,
+.component-modal-settings-sidebar .component-menu-link.active,
 .component-modal-members-nav .component-menu-link:hover,
 .component-modal-members-nav .component-menu-link.active {
     background-color: var(--bg-hover-light, var(--surface-hover));
@@ -640,6 +626,7 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
         overscroll-behavior-x: contain;
     }
 
+    .component-modal-settings-sidebar-top,
     .component-modal-settings-tabs,
     .component-modal-members-nav {
         flex-direction: row;
@@ -648,7 +635,22 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
         width: max-content;
     }
 
+    .component-modal-settings-sidebar-bottom {
+        flex-direction: row;
+        padding: 6px 8px;
+        gap: 6px;
+        border-top: none;
+        border-left: 1px solid var(--border-color);
+        margin-top: 0;
+        width: max-content;
+    }
+
+    .component-modal-settings-sidebar .component-menu-category-title {
+        display: none;
+    }
+
     .component-modal-settings-tabs .component-menu-link,
+    .component-modal-settings-sidebar .component-menu-link,
     .component-modal-members-nav .component-menu-link {
         width: auto;
         min-width: max-content;
@@ -1557,6 +1559,19 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     width: 100%;
     box-sizing: border-box;
     padding: 4px;
+}
+
+.component-modal-template-grid--wide {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 2px;
+}
+
+.component-modal-template-grid--wide .component-modal-template-card {
+    height: 125px;
 }
 
 .component-modal-template-card {

@@ -6,6 +6,7 @@ use App\Config\Database\DatabaseManager;
 use App\Core\Interfaces\NotificationRepositoryInterface;
 use App\Core\Helpers\Utils;
 use App\Core\System\Logger;
+use App\Core\System\SubscriptionPlanConstants;
 use App\Core\System\DatabaseConstants as DB;
 use PDO;
 
@@ -56,11 +57,10 @@ class NotificationRepository implements NotificationRepositoryInterface {
             $sql = "
                 SELECT n.id, n.user_id, n.actor_id, n.type, n.target_id, n.target_uuid, n.data, n.is_read, n.created_at,
                        u.username as actor_username, u.identifier as actor_identifier, u.profile_picture as actor_avatar,
-                       u.subscription_tier as actor_tier, st.color as actor_color,
+                       u.subscription_tier as actor_tier,
                        (SELECT r.name FROM " . DB::TBL_USER_ROLES . " ur JOIN " . DB::TBL_ROLES . " r ON ur.role_id = r.id WHERE ur.user_id = u.id ORDER BY r.id DESC LIMIT 1) as actor_role
                 FROM " . DB::TBL_NOTIFICATIONS . " n
                 LEFT JOIN " . DB::TBL_USERS . " u ON n.actor_id = u.id
-                LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
                 WHERE n.user_id = :user_id
                 ORDER BY n.created_at DESC
                 LIMIT :limit_val OFFSET :offset_val
@@ -80,7 +80,8 @@ class NotificationRepository implements NotificationRepositoryInterface {
                 $actorName = $r['actor_username'] ?? 'Usuario';
                 $actorIdentifier = $r['actor_identifier'] ?? strtolower(str_replace(' ', '_', $actorName));
                 $actorAvatar = Utils::getS3PublicUrl($r['actor_avatar'] ?? '');
-                $actorSubBg = Utils::formatSubscriptionBg($r['actor_color'] ?? '');
+                $actorColor = SubscriptionPlanConstants::getTierColor((int)($r['actor_tier'] ?? 0));
+                $actorSubBg = Utils::formatSubscriptionBg($actorColor);
                 $title = $data['title'] ?? '';
 
                 $targetUrl = '/';

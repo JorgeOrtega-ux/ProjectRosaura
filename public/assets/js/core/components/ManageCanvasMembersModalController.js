@@ -195,6 +195,16 @@ export class ManageCanvasMembersModalController {
             return;
         }
 
+        // 1.1 Upgrade Modal trigger
+        const btnUpgrade = e.target.closest('[data-action="openUpgradeModal"]') || e.target.closest('[data-modal-action="openUpgradeModal"]');
+        if (btnUpgrade) {
+            e.preventDefault();
+            if (window.modalSystem) {
+                window.modalSystem.show('upgradePlansModal');
+            }
+            return;
+        }
+
         // 2. Multi-step Resize Actions
         const resizeTypeOpt = e.target.closest('[data-action="selectResizeTypeOption"]');
         if (resizeTypeOpt) {
@@ -754,17 +764,14 @@ export class ManageCanvasMembersModalController {
         this.resetStep = 'step-1';
         this.closeAllDropdowns();
 
-        const tabsContainer = this.modalBox.querySelector('[data-ref="canvas-members-modal-tabs"]');
-        if (tabsContainer) {
-            const links = tabsContainer.querySelectorAll('[data-action="switchMembersModalTab"]');
-            links.forEach(link => {
-                if (link.getAttribute('data-tab') === tabName) {
-                    link.classList.add('active');
-                } else {
-                    link.classList.remove('active');
-                }
-            });
-        }
+        const links = this.modalBox.querySelectorAll('.component-modal-settings-sidebar [data-action="switchMembersModalTab"]');
+        links.forEach(link => {
+            if (link.getAttribute('data-tab') === tabName) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
 
         const tabContents = this.modalBox.querySelectorAll('.component-modal-tab-content');
         tabContents.forEach(tc => {
@@ -777,12 +784,6 @@ export class ManageCanvasMembersModalController {
             }
         });
 
-        // Search vs Title Header toggle
-        const searchContainer = this.modalBox.querySelector('[data-ref="modal-search-container"]');
-        const titleContainer = this.modalBox.querySelector('[data-ref="modal-section-title-container"]');
-        const titleIcon = this.modalBox.querySelector('[data-ref="modal-section-title-icon"]');
-        const titleText = this.modalBox.querySelector('[data-ref="modal-section-title-text"]');
-
         const t = (k, f) => {
             if (typeof window.__ === 'function') {
                 const r = window.__(k);
@@ -791,29 +792,44 @@ export class ManageCanvasMembersModalController {
             return f || k;
         };
 
-        if (tabName === 'resize' || tabName === 'reset' || tabName === 'edit' || tabName === 'general' || tabName === 'danger' || tabName === 'critical') {
-            if (searchContainer) searchContainer.classList.add('disabled');
-            if (titleContainer) titleContainer.classList.remove('disabled');
+        const tabTitles = {
+            edit: t('canvas_edit_title', 'Editar configuración'),
+            general: t('canvas_edit_title', 'Editar configuración'),
+            resize: t('canvas_resize_title', 'Redimensionar lienzo'),
+            reset: t('canvas_resets_title', 'Reiniciar lienzo'),
+            members: t('tab_members_title', 'Gestionar miembros'),
+            requests: t('tab_requests_title', 'Gestionar solicitudes'),
+            invites: t('lbl_invites_management', 'Gestionar invitaciones'),
+            live: t('tab_live_presence', 'Colaboradores en vivo'),
+            roles: t('tab_roles_title', 'Gestionar roles'),
+            sanctions: t('tab_sanctions_title', 'Gestionar sanciones'),
+            danger: t('tab_danger_zone', 'Configuración crítica'),
+            critical: t('tab_danger_zone', 'Configuración crítica')
+        };
 
-            if (tabName === 'danger' || tabName === 'critical') {
-                if (titleIcon) titleIcon.textContent = 'warning';
-                if (titleText) titleText.textContent = t('tab_danger_zone', 'Opciones Críticas');
-            } else if (tabName === 'edit' || tabName === 'general') {
-                if (titleIcon) titleIcon.textContent = 'tune';
-                if (titleText) titleText.textContent = t('canvas_edit_title', 'Editar Lienzo');
-                this.loadEditData();
-            } else if (tabName === 'resize') {
-                if (titleIcon) titleIcon.textContent = 'aspect_ratio';
-                if (titleText) titleText.textContent = t('canvas_resize_title', 'Expandir Lienzo');
-                this.loadResizeSettings();
-            } else {
-                if (titleIcon) titleIcon.textContent = 'restart_alt';
-                if (titleText) titleText.textContent = t('canvas_resets_title', 'Reiniciar Lienzo');
-                this.loadResetSettings();
-            }
-        } else {
-            if (searchContainer) searchContainer.classList.remove('disabled');
-            if (titleContainer) titleContainer.classList.add('disabled');
+        // Update Section Title in Header
+        const titleText = this.modalBox.querySelector('[data-ref="modal-section-title-text"]');
+        if (titleText && tabTitles[tabName]) {
+            titleText.textContent = tabTitles[tabName];
+        }
+
+        const isRolesLocked = (tabName === 'roles' && this.userTier < 2);
+        const nonSearchableTabs = ['resize', 'reset', 'edit', 'general', 'danger', 'critical'];
+        const isNonSearchable = nonSearchableTabs.includes(tabName) || isRolesLocked;
+
+        const searchContainer = this.modalBox.querySelector('[data-ref="modal-search-container"]');
+        if (searchContainer) {
+            if (isNonSearchable) searchContainer.classList.add('disabled');
+            else searchContainer.classList.remove('disabled');
+        }
+
+        // Data preloads for option tabs
+        if (tabName === 'edit' || tabName === 'general') {
+            this.loadEditData();
+        } else if (tabName === 'resize') {
+            this.loadResizeSettings();
+        } else if (tabName === 'reset') {
+            this.loadResetSettings();
         }
 
         // Top contextual actions visibility
@@ -848,7 +864,7 @@ export class ManageCanvasMembersModalController {
         }
 
         if (rolesActions) {
-            if (tabName === 'roles') rolesActions.classList.remove('disabled');
+            if (tabName === 'roles' && !isRolesLocked) rolesActions.classList.remove('disabled');
             else rolesActions.classList.add('disabled');
         }
 
@@ -893,11 +909,38 @@ export class ManageCanvasMembersModalController {
         } else if (tabName === 'invites') {
             this.loadInvites();
         } else if (tabName === 'roles') {
-            this.showRolesListView();
-            this.loadRoles();
+            if (isRolesLocked) {
+                this.renderRolesLockedState();
+            } else {
+                this.showRolesListView();
+                this.loadRoles();
+            }
         } else if (tabName === 'sanctions') {
             this.loadSanctions(1);
         }
+    }
+
+    renderRolesLockedState() {
+        const container = this.modalBox.querySelector('[data-ref="tab-content-roles"]');
+        if (!container) return;
+
+        const tierName = getDynamicTierName(2);
+        container.innerHTML = `
+            <div class="component-modal-settings-content">
+                ${CardTemplates.emptyState({
+                    type: 'roles',
+                    icon: 'shield_person',
+                    title: `Suscripción ${tierName} Requerida`,
+                    message: `La creación de roles personalizados y configuración de permisos avanzados está disponible a partir del plan ${tierName}.`,
+                    actions: `
+                        <button type="button" class="component-button component-button--primary component-button--h36" data-action="openUpgradeModal">
+                            <span class="material-symbols-rounded">workspace_premium</span>
+                            <span>${window.__('lbl_upgrade_plan') || 'Mejorar Plan'}</span>
+                        </button>
+                    `
+                })}
+            </div>
+        `;
     }
 
     updateBottomBar() {
@@ -2646,11 +2689,13 @@ export class ManageCanvasMembersModalController {
         const builderSubview = this.modalBox.querySelector('[data-ref="modal-role-builder-subview"]');
         const permsSubview = this.modalBox.querySelector('[data-ref="modal-role-permissions-subview"]');
         const createBtn = this.modalBox.querySelector('[data-ref="modal-btn-create-role"]');
+        const searchContainer = this.modalBox.querySelector('[data-ref="modal-search-container"]');
 
         if (tableContainer) tableContainer.classList.remove('disabled');
         if (builderSubview) builderSubview.classList.add('disabled');
         if (permsSubview) permsSubview.classList.add('disabled');
         if (createBtn) createBtn.classList.remove('disabled');
+        if (searchContainer && this.userTier >= 2) searchContainer.classList.remove('disabled');
 
         this.updateBottomBar();
         this.renderRolesTable();
@@ -2785,9 +2830,11 @@ export class ManageCanvasMembersModalController {
         const tableContainer = this.modalBox.querySelector('[data-ref="modal-roles-table-container"]');
         const builderSubview = this.modalBox.querySelector('[data-ref="modal-role-builder-subview"]');
         const createBtn = this.modalBox.querySelector('[data-ref="modal-btn-create-role"]');
+        const searchContainer = this.modalBox.querySelector('[data-ref="modal-search-container"]');
 
         if (tableContainer) tableContainer.classList.add('disabled');
         if (createBtn) createBtn.classList.add('disabled');
+        if (searchContainer) searchContainer.classList.add('disabled');
         if (!builderSubview) return;
 
         builderSubview.classList.remove('disabled');
@@ -2909,9 +2956,11 @@ export class ManageCanvasMembersModalController {
         const tableContainer = this.modalBox.querySelector('[data-ref="modal-roles-table-container"]');
         const permsSubview = this.modalBox.querySelector('[data-ref="modal-role-permissions-subview"]');
         const createBtn = this.modalBox.querySelector('[data-ref="modal-btn-create-role"]');
+        const searchContainer = this.modalBox.querySelector('[data-ref="modal-search-container"]');
 
         if (tableContainer) tableContainer.classList.add('disabled');
         if (createBtn) createBtn.classList.add('disabled');
+        if (searchContainer) searchContainer.classList.add('disabled');
         if (!permsSubview) return;
 
         permsSubview.classList.remove('disabled');

@@ -47,6 +47,12 @@ export class SearchController {
             if (item && item.is_promo) {
                 return CardTemplates.promoCard(item, { basePath: this.basePath });
             }
+            if (item && item.is_user) {
+                return CardTemplates.userCard(item, { basePath: this.basePath });
+            }
+            if (item && item.is_publication) {
+                return CardTemplates.publicationCard(item, { basePath: this.basePath });
+            }
             return CardTemplates.canvasCard(item, { basePath: this.basePath });
         });
 
@@ -92,23 +98,10 @@ export class SearchController {
             this.totalFound = 0;
 
             if (this.contentArea) {
-                this.contentArea.innerHTML = `
-                    <div class="component-search-sections" data-ref="search-sections-wrapper">
-                        <div class="component-search-section disabled" data-ref="search-users-section">
-                            <div class="component-search-section__header">
-                                <span class="material-symbols-rounded">group</span>
-                                <h2 class="component-search-section__title">${window.__('search_section_users') || 'Usuarios'}</h2>
-                            </div>
-                            <div class="component-grid component-grid--users" data-ref="search-users-grid"></div>
-                        </div>
-                        <div class="component-search-section" data-ref="search-canvases-section">
-                            <div class="component-grid" data-ref="search-results-grid"></div>
-                        </div>
-                    </div>
-                `;
-                const canvasesGrid = this.contentArea.querySelector('[data-ref="search-results-grid"]');
-                if (canvasesGrid) {
-                    renderSkeleton(canvasesGrid, 'homeCanvasGrid');
+                this.contentArea.innerHTML = '<div class="component-grid" data-ref="search-results-grid"></div>';
+                const grid = this.contentArea.querySelector('.component-grid');
+                if (grid) {
+                    renderSkeleton(grid, 'homeCanvasGrid');
                 }
             }
         }
@@ -117,10 +110,8 @@ export class SearchController {
 
         this.isLoadingMore = true;
 
-        const canvasesGrid = this.contentArea ? this.contentArea.querySelector('[data-ref="search-results-grid"]') : null;
-
-        if (isLoadMore && canvasesGrid) {
-            appendInfiniteScrollSkeletons(canvasesGrid, 4);
+        if (isLoadMore && this.contentArea) {
+            appendInfiniteScrollSkeletons(this.contentArea, 4);
         }
 
         try {
@@ -136,61 +127,47 @@ export class SearchController {
                 return;
             }
 
-            if (canvasesGrid) {
-                removeInfiniteScrollSkeletons(canvasesGrid);
+            if (this.contentArea) {
+                removeInfiniteScrollSkeletons(this.contentArea);
             }
 
             if (resData && resData.success) {
                 let newCanvases = resData.data || [];
-                let users = resData.users || [];
+                let users = (!isLoadMore ? (resData.users || []) : []).map(u => ({ ...u, is_user: true }));
+                let publications = (!isLoadMore ? (resData.publications || []) : []).map(p => ({ ...p, is_publication: true }));
+
                 this.totalFound = typeof resData.total === 'number' ? resData.total : (this.allCanvases.length + newCanvases.length);
-                const totalUsersCount = Array.isArray(users) ? users.length : 0;
+                const totalUsersCount = users.length;
+                const totalPubsCount = publications.length;
 
-                if (!isLoadMore) {
-                    const usersSection = this.contentArea.querySelector('[data-ref="search-users-section"]');
-                    const usersGrid = this.contentArea.querySelector('[data-ref="search-users-grid"]');
-                    if (users.length > 0 && usersSection && usersGrid) {
-                        usersSection.classList.remove('disabled');
-                        usersGrid.innerHTML = users.map(u => CardTemplates.userCard(u, { basePath: this.basePath })).join('');
-                    }
-
-                    if (this.title) {
-                        const totalCombined = this.totalFound + totalUsersCount;
-                        const template = window.__('search_results_for', { count: totalCombined, query: this.query });
-                        this.title.textContent = template
-                            .replace(':count', totalCombined)
-                            .replace(':query', this.query);
-                    }
-
-                    if (newCanvases.length === 0 && users.length === 0) {
-                        this.hasMore = false;
-                        if (this.contentArea) {
-                            this.contentArea.innerHTML = CardTemplates.emptyState({
-                                type: 'search',
-                                title: window.__('search_empty_no_results_title'),
-                                message: window.__('search_empty_no_results_desc')
-                            });
-                        }
-                        this.isLoadingMore = false;
-                        return;
-                    }
-
-                    if (newCanvases.length === 0 && users.length > 0) {
-                        this.hasMore = false;
-                        const canvasesSection = this.contentArea.querySelector('[data-ref="search-canvases-section"]');
-                        if (canvasesSection) {
-                            canvasesSection.classList.add('disabled');
-                        }
-                        this.isLoadingMore = false;
-                        return;
-                    }
+                if (!isLoadMore && this.title) {
+                    const totalCombined = this.totalFound + totalUsersCount + totalPubsCount;
+                    const template = window.__('search_results_for', { count: totalCombined, query: this.query }) || `${totalCombined} resultados para "${this.query}"`;
+                    this.title.textContent = template
+                        .replace(':count', totalCombined)
+                        .replace(':query', this.query);
                 }
 
-                if (newCanvases.length > 0 && canvasesGrid) {
-                    await PromoService.ensureLoaded();
-                    const itemsWithPromos = PromoService.injectFeedCards(newCanvases, this.allCanvases.length);
+                let itemsToAdd = [...users, ...publications, ...newCanvases];
 
-                    renderVirtualGridItems(canvasesGrid, itemsWithPromos, this.virtualObserver, isLoadMore, 'home-all-canvases');
+                if (!isLoadMore && itemsToAdd.length === 0) {
+                    this.hasMore = false;
+                    if (this.contentArea) {
+                        this.contentArea.innerHTML = CardTemplates.emptyState({
+                            type: 'search',
+                            title: window.__('search_empty_no_results_title') || 'Sin resultados',
+                            message: window.__('search_empty_no_results_desc') || 'No encontramos nada que coincida con tu búsqueda.'
+                        });
+                    }
+                    this.isLoadingMore = false;
+                    return;
+                }
+
+                if (itemsToAdd.length > 0 && this.contentArea) {
+                    await PromoService.ensureLoaded();
+                    const itemsWithPromos = PromoService.injectFeedCards(itemsToAdd, this.allCanvases.length);
+
+                    renderVirtualGridItems(this.contentArea, itemsWithPromos, this.virtualObserver, isLoadMore, 'search-results-grid');
                     this.allCanvases = this.allCanvases.concat(itemsWithPromos);
                 }
 
@@ -204,9 +181,9 @@ export class SearchController {
                 this.isLoadingMore = false;
 
                 this.reinitializeUI();
-                if (canvasesGrid) {
+                if (this.contentArea) {
                     this.observer = setupGridInfiniteScroll({
-                        container: canvasesGrid,
+                        container: this.contentArea,
                         hasMore: this.hasMore,
                         currentObserver: this.observer,
                         onIntersect: () => this.loadSearchResults(true)
@@ -228,8 +205,8 @@ export class SearchController {
         } catch (e) {
             if (e.name === 'AbortError') return;
 
-            if (canvasesGrid) {
-                removeInfiniteScrollSkeletons(canvasesGrid);
+            if (this.contentArea) {
+                removeInfiniteScrollSkeletons(this.contentArea);
             }
 
             if (!isLoadMore) {
@@ -300,14 +277,14 @@ export class SearchController {
 
             if (res && res.success) {
                 const isFollowing = res.is_following;
-                btnEl.classList.toggle('component-button--secondary', isFollowing);
-                btnEl.classList.toggle('component-button--primary', !isFollowing);
+                btnEl.classList.toggle('is-following', isFollowing);
+                btnEl.classList.toggle('component-button--active', isFollowing);
 
                 const icon = btnEl.querySelector('.material-symbols-rounded');
                 if (icon) icon.textContent = isFollowing ? 'person_remove' : 'person_add';
 
-                const text = btnEl.querySelector('.btn-text');
-                if (text) text.textContent = isFollowing ? (window.__('profile.unfollow') || 'Dejar de seguir') : (window.__('profile.follow') || 'Seguir');
+                const newTooltip = isFollowing ? (window.__('profile.unfollow') || 'Dejar de seguir') : (window.__('profile.follow') || 'Seguir');
+                btnEl.setAttribute('data-tooltip', newTooltip);
 
                 const card = btnEl.closest('.component-user-card');
                 if (card) {

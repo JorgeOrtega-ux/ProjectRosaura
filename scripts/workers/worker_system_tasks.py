@@ -922,14 +922,14 @@ def scheduler_loop():
                 conn = get_db_connection()
                 cursor = conn.cursor(dictionary=True)
                 cursor.execute("""
-                    SELECT s.id, s.user_id, s.tier, s.billing_period, s.current_period_end, t.name as tier_name
+                    SELECT s.id, s.user_id, s.tier, s.billing_period, s.current_period_end
                     FROM subscriptions s
-                    LEFT JOIN subscription_tiers t ON s.tier = t.tier_level
                     WHERE s.status = 'active' 
                     AND s.current_period_end BETWEEN NOW() + INTERVAL 6 DAY AND NOW() + INTERVAL 8 DAY
                 """)
                 upcoming_subs = cursor.fetchall()
                 
+                tier_names = {0: 'Basic', 1: 'Plus', 2: 'Pro', 3: 'Ultra'}
                 for sub in upcoming_subs:
                     if not r:
                         r = get_redis_connection()
@@ -937,7 +937,7 @@ def scheduler_loop():
                         renewal_date = sub['current_period_end'].strftime('%Y-%m-%d')
                         redis_key = f"notified:renewal:{sub['id']}:{renewal_date}"
                         if not r.exists(redis_key):
-                            tier_name = sub['tier_name'] or ''
+                            tier_name = tier_names.get(int(sub.get('tier') or 0), 'Basic')
                             payload = json.dumps({
                                 'type': 'upcoming_renewal',
                                 'user_id': sub['user_id'],

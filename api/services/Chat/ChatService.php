@@ -8,6 +8,7 @@ use App\Config\Database\CassandraManager;
 use App\Core\System\CacheConstants;
 use App\Core\Helpers\Utils;
 use App\Core\System\Logger;
+use App\Core\System\SubscriptionPlanConstants;
 use PDO;
 
 class ChatService
@@ -119,14 +120,14 @@ class ChatService
             $userIds = array_values(array_unique(array_column($messages, 'user_id')));
             $placeholders = implode(',', array_fill(0, count($userIds), '?'));
             $userStmt = $this->identityPdo->prepare("
-                SELECT u.id, u.uuid, u.username, u.profile_picture, st.color as subscription_color 
+                SELECT u.id, u.uuid, u.username, u.profile_picture, u.subscription_tier 
                 FROM users u 
-                LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level 
                 WHERE u.id IN ($placeholders)
             ");
             $userStmt->execute($userIds);
             $usersMap = [];
             while ($row = $userStmt->fetch(PDO::FETCH_ASSOC)) {
+                $row['subscription_color'] = SubscriptionPlanConstants::getTierColor((int)($row['subscription_tier'] ?? 0));
                 $usersMap[$row['id']] = $row;
             }
             
@@ -375,13 +376,15 @@ class ChatService
         $msgId = 'pending_' . $msgUuid;
 
         $uStmt = $this->identityPdo->prepare("
-            SELECT u.username, u.uuid, u.profile_picture, st.color as subscription_color 
+            SELECT u.username, u.uuid, u.profile_picture, u.subscription_tier 
             FROM " . DB::TBL_USERS . " u 
-            LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level 
             WHERE u.id = ?
         ");
         $uStmt->execute([$userId]);
         $userInfo = $uStmt->fetch(PDO::FETCH_ASSOC);
+        if ($userInfo) {
+            $userInfo['subscription_color'] = SubscriptionPlanConstants::getTierColor((int)($userInfo['subscription_tier'] ?? 0));
+        }
 
         $defaultUsername = __('default_user');
         
@@ -783,13 +786,15 @@ class ChatService
             }
 
             $uStmt = $this->identityPdo->prepare("
-                SELECT u.username, u.uuid, u.profile_picture, st.color as subscription_color 
+                SELECT u.username, u.uuid, u.profile_picture, u.subscription_tier 
                 FROM " . DB::TBL_USERS . " u 
-                LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level 
                 WHERE u.id = ?
             ");
             $uStmt->execute([$userId]);
             $senderInfo = $uStmt->fetch(PDO::FETCH_ASSOC);
+            if ($senderInfo) {
+                $senderInfo['subscription_color'] = SubscriptionPlanConstants::getTierColor((int)($senderInfo['subscription_tier'] ?? 0));
+            }
 
             $censoredWhisper = \App\Core\Helpers\Utils::censorText($whisperText);
 

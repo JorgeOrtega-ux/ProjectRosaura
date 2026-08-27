@@ -9,6 +9,7 @@ use App\Core\Interfaces\NotificationRepositoryInterface;
 use App\Core\Helpers\Utils;
 use App\Core\Helpers\EnvLoader;
 use App\Core\System\Logger;
+use App\Core\System\SubscriptionPlanConstants;
 use App\Core\System\DatabaseConstants as DB;
 use PDO;
 use Exception;
@@ -475,13 +476,13 @@ class PublicationsService {
             if (!empty($userIds)) {
                 $placeholders = implode(',', array_fill(0, count($userIds), '?'));
                 $stmtUsers = $this->pdoIdentity->prepare("
-                    SELECT u.id, u.uuid, u.username, u.identifier, u.profile_picture, u.subscription_tier, st.color as subscription_color
+                    SELECT u.id, u.uuid, u.username, u.identifier, u.profile_picture, u.subscription_tier
                     FROM " . DB::TBL_USERS . " u
-                    LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
                     WHERE u.id IN ({$placeholders})
                 ");
                 $stmtUsers->execute(array_values($userIds));
                 while ($u = $stmtUsers->fetch(PDO::FETCH_ASSOC)) {
+                    $u['subscription_color'] = SubscriptionPlanConstants::getTierColor((int)($u['subscription_tier'] ?? 0));
                     $usersMap[$u['id']] = $u;
                 }
             }
@@ -751,13 +752,13 @@ class PublicationsService {
         if (!empty($missingUserIds)) {
             $placeholders = implode(',', array_fill(0, count($missingUserIds), '?'));
             $stmtUsers = $this->pdoIdentity->prepare("
-                SELECT u.id, u.uuid, u.username, u.identifier, u.profile_picture, u.banner_picture, u.subscription_tier, st.color as subscription_color
+                SELECT u.id, u.uuid, u.username, u.identifier, u.profile_picture, u.banner_picture, u.subscription_tier
                 FROM " . DB::TBL_USERS . " u
-                LEFT JOIN subscription_tiers st ON u.subscription_tier = st.tier_level
                 WHERE u.id IN ({$placeholders})
             ");
             $stmtUsers->execute(array_values($missingUserIds));
             while ($u = $stmtUsers->fetch(PDO::FETCH_ASSOC)) {
+                $u['subscription_color'] = SubscriptionPlanConstants::getTierColor((int)($u['subscription_tier'] ?? 0));
                 $usersMap[$u['id']] = $u;
             }
         }

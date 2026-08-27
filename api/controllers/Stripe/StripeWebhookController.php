@@ -180,35 +180,8 @@ class StripeWebhookController extends BaseController {
     }
 
     private function resolveTierFromPriceId(string $priceId): ?int {
-        $priceMap = [
-            ($_ENV['STRIPE_PRICE_PLUS_MONTHLY'] ?? '') => 1,
-            ($_ENV['STRIPE_PRICE_PLUS_YEARLY'] ?? '')  => 1,
-            ($_ENV['STRIPE_PRICE_PRO_MONTHLY'] ?? '')  => 2,
-            ($_ENV['STRIPE_PRICE_PRO_YEARLY'] ?? '')   => 2,
-            ($_ENV['STRIPE_PRICE_ULTRA_MONTHLY'] ?? '') => 3,
-            ($_ENV['STRIPE_PRICE_ULTRA_YEARLY'] ?? '')  => 3,
-        ];
-
-        unset($priceMap['']);
-
-        if (isset($priceMap[$priceId])) {
-            return $priceMap[$priceId];
-        }
-
-        try {
-            $db = new \App\Config\Database\DatabaseManager();
-            $pdo = $db->getConnection(\App\Core\System\DatabaseConstants::CONN_IDENTITY);
-            $stmt = $pdo->prepare("SELECT tier_level FROM subscription_tiers WHERE (stripe_price_id_monthly = ? OR stripe_price_id_yearly = ?) AND is_active = 1 LIMIT 1");
-            $stmt->execute([$priceId, $priceId]);
-            $tier = $stmt->fetchColumn();
-            if ($tier !== false && $tier !== null) {
-                return (int) $tier;
-            }
-        } catch (\Throwable $e) {
-            Logger::error("Error resolving tier from price ID in webhook", ['price_id' => $priceId, 'error' => $e->getMessage()]);
-        }
-
-        return null;
+        $tierInfo = SubscriptionPlanConstants::getTierByPriceId($priceId);
+        return $tierInfo['tier'] ?? null;
     }
 
     private function handleSubscriptionUpdated($subscription): void {

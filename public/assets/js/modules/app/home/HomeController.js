@@ -322,10 +322,10 @@ class HomeController {
 
     getPersonalEmptyState(filter) {
         const createBtn = `
-            <a class="component-button component-button--h40" data-nav="${this.basePath}/canvases/create">
+            <button type="button" class="component-button component-button--h40" data-action="openCreateCanvasModal">
                 <span class="material-symbols-rounded">add</span>
                 <span>${window.__('btn_create_canvas')}</span>
-            </a>
+            </button>
         `;
         const exploreBtn = `
             <button class="component-button component-button--secondary component-button--h40" data-action="filterHomeTag" data-tag="all">
