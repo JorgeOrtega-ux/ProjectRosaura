@@ -75,7 +75,42 @@ class UserRepository implements UserRepositoryInterface {
                 $user['two_factor_secret'] = DataCipher::decrypt($user['two_factor_secret']);
             }
 
+            // JIT Auto-Heal 1: Ensure user has a valid UUID
+            if (empty($user['uuid'])) {
+                $newUuid = Utils::generateUUID();
+                try {
+                    $this->pdo->prepare("UPDATE {$tblUsers} SET uuid = ? WHERE id = ?")->execute([$newUuid, $user['id']]);
+                    $user['uuid'] = $newUuid;
+                } catch (\Throwable $e) {}
+            }
+
+            // JIT Auto-Heal 2: Ensure user has a role in user_roles
             $roles = $this->roleRepository->getUserRoles($user['id']);
+            if (empty($roles)) {
+                try {
+                    $this->roleRepository->assignRoleToUser((int)$user['id'], 1);
+                    $roles = $this->roleRepository->getUserRoles($user['id']);
+                    Logger::warning("Auto-healed missing user role for user ID: " . $user['id']);
+                } catch (\Throwable $e) {}
+            }
+
+            // JIT Auto-Heal 3: Ensure user_preferences row exists
+            try {
+                $stmtPref = $this->pdo->prepare("SELECT 1 FROM " . DB::TBL_USER_PREFERENCES . " WHERE user_id = ? LIMIT 1");
+                $stmtPref->execute([(int)$user['id']]);
+                if (!$stmtPref->fetchColumn()) {
+                    $this->pdo->prepare("INSERT IGNORE INTO " . DB::TBL_USER_PREFERENCES . " (user_id, language, theme, open_links_new_tab, extended_alerts, allow_telemetry) VALUES (?, 'es-419', 'system', 1, 0, 1)")->execute([(int)$user['id']]);
+                    Logger::warning("Auto-healed missing user_preferences for user ID: " . $user['id']);
+                }
+            } catch (\Throwable $e) {}
+
+            // JIT Auto-Heal 4: Ensure user_restrictions row exists
+            if ($user['is_suspended'] === null) {
+                try {
+                    $this->pdo->prepare("INSERT IGNORE INTO {$tblUserRestr} (user_id, is_suspended) VALUES (?, 0)")->execute([(int)$user['id']]);
+                    $user['is_suspended'] = 0;
+                } catch (\Throwable $e) {}
+            }
 
             if (!empty($roles)) {
                 $mainRole = $roles[0];
@@ -83,9 +118,9 @@ class UserRepository implements UserRepositoryInterface {
                 $user['role_weight'] = $mainRole['weight'];
                 $user['assigned_roles_ids'] = implode(',', array_column($roles, 'id'));
             } else {
-                $user['role_name'] = null;
-                $user['role_weight'] = null;
-                $user['assigned_roles_ids'] = null;
+                $user['role_name'] = 'User';
+                $user['role_weight'] = 1;
+                $user['assigned_roles_ids'] = '1';
             }
             $permissionsArray = $this->roleRepository->getMergedPermissionsForUser($user['id']);
             $user['permissions'] = !empty($permissionsArray) ? implode(',', $permissionsArray) : null;
@@ -412,8 +447,12 @@ class UserRepository implements UserRepositoryInterface {
 
         $tblUserPrefs = DB::TBL_USER_PREFERENCES;
         try {
-            $stmt = $this->pdo->prepare("UPDATE {$tblUserPrefs} SET {$key} = ? WHERE user_id = ?");
-            $res = $stmt->execute([$value, $userId]);
+            $stmt = $this->pdo->prepare("
+                INSERT INTO {$tblUserPrefs} (user_id, {$key}) 
+                VALUES (:uid, :val) 
+                ON DUPLICATE KEY UPDATE {$key} = VALUES({$key})
+            ");
+            $res = $stmt->execute([':uid' => $userId, ':val' => $value]);
             if ($res) {
                 $this->cacheInvalidator->userPrefs($userId);
             }
@@ -421,6 +460,36 @@ class UserRepository implements UserRepositoryInterface {
         } catch (PDOException $e) {
             Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'key' => $key, 'value' => $value, 'exception' => $e]);
             return false;
+        }
+    }
+
+    public function getUserPreferences(int $userId): array {
+        $tblUserPrefs = DB::TBL_USER_PREFERENCES;
+        try {
+            $stmt = $this->pdo->prepare("SELECT language, open_links_new_tab, theme, extended_alerts, allow_telemetry FROM {$tblUserPrefs} WHERE user_id = ? LIMIT 1");
+            $stmt->execute([$userId]);
+            $prefs = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$prefs) {
+                // JIT Auto-Heal: create default preferences row
+                $this->pdo->prepare("INSERT IGNORE INTO {$tblUserPrefs} (user_id, language, open_links_new_tab, theme, extended_alerts, allow_telemetry) VALUES (?, 'es-419', 1, 'system', 0, 1)")->execute([$userId]);
+                return [
+                    'language' => 'es-419',
+                    'open_links_new_tab' => 1,
+                    'theme' => 'system',
+                    'extended_alerts' => 0,
+                    'allow_telemetry' => 1
+                ];
+            }
+            return $prefs;
+        } catch (PDOException $e) {
+            Logger::error("Database error in " . __METHOD__, ['user_id' => $userId, 'exception' => $e]);
+            return [
+                'language' => 'es-419',
+                'open_links_new_tab' => 1,
+                'theme' => 'system',
+                'extended_alerts' => 0,
+                'allow_telemetry' => 1
+            ];
         }
     }
 

@@ -1499,6 +1499,7 @@ def seed_database(project_root, num_users=25, canvases_per_user=25):
         layers_rows = []
         recent_colors_rows = []
         members_rows = []
+        canvas_user_roles_rows = []
         favorites_rows = []
         snapshots_history_rows = []
         snapshots_likes_rows = []
@@ -1585,9 +1586,14 @@ def seed_database(project_root, num_users=25, canvases_per_user=25):
                 snapshots_history_rows.append((c_id, hist_uuid, f"snapshots/history_canvas_{c_id}_{hist_uuid[:8]}.png", None, 'public', random_date(60)))
 
                 # Miembros y favoritos
+                c_created_at_val = random_date(180)
+                members_rows.append((c_id, u_id, c_created_at_val))
+                canvas_user_roles_rows.append((c_id, u_id, 4)) # SuperAdmin / Owner
+
                 other_user_ids = [o["id"] for o in SEED_USERS_DATA[:num_users] if o["id"] != u_id]
                 for mem_id in random.sample(other_user_ids, min(len(other_user_ids), random.randint(2, 6))):
                     members_rows.append((c_id, mem_id, random_date(90)))
+                    canvas_user_roles_rows.append((c_id, mem_id, 1)) # Usuario
                 for fav_id in random.sample(other_user_ids, min(len(other_user_ids), random.randint(3, 8))):
                     favorites_rows.append((c_id, fav_id, random_date(90)))
 
@@ -1690,9 +1696,11 @@ def seed_database(project_root, num_users=25, canvases_per_user=25):
             cursor.executemany(sql_recent, recent_colors_rows[i:i+BATCH_SIZE])
         conn.commit()
 
-        print("  -> Insertando miembros, favoritos y snapshots históricos...")
+        print("  -> Insertando miembros, roles, favoritos y snapshots históricos...")
         for i in range(0, len(members_rows), BATCH_SIZE):
             cursor.executemany("INSERT IGNORE INTO `canvas_members` (canvas_id, user_id, joined_at) VALUES (%s, %s, %s)", members_rows[i:i+BATCH_SIZE])
+        for i in range(0, len(canvas_user_roles_rows), BATCH_SIZE):
+            cursor.executemany("INSERT IGNORE INTO `canvas_user_roles` (canvas_id, user_id, role_id) VALUES (%s, %s, %s)", canvas_user_roles_rows[i:i+BATCH_SIZE])
         for i in range(0, len(favorites_rows), BATCH_SIZE):
             cursor.executemany("INSERT IGNORE INTO `canvas_favorites` (canvas_id, user_id, created_at) VALUES (%s, %s, %s)", favorites_rows[i:i+BATCH_SIZE])
         for i in range(0, len(snapshots_history_rows), BATCH_SIZE):
@@ -2031,6 +2039,11 @@ def main():
         run_seeder(target_path, script_dir)
         return
 
+    if '--heal-db' in sys.argv:
+        from db_healer import run_database_healer
+        run_database_healer(target_path)
+        return
+
     print(f"{Colors.HEADER}{Colors.BOLD}=============================================================={Colors.ENDC}")
     print(f"{Colors.HEADER}{Colors.BOLD}   Herramienta Integral de Gestión y Análisis: Project Rosaura{Colors.ENDC}")
     print(f"{Colors.HEADER}{Colors.BOLD}=============================================================={Colors.ENDC}")
@@ -2044,18 +2057,24 @@ def main():
     print("7 - Asignar rol SuperAdministrador a usuario ID 1 y purgar caché Redis")
     print("8 - Escanear integridad de vistas (atributos ID e inputs hidden)")
     print("9 - Limpieza completa del proyecto (logs, __pycache__, scratch, temporales)")
+    print("10 - Saneamiento y Autorecuperación Integral de Base de Datos (Healer Engine)")
     print("0 - Salir")
-    choice = input(f"\n{Colors.WARNING}Ingresa una opción (0-9): {Colors.ENDC}").strip()
+    choice = input(f"\n{Colors.WARNING}Ingresa una opción (0-10): {Colors.ENDC}").strip()
 
     if choice in ('0', 'q', 'exit', ''):
         print(f"{Colors.GREEN}Saliendo.{Colors.ENDC}")
         return
 
-    if choice not in ('1', '2', '3', '4', '5', '6', '7', '8', '9'):
+    if choice not in ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10'):
         print(f"{Colors.FAIL}Opción no válida. Saliendo.{Colors.ENDC}")
         return
 
     start_time = time.time()
+
+    if choice == '10':
+        from db_healer import run_database_healer
+        run_database_healer(target_path)
+        return
 
     if choice == '9':
         run_project_cleanup(target_path)

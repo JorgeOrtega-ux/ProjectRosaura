@@ -3515,46 +3515,6 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     box-shadow: none !important;
 }
 
-.upgrade-modal-more-info-wrap {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-}
-
-.upgrade-modal-more-info-btn {
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 12px;
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    cursor: pointer;
-    padding: 6px 12px;
-    border-radius: 8px;
-    transition: color 0.15s ease, background-color 0.15s ease;
-}
-
-.upgrade-modal-more-info-btn:hover {
-    color: var(--text-primary);
-    background-color: var(--bg-hover-light, rgba(255, 255, 255, 0.05));
-}
-
-.upgrade-modal-more-info-btn .material-symbols-rounded {
-    font-size: 15px;
-    color: inherit;
-}
-
-.upgrade-modal-more-info-btn .upgrade-arrow-icon {
-    font-size: 14px;
-    transition: transform 0.15s ease;
-}
-
-.upgrade-modal-more-info-btn:hover .upgrade-arrow-icon {
-    transform: translateX(3px);
-}
-
 .upgrade-modal-disclaimer {
     font-size: 11px;
     color: var(--text-secondary);
@@ -3568,8 +3528,8 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
 .upgrade-modal-right {
     flex: 1.45;
     padding: 24px 20px;
-    background-color: var(--bg-app);
-    border-left: 1px solid var(--border-color);
+    background-color: transparent;
+    border-left: none;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
@@ -3725,7 +3685,7 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
 .upgrade-modal-compare-footer {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     font-size: 13px;
     font-weight: 600;
     color: var(--text-secondary);

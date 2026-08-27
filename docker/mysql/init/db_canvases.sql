@@ -40,7 +40,9 @@ CREATE TABLE IF NOT EXISTS `canvases` (
   INDEX `idx_canvases_popular` (`favorites_count` DESC, `created_at` DESC),
   INDEX `idx_canvases_tags` ((CAST(tags AS CHAR(32) ARRAY))),
   INDEX `idx_canvases_mode_owner` (`owner_id`, `mode`, `is_online_active`),
-  INDEX `idx_canvases_deleted` (`deleted_at`)
+  INDEX `idx_canvases_deleted` (`deleted_at`),
+  INDEX `idx_canvases_deleted_by` (`deleted_by_user_id`),
+  INDEX `idx_canvases_palette` (`palette_id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS `canvas_protections` (
@@ -262,6 +264,7 @@ CREATE TABLE IF NOT EXISTS `canvas_invites` (
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   INDEX `idx_ci_canvas` (`canvas_id`),
   INDEX `idx_ci_created_by` (`created_by`),
+  INDEX `idx_ci_expires` (`expires_at`),
   FOREIGN KEY (`canvas_id`) REFERENCES `canvases`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -304,7 +307,9 @@ CREATE TABLE IF NOT EXISTS `canvas_sanctions` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_canvas_user_scope` (`canvas_id`,`user_id`,`sanction_scope`),
-  INDEX `idx_ccr_end_date` (`end_date`)
+  INDEX `idx_ccr_end_date` (`end_date`),
+  INDEX `idx_cs_user_end` (`user_id`, `end_date`),
+  INDEX `idx_cs_canvas_scope` (`canvas_id`, `sanction_scope`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `canvas_chat_reports` (
@@ -355,7 +360,8 @@ CREATE TABLE IF NOT EXISTS `publications` (
   INDEX `idx_pub_user` (`user_id`, `created_at` DESC),
   INDEX `idx_pub_privacy_created` (`privacy`, `created_at` DESC),
   INDEX `idx_pub_popular` (`likes_count` DESC, `created_at` DESC),
-  INDEX `idx_pub_canvas` (`canvas_id`)
+  INDEX `idx_pub_canvas` (`canvas_id`),
+  INDEX `idx_pub_palette` (`palette_id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS `publication_likes` (
@@ -366,6 +372,7 @@ CREATE TABLE IF NOT EXISTS `publication_likes` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_pub_user_like` (`publication_id`, `user_id`),
   INDEX `idx_pub_likes_user` (`user_id`),
+  INDEX `idx_pl_created` (`created_at` DESC),
   CONSTRAINT `fk_pub_likes_pub` FOREIGN KEY (`publication_id`) REFERENCES `publications` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 

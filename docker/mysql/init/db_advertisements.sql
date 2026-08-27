@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS ad_metrics (
     INDEX idx_metrics_provider (provider_id),
     INDEX idx_metrics_date (date_only),
     INDEX idx_metrics_event (event_type, created_at),
+    INDEX idx_am_user_uuid (user_uuid),
     CONSTRAINT fk_metrics_ad FOREIGN KEY (ad_id) REFERENCES advertisements(id) ON DELETE CASCADE,
     CONSTRAINT fk_metrics_provider FOREIGN KEY (provider_id) REFERENCES ad_providers(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;

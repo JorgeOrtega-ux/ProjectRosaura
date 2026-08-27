@@ -805,8 +805,12 @@ class SettingsService
 
                 $this->logProfileChange($userId, DB::LOG_CHANGE_2FA, json_encode(['status' => 'disabled']), json_encode(['status' => 'enabled']));
                 
-                $mailer = new Mailer();
-                $mailer->send2FAStatusNotification($this->sessionManager->get('user_email'), $this->sessionManager->get('user_name'), 'enabled');
+                try {
+                    $mailer = new Mailer();
+                    $mailer->send2FAStatusNotification($this->sessionManager->get('user_email'), $this->sessionManager->get('user_name'), 'enabled');
+                } catch (\Throwable $e) {
+                    Logger::warning("2FA email notification error: " . $e->getMessage());
+                }
                 
                 return ['success' => true, 'message' => __('settings.2fa_enabled'), 'recovery_codes' => $codes];
             }

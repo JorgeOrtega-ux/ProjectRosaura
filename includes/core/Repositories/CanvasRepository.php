@@ -553,6 +553,22 @@ class CanvasRepository implements CanvasRepositoryInterface {
         return $result ? $this->appendSnapshotUrl($result) : null;
     }
 
+    private function ensureCanvasIntegrity(?array &$canvas): void {
+        if (!$canvas || empty($canvas['id']) || empty($canvas['owner_id'])) {
+            return;
+        }
+        $canvasId = (int)$canvas['id'];
+        $ownerId = (int)$canvas['owner_id'];
+        try {
+            // JIT Auto-Heal: Ensure owner is in canvas_members
+            $this->db->prepare("INSERT IGNORE INTO " . DB::TBL_CANVAS_MEMBERS . " (canvas_id, user_id, joined_at) VALUES (?, ?, ?)")
+                     ->execute([$canvasId, $ownerId, $canvas['created_at'] ?? date('Y-m-d H:i:s')]);
+            // JIT Auto-Heal: Ensure owner has SuperAdmin (role 4) in canvas_user_roles
+            $this->db->prepare("INSERT IGNORE INTO " . DB::TBL_CANVAS_USER_ROLES . " (canvas_id, user_id, role_id) VALUES (?, ?, 4)")
+                     ->execute([$canvasId, $ownerId]);
+        } catch (\Throwable $e) {}
+    }
+
     public function getById(int $id): ?array {
         $cacheKey = CacheConstants::PREFIX_CANVAS_DETAIL . $id;
         if ($this->redisClient) {
@@ -565,6 +581,9 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt->execute([':id' => $id]);
         
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($result) {
+            $this->ensureCanvasIntegrity($result);
+        }
         $final = $result ? $this->appendSnapshotUrl($result) : null;
         
         if ($final && $this->redisClient) {
@@ -1048,6 +1067,9 @@ class CanvasRepository implements CanvasRepositoryInterface {
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':uuid' => $uuid]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($result) {
+            $this->ensureCanvasIntegrity($result);
+        }
         $final = $result ? $this->appendSnapshotUrl($result) : null;
 
         if ($final && $this->redisClient) {
@@ -1757,6 +1779,26 @@ class CanvasRepository implements CanvasRepositoryInterface {
                 $cached = $this->redisClient->get($cacheKey);
                 if ($cached !== null && $cached !== false) return (int)$cached;
             } catch (\Throwable $e) {}
+        }
+
+        // JIT Auto-Heal: If user is the canvas owner, ensure 100 weight and active role/membership
+        $sqlOwner = "SELECT owner_id, created_at FROM " . DB::TBL_CANVASES . " WHERE id = :cid LIMIT 1";
+        $stmtOwner = $this->db->prepare($sqlOwner);
+        $stmtOwner->execute([':cid' => $canvasId]);
+        $canvas = $stmtOwner->fetch(PDO::FETCH_ASSOC);
+
+        if ($canvas && (int)$canvas['owner_id'] === $userId) {
+            try {
+                $this->db->prepare("INSERT IGNORE INTO " . DB::TBL_CANVAS_MEMBERS . " (canvas_id, user_id, joined_at) VALUES (?, ?, ?)")
+                         ->execute([$canvasId, $userId, $canvas['created_at'] ?? date('Y-m-d H:i:s')]);
+                $this->db->prepare("INSERT IGNORE INTO " . DB::TBL_CANVAS_USER_ROLES . " (canvas_id, user_id, role_id) VALUES (?, ?, 4)")
+                         ->execute([$canvasId, $userId]);
+            } catch (\Throwable $e) {}
+
+            if ($this->redisClient) {
+                try { $this->redisClient->setex($cacheKey, CacheConstants::TTL_FIVE_MINS, "100"); } catch (\Throwable $e) {}
+            }
+            return 100;
         }
 
         $sql = "SELECT r.weight 

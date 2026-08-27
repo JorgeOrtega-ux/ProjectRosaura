@@ -346,13 +346,6 @@ export const ModalTemplates = {
                                 <span class="material-symbols-rounded">crown</span>
                                 <span data-ref="cta-text">${escapeHTML(ctaBtnText)}</span>
                             </button>
-                            <div class="upgrade-modal-more-info-wrap">
-                                <button type="button" class="upgrade-modal-more-info-btn" data-action="goToUpgradePage">
-                                    <span class="material-symbols-rounded">info</span>
-                                    <span>${__('upgrade_modal_view_more_info') || 'Ver información adicional'}</span>
-                                    <span class="material-symbols-rounded upgrade-arrow-icon">arrow_forward</span>
-                                </button>
-                            </div>
                             <p class="upgrade-modal-disclaimer">${__('upgrade_modal_terms_note') || 'Cancela cuando quieras. Aplican términos.'}</p>
                         </div>
                     </div>
@@ -374,7 +367,6 @@ export const ModalTemplates = {
                                 </tbody>
                             </table>
                             <div class="upgrade-modal-compare-footer">
-                                <span>${__('upgrade_and_much_more') || '¡Y mucho más!'}</span>
                                 <button type="button" class="upgrade-modal-compare-link" data-action="goToUpgradePage">
                                     <span>${__('upgrade_modal_view_more_info') || 'Ver información adicional'}</span>
                                     <span class="material-symbols-rounded">open_in_new</span>

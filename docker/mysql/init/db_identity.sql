@@ -203,6 +203,9 @@ CREATE TABLE IF NOT EXISTS `payment_history` (
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_ph_user (`user_id`),
   INDEX idx_ph_user_created (`user_id`, `created_at` DESC),
+  INDEX idx_ph_stripe_intent (`stripe_payment_intent_id`),
+  INDEX idx_ph_stripe_invoice (`stripe_invoice_id`),
+  INDEX idx_ph_status (`status`),
   CONSTRAINT fk_ph_user FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -216,6 +219,7 @@ CREATE TABLE IF NOT EXISTS `custom_palettes` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `idx_user_palette` (`user_id`, `palette_key`),
     KEY `idx_user_id` (`user_id`),
+    INDEX `idx_cp_created` (`created_at` DESC),
     CONSTRAINT `fk_custom_palettes_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -273,6 +277,7 @@ CREATE TABLE IF NOT EXISTS user_preferences (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY (user_id),
+  INDEX idx_up_created (created_at DESC),
   CONSTRAINT fk_user_preferences FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
@@ -282,6 +287,7 @@ CREATE TABLE IF NOT EXISTS `user_flags` (
   `flag_key` VARCHAR(100) NOT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY `unique_user_flag` (`user_id`, `flag_key`),
+  INDEX `idx_uf_created` (`created_at` DESC),
   CONSTRAINT `fk_user_flags_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
@@ -309,6 +315,7 @@ CREATE TABLE IF NOT EXISTS `notifications` (
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX `idx_notif_user_read` (`user_id`, `is_read`, `created_at` DESC),
   INDEX `idx_notif_user_created` (`user_id`, `created_at` DESC),
+  INDEX `idx_notif_target_uuid` (`target_uuid`),
   CONSTRAINT `fk_notif_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_notif_actor` FOREIGN KEY (`actor_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

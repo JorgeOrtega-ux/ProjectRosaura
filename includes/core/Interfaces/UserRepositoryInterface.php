@@ -25,6 +25,7 @@ interface UserRepositoryInterface {
     public function update2FA(int $id, ?string $secret, int $enabled, ?string $recoveryCodes): bool;
     public function updateRecoveryCodes(int $id, string $recoveryCodes): bool;
     public function updatePreference(int $userId, string $key, $value): bool;
+    public function getUserPreferences(int $userId): array;
     public function setFlag(int $userId, string $flagKey): bool;
     public function scheduleDeletion(int $userId, string $date): bool;
     public function cancelDeletion(int $userId): bool;

@@ -31,7 +31,9 @@ CREATE TABLE IF NOT EXISTS pageviews (
     date_only DATE GENERATED ALWAYS AS (DATE(created_at)) STORED,
     INDEX idx_created_at (created_at),
     INDEX idx_date_only (date_only),
-    INDEX idx_path (path)
+    INDEX idx_path (path),
+    INDEX idx_pv_user_uuid (user_uuid),
+    INDEX idx_pv_session (session_id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS auth_events (
@@ -44,7 +46,8 @@ CREATE TABLE IF NOT EXISTS auth_events (
     date_only DATE GENERATED ALWAYS AS (DATE(created_at)) STORED,
     INDEX idx_created_at (created_at),
     INDEX idx_date_only (date_only),
-    INDEX idx_event (event_type)
+    INDEX idx_event (event_type),
+    INDEX idx_ae_user_uuid (user_uuid)
 ) ENGINE=InnoDB;
 
 -- Segmentación de usuario para db_telemetry (Mínimo Privilegio)
