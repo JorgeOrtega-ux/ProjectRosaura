@@ -550,6 +550,32 @@ html.dark-theme .component-avatar__overlay {
     margin: 0;
 }
 
+.component-avatar--120 {
+    width: 96px;
+    height: 96px;
+    margin: 0;
+}
+
+.component-avatar--120 img {
+    border-width: 4px;
+    border-color: var(--bg-body);
+}
+
+.component-avatar--120.subscription-dynamic::before {
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    padding: 3px;
+}
+
+@media (min-width: 768px) {
+    .component-avatar--120 {
+        width: 120px;
+        height: 120px;
+    }
+}
+
 .component-badge-list {
     display: flex;
     flex-wrap: wrap;

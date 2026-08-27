@@ -136,6 +136,7 @@ class UserProfileViewService {
         $identifier = $user['identifier'] ?? strtolower(str_replace(' ', '_', $user['username']));
         $avatarUrl = Utils::getS3PublicUrl($user['profile_picture']);
         $bannerUrl = !empty($user['banner_picture']) ? Utils::getS3PublicUrl($user['banner_picture']) : Utils::getDefaultBannerForUser($userId);
+        $subscriptionBg = Utils::formatSubscriptionBg($user['subscription_color'] ?? '');
 
         $publications = [];
         foreach ($pubRows as $p) {
@@ -168,12 +169,13 @@ class UserProfileViewService {
                     'handle' => '@' . $identifier,
                     'avatar_url' => $avatarUrl,
                     'subscription_tier' => (int)($user['subscription_tier'] ?? 0),
-                    'subscription_color' => $user['subscription_color'] ?? '#000000'
+                    'subscription_color' => $user['subscription_color'] ?? '#000000',
+                    'subscription_bg' => $subscriptionBg
                 ]
             ];
         }
 
-        // Cargar lienzos públicos del usuario
+        // Cargar lienzos públicos del usuario (solo los que están activos/online para terceros, o todos los públicos si es dueño)
         $stmtUserCanvases = $this->pdoCanvases->prepare("
             SELECT id, uuid, name, tags, size, is_online_active, members_count, favorites_count, created_at
             FROM " . DB::TBL_CANVASES . "
@@ -219,6 +221,7 @@ class UserProfileViewService {
                 'bio' => $user['bio'] ?? '',
                 'subscription_tier' => (int)($user['subscription_tier'] ?? 0),
                 'subscription_color' => $user['subscription_color'] ?? '#000000',
+                'subscription_bg' => $subscriptionBg,
                 'role_name' => $user['role_name'] ?? 'User',
                 'created_at' => $user['created_at']
             ],

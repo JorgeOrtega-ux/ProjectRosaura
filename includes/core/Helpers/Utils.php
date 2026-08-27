@@ -1303,4 +1303,36 @@ class Utils {
         $html .= '</div>';
         return $html;
     }
+
+    public static function formatSubscriptionBg(?string $subscriptionColorRaw): string {
+        if (empty($subscriptionColorRaw)) {
+            return 'var(--text-muted)';
+        }
+
+        $colorData = json_decode($subscriptionColorRaw, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($colorData)) {
+            $firstColorObj = $colorData['colors'][0] ?? null;
+            $activeSubBg = is_string($firstColorObj) ? htmlspecialchars($firstColorObj) : htmlspecialchars($firstColorObj['hex'] ?? 'var(--text-muted)');
+
+            if (($colorData['type'] ?? 'solid') === 'gradient' && count($colorData['colors']) > 1) {
+                $angle = (int)($colorData['angle'] ?? 0);
+                $stopsArray = [];
+                $prevStop = 0;
+                $colorsCount = count($colorData['colors']);
+                foreach ($colorData['colors'] as $i => $colorObj) {
+                    $hex = is_string($colorObj) ? $colorObj : ($colorObj['hex'] ?? '#000000');
+                    $hex = htmlspecialchars($hex);
+                    $percentage = is_array($colorObj) && isset($colorObj['percentage']) ? (int)$colorObj['percentage'] : floor(100 / $colorsCount);
+                    $endStop = $prevStop + $percentage;
+                    if ($i === $colorsCount - 1) $endStop = 100;
+                    $stopsArray[] = "{$hex} {$prevStop}% {$endStop}%";
+                    $prevStop = $endStop;
+                }
+                $activeSubBg = "conic-gradient(from {$angle}deg, " . implode(', ', $stopsArray) . ")";
+            }
+            return $activeSubBg;
+        }
+
+        return htmlspecialchars($subscriptionColorRaw);
+    }
 }

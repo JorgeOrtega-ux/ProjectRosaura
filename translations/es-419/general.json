@@ -2601,5 +2601,19 @@
     "billing_methods_empty_title": "Sin métodos de pago",
     "no_colors_title": "Sin colores disponibles",
     "error_loading_comments_title": "Error al cargar comentarios",
-    "error_loading_comments": "No se pudieron cargar los comentarios."
+    "error_loading_comments": "No se pudieron cargar los comentarios.",
+    "lbl_bio": "Biografía",
+    "ph_bio": "Cuéntanos algo sobre ti...",
+    "no_bio_yet": "Sin biografía",
+    "profile.link_copied": "Enlace del perfil copiado al portapapeles.",
+    "profile.copy_link_error": "Error al copiar enlace del perfil.",
+    "profile.banner_uploading": "Subiendo banner...",
+    "profile.banner_size_exceeded": "El archivo supera el tamaño máximo permitido.",
+    "profile.banner_processing_error": "Error al procesar el banner.",
+    "profile.like_error": "Error al procesar Me Gusta.",
+    "profile.favorite_error": "Error al procesar favorito.",
+    "profile.participants": "participantes",
+    "profile.favorites": "favoritos",
+    "profile.tab_stats": "Estadísticas",
+    "profile.no_stats": "Sin estadísticas disponibles."
 }

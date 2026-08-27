@@ -290,7 +290,7 @@ class ProfileController {
                 window.location.reload();
             }, 1200);
         } else {
-            showMessage((result && result.message) || 'Error al actualizar identificador', 'error');
+            showMessage(result.message, 'error');
         }
     }
 
@@ -308,12 +308,12 @@ class ProfileController {
         if (result && result.success) {
             showMessage(result.message, 'success');
             const display = document.querySelector('[data-ref="display-bio"]');
-            if (display) display.textContent = val || 'Sin biografía';
+            if (display) display.textContent = val ? val : window.__('no_bio_yet');
             if (window.appInstance && typeof window.appInstance.toggleEditState === 'function') {
                 window.appInstance.toggleEditState('bio');
             }
         } else {
-            showMessage((result && result.message) || 'Error al actualizar biografía', 'error');
+            showMessage(result.message, 'error');
         }
     }
 
