@@ -362,15 +362,20 @@ class DesignController {
                     if (liveShareTier) liveShareMinTier = parseInt(liveShareTier.tier_level, 10);
                 }
 
+                liveShareMenuBtn.setAttribute('data-required-tier', liveShareMinTier);
                 liveShareMenuBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    const basePath = window.AppBasePath || '';
-                    const targetUrl = basePath + '/upgrade';
-                    if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
-                        window.spaRouter.navigate(targetUrl);
+                    if (window.modalSystem) {
+                        window.modalSystem.show('upgradePlansModal', { initialTier: liveShareMinTier });
                     } else {
-                        window.location.href = targetUrl;
+                        const basePath = window.AppBasePath || '';
+                        const targetUrl = basePath + '/upgrade';
+                        if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
+                            window.spaRouter.navigate(targetUrl);
+                        } else {
+                            window.location.href = targetUrl;
+                        }
                     }
                 }, true); 
             }

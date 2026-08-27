@@ -267,6 +267,12 @@ class PromoCardService {
                 if (isExternal) {
                     window.open(targetUrl, '_blank', 'noopener,noreferrer');
                 } else {
+                    const isCanvasEditor = !!(document.querySelector('[data-ref="design-wrapper"]') || document.querySelector('[data-ref="canvas-container"]'));
+                    if (isCanvasEditor && targetUrl.includes('/upgrade') && window.modalSystem) {
+                        window.modalSystem.show('upgradePlansModal');
+                        return;
+                    }
+
                     const basePath = window.AppBasePath || '';
                     const navUrl = (basePath && targetUrl.startsWith('/') && !targetUrl.startsWith(basePath + '/')) 
                         ? `${basePath}${targetUrl}` 

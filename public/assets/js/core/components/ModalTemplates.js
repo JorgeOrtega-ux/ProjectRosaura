@@ -92,10 +92,10 @@ export const ModalTemplates = {
                     </div>
                     <div class="component-modal-actions">
                         <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
-                        <a href="/upgrade" class="component-button component-button--primary component-button--h40">
+                        <button type="button" class="component-button component-button--primary component-button--h40" data-modal-action="openUpgradeModal">
                             <span class="material-symbols-rounded">stars</span>
                             <span>${__('btn_upgrade')}</span>
-                        </a>
+                        </button>
                     </div>
                 `;
             }
@@ -109,6 +109,279 @@ export const ModalTemplates = {
                 <div class="component-modal-actions">
                     <button class="component-button component-button--h40" data-modal-action="cancel">${__('btn_cancel')}</button>
                     <button class="component-button component-button--primary component-button--h40" data-modal-action="confirm">${__('btn_activate_live_chat_confirm')}</button>
+                </div>
+            `;
+        }
+    },
+
+    upgradePlansModal: {
+        customBoxClass: 'component-modal-box--upgrade',
+        build: (data = {}) => {
+            const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
+            
+            const allTiers = (window.APP_TIERS && Array.isArray(window.APP_TIERS))
+                ? [...window.APP_TIERS].filter(t => parseInt(t.tier_level, 10) > 0 && t.is_active !== 0 && t.is_active !== false).sort((a, b) => parseInt(a.tier_level, 10) - parseInt(b.tier_level, 10))
+                : [];
+
+            let reqTier = parseInt(data.initialTier ?? data.selectedTier ?? data.tier ?? 0, 10);
+            if (!allTiers.some(t => parseInt(t.tier_level, 10) === reqTier)) {
+                const pop = allTiers.find(t => t.is_popular == 1 || t.is_popular === true);
+                reqTier = pop ? parseInt(pop.tier_level, 10) : (allTiers[0] ? parseInt(allTiers[0].tier_level, 10) : 1);
+            }
+
+            const currentTier = parseInt(window.appUserTier ?? (window.APP_USER?.subscription_tier ?? 0), 10);
+            const isYearly = window.isYearlyPremium === true || data.billingPeriod === 'yearly';
+
+            const selectedTierObj = allTiers.find(t => parseInt(t.tier_level, 10) === reqTier) || allTiers[0] || {};
+            const initialTierName = selectedTierObj.name || `Pro`;
+
+            const compareRows = [
+                {
+                    label: __('plan_limit_canvases') || 'Lienzos Personales',
+                    desc: __('plan_limit_canvases_desc') || 'Proyectos simultáneos',
+                    icon: 'dashboard',
+                    getValue: (t) => t.max_canvases == -1 ? (__('plan_limit_unlimited') || 'Ilimitado') : `${t.max_canvases}`
+                },
+                {
+                    label: __('plan_limit_capturas') || 'Capturas de Lienzo',
+                    desc: __('plan_limit_capturas_desc') || 'Historial de versiones y capturas',
+                    icon: 'history',
+                    getValue: (t) => t.max_snapshots_per_canvas == -1 ? (__('plan_limit_unlimited') || 'Ilimitado') : `${t.max_snapshots_per_canvas}`
+                },
+                {
+                    label: __('plan_limit_members') || 'Miembros por lienzo',
+                    desc: __('plan_limit_members_desc') || 'Invitados simultáneos en un mismo lienzo',
+                    icon: 'group',
+                    getValue: (t) => t.max_members_per_canvas == -1 ? (__('plan_limit_unlimited') || 'Ilimitado') : Number(t.max_members_per_canvas).toLocaleString()
+                },
+                {
+                    label: __('lbl_storage') || 'Almacenamiento en la nube',
+                    desc: __('plan_storage_desc') || 'Capacidad total de almacenamiento',
+                    icon: 'cloud',
+                    getValue: (t) => {
+                        const mb = parseInt(t.max_storage_mb || 0, 10);
+                        return mb >= 1024 ? `${(mb / 1024).toFixed(0)} GB` : `${mb} MB`;
+                    }
+                },
+                {
+                    label: 'Límite de subida por archivo',
+                    desc: 'Tamaño máximo por imagen o recurso cargado',
+                    icon: 'upload_file',
+                    getValue: (t) => `${parseInt(t.max_upload_mb || 10, 10)} MB`
+                },
+                {
+                    label: __('plan_feat_custom_palettes_title') || 'Paletas Personalizadas',
+                    desc: __('plan_feat_custom_palettes_desc') || 'Crea y almacena paletas exclusivas',
+                    icon: 'palette',
+                    getValue: (t) => {
+                        if (!t.feat_custom_palettes) return false;
+                        const max = parseInt(t.max_custom_palettes || 0, 10);
+                        return max > 0 ? `${max}` : true;
+                    }
+                },
+                {
+                    label: __('plan_feat_inject_templates_title') || 'Inyección de Plantillas',
+                    desc: __('plan_feat_inject_templates_desc') || 'Inyecta imágenes y plantillas en el lienzo',
+                    icon: 'brush',
+                    getValue: (t) => !!(parseInt(t.feat_inject_templates, 10) || t.feat_inject_templates === true)
+                },
+                {
+                    label: __('plan_feat_live_share_title') || 'Transmisión y Live Share',
+                    desc: __('plan_feat_live_share_desc') || 'Transmite tu lienzo y sincroniza con otros',
+                    icon: 'stream',
+                    getValue: (t) => !!(parseInt(t.feat_live_share, 10) || t.feat_live_share === true)
+                },
+                {
+                    label: __('plan_feat_export_timelapse_title') || 'Videos Timelapse',
+                    desc: __('plan_feat_export_timelapse_desc') || 'Exporta videos timelapse en alta resolución',
+                    icon: 'movie',
+                    getValue: (t) => !!(parseInt(t.feat_export_timelapse, 10) || t.feat_export_timelapse === true)
+                },
+                {
+                    label: __('plan_feat_advanced_roles_title') || 'Roles Avanzados',
+                    desc: __('plan_feat_advanced_roles_desc') || 'Permisos personalizados en lienzos',
+                    icon: 'admin_panel_settings',
+                    getValue: (t) => !!(parseInt(t.feat_advanced_roles, 10) || t.feat_advanced_roles === true)
+                },
+                {
+                    label: __('plan_feat_chat_restriction_title') || 'Chat en Tiempo Real',
+                    desc: __('plan_feat_chat_restriction_desc') || 'Uso de chat y herramientas de moderación',
+                    icon: 'speaker_notes',
+                    getValue: (t) => !!(parseInt(t.feat_chat_restriction, 10) || t.feat_chat_restriction === true)
+                },
+                {
+                    label: __('plan_feat_no_ads_title') || 'Experiencia Sin Anuncios',
+                    desc: __('plan_feat_no_ads_desc') || 'Navegación fluida y sin publicidad',
+                    icon: 'block',
+                    getValue: (t) => !!(parseInt(t.feat_no_ads, 10) || t.feat_no_ads === true)
+                }
+            ];
+
+            const planCardsHtml = allTiers.map(t => {
+                const tierLvl = parseInt(t.tier_level, 10);
+                const isSelected = tierLvl === reqTier;
+                const isPopular = !!(t.is_popular == 1 || t.is_popular === true);
+                const mPrice = Number(t.price_monthly || 0).toFixed(2);
+                const yPrice = Number(t.price_yearly || 0).toFixed(2);
+                const curPrice = isYearly ? yPrice : mPrice;
+                const curPeriod = isYearly ? (__('upgrade_period_yearly_full') || 'al año') : (__('upgrade_period_monthly_full') || 'al mes');
+
+                let badgeText = '';
+                if (isPopular) {
+                    badgeText = __('upgrade_card_popular_badge') || 'Recomendado';
+                } else if (t.max_template_tokens > 0) {
+                    badgeText = `${t.max_template_tokens} Tokens`;
+                } else if (parseInt(t.feat_export_timelapse, 10) || t.feat_export_timelapse === true) {
+                    badgeText = 'Timelapse HD';
+                }
+
+                const badgeHtml = badgeText ? `<span class="component-badge component-badge--sm upgrade-plan-card-badge">${escapeHTML(badgeText)}</span>` : '';
+                
+                const storageMb = parseInt(t.max_storage_mb || 0, 10);
+                const storageStr = storageMb >= 1024 ? `${(storageMb / 1024).toFixed(0)} GB` : `${storageMb} MB`;
+                const canvasesStr = t.max_canvases == -1 ? (__('plan_limit_unlimited') || 'Lienzos ilimitados') : `${t.max_canvases} lienzos`;
+                const subtitle = `${canvasesStr} • ${storageStr} de almacenamiento`;
+
+                return `
+                    <div class="upgrade-plan-card ${isSelected ? 'active' : ''}" data-action="select-modal-tier" data-tier="${tierLvl}" role="radio" aria-selected="${isSelected ? 'true' : 'false'}">
+                        <div class="upgrade-plan-radio">
+                            <span class="upgrade-plan-radio-dot" style="opacity: ${isSelected ? '1' : '0'}; transform: ${isSelected ? 'scale(1)' : 'scale(0.5)'};"></span>
+                        </div>
+                        <div class="upgrade-plan-info">
+                            <div class="upgrade-plan-header-row">
+                                <span class="upgrade-plan-name">${escapeHTML(t.name || `Tier ${tierLvl}`)}</span>
+                                ${badgeHtml}
+                            </div>
+                            <div class="upgrade-plan-subtitle-row">
+                                <span class="upgrade-plan-desc">${escapeHTML(subtitle)}</span>
+                                <span class="upgrade-plan-price-wrap">
+                                    <span class="upgrade-plan-price-currency">USD $</span><span class="upgrade-plan-price-val" data-ref="plan-card-price" data-monthly="${mPrice}" data-yearly="${yPrice}">${curPrice}</span>
+                                    <span class="upgrade-plan-price-period" data-ref="plan-card-period">${curPeriod}</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const tableColHeadersHtml = allTiers.map(t => {
+                const tierLvl = parseInt(t.tier_level, 10);
+                const isColActive = tierLvl === reqTier;
+                return `
+                    <th class="upgrade-table-col-header ${isColActive ? 'upgrade-col-active' : ''}" data-tier="${tierLvl}">
+                        <span class="upgrade-table-header-name">${escapeHTML(t.name || `Tier ${tierLvl}`)}</span>
+                    </th>
+                `;
+            }).join('');
+
+            const tableRowsHtml = compareRows.map(row => {
+                const cellColsHtml = allTiers.map(t => {
+                    const tierLvl = parseInt(t.tier_level, 10);
+                    const isColActive = tierLvl === reqTier;
+                    const val = row.getValue(t);
+
+                    let renderedVal = '';
+                    if (val === true) {
+                        renderedVal = `<span class="material-symbols-rounded upgrade-check-icon">check</span>`;
+                    } else if (val === false) {
+                        renderedVal = `<span class="upgrade-dash">—</span>`;
+                    } else {
+                        renderedVal = `<span class="upgrade-val-text">${escapeHTML(String(val))}</span>`;
+                    }
+
+                    return `
+                        <td class="upgrade-table-cell ${isColActive ? 'upgrade-col-active' : ''}" data-tier="${tierLvl}">
+                            ${renderedVal}
+                        </td>
+                    `;
+                }).join('');
+
+                return `
+                    <tr class="upgrade-table-row">
+                        <td class="upgrade-table-feature-cell">
+                            <div class="upgrade-table-feature-wrap">
+                                <span class="upgrade-feature-label">${escapeHTML(row.label)}</span>
+                                ${row.desc ? `<span class="material-symbols-rounded upgrade-info-icon" title="${escapeHTML(row.desc)}">info</span>` : ''}
+                            </div>
+                        </td>
+                        ${cellColsHtml}
+                    </tr>
+                `;
+            }).join('');
+
+            const ctaBtnText = currentTier === reqTier 
+                ? (__('plan_btn_current') || 'Tu Plan Actual')
+                : `${__('upgrade_modal_title_prefix') || 'Sube de categoría a'} ${initialTierName}`;
+
+            return `
+                <div class="upgrade-modal-container" data-ref="upgrade-modal-container">
+                    <!-- LEFT COLUMN -->
+                    <div class="upgrade-modal-left">
+                        <div class="upgrade-modal-left-header">
+                            <h2 class="upgrade-modal-title">
+                                ${__('upgrade_modal_title_prefix') || 'Sube de categoría a'} 
+                                <span class="upgrade-modal-tier-highlight" data-ref="upgrade-selected-tier-name" data-tier="${reqTier}">${escapeHTML(initialTierName)}</span>
+                            </h2>
+                            <p class="upgrade-modal-desc">${__('upgrade_modal_subtitle') || 'Elige tu plan.'}</p>
+
+                            <div class="upgrade-modal-billing-switch">
+                                <div class="component-toggle-pill upgrade-modal-toggle-pill" data-ref="modal-billing-toggle-pill" data-cycle="${isYearly ? 'yearly' : 'monthly'}">
+                                    <div class="component-toggle-pill-glider"></div>
+                                    <button type="button" class="component-button component-button--rounded-pill ${!isYearly ? 'active' : ''}" data-action="setModalBillingCycle" data-value="monthly">
+                                        ${__('upgrade_billing_monthly') || 'Mensual'}
+                                    </button>
+                                    <button type="button" class="component-button component-button--rounded-pill ${isYearly ? 'active' : ''}" data-action="setModalBillingCycle" data-value="yearly">
+                                        ${__('upgrade_billing_yearly') || 'Anual'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="upgrade-modal-plans-list" role="radiogroup">
+                            ${planCardsHtml}
+                        </div>
+
+                        <div class="upgrade-modal-left-footer">
+                            <button type="button" class="component-button component-button--primary upgrade-modal-cta-btn ${currentTier === reqTier ? 'disabled-interaction' : ''}" data-action="upgradeModalSubscribe">
+                                <span class="material-symbols-rounded">crown</span>
+                                <span data-ref="cta-text">${escapeHTML(ctaBtnText)}</span>
+                            </button>
+                            <div class="upgrade-modal-more-info-wrap">
+                                <button type="button" class="upgrade-modal-more-info-btn" data-action="goToUpgradePage">
+                                    <span class="material-symbols-rounded">info</span>
+                                    <span>${__('upgrade_modal_view_more_info') || 'Ver información adicional'}</span>
+                                    <span class="material-symbols-rounded upgrade-arrow-icon">arrow_forward</span>
+                                </button>
+                            </div>
+                            <p class="upgrade-modal-disclaimer">${__('upgrade_modal_terms_note') || 'Cancela cuando quieras. Aplican términos.'}</p>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN -->
+                    <div class="upgrade-modal-right">
+                        <div class="upgrade-modal-compare-wrap">
+                            <table class="upgrade-modal-compare-table">
+                                <thead>
+                                    <tr class="upgrade-table-header-row">
+                                        <th class="upgrade-table-feature-header">
+                                            <span>${__('upgrade_premium_benefits') || 'Beneficios prémium'}</span>
+                                        </th>
+                                        ${tableColHeadersHtml}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${tableRowsHtml}
+                                </tbody>
+                            </table>
+                            <div class="upgrade-modal-compare-footer">
+                                <span>${__('upgrade_and_much_more') || '¡Y mucho más!'}</span>
+                                <button type="button" class="upgrade-modal-compare-link" data-action="goToUpgradePage">
+                                    <span>${__('upgrade_modal_view_more_info') || 'Ver información adicional'}</span>
+                                    <span class="material-symbols-rounded">open_in_new</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `;
         }

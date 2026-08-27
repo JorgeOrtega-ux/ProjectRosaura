@@ -98,7 +98,7 @@ if ($isLoggedIn) {
             </button>
 
             <?php if ($isLoggedIn && !$isPremium): ?>
-                <button class="component-button component-button--icon component-button--h40" data-ref="header-upgrade-btn" data-nav="<?php echo APP_URL; ?>/upgrade" data-tooltip="<?php echo __('tooltip_upgrade_plan'); ?>" data-position="bottom">
+                <button class="component-button component-button--icon component-button--h40" data-ref="header-upgrade-btn" data-action="openUpgradeModal" data-tooltip="<?php echo __('tooltip_upgrade_plan'); ?>" data-position="bottom">
                     <span class="material-symbols-rounded">workspace_premium</span>
                 </button>
             <?php endif; ?>

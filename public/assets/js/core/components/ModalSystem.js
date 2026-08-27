@@ -2,6 +2,7 @@ import { ModalTemplates } from './ModalTemplates.js';
 import { CalendarSystem } from './CalendarSystem.js';
 import { BannerCropperSystem } from './BannerCropperSystem.js';
 import { ManageCanvasMembersModalController } from './ManageCanvasMembersModalController.js';
+import { UpgradeModalController } from './UpgradeModalController.js';
 import { getEventCoords, hexToHsv, hsvToHex, restoreButton, setButtonLoading, showMessage, initCarouselScroll, closeDropdown, localInputFormatToUtcString, parseUtcToLocalDate, formatLocalDateTimeToInput, getScheduledTimeDetails, copyToClipboard } from '../utils/uiUtils.js';
 import { ApiService } from '../api/ApiService.js';
 import { ApiRoutes } from '../api/ApiRoutes.js';
@@ -17,6 +18,7 @@ export class ModalSystem {
         this.calendarSystem = null;
         this.bannerCropper = null;
         this.activeMembersModalController = null;
+        this.activeUpgradeModalController = null;
         this.modalStack = [];
         this.activeOnConfirm = null;
         this.activeAsyncConfirm = false;
@@ -116,6 +118,7 @@ export class ModalSystem {
                     calendarSystem: this.calendarSystem,
                     bannerCropper: this.bannerCropper,
                     membersModalController: this.activeMembersModalController,
+                    upgradeModalController: this.activeUpgradeModalController,
                     dragState: Object.assign({}, this.dragState),
                     onConfirm: this.activeOnConfirm,
                     asyncConfirm: this.activeAsyncConfirm
@@ -127,6 +130,7 @@ export class ModalSystem {
                 this.calendarSystem = null;
                 this.bannerCropper = null;
                 this.activeMembersModalController = null;
+                this.activeUpgradeModalController = null;
                 this.activeOnConfirm = null;
                 this.activeAsyncConfirm = false;
             }
@@ -266,6 +270,11 @@ export class ModalSystem {
             if (templateName === 'manageCanvasMembersModal' || templateName === 'canvasSettingsModal') {
                 this.activeMembersModalController = new ManageCanvasMembersModalController(this.activeBox, data);
                 this.activeMembersModalController.init();
+            }
+
+            if (templateName === 'upgradePlansModal' || templateName === 'upgradeModal') {
+                this.activeUpgradeModalController = new UpgradeModalController(this.activeBox, data);
+                this.activeUpgradeModalController.init();
             }
 
             this.activeResolveFn = resolve;
@@ -2054,6 +2063,9 @@ export class ModalSystem {
 
             if (action === 'cancel') {
                 this.closeCurrent(false);
+            } else if (action === 'openUpgradeModal') {
+                this.closeCurrent(false);
+                this.show('upgradePlansModal');
             } else {
                 const isConfirmAction = action === 'confirm' || action === 'confirm_dynamic_form' || action === 'finish' || action === 'submitJoinLive' || actionBtn.id === 'btn_confirm_custom_backup';
                 if (isConfirmAction && this.activeAsyncConfirm) {
@@ -2128,6 +2140,11 @@ export class ModalSystem {
             this.activeMembersModalController = null;
         }
 
+        if (this.activeUpgradeModalController) {
+            this.activeUpgradeModalController.destroy();
+            this.activeUpgradeModalController = null;
+        }
+
         this.activeResolveFn = null;
         this.activeOverlay = null;
         this.activeWrapper = null;
@@ -2151,6 +2168,7 @@ export class ModalSystem {
             this.calendarSystem = prevModal.calendarSystem;
             this.bannerCropper = prevModal.bannerCropper;
             this.activeMembersModalController = prevModal.membersModalController || null;
+            this.activeUpgradeModalController = prevModal.upgradeModalController || null;
             this.dragState = prevModal.dragState;
             this.activeOnConfirm = prevModal.onConfirm;
             this.activeAsyncConfirm = prevModal.asyncConfirm;

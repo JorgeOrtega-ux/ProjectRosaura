@@ -3245,5 +3245,554 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
     cursor: nesw-resize;
 }
 
+/* --------------------------------------------------------------------------
+   14. VARIANT: 2-COLUMN UPGRADE & SUBSCRIPTION MODAL
+   -------------------------------------------------------------------------- */
+
+.component-modal-box--upgrade {
+    width: 1040px !important;
+    max-width: min(1040px, calc(100vw - 32px)) !important;
+    height: 640px !important;
+    max-height: min(640px, calc(100dvh - 36px)) !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: row !important;
+    box-sizing: border-box;
+    background-color: var(--bg-surface) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 20px !important;
+}
+
+.upgrade-modal-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+/* --- LEFT COLUMN --- */
+.upgrade-modal-left {
+    flex: 1;
+    min-width: 360px;
+    max-width: 440px;
+    display: flex;
+    flex-direction: column;
+    padding: 28px 24px;
+    border-right: 1px solid var(--border-color);
+    background-color: var(--bg-surface);
+    overflow-y: auto;
+    box-sizing: border-box;
+    gap: 14px;
+}
+
+.upgrade-modal-left-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.upgrade-modal-title {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.25;
+    margin: 0;
+    color: var(--text-primary);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.upgrade-modal-tier-highlight {
+    color: var(--text-primary);
+    font-weight: 800;
+    display: inline-block;
+}
+
+.upgrade-modal-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.upgrade-modal-billing-switch {
+    display: flex;
+    margin-top: 6px;
+    margin-bottom: 2px;
+}
+
+.upgrade-modal-toggle-pill {
+    display: inline-grid;
+    grid-template-columns: 1fr 1fr;
+    background-color: transparent;
+    border-radius: 9999px;
+    padding: 3px;
+    margin-top: 0;
+    border: 1px solid var(--border-color);
+    position: relative;
+    user-select: none;
+    isolation: isolate;
+    width: auto;
+    min-width: 180px;
+}
+
+.upgrade-modal-toggle-pill .component-button {
+    padding: 6px 16px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    min-width: 80px !important;
+}
+
+/* Plan Cards */
+.upgrade-modal-plans-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.upgrade-plan-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-surface);
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+    user-select: none;
+}
+
+.upgrade-plan-card:hover {
+    border-color: var(--text-secondary);
+    background-color: var(--bg-hover-light, rgba(255, 255, 255, 0.03));
+}
+
+.upgrade-plan-card.active {
+    border: 2px solid var(--text-primary) !important;
+    background-color: var(--bg-hover-light, rgba(255, 255, 255, 0.05)) !important;
+    padding: 11px 13px;
+}
+
+.upgrade-plan-radio {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+    flex-shrink: 0;
+    transition: border-color 0.15s ease;
+    background: transparent;
+}
+
+.upgrade-plan-card.active .upgrade-plan-radio {
+    border-color: var(--text-primary);
+}
+
+.upgrade-plan-radio-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--text-primary);
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.upgrade-plan-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.upgrade-plan-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.upgrade-plan-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.upgrade-plan-card-badge {
+    font-size: 11px !important;
+    padding: 2px 8px !important;
+    border: 1px solid var(--border-color) !important;
+    background-color: var(--bg-surface) !important;
+    color: var(--text-primary) !important;
+    border-radius: 9999px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    white-space: nowrap !important;
+}
+
+.upgrade-plan-card.active .upgrade-plan-card-badge {
+    border-color: var(--text-primary) !important;
+}
+
+.upgrade-plan-subtitle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.upgrade-plan-desc {
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 12px;
+}
+
+.upgrade-plan-price-wrap {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.upgrade-plan-price-val {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.upgrade-plan-price-period {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+/* Left Footer / CTA */
+.upgrade-modal-left-footer {
+    margin-top: auto;
+    padding-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.upgrade-modal-cta-btn {
+    width: 100% !important;
+    height: 42px !important;
+    border-radius: 9999px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    background-color: var(--action-primary) !important;
+    color: var(--text-inverse) !important;
+    border: 1px solid var(--action-primary) !important;
+    transition: background-color 0.15s ease, border-color 0.15s ease !important;
+    cursor: pointer !important;
+    box-shadow: none !important;
+}
+
+.upgrade-modal-cta-btn .material-symbols-rounded {
+    color: var(--text-inverse) !important;
+    font-size: 18px !important;
+}
+
+.upgrade-modal-cta-btn:hover {
+    background-color: var(--action-primary-hover) !important;
+    border-color: var(--action-primary-hover) !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.upgrade-modal-more-info-wrap {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.upgrade-modal-more-info-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.upgrade-modal-more-info-btn:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-hover-light, rgba(255, 255, 255, 0.05));
+}
+
+.upgrade-modal-more-info-btn .material-symbols-rounded {
+    font-size: 15px;
+    color: inherit;
+}
+
+.upgrade-modal-more-info-btn .upgrade-arrow-icon {
+    font-size: 14px;
+    transition: transform 0.15s ease;
+}
+
+.upgrade-modal-more-info-btn:hover .upgrade-arrow-icon {
+    transform: translateX(3px);
+}
+
+.upgrade-modal-disclaimer {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin: 0;
+    line-height: 1.35;
+    opacity: 0.8;
+}
+
+/* --- RIGHT COLUMN (COMPARISON TABLE) --- */
+.upgrade-modal-right {
+    flex: 1.45;
+    padding: 24px 20px;
+    background-color: var(--bg-app);
+    border-left: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.upgrade-modal-compare-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.upgrade-modal-compare-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+}
+
+/* Table Header */
+.upgrade-table-header-row {
+    height: 44px;
+}
+
+.upgrade-table-feature-header {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: left;
+    padding: 8px 10px;
+    width: 44%;
+    vertical-align: middle;
+}
+
+.upgrade-table-col-header {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 8px 6px;
+    vertical-align: middle;
+    border-radius: 8px 8px 0 0;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.upgrade-table-col-header.upgrade-col-active {
+    background-color: var(--bg-hover-light, rgba(255, 255, 255, 0.05));
+    color: var(--text-primary) !important;
+    font-weight: 700;
+    border-top: 1px solid var(--border-color);
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+}
+
+.upgrade-table-header-name {
+    display: inline-block;
+}
+
+/* Table Rows */
+.upgrade-table-row {
+    transition: background-color 0.15s;
+}
+
+.upgrade-table-row:hover {
+    background-color: var(--bg-hover-light, rgba(255, 255, 255, 0.02));
+}
+
+.upgrade-table-feature-cell {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.upgrade-table-feature-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.upgrade-feature-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+
+.upgrade-info-icon {
+    font-size: 14px;
+    color: var(--text-secondary);
+    cursor: help;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+}
+
+.upgrade-info-icon:hover {
+    opacity: 1;
+    color: var(--text-primary);
+}
+
+.upgrade-table-cell {
+    padding: 9px 6px;
+    text-align: center;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.upgrade-table-cell.upgrade-col-active {
+    background-color: var(--bg-hover-light, rgba(255, 255, 255, 0.05));
+    color: var(--text-primary);
+    font-weight: 600;
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+}
+
+.upgrade-table-row:last-child .upgrade-table-cell.upgrade-col-active {
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 0 0 8px 8px;
+}
+
+.upgrade-check-icon {
+    font-size: 17px;
+    color: var(--text-secondary);
+    display: inline-flex;
+    vertical-align: middle;
+}
+
+.upgrade-col-active .upgrade-check-icon {
+    color: var(--text-primary) !important;
+    font-weight: 700;
+}
+
+.upgrade-dash {
+    color: var(--text-secondary);
+    opacity: 0.4;
+    font-weight: 400;
+}
+
+.upgrade-val-text {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.upgrade-col-active .upgrade-val-text {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.upgrade-modal-compare-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    padding: 8px 10px;
+    margin-top: 4px;
+}
+
+.upgrade-modal-compare-link {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background-color 0.15s ease;
+    text-decoration: underline;
+}
+
+.upgrade-modal-compare-link:hover {
+    background-color: var(--bg-hover-light, rgba(255, 255, 255, 0.05));
+}
+
+.upgrade-modal-compare-link .material-symbols-rounded {
+    font-size: 14px;
+    color: inherit;
+}
+
+/* RESPONSIVE */
+@media (max-width: 860px) {
+    .component-modal-box--upgrade {
+        width: 95vw !important;
+        height: auto !important;
+        max-height: calc(100dvh - 32px) !important;
+        flex-direction: column !important;
+        overflow-y: auto !important;
+    }
+
+    .upgrade-modal-container {
+        flex-direction: column !important;
+        overflow-y: auto !important;
+        height: auto !important;
+    }
+
+    .upgrade-modal-left {
+        max-width: 100% !important;
+        min-width: 100% !important;
+        border-right: none !important;
+        border-bottom: 1px solid var(--border-color);
+        padding: 20px 16px;
+    }
+
+    .upgrade-modal-right {
+        padding: 20px 16px;
+        overflow-x: auto;
+        border-left: none;
+    }
+
+    .upgrade-modal-compare-table {
+        min-width: 480px;
+    }
+}
+
+
 
 

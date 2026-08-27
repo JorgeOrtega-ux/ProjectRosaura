@@ -550,60 +550,6 @@ export class CanvasCardInteractions {
             `;
         }
 
-        let manageSubmenuHtml = '';
-        if (isOwner) {
-            const rolesLock = getLockDetails('feat_advanced_roles', 'link');
-            const rolesClass = rolesLock.isLocked ? ` ${rolesLock.classStr}` : '';
-            const rolesAttrs = rolesLock.isLocked ? ` ${rolesLock.attributesStr}` : '';
-            const rolesBadge = rolesLock.isLocked ? rolesLock.badgeHtml : '';
-            const rolesNav = rolesLock.isLocked ? '' : `${this.basePath}/canvases/manage/roles/${uuid}`;
-
-            manageSubmenuHtml = `
-                <div class="component-menu-page" data-menu-page="manage">
-                    <div class="component-menu-list">
-                        <button type="button" class="component-menu-link component-menu-link--bordered nav-item" data-action="menuGoBack">
-                            <div class="component-menu-link-icon"><span class="material-symbols-rounded msr-arrow_back">arrow_back</span></div>
-                            <div class="component-menu-link-text"><span>Volver</span></div>
-                        </button>
-                        <div class="component-menu-divider"></div>
-                        <button type="button" class="component-menu-link" data-action="openCardEditModal" data-id="${id}" data-uuid="${uuid}">
-                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">tune</span></div>
-                            <div class="component-menu-link-text"><span>${window.__('tooltip_edit_canvas')}</span></div>
-                        </button>
-                        <button type="button" class="component-menu-link" data-action="openCardResizeModal" data-id="${id}" data-uuid="${uuid}">
-                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">expand</span></div>
-                            <div class="component-menu-link-text"><span>${window.__('tooltip_resize_canvas')}</span></div>
-                        </button>
-                        <button type="button" class="component-menu-link" data-action="openCardResetModal" data-id="${id}" data-uuid="${uuid}">
-                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">update</span></div>
-                            <div class="component-menu-link-text"><span>${window.__('tooltip_manage_resets')}</span></div>
-                        </button>
-                        <button type="button" class="component-menu-link" data-action="createSnapshotSelected" data-id="${id}">
-                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">photo_camera</span></div>
-                            <div class="component-menu-link-text"><span>${window.__('btn_create_captura')}</span></div>
-                        </button>
-                        <div class="component-menu-divider"></div>
-                        <button type="button" class="component-menu-link" data-action="openManageMembersModal" data-id="${id}" data-uuid="${uuid}">
-                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">group</span></div>
-                            <div class="component-menu-link-text"><span>${window.__('tooltip_manage_members')}</span></div>
-                        </button>
-                        <button type="button" class="component-menu-link${rolesClass}" data-action="openManageRolesModal" data-id="${id}" data-uuid="${uuid}"${rolesAttrs}>
-                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">shield_person</span></div>
-                            <div class="component-menu-link-text"><span>${window.__('tooltip_manage_roles')}</span>${rolesBadge}</div>
-                        </button>
-                        <button type="button" class="component-menu-link" data-action="openManageInvitesModal" data-id="${id}" data-uuid="${uuid}">
-                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">link</span></div>
-                            <div class="component-menu-link-text"><span>${window.__('tooltip_manage_invites')}</span></div>
-                        </button>
-                        <button type="button" class="component-menu-link" data-action="openManageSanctionsModal" data-id="${id}" data-uuid="${uuid}">
-                            <div class="component-menu-link-icon"><span class="material-symbols-rounded">gavel</span></div>
-                            <div class="component-menu-link-text"><span>${window.__('tooltip_manage_sanctions')}</span></div>
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
         const html = `
             <div class="component-module component-module--dropdown disabled" data-module="snapshot-menu-${id}">
                 <div class="component-menu component-menu--w265">
@@ -637,18 +583,15 @@ export class CanvasCardInteractions {
 
                             ${isOwner ? `
                             <div class="component-menu-divider"></div>
-                            <button type="button" class="component-menu-link${isLocked ? ' disabled-interaction' : ''}" ${isLocked ? '' : 'data-action="menuGoToPage" data-target-page="manage"'}>
+                            <button type="button" class="component-menu-link${isLocked ? ' disabled-interaction' : ''}" ${isLocked ? '' : `data-action="openManageMembersModal" data-id="${id}" data-uuid="${uuid}"`}>
                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">settings</span></div>
-                                <div class="component-menu-link-text"><span>Gestionar lienzo</span></div>
-                                ${isLocked ? '' : '<div class="component-menu-link-arrow"><span class="material-symbols-rounded">chevron_right</span></div>'}
+                                <div class="component-menu-link-text"><span>${window.__('tooltip_manage_canvas') || 'Gestionar lienzo'}</span></div>
                             </button>
                             ` : ''}
 
                             ${actionButtonHtml}
                         </div>
                     </div>
-
-                    ${manageSubmenuHtml}
                 </div>
             </div>
         `;
@@ -953,9 +896,10 @@ export class CanvasCardInteractions {
         }
     }
 
-    async openCanvasSettingsModal(btn, initialTab = 'resize') {
+    async openCanvasSettingsModal(btn, initialTab = 'edit') {
         const id = btn.getAttribute('data-id');
         const uuid = btn.getAttribute('data-uuid');
+        const tab = btn.getAttribute('data-tab') || initialTab;
         if (!id) return;
         this.closeDropdowns();
 
@@ -972,7 +916,7 @@ export class CanvasCardInteractions {
             currentSize,
             userTier,
             isOfflineMode: isOffline,
-            initialTab,
+            initialTab: tab,
             isOwner: true,
             onSuccess: (data) => {
                 if (data && data.type === 'resize' && card && data.size) {
@@ -991,7 +935,7 @@ export class CanvasCardInteractions {
     }
 
     async openManageMembersModal(btn) {
-        return this.openCanvasSettingsModal(btn, 'members');
+        return this.openCanvasSettingsModal(btn, 'edit');
     }
 
     async syncLocalCanvasToCloud(btn) {

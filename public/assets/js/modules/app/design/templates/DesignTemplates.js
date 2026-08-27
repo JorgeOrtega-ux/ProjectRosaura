@@ -53,12 +53,17 @@ export const DesignTemplates = {
             e.stopPropagation();
 
             if (btnToggleLiveBroadcast.getAttribute('data-requires-premium') === 'true') {
-                const basePath = window.AppBasePath || '';
-                const targetUrl = basePath + '/upgrade';
-                if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
-                    window.spaRouter.navigate(targetUrl);
+                const reqTier = parseInt(btnToggleLiveBroadcast.getAttribute('data-required-tier') || '1', 10);
+                if (window.modalSystem) {
+                    window.modalSystem.show('upgradePlansModal', { initialTier: reqTier });
                 } else {
-                    window.location.href = targetUrl;
+                    const basePath = window.AppBasePath || '';
+                    const targetUrl = basePath + '/upgrade';
+                    if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
+                        window.spaRouter.navigate(targetUrl);
+                    } else {
+                        window.location.href = targetUrl;
+                    }
                 }
                 return true;
             }

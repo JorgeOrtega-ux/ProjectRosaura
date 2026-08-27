@@ -384,10 +384,10 @@ class CanvasSnapshotViewerController {
 
     handleSelectSnapshotExportType(btn) {
         if (btn.hasAttribute('data-requires-premium') || btn.classList.contains('premium-locked')) {
-            const premiumMsg = window.__ ? window.__('err_timelapse_export_requires_premium') : 'La exportación de videos timelapse requiere una suscripción activa.';
-            showMessage(premiumMsg, 'warning');
-            if (window.modalSystem) window.modalSystem.closeCurrent();
-            if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
+            const reqTier = parseInt(btn.getAttribute('data-required-tier') || '1', 10);
+            if (window.modalSystem) {
+                window.modalSystem.show('upgradePlansModal', { initialTier: reqTier });
+            } else if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
                 window.spaRouter.navigate('/upgrade');
             }
             return;

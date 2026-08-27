@@ -83,19 +83,24 @@ export class MainController {
         window.addEventListener('resize', this.handleResizeBound);
         document.addEventListener('scroll', this.handleScrollBound, true);
 
-        // Handler global para elementos con clase premium-locked
+        // Handler global para elementos con clase premium-locked o data-requires-premium
         document.addEventListener('click', (e) => {
-            const premiumLockedBtn = e.target.closest('.premium-locked');
+            const premiumLockedBtn = e.target.closest('.premium-locked, [data-requires-premium="true"], [data-action="openUpgradeModal"]');
             if (premiumLockedBtn) {
                 e.preventDefault();
                 e.stopPropagation();
                 
-                const basePath = window.AppBasePath || '';
-                const targetUrl = basePath + '/upgrade';
-                if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
-                    window.spaRouter.navigate(targetUrl);
+                const reqTier = parseInt(premiumLockedBtn.getAttribute('data-required-tier') || '0', 10);
+                if (window.modalSystem) {
+                    window.modalSystem.show('upgradePlansModal', { initialTier: reqTier });
                 } else {
-                    window.location.href = targetUrl;
+                    const basePath = window.AppBasePath || '';
+                    const targetUrl = basePath + '/upgrade';
+                    if (window.spaRouter && typeof window.spaRouter.navigate === 'function') {
+                        window.spaRouter.navigate(targetUrl);
+                    } else {
+                        window.location.href = targetUrl;
+                    }
                 }
             }
         }, true);
