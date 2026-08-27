@@ -450,6 +450,8 @@ export class CanvasCardInteractions {
         const isMember = btn.getAttribute('data-member') === '1';
         const isOnline = btn.getAttribute('data-online') === '1';
         const isLocal = btn.getAttribute('data-local') === '1' || (uuid && String(uuid).startsWith('local_'));
+        const card = btn.closest('.component-card') || btn.closest('.component-gallery-card');
+        const canManage = isOwner || btn.getAttribute('data-can-manage') === '1' || (card && card.getAttribute('data-can-manage') === '1');
 
         if (isLocal) {
             const html = `
@@ -581,9 +583,9 @@ export class CanvasCardInteractions {
 
                             ${warningMenuOption}
 
-                            ${isOwner ? `
+                            ${(isOwner || canManage) ? `
                             <div class="component-menu-divider"></div>
-                            <button type="button" class="component-menu-link${isLocked ? ' disabled-interaction' : ''}" ${isLocked ? '' : `data-action="openManageMembersModal" data-id="${id}" data-uuid="${uuid}"`}>
+                            <button type="button" class="component-menu-link${isLocked ? ' disabled-interaction' : ''}" ${isLocked ? '' : `data-action="openManageMembersModal" data-id="${id}" data-uuid="${uuid}" data-owner="${isOwner ? '1' : '0'}"`}>
                                 <div class="component-menu-link-icon"><span class="material-symbols-rounded">settings</span></div>
                                 <div class="component-menu-link-text"><span>${window.__('tooltip_manage_canvas') || 'Gestionar lienzo'}</span></div>
                             </button>
@@ -903,11 +905,20 @@ export class CanvasCardInteractions {
         if (!id) return;
         this.closeDropdowns();
 
-        const card = document.querySelector(`[data-card-id="${id}"]`) || btn.closest('.component-card');
+        const card = document.querySelector(`[data-card-id="${id}"]`) || btn.closest('.component-card') || btn.closest('.component-gallery-card');
         const isOffline = card ? card.getAttribute('data-mode') === 'offline' : false;
         const currentSize = card ? card.getAttribute('data-size') || '64x64' : '64x64';
         const userTier = window.APP_USER?.subscription_tier ?? 0;
-        const title = card?.querySelector('.component-card__title')?.textContent?.trim() || '';
+        const title = card?.querySelector('.component-card__title, .component-gallery-title')?.textContent?.trim() || '';
+        const isOwner = btn.getAttribute('data-owner') === '1' || (card && (card.getAttribute('data-owner') === '1' || card.getAttribute('data-is-owner') === '1'));
+        
+        let permissions = [];
+        try {
+            const rawPerms = btn.getAttribute('data-permissions') || (card ? card.getAttribute('data-permissions') : null);
+            if (rawPerms) {
+                permissions = typeof rawPerms === 'string' ? JSON.parse(rawPerms) : rawPerms;
+            }
+        } catch (e) {}
 
         await window.modalSystem.show('manageCanvasMembersModal', {
             canvasId: id,
@@ -917,7 +928,8 @@ export class CanvasCardInteractions {
             userTier,
             isOfflineMode: isOffline,
             initialTab: tab,
-            isOwner: true,
+            isOwner: !!isOwner,
+            permissions: Array.isArray(permissions) ? permissions : [],
             onSuccess: (data) => {
                 if (data && data.type === 'resize' && card && data.size) {
                     card.setAttribute('data-size', data.size);

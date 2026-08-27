@@ -1034,7 +1034,8 @@ class CanvasCoreService {
             }
 
             $isOwner = ($canvas['owner_id'] == $userId);
-            if (!$isOwner) {
+            $canManageSettings = $isOwner || $this->canvasRepository->hasCanvasPermission($canvasId, $userId, \App\Core\System\CanvasPermissionsConstants::MANAGE_SETTINGS);
+            if (!$canManageSettings) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
 

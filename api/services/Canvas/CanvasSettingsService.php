@@ -37,7 +37,8 @@ class CanvasSettingsService {
             }
 
             $isOwner = ((int)$canvas['owner_id'] === (int)$userId);
-            if (!$isOwner) {
+            $canResize = $isOwner || $this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_SETTINGS);
+            if (!$canResize) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
 
@@ -157,9 +158,12 @@ class CanvasSettingsService {
     public function getResizeSettings(int $userId, int $canvasId): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
-            $isOwner = ($canvas['owner_id'] === $userId);
+            if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
+
+            $isOwner = ((int)$canvas['owner_id'] === $userId);
+            $canResize = $isOwner || $this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_SETTINGS);
             
-            if (!$canvas || !$isOwner) {
+            if (!$canResize) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
 
@@ -184,9 +188,12 @@ class CanvasSettingsService {
   public function updateResizeSettings(int $userId, int $canvasId, array $data): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
-            $isOwner = ($canvas['owner_id'] === $userId);
+            if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
 
-            if (!$canvas || !$isOwner) {
+            $isOwner = ((int)$canvas['owner_id'] === $userId);
+            $canResize = $isOwner || $this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_SETTINGS);
+
+            if (!$canResize) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
 
@@ -288,9 +295,14 @@ class CanvasSettingsService {
     public function getResetSettings(int $userId, int $canvasId): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
-            $isOwner = ($canvas['owner_id'] === $userId);
+            if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
+
+            $isOwner = ((int)$canvas['owner_id'] === $userId);
+            $canReset = $isOwner 
+                || $this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_RESETS)
+                || $this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_SETTINGS);
             
-            if (!$canvas || !$isOwner) {
+            if (!$canReset) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
 
@@ -316,17 +328,20 @@ class CanvasSettingsService {
     public function updateResetSettings(int $userId, int $canvasId, array $data): array {
         try {
             $canvas = $this->canvasRepository->getById($canvasId);
-            $isOwner = ($canvas['owner_id'] === $userId);
+            if (!$canvas) return ['success' => false, 'message' => __('err_canvas_not_found')];
 
-            if (!$canvas || !$isOwner) {
+            $isOwner = ((int)$canvas['owner_id'] === $userId);
+            $canReset = $isOwner 
+                || $this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_RESETS)
+                || $this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_SETTINGS);
+
+            if (!$canReset) {
                 return ['success' => false, 'message' => __('err_unauthorized')];
             }
 
             if (!empty($canvas['is_subscription_locked'])) {
                 return ['success' => false, 'message' => __('err_canvas_locked')];
             }
-
-
 
             $isActive = filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
             $takeSnapshot = filter_var($data['take_snapshot'] ?? true, FILTER_VALIDATE_BOOLEAN);
@@ -419,15 +434,13 @@ class CanvasSettingsService {
                 return ['success' => false, 'message' => __('err_canvas_locked')];
             }
 
-
-
-            $role = null;
             $isOwner = ($canvas['owner_id'] !== null && (int)$canvas['owner_id'] === (int)$userId);
+            $canReset = $isOwner 
+                || $this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_RESETS)
+                || $this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_SETTINGS);
 
-            if (!$isOwner) {
-                if (!$this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_SETTINGS)) {
-                    return ['success' => false, 'message' => __('err_unauthorized')];
-                }
+            if (!$canReset) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
             }
 
             if ($takeSnapshot) {
@@ -490,10 +503,13 @@ class CanvasSettingsService {
             }
 
             $isOwner = ($canvas['owner_id'] !== null && (int)$canvas['owner_id'] === (int)$userId);
-            if (!$isOwner) {
-                if (!$this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_SETTINGS)) {
-                    return ['success' => false, 'message' => __('err_unauthorized')];
-                }
+            $canSnapshot = $isOwner 
+                || $this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::CREATE_SNAPSHOTS)
+                || $this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_SETTINGS)
+                || $this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::VIEW_HISTORY);
+
+            if (!$canSnapshot) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
             }
 
             if ($canvas['owner_id'] !== null) {
@@ -539,10 +555,13 @@ class CanvasSettingsService {
             }
 
             $isOwner = ($canvas['owner_id'] !== null && (int)$canvas['owner_id'] === (int)$userId);
-            if (!$isOwner) {
-                if (!$this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_SETTINGS)) {
-                    return ['success' => false, 'message' => __('err_unauthorized')];
-                }
+            $canSnapshot = $isOwner 
+                || $this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::CREATE_SNAPSHOTS)
+                || $this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::MANAGE_SETTINGS)
+                || $this->canvasRepository->hasCanvasPermission($canvasId, $userId, CanvasPermissionsConstants::VIEW_HISTORY);
+
+            if (!$canSnapshot) {
+                return ['success' => false, 'message' => __('err_unauthorized')];
             }
 
             $inQueue = false;

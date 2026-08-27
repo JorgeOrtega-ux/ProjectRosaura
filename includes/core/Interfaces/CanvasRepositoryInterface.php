@@ -23,6 +23,7 @@ interface CanvasRepositoryInterface {
     public function getById(int $id): ?array;
     public function getMemberRoles(int $canvasId, int $userId): array;
     public function hasCanvasPermission(int $canvasId, int $userId, string $permission): bool;
+    public function getUserCanvasPermissions(int $canvasId, int $userId): array;
     public function assignMemberRole(int $canvasId, int $userId, int $roleId): bool;
     public function removeMemberRole(int $canvasId, int $userId, int $roleId): bool;
     public function getCanvasRoles(?int $canvasId = null): array;

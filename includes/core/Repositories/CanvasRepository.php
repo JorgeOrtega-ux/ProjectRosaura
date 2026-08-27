@@ -348,7 +348,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         } elseif ($filter === 'joined') {
             $whereClause = "WHERE c.owner_id != :uid_owner AND cm2.canvas_id IS NOT NULL AND (c.mode = 'online' OR c.is_online_active = 1) AND c.deleted_at IS NULL";
         } elseif ($filter === 'managed') {
-            $whereClause = "WHERE (c.owner_id = :uid_owner OR (EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_USER_ROLES . " cur JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id WHERE cur.canvas_id = c.id AND cur.user_id = :uid_managed AND crp.permission_id IN (2, 3, 4, 5, 6, 7)) AND (c.mode = 'online' OR c.is_online_active = 1))) AND c.deleted_at IS NULL";
+            $whereClause = "WHERE (c.owner_id = :uid_owner OR (EXISTS (SELECT 1 FROM " . DB::TBL_CANVAS_USER_ROLES . " cur JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id WHERE cur.canvas_id = c.id AND cur.user_id = :uid_managed AND crp.permission_id IN (2, 3, 4, 5, 6, 7, 8, 9)) AND (c.mode = 'online' OR c.is_online_active = 1))) AND c.deleted_at IS NULL";
             $params[':uid_managed'] = $userId;
         } elseif ($filter === 'favorites') {
             $whereClause = "WHERE (c.owner_id = :uid_owner OR (cm2.canvas_id IS NOT NULL AND (c.mode = 'online' OR c.is_online_active = 1))) AND f.canvas_id IS NOT NULL AND c.deleted_at IS NULL";
@@ -789,6 +789,37 @@ class CanvasRepository implements CanvasRepositoryInterface {
         }
 
         return $result;
+    }
+
+    public function getUserCanvasPermissions(int $canvasId, int $userId): array {
+        $canvas = $this->getById($canvasId);
+        if (!$canvas) return [];
+
+        if (isset($canvas['owner_id']) && (int)$canvas['owner_id'] === $userId) {
+            return [
+                \App\Core\System\CanvasPermissionsConstants::PLACE_PIXELS,
+                \App\Core\System\CanvasPermissionsConstants::MANAGE_SETTINGS,
+                \App\Core\System\CanvasPermissionsConstants::MANAGE_MEMBERS,
+                \App\Core\System\CanvasPermissionsConstants::MANAGE_ROLES,
+                \App\Core\System\CanvasPermissionsConstants::ASSIGN_ROLES,
+                \App\Core\System\CanvasPermissionsConstants::VIEW_HISTORY,
+                \App\Core\System\CanvasPermissionsConstants::MANAGE_RESETS,
+                \App\Core\System\CanvasPermissionsConstants::MANAGE_SANCTIONS,
+                \App\Core\System\CanvasPermissionsConstants::MANAGE_INVITES,
+                \App\Core\System\CanvasPermissionsConstants::CREATE_SNAPSHOTS
+            ];
+        }
+
+        $sql = "SELECT DISTINCT p.name 
+                FROM " . DB::TBL_CANVAS_USER_ROLES . " cur
+                INNER JOIN " . DB::TBL_CANVAS_ROLES . " r ON cur.role_id = r.id
+                INNER JOIN " . DB::TBL_CANVAS_ROLE_PERMISSIONS . " crp ON r.id = crp.role_id
+                INNER JOIN " . DB::TBL_CANVAS_PERMISSIONS . " p ON crp.permission_id = p.id
+                WHERE cur.canvas_id = :canvas_id 
+                  AND cur.user_id = :user_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':canvas_id' => $canvasId, ':user_id' => $userId]);
+        return $stmt->fetchAll(\PDO::FETCH_COLUMN) ?: [];
     }
 
     public function assignMemberRole(int $canvasId, int $userId, int $roleId): bool {

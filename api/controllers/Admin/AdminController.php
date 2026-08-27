@@ -125,9 +125,13 @@ class AdminController extends BaseController {
     public function update_role($input) {
         try { 
             $this->requirePermission(PermissionsConstants::ASSIGN_ROLES);
+            $roles = $input['roles'] ?? (isset($input['role_id']) ? [(int)$input['role_id']] : null);
+            if (is_numeric($roles)) {
+                $roles = [(int)$roles];
+            }
             $safeInput = [
                 'target_user_id' => $input['target_user_id'] ?? null,
-                'roles' => $input['roles'] ?? null,
+                'roles' => $roles,
                 'password' => $input['password'] ?? null,
                 'credential' => $input['credential'] ?? $input['google_token'] ?? null,
                 'google_token' => $input['google_token'] ?? $input['credential'] ?? null
@@ -351,6 +355,7 @@ class AdminController extends BaseController {
             $this->requirePermission(PermissionsConstants::RESTORE_BACKUPS);
             $safeInput = [
                 'backup_id' => $input['backup_id'] ?? null,
+                'schema' => $input['schema'] ?? null,
                 'password' => $input['password'] ?? null,
                 'credential' => $input['credential'] ?? $input['google_token'] ?? null,
                 'google_token' => $input['google_token'] ?? $input['credential'] ?? null

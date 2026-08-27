@@ -2768,8 +2768,37 @@ export const ModalTemplates = {
             const currentSize = data.currentSize || '64x64';
             const userTier = parseInt(data.userTier ?? (window.APP_USER?.subscription_tier ?? 0), 10);
             const isOffline = data.isOfflineMode !== false && (data.isOffline || false);
-            const initialTab = data.initialTab || (data.designNetwork ? 'live' : 'members');
             const isOwner = !!data.isOwner;
+            const permissions = Array.isArray(data.permissions) ? data.permissions : [];
+            const hasPerm = (p) => isOwner || permissions.includes(p);
+
+            const canManageSettings = isOwner || hasPerm('manage_settings');
+            const canManageResets = isOwner || hasPerm('manage_resets') || hasPerm('manage_settings');
+            const canManageMembers = isOwner || hasPerm('manage_members');
+            const canManageInvites = isOwner || hasPerm('manage_invites') || hasPerm('manage_members');
+            const canManageRoles = isOwner || hasPerm('manage_roles');
+            const canAssignRoles = isOwner || hasPerm('assign_roles') || hasPerm('manage_roles');
+            const canManageSanctions = isOwner || hasPerm('manage_sanctions') || hasPerm('manage_members') || hasPerm('manage_settings');
+
+            let initialTab = data.initialTab;
+            if (!initialTab) {
+                initialTab = data.designNetwork ? 'live' : (canManageSettings ? 'edit' : (canManageMembers ? 'members' : 'live'));
+            }
+            if ((initialTab === 'edit' || initialTab === 'general' || initialTab === 'resize') && !canManageSettings) {
+                initialTab = canManageMembers ? 'members' : (canManageSanctions ? 'sanctions' : 'live');
+            } else if (initialTab === 'reset' && !canManageResets) {
+                initialTab = canManageMembers ? 'members' : (canManageSanctions ? 'sanctions' : 'live');
+            } else if ((initialTab === 'members' || initialTab === 'requests') && !canManageMembers) {
+                initialTab = canManageSanctions ? 'sanctions' : 'live';
+            } else if (initialTab === 'invites' && !canManageInvites) {
+                initialTab = canManageMembers ? 'members' : 'live';
+            } else if (initialTab === 'roles' && !canManageRoles) {
+                initialTab = canManageMembers ? 'members' : 'live';
+            } else if (initialTab === 'sanctions' && !canManageSanctions) {
+                initialTab = canManageMembers ? 'members' : 'live';
+            } else if ((initialTab === 'danger' || initialTab === 'critical') && !isOwner) {
+                initialTab = canManageMembers ? 'members' : 'live';
+            }
 
             const sizesList = {
                 "32x32": { label: "32x32", icon: "crop_square", tier: 0 },
@@ -2856,7 +2885,7 @@ export const ModalTemplates = {
                 : '';
 
             return `
-                <div class="component-modal-settings-container" data-canvas-uuid="${escapeHTML(canvasUuid)}" data-canvas-id="${escapeHTML(canvasId)}" data-is-owner="${isOwner ? '1' : '0'}">
+                <div class="component-modal-settings-container" data-canvas-uuid="${escapeHTML(canvasUuid)}" data-canvas-id="${escapeHTML(canvasId)}" data-is-owner="${isOwner ? '1' : '0'}" data-permissions="${escapeHTML(JSON.stringify(permissions))}">
                     <!-- MOBILE DRAG HANDLE -->
                     <div class="pill-container"><div class="drag-handle"></div></div>
 
@@ -2888,12 +2917,16 @@ export const ModalTemplates = {
                                         <div class="component-badge component-badge--sm" data-ref="modal-selected-count-badge">
                                             <span>0 seleccionados</span>
                                         </div>
+                                        ${canAssignRoles ? `
                                         <button type="button" class="component-button component-button--icon component-button--h34" data-action="modalChangeMemberRole" data-tooltip="${t('tooltip_change_role', 'Cambiar rol')}" data-position="bottom">
                                             <span class="material-symbols-rounded msr-manage_accounts">manage_accounts</span>
                                         </button>
+                                        ` : ''}
+                                        ${canManageMembers ? `
                                         <button type="button" class="component-button component-button--icon component-button--h34 component-button--danger" data-action="modalRemoveMember" data-tooltip="${t('tooltip_remove_member', 'Expulsar')}" data-position="bottom">
                                             <span class="material-symbols-rounded msr-person_remove">person_remove</span>
                                         </button>
+                                        ` : ''}
                                     </div>
 
                                     <!-- Contextual Actions: Requests Tab Selection -->
@@ -2999,9 +3032,11 @@ export const ModalTemplates = {
                         <!-- LEFT: NAV LINKS -->
                         <div class="component-modal-settings-sidebar">
                             <div class="component-modal-settings-sidebar-top" data-ref="canvas-members-modal-tabs">
+                                ${(canManageSettings || canManageResets) ? `
                                 <!-- CATEGORY 1: LIENZO -->
                                 <div class="component-menu-category-title">${t('category_canvas', 'Lienzo')}</div>
 
+                                ${canManageSettings ? `
                                 <div class="component-menu-link nav-item ${(initialTab === 'edit' || initialTab === 'general') ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="edit">
                                     <div class="component-menu-link-icon">
                                         <span class="material-symbols-rounded">tune</span>
@@ -3019,7 +3054,9 @@ export const ModalTemplates = {
                                         <span>${t('canvas_resize_title', 'Redimensionar lienzo')}</span>
                                     </div>
                                 </div>
+                                ` : ''}
 
+                                ${canManageResets ? `
                                 <div class="component-menu-link nav-item ${initialTab === 'reset' ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="reset">
                                     <div class="component-menu-link-icon">
                                         <span class="material-symbols-rounded msr-restart_alt">restart_alt</span>
@@ -3028,10 +3065,13 @@ export const ModalTemplates = {
                                         <span>${t('canvas_resets_title', 'Reiniciar lienzo')}</span>
                                     </div>
                                 </div>
+                                ` : ''}
+                                ` : ''}
 
                                 <!-- CATEGORY 2: COLABORACIÓN -->
                                 <div class="component-menu-category-title">${t('category_collaboration', 'Colaboración')}</div>
 
+                                ${canManageMembers ? `
                                 <div class="component-menu-link nav-item ${initialTab === 'members' ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="members">
                                     <div class="component-menu-link-icon">
                                         <span class="material-symbols-rounded msr-group">group</span>
@@ -3049,7 +3089,9 @@ export const ModalTemplates = {
                                         <span>${t('tab_requests_title', 'Gestionar solicitudes')}</span>
                                     </div>
                                 </div>
+                                ` : ''}
 
+                                ${canManageInvites ? `
                                 <div class="component-menu-link nav-item ${initialTab === 'invites' ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="invites">
                                     <div class="component-menu-link-icon">
                                         <span class="material-symbols-rounded">link</span>
@@ -3058,6 +3100,7 @@ export const ModalTemplates = {
                                         <span>${t('lbl_invites_management', 'Gestionar invitaciones')}</span>
                                     </div>
                                 </div>
+                                ` : ''}
 
                                 <div class="component-menu-link nav-item ${initialTab === 'live' ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="live">
                                     <div class="component-menu-link-icon">
@@ -3068,9 +3111,11 @@ export const ModalTemplates = {
                                     </div>
                                 </div>
 
+                                ${(canManageRoles || canManageSanctions) ? `
                                 <!-- CATEGORY 3: SEGURIDAD -->
                                 <div class="component-menu-category-title">${t('category_security', 'Seguridad')}</div>
 
+                                ${canManageRoles ? `
                                 <div class="component-menu-link nav-item ${initialTab === 'roles' ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="roles">
                                     <div class="component-menu-link-icon">
                                         <span class="material-symbols-rounded">shield_person</span>
@@ -3080,7 +3125,9 @@ export const ModalTemplates = {
                                     </div>
                                     ${rolesBadge}
                                 </div>
+                                ` : ''}
 
+                                ${canManageSanctions ? `
                                 <div class="component-menu-link nav-item ${initialTab === 'sanctions' ? 'active' : ''}" data-action="switchMembersModalTab" data-tab="sanctions">
                                     <div class="component-menu-link-icon">
                                         <span class="material-symbols-rounded">gavel</span>
@@ -3089,6 +3136,8 @@ export const ModalTemplates = {
                                         <span>${t('tab_sanctions_title', 'Gestionar sanciones')}</span>
                                     </div>
                                 </div>
+                                ` : ''}
+                                ` : ''}
                             </div>
 
                             ${isOwner ? `

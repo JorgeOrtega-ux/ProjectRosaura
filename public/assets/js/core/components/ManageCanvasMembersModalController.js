@@ -25,11 +25,38 @@ export class ManageCanvasMembersModalController {
         this.canvasId = data.canvasId || data.id || '';
         this.canvasTitle = data.title || '';
         this.isOwner = !!data.isOwner;
+        this.permissions = Array.isArray(data.permissions) ? data.permissions : [];
+        const hasPerm = (p) => this.isOwner || this.permissions.includes(p);
+        this.canManageSettings = this.isOwner || hasPerm('manage_settings');
+        this.canManageResets = this.isOwner || hasPerm('manage_resets') || hasPerm('manage_settings');
+        this.canManageMembers = this.isOwner || hasPerm('manage_members');
+        this.canManageInvites = this.isOwner || hasPerm('manage_invites') || hasPerm('manage_members');
+        this.canManageRoles = this.isOwner || hasPerm('manage_roles');
+        this.canAssignRoles = this.isOwner || hasPerm('assign_roles') || hasPerm('manage_roles');
+        this.canManageSanctions = this.isOwner || hasPerm('manage_sanctions') || hasPerm('manage_members') || hasPerm('manage_settings');
+
         this.isOffline = data.isOfflineMode !== false && (data.isOffline || false);
         this.currentSize = data.currentSize || '64x64';
         this.userTier = parseInt(data.userTier ?? (window.APP_USER?.subscription_tier ?? 0), 10);
         this.designNetwork = data.designNetwork || window.activeDesignNetwork || null;
-        this.activeTab = data.initialTab || (this.designNetwork ? 'live' : 'members');
+        
+        let initialTab = data.initialTab || (this.designNetwork ? 'live' : (this.canManageSettings ? 'edit' : (this.canManageMembers ? 'members' : 'live')));
+        if ((initialTab === 'edit' || initialTab === 'general' || initialTab === 'resize') && !this.canManageSettings) {
+            initialTab = this.canManageMembers ? 'members' : (this.canManageSanctions ? 'sanctions' : 'live');
+        } else if (initialTab === 'reset' && !this.canManageResets) {
+            initialTab = this.canManageMembers ? 'members' : (this.canManageSanctions ? 'sanctions' : 'live');
+        } else if ((initialTab === 'members' || initialTab === 'requests') && !this.canManageMembers) {
+            initialTab = this.canManageSanctions ? 'sanctions' : 'live';
+        } else if (initialTab === 'invites' && !this.canManageInvites) {
+            initialTab = this.canManageMembers ? 'members' : 'live';
+        } else if (initialTab === 'roles' && !this.canManageRoles) {
+            initialTab = this.canManageMembers ? 'members' : 'live';
+        } else if (initialTab === 'sanctions' && !this.canManageSanctions) {
+            initialTab = this.canManageMembers ? 'members' : 'live';
+        } else if ((initialTab === 'danger' || initialTab === 'critical') && !this.isOwner) {
+            initialTab = this.canManageMembers ? 'members' : 'live';
+        }
+        this.activeTab = initialTab;
 
         // Edit Canvas State
         this.editState = {
@@ -117,13 +144,15 @@ export class ManageCanvasMembersModalController {
         window.addEventListener('canvasPresenceUpdated', this.handlePresenceUpdateBound);
         window.addEventListener('customPaletteCreated', this.handlePaletteCreatedBound);
 
-        // Preload data
+        // Preload data based on permissions
         this.switchTab(this.activeTab);
-        this.loadEditData();
-        this.loadMembers(1);
-        this.loadRequests();
-        this.loadResizeSettings();
-        this.loadResetSettings();
+        if (this.canManageSettings) this.loadEditData();
+        if (this.canManageMembers) {
+            this.loadMembers(1);
+            this.loadRequests();
+        }
+        if (this.canManageSettings) this.loadResizeSettings();
+        if (this.canManageResets) this.loadResetSettings();
 
         if (this.designNetwork) {
             this.renderLivePresence();
@@ -758,6 +787,22 @@ export class ManageCanvasMembersModalController {
     }
 
     switchTab(tabName) {
+        if ((tabName === 'edit' || tabName === 'general' || tabName === 'resize') && !this.canManageSettings) {
+            tabName = this.canManageMembers ? 'members' : (this.canManageSanctions ? 'sanctions' : 'live');
+        } else if (tabName === 'reset' && !this.canManageResets) {
+            tabName = this.canManageMembers ? 'members' : (this.canManageSanctions ? 'sanctions' : 'live');
+        } else if ((tabName === 'members' || tabName === 'requests') && !this.canManageMembers) {
+            tabName = this.canManageSanctions ? 'sanctions' : 'live';
+        } else if (tabName === 'invites' && !this.canManageInvites) {
+            tabName = this.canManageMembers ? 'members' : 'live';
+        } else if (tabName === 'roles' && !this.canManageRoles) {
+            tabName = this.canManageMembers ? 'members' : 'live';
+        } else if (tabName === 'sanctions' && !this.canManageSanctions) {
+            tabName = this.canManageMembers ? 'members' : 'live';
+        } else if ((tabName === 'danger' || tabName === 'critical') && !this.isOwner) {
+            tabName = this.canManageMembers ? 'members' : 'live';
+        }
+
         this.activeTab = tabName;
         this.rolesSubView = 'list';
         this.resizeStep = 'step-1';

@@ -129,7 +129,9 @@ class AdminViewService {
         } else {
             $userPerms = $_SESSION['user_permissions'] ?? [];
         }
-        $isSuperAdmin = isset($_SESSION['user_role_id']) && (int)$_SESSION['user_role_id'] === 4;
+        $isSuperAdmin = (isset($_SESSION['user_role_id']) && (int)$_SESSION['user_role_id'] === 4) 
+            || (isset($_SESSION['user_role_weight']) && (int)$_SESSION['user_role_weight'] >= \App\Core\System\SecurityConstants::WEIGHT_SUPER_ADMIN)
+            || (!empty($_SESSION['is_super_admin']));
         $canEditUsers = in_array(PermissionsConstants::EDIT_USERS, $userPerms);
         $canAssignRoles = in_array(PermissionsConstants::ASSIGN_ROLES, $userPerms);
         $canDeleteUsers = in_array(PermissionsConstants::DELETE_USERS, $userPerms) || $isSuperAdmin;
@@ -289,9 +291,10 @@ class AdminViewService {
     public function getEditUserData(?string $targetUserUuid): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
         global $serverConfig;
-
         $maxAvatarSize = $serverConfig['max_avatar_size_mb'] ?? 2;
-        $isSuperAdmin = isset($_SESSION['user_role_id']) && (int)$_SESSION['user_role_id'] === 4;
+        $isSuperAdmin = (isset($_SESSION['user_role_id']) && (int)$_SESSION['user_role_id'] === 4) 
+            || (isset($_SESSION['user_role_weight']) && (int)$_SESSION['user_role_weight'] >= \App\Core\System\SecurityConstants::WEIGHT_SUPER_ADMIN)
+            || (!empty($_SESSION['is_super_admin']));
 
         if (empty($targetUserUuid)) {
             return ['redirect' => (defined('APP_URL') ? APP_URL : '') . "/admin/users"];
@@ -302,7 +305,6 @@ class AdminViewService {
         $roleRepo = new RoleRepository($db, $redis);
         $userRepo = new UserRepository($db, $roleRepo);
         $prefsManager = new UserPrefsManager($db);
-
         $user = $userRepo->findByUuid($targetUserUuid);
         if (!$user) {
             return ['redirect' => (defined('APP_URL') ? APP_URL : '') . "/admin/users"];
@@ -417,7 +419,9 @@ class AdminViewService {
 
         $currentUserRoleId = !empty($assignedRoleIds) ? $assignedRoleIds[0] : 1;
         $currentUserWeight = isset($_SESSION['user_role_weight']) ? (int)$_SESSION['user_role_weight'] : 0;
-        $isSuperAdmin = isset($_SESSION['user_role_id']) && (int)$_SESSION['user_role_id'] === 4;
+        $isSuperAdmin = (isset($_SESSION['user_role_id']) && (int)$_SESSION['user_role_id'] === 4) 
+            || ($currentUserWeight >= \App\Core\System\SecurityConstants::WEIGHT_SUPER_ADMIN)
+            || (!empty($_SESSION['is_super_admin']));
 
         return [
             'redirect' => null,

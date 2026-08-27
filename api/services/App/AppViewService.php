@@ -183,6 +183,13 @@ class AppViewService {
                 'isSnapshot' => false,
                 'isLocalCanvas' => true,
                 'showDesignTools' => true,
+                'canvasPermissions' => [
+                    'place_pixels', 'manage_settings', 'manage_members', 'manage_roles', 
+                    'assign_roles', 'view_history', 'manage_resets', 'manage_sanctions', 
+                    'manage_invites', 'create_snapshots'
+                ],
+                'canManageCanvas' => true,
+                'userCanvasRole' => 'Owner',
                 'activeLiveShareCode' => '',
                 'activeLiveShareData' => null,
             ];
@@ -235,6 +242,9 @@ class AppViewService {
         $resizeTimerAction = 'restart';
         $isMember = false;
         $userRole = 'spectator';
+        $userCanvasRole = 'spectator';
+        $canvasPermissions = [];
+        $canManageCanvas = false;
         $userId = null;
         $isOwner = false;
         $isBlockedInit = true;
@@ -326,14 +336,39 @@ class AppViewService {
                             $isOwner = true;
                             $isMember = true;
                             $userRole = 'admin';
-                        }
-                        $memberSql = "SELECT r.name as role FROM canvas_user_roles cur JOIN canvas_roles r ON cur.role_id = r.id WHERE cur.canvas_id = :cid AND cur.user_id = :uid LIMIT 1";
-                        $mStmt = $db->prepare($memberSql);
-                        $mStmt->execute([':cid' => $canvasIntId, ':uid' => $userId]);
-                        if ($mRow = $mStmt->fetch(PDO::FETCH_ASSOC)) {
-                            $isMember = true;
-                            if (!$isOwner) {
+                            $userCanvasRole = 'Owner';
+                            $canManageCanvas = true;
+                            $canvasPermissions = [
+                                'place_pixels', 'manage_settings', 'manage_members', 'manage_roles', 
+                                'assign_roles', 'view_history', 'manage_resets', 'manage_sanctions', 
+                                'manage_invites', 'create_snapshots'
+                            ];
+                        } else {
+                            $memberSql = "SELECT r.name as role FROM canvas_user_roles cur JOIN canvas_roles r ON cur.role_id = r.id WHERE cur.canvas_id = :cid AND cur.user_id = :uid LIMIT 1";
+                            $mStmt = $db->prepare($memberSql);
+                            $mStmt->execute([':cid' => $canvasIntId, ':uid' => $userId]);
+                            if ($mRow = $mStmt->fetch(PDO::FETCH_ASSOC)) {
+                                $isMember = true;
+                                $userCanvasRole = $mRow['role'];
                                 $userRole = 'editor';
+                            }
+                            
+                            $permSql = "SELECT DISTINCT p.name 
+                                        FROM canvas_user_roles cur
+                                        INNER JOIN canvas_roles r ON cur.role_id = r.id
+                                        INNER JOIN canvas_role_permissions crp ON r.id = crp.role_id
+                                        INNER JOIN canvas_permissions p ON crp.permission_id = p.id
+                                        WHERE cur.canvas_id = :cid AND cur.user_id = :uid";
+                            $pStmt = $db->prepare($permSql);
+                            $pStmt->execute([':cid' => $canvasIntId, ':uid' => $userId]);
+                            $canvasPermissions = $pStmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+
+                            $managementPerms = ['manage_settings', 'manage_members', 'manage_roles', 'assign_roles', 'manage_resets', 'manage_sanctions', 'manage_invites'];
+                            foreach ($managementPerms as $mp) {
+                                if (in_array($mp, $canvasPermissions, true)) {
+                                    $canManageCanvas = true;
+                                    break;
+                                }
                             }
                         }
                     }
@@ -510,6 +545,9 @@ class AppViewService {
             'maxImages' => $maxImages ?? 4,
             'maxUploadMB' => $maxUploadMB ?? 10,
             'showDesignTools' => ($isMember || $isOwner) && !$isBanned,
+            'canvasPermissions' => $canvasPermissions ?? [],
+            'canManageCanvas' => $canManageCanvas ?? false,
+            'userCanvasRole' => $userCanvasRole ?? ($isOwner ? 'Owner' : 'spectator'),
             'ownerTier' => $ownerTier,
             'isLocalCanvas' => false,
         ];

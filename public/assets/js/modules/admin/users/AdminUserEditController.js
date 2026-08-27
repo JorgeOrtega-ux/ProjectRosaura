@@ -327,6 +327,7 @@ class AdminUserEditController {
         const result = await this.api.post(ApiRoutes.Admin.UpdateRole, { 
             target_user_id: this.targetUserId, 
             role_id: roleId,
+            roles: [roleId],
             password: password
         }, this.abortController.signal);
         if (result.aborted) return;

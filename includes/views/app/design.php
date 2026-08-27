@@ -56,6 +56,8 @@ if (!isset($showDesignTools)) {
          data-palette="<?php echo htmlspecialchars($canvasPalette); ?>"
          data-privacy="<?php echo htmlspecialchars($canvasPrivacy); ?>"
          data-is-owner="<?php echo ($isLocal || (isset($isOwner) && $isOwner)) ? '1' : '0'; ?>"
+         data-can-manage="<?php echo ($isLocal || !empty($isOwner) || !empty($canManageCanvas)) ? '1' : '0'; ?>"
+         data-canvas-permissions="<?php echo htmlspecialchars(json_encode($canvasPermissions ?? [])); ?>"
          data-is-local="<?php echo $isLocal ? '1' : '0'; ?>"
          data-is-blocked="<?php echo (!$isLocal && isset($isBlockedInit) && $isBlockedInit) ? '1' : '0'; ?>"
          data-subscription-locked="<?php echo (!$isLocal && isset($isSubscriptionLockedInit) && $isSubscriptionLockedInit) ? '1' : '0'; ?>"
