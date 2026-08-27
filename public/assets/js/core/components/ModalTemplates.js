@@ -2782,7 +2782,7 @@ export const ModalTemplates = {
 
             let initialTab = data.initialTab;
             if (!initialTab) {
-                initialTab = data.designNetwork ? 'live' : (canManageSettings ? 'edit' : (canManageMembers ? 'members' : 'live'));
+                initialTab = canManageSettings ? 'edit' : (canManageMembers ? 'members' : (canManageSanctions ? 'sanctions' : 'live'));
             }
             if ((initialTab === 'edit' || initialTab === 'general' || initialTab === 'resize') && !canManageSettings) {
                 initialTab = canManageMembers ? 'members' : (canManageSanctions ? 'sanctions' : 'live');
@@ -3537,7 +3537,7 @@ export const ModalTemplates = {
 
                                 <!-- TAB 3: GESTIONAR CURSORES (EN VIVO) -->
                                 <div class="component-modal-tab-content ${initialTab === 'live' ? 'active' : 'disabled'}" data-ref="tab-content-live">
-                                    <div class="component-modal-list-container component-live-members-list" data-ref="modal-live-members-scroll">
+                                    <div class="component-modal-table-container component-live-members-table-container" data-ref="modal-live-members-scroll">
                                         <!-- Populated dynamically via controller -->
                                     </div>
                                 </div>

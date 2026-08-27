@@ -2668,7 +2668,7 @@
     "msg_copied_clipboard": "Copiado al portapapeles exitosamente.",
     "msg_same_canvas_size": "El tamaño seleccionado es igual al tamaño actual del lienzo.",
     "msg_summon_sent": "Convocatoria enviada exitosamente a los miembros.",
-    "tooltip_manage_canvas": "Gestionar lienzo y miembros",
+    "tooltip_manage_canvas": "Gestionar lienzo",
     "upload.invalid_format": "El formato del archivo cargado no es válido.",
     "user_not_found_desc": "El usuario solicitado no existe o no se encuentra disponible."
 }

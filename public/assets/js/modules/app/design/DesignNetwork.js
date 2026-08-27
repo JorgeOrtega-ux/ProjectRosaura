@@ -2456,7 +2456,7 @@ export const DesignNetwork = {
         this.requestRender();
     },
 
-    async openManageMembersModal(initialTab = 'live') {
+    async openManageMembersModal(initialTab = null) {
         window.activeDesignNetwork = this;
         if (window.modalSystem && window.modalSystem.show) {
             const titleEl = document.querySelector('.component-top-title') || document.querySelector('[data-ref="canvas-title-header"]');

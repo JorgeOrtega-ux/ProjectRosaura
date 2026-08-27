@@ -40,7 +40,7 @@ export class ManageCanvasMembersModalController {
         this.userTier = parseInt(data.userTier ?? (window.APP_USER?.subscription_tier ?? 0), 10);
         this.designNetwork = data.designNetwork || window.activeDesignNetwork || null;
         
-        let initialTab = data.initialTab || (this.designNetwork ? 'live' : (this.canManageSettings ? 'edit' : (this.canManageMembers ? 'members' : 'live')));
+        let initialTab = data.initialTab || (this.canManageSettings ? 'edit' : (this.canManageMembers ? 'members' : (this.canManageSanctions ? 'sanctions' : 'live')));
         if ((initialTab === 'edit' || initialTab === 'general' || initialTab === 'resize') && !this.canManageSettings) {
             initialTab = this.canManageMembers ? 'members' : (this.canManageSanctions ? 'sanctions' : 'live');
         } else if (initialTab === 'reset' && !this.canManageResets) {
@@ -1833,6 +1833,14 @@ export class ManageCanvasMembersModalController {
         const btnToggleText = this.modalBox.querySelector('[data-ref="modal-btn-toggle-cursors-text"]');
         const btnToggleIcon = this.modalBox.querySelector('[data-ref="modal-btn-toggle-cursors-icon"]');
 
+        const t = (k, f) => {
+            if (typeof window.__ === 'function') {
+                const r = window.__(k);
+                if (r && r !== k) return r;
+            }
+            return f || k;
+        };
+
         if (!this.designNetwork || !this.designNetwork.onlineMembers) {
             if (container) {
                 container.innerHTML = CardTemplates.emptyState({
@@ -1862,8 +1870,9 @@ export class ManageCanvasMembersModalController {
 
         const myUid = String(window.activeUserId || document.querySelector('meta[name="user-id"]')?.content || 'usr_local');
         const query = (this.liveSearchQuery || '').toLowerCase().trim();
+        const appUrl = window.AppBasePath || '';
 
-        let html = '';
+        let rowsHtml = '';
         let matchCount = 0;
 
         for (const [uid, member] of onlineMembers.entries()) {
@@ -1875,49 +1884,98 @@ export class ManageCanvasMembersModalController {
             const isWatching = trackedCursors.has(uid);
             const isDrawing = !!member.isDrawing;
             const userColor = member.color || '#3b82f6';
-            const initial = (name.charAt(0) || 'U').toUpperCase();
+            const avatar = member.avatar || `${appUrl}/avatar/Um9zYXVyYVVzZXI6VQ`;
             const isOwner = member.role === 'owner' || (this.data.canvasOwnerId && String(this.data.canvasOwnerId) === String(uid));
 
-            const statusClass = isDrawing ? 'drawing' : (member.status === 'idle' ? 'idle' : 'online');
-            const statusLabel = isDrawing ? 'Dibujando...' : (isOwner ? 'Dueño' : 'En línea');
+            let statusBadge = '';
+            if (isDrawing) {
+                statusBadge = `
+                    <div class="component-badge component-badge--primary component-badge--sm">
+                        <span class="material-symbols-rounded">brush</span>
+                        <span>Dibujando</span>
+                    </div>
+                `;
+            } else if (member.status === 'idle') {
+                statusBadge = `
+                    <div class="component-badge component-badge--glass component-badge--sm">
+                        <span class="material-symbols-rounded">snooze</span>
+                        <span>Inactivo</span>
+                    </div>
+                `;
+            } else {
+                statusBadge = `
+                    <div class="component-badge component-badge--success component-badge--sm">
+                        <span class="material-symbols-rounded">radio_button_checked</span>
+                        <span>En línea</span>
+                    </div>
+                `;
+            }
 
-            html += `
-            <div class="component-group-item ${isWatching ? 'is-watching' : ''}" data-user-id="${escapeHTML(uid)}">
-                <div class="component-card__content">
-                    <div class="component-avatar component-avatar--presence">
-                        ${member.avatar ? `<img src="${escapeHTML(member.avatar)}" alt="${escapeHTML(name)}" class="component-avatar__img" onerror="this.remove()">` : ''}
-                        <span class="component-avatar__initial">${initial}</span>
-                        <span class="component-live-status-dot ${statusClass}" title="${statusLabel}"></span>
+            let actionsHtml = '';
+            if (!isSelf) {
+                actionsHtml = `
+                    <div class="component-badge-group" style="justify-content: flex-end;">
+                        <button type="button" class="component-button component-button--icon component-button--h28" data-action="modalTeleportToUser" data-user-id="${escapeHTML(uid)}" data-tooltip="Centrar lienzo en su posición" data-position="left">
+                            <span class="material-symbols-rounded msr-my_location">my_location</span>
+                        </button>
+                        <button type="button" class="component-button component-button--icon component-button--h28 ${isWatching ? 'active component-button--primary' : ''}" data-action="modalToggleUserCursor" data-user-id="${escapeHTML(uid)}" data-tooltip="${isWatching ? 'Ocultar cursor' : 'Ver cursor en vivo'}" data-position="left">
+                            <span class="material-symbols-rounded">${isWatching ? 'near_me' : 'near_me_disabled'}</span>
+                        </button>
                     </div>
-                    <div class="component-card__text">
-                        <div class="component-card__title-row">
-                            <span class="component-card__title">${escapeHTML(name)} ${isSelf ? '(Tú)' : ''}</span>
-                            ${isOwner ? '<span class="component-badge component-badge--warning component-badge--sm">Dueño</span>' : ''}
+                `;
+            } else {
+                actionsHtml = `
+                    <div class="component-badge-group" style="justify-content: flex-end;">
+                        <span class="component-badge component-badge--sm component-badge--glass">
+                            <span class="material-symbols-rounded">person</span>
+                            <span>Tú</span>
+                        </span>
+                    </div>
+                `;
+            }
+
+            rowsHtml += `
+                <tr class="component-table-row ${isWatching ? 'selected' : ''}" data-user-id="${escapeHTML(uid)}">
+                    <td>
+                        <div class="td-user-info">
+                            <button type="button" class="component-button component-button--profile" style="box-shadow: 0 0 0 2px ${escapeHTML(userColor)};">
+                                <img src="${escapeHTML(avatar)}" alt="${escapeHTML(name)}" decoding="async" class="image-lazy-fade image-loaded" onerror="this.onerror=null; this.src='${appUrl}/avatar/Um9zYXVyYVVzZXI6VQ';">
+                            </button>
+                            <div class="component-user-info-text">
+                                <span class="search-target">${escapeHTML(name)} ${isSelf ? '<span class="component-text-muted">(Tú)</span>' : ''}</span>
+                                ${isOwner ? '<span class="material-symbols-rounded component-text-warning" title="Creador del lienzo">star</span>' : ''}
+                            </div>
                         </div>
-                        <p class="component-card__description ${isDrawing ? 'component-text-accent' : ''}">${statusLabel}</p>
-                    </div>
-                </div>
-                <div class="component-card__actions">
-                    ${!isSelf ? `
-                    <button type="button" class="component-button component-button--icon component-button--h32" data-action="modalTeleportToUser" data-user-id="${escapeHTML(uid)}" data-tooltip="Centrar lienzo en su posición" data-position="top">
-                        <span class="material-symbols-rounded msr-my_location">my_location</span>
-                    </button>
-                    <button type="button" class="component-button component-button--icon component-button--h32 ${isWatching ? 'active' : ''}" data-action="modalToggleUserCursor" data-user-id="${escapeHTML(uid)}" data-tooltip="${isWatching ? 'Ocultar cursor' : 'Ver cursor en vivo'}" data-position="top">
-                        <span class="material-symbols-rounded">${isWatching ? 'near_me' : 'near_me_disabled'}</span>
-                    </button>
-                    ` : ''}
-                </div>
-            </div>`;
+                    </td>
+                    <td>${statusBadge}</td>
+                    <td style="text-align: right;">${actionsHtml}</td>
+                </tr>
+            `;
         }
 
         if (matchCount === 0) {
             container.innerHTML = CardTemplates.emptyState({
                 icon: 'search_off',
-                title: 'Sin resultados',
+                title: t('lbl_no_results', 'Sin resultados'),
                 message: 'No se encontraron colaboradores en vivo coincidentes.'
             });
         } else {
-            container.innerHTML = `<div class="component-card--grouped">${html}</div>`;
+            container.innerHTML = `
+                <div class="component-table-wrapper">
+                    <table class="component-table">
+                        <thead>
+                            <tr>
+                                <th>${t('table_header_member', 'Colaborador')}</th>
+                                <th>${t('table_header_status', 'Estado')}</th>
+                                <th style="text-align: right;">${t('table_header_action', 'Acciones')}</th>
+                            </tr>
+                        </thead>
+                        <tbody data-ref="modal-live-members-table-body">
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+                </div>
+            `;
         }
     }
 

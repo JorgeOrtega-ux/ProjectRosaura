@@ -370,6 +370,7 @@ body:has(.component-modal-overlay.active) .general-content-scrolleable {
 .component-invites-table-container,
 .component-roles-table-container,
 .component-sanctions-table-container,
+.component-live-members-table-container,
 .component-live-members-list {
     flex: 1;
     display: flex;
