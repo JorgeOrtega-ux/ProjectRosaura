@@ -742,22 +742,8 @@ async function decompressIfNeeded(input) {
 }
 
 async function hydrateState(base64String) {
-    console.log('[TemplateDebug][CanvasRenderWorker] hydrateState called with base64String:', {
-        length: base64String?.length,
-        preview: base64String?.substring(0, 40),
-        boardWidth,
-        boardHeight,
-        isOfflineMode
-    });
     const bytes = await decompressIfNeeded(base64String);
-    console.log('[TemplateDebug][CanvasRenderWorker] decompressIfNeeded result:', {
-        hasBytes: !!bytes,
-        bytesLength: bytes?.length,
-        first16Bytes: bytes ? Array.from(bytes.subarray(0, 16)) : null,
-        hasOffscreenCtx: !!offscreenCtx
-    });
     if (!bytes || !offscreenCtx) {
-        console.warn('[TemplateDebug][CanvasRenderWorker] hydrateState no pudo descomprimir o contexto no listo', { hasBytes: !!bytes, hasCtx: !!offscreenCtx });
         return;
     }
 
@@ -765,15 +751,6 @@ async function hydrateState(base64String) {
         initMemoryEngine(boardWidth, boardHeight);
         const totalBytes = Math.min(bytes.length, mainImageData.data.length);
         mainImageData.data.set(bytes.subarray(0, totalBytes));
-        
-        let nonZeroCount = 0;
-        for (let i = 0; i < totalBytes; i += 4) {
-            if (mainImageData.data[i + 3] > 0) nonZeroCount++;
-        }
-        console.log('[TemplateDebug][CanvasRenderWorker] mainImageData set with bytes:', {
-            totalBytes,
-            nonZeroPixels: nonZeroCount
-        });
 
         if (isOfflineMode) {
             const totalPixels = boardWidth * boardHeight;
@@ -801,7 +778,6 @@ async function hydrateState(base64String) {
                 }
             ];
             activeFrameId = 'frame-1';
-            console.log('[TemplateDebug][CanvasRenderWorker] Offline layer created with buffer length:', buf.length, 'calling composeAll()');
             composeAll();
             notifyLayersState();
             notifyFramesState();
@@ -809,9 +785,8 @@ async function hydrateState(base64String) {
             offscreenCtx.putImageData(mainImageData, 0, 0);
             requestRender();
         }
-        console.info('[TemplateDebug][CanvasRenderWorker] hydrateState aplicado exitosamente (%d bytes cargados en el lienzo).', totalBytes);
     } catch (e) {
-        console.error('[TemplateDebug][CanvasRenderWorker] Error en hydrateState:', e);
+        // Silently handle hydration exception
     }
 }
 
@@ -2940,16 +2915,6 @@ self.onmessage = async function (e) {
         }
 
         case 'HYDRATE_STATE': {
-            console.log('[TemplateDebug][CanvasRenderWorker] HYDRATE_STATE received message:', {
-                hasBase64: !!payload.base64String,
-                base64Length: payload.base64String?.length,
-                base64Preview: payload.base64String?.substring(0, 40),
-                hasLayersData: !!payload.layersData,
-                layersData: payload.layersData,
-                boardWidth: payload.boardWidth,
-                boardHeight: payload.boardHeight
-            });
-
             if (payload.boardWidth && payload.boardHeight) {
                 boardWidth = payload.boardWidth;
                 boardHeight = payload.boardHeight;
@@ -2976,23 +2941,13 @@ self.onmessage = async function (e) {
                 }
             }
 
-            console.log('[TemplateDebug][CanvasRenderWorker] rawFrames parsed:', rawFrames);
-
             // Pre-descomprimir payload.base64String si existe para usarlo como buffer base o fallback
             let decompressedMainBuf = null;
             if (payload.base64String) {
                 try {
                     decompressedMainBuf = await base64ToUint32Async(payload.base64String, boardWidth * boardHeight);
-                    let nonZeroCount = 0;
-                    for (let i = 0; i < decompressedMainBuf.length; i++) {
-                        if (decompressedMainBuf[i] !== 0) nonZeroCount++;
-                    }
-                    console.log('[TemplateDebug][CanvasRenderWorker] Pre-decompressed payload.base64String:', {
-                        length: decompressedMainBuf.length,
-                        nonZeroPixels: nonZeroCount
-                    });
                 } catch (e) {
-                    console.error('[TemplateDebug][CanvasRenderWorker] Error pre-decompressing payload.base64String:', e);
+                    // Silently ignore pre-decompress error
                 }
             }
 
@@ -3003,13 +2958,6 @@ self.onmessage = async function (e) {
                 frames = await Promise.all(rawFrames.map(async (f, fIdx) => {
                     const fLayers = await Promise.all((f.layers || []).map(async (l, lIdx) => {
                         const b64 = l.buffer_base64 || l.bufferBase64 || null;
-                        console.log('[TemplateDebug][CanvasRenderWorker] Processing layer in rawFrames:', {
-                            layerId: l.id,
-                            layerName: l.name,
-                            hasB64: !!b64,
-                            b64Length: b64?.length,
-                            b64Preview: b64?.substring(0, 40)
-                        });
                         let finalBuf = null;
                         if (b64) {
                             const rawBuf = await base64ToUint32Async(b64, savedW * savedH);
@@ -3036,7 +2984,6 @@ self.onmessage = async function (e) {
                                 }
                             }
                             if (!hasPixels) {
-                                console.log('[TemplateDebug][CanvasRenderWorker] Layer 0 was empty/zero, populating with template decompressedMainBuf');
                                 finalBuf = new Uint32Array(decompressedMainBuf);
                             }
                         }
@@ -3044,16 +2991,6 @@ self.onmessage = async function (e) {
                         if (!finalBuf) {
                             finalBuf = new Uint32Array(boardWidth * boardHeight);
                         }
-
-                        let nonZeroPix = 0;
-                        for (let i = 0; i < finalBuf.length; i++) {
-                            if (finalBuf[i] !== 0) nonZeroPix++;
-                        }
-                        console.log('[TemplateDebug][CanvasRenderWorker] Final layer buffer:', {
-                            layerName: l.name,
-                            length: finalBuf.length,
-                            nonZeroPixels: nonZeroPix
-                        });
 
                         return {
                             id: l.id || ('layer-' + Date.now()),
@@ -3087,19 +3024,15 @@ self.onmessage = async function (e) {
                 activeFrameId = frames[0]?.id || 'frame-1';
                 layers = frames[0]?.layers || [];
                 activeLayerId = layers[0]?.id || 'layer-1';
-                console.log('[TemplateDebug][CanvasRenderWorker] Calling composeAll() for parsed rawFrames');
                 composeAll();
                 notifyLayersState();
                 notifyFramesState();
             } else if (payload.base64String) {
-                console.log('[TemplateDebug][CanvasRenderWorker] No rawFrames, delegating to hydrateState');
                 if (injectAnimation) {
                     pendingHydrateStateBase64 = payload.base64String;
                 } else {
                     await hydrateState(payload.base64String);
                 }
-            } else {
-                console.warn('[TemplateDebug][CanvasRenderWorker] HYDRATE_STATE received neither rawFrames nor base64String!');
             }
 
             self.postMessage({ type: 'STATE_HYDRATED', payload: { success: true } });

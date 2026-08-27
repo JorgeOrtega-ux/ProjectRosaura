@@ -86,16 +86,6 @@ export const DesignSetup = {
             this.isOnlineActive = wrapper.getAttribute('data-online-active') === '1';
             this.isOfflineMode = (this.canvasMode === 'offline' && !this.isOnlineActive);
 
-            console.log('[TemplateDebug][DesignSetup] loadCanvasConfig DOM parsed:', {
-                canvasIntId: this.canvasIntId,
-                canvasId: this.canvasId,
-                canvasPrivacy: this.canvasPrivacy,
-                canvasMode: this.canvasMode,
-                isOnlineActive: this.isOnlineActive,
-                isOfflineMode: this.isOfflineMode,
-                wrapperSize: wrapper.getAttribute('data-size')
-            });
-
             if (this.renderWorker) {
                 this.renderWorker.postMessage({
                     type: 'SET_OFFLINE_MODE',
@@ -115,9 +105,7 @@ export const DesignSetup = {
                 
                 try {
                     localMeta = await CanvasStorageEngine.getLocalCanvas(this.canvasId);
-                    console.log('[TemplateDebug][DesignSetup] Retrieved localMeta from CanvasStorageEngine:', localMeta);
                 } catch (e) {
-                    console.error('[TemplateDebug][DesignSetup] Error getting localMeta:', e);
                     localMeta = null;
                 }
 
@@ -160,12 +148,6 @@ export const DesignSetup = {
                 this.boardWidth = 64;
                 this.boardHeight = 64;
             }
-
-            console.log('[TemplateDebug][DesignSetup] Dimensions and zoom set:', {
-                sizeStr,
-                boardWidth: this.boardWidth,
-                boardHeight: this.boardHeight
-            });
             
             const initialZoomAttr = wrapper.getAttribute('data-initial-zoom');
             this.initialZoomConfig = initialZoomAttr ? parseFloat(initialZoomAttr) : 0.5;
@@ -205,7 +187,6 @@ export const DesignSetup = {
 
             this.setupCanvas();
             if (this.isLocalCanvas) {
-                console.log('[TemplateDebug][DesignSetup] Local canvas -> invoking hydrateCanvasState(null)');
                 await this.hydrateCanvasState(null);
             }
             if (this.isOfflineMode && typeof this.syncOfflineToolsTier === 'function') {
@@ -446,15 +427,6 @@ export const DesignSetup = {
     },
 
     async hydrateCanvasState(base64String, templateCoords = null, serverLayersData = null) {
-        console.log('[TemplateDebug][DesignSetup] hydrateCanvasState invoked with:', {
-            base64Length: base64String ? base64String.length : 0,
-            base64Preview: base64String ? base64String.substring(0, 40) : null,
-            templateCoords,
-            serverLayersData,
-            isOfflineMode: this.isOfflineMode,
-            canvasIntId: this.canvasIntId
-        });
-
         try {
             let layersData = null;
             let effectiveBase64 = base64String;
@@ -463,11 +435,9 @@ export const DesignSetup = {
                 // 1. Obtener o recuperar capas desde server o IndexedDB/localStorage
                 if (serverLayersData && (typeof serverLayersData === 'object' || Array.isArray(serverLayersData))) {
                     layersData = serverLayersData;
-                    console.log('[TemplateDebug][DesignSetup] Using serverLayersData for offline mode:', serverLayersData);
                     CanvasStorageEngine.saveLayersData(this.canvasIntId, serverLayersData).catch(() => {});
                 } else if (!effectiveBase64 || this.isLocalCanvas) {
                     layersData = await CanvasStorageEngine.getLayersData(this.canvasIntId);
-                    console.log('[TemplateDebug][DesignSetup] Retrieved layersData from storage:', layersData);
                 }
 
                 // 2. Extraer paleta de colores recientes
@@ -480,21 +450,13 @@ export const DesignSetup = {
 
                 // 3. Autorrecuperación silenciosa en caso de estado nulo o dañado
                 if ((!effectiveBase64 || effectiveBase64.length < 20) && this.canvasIntId) {
-                    console.log('[TemplateDebug][DesignSetup] effectiveBase64 is empty/short, searching IndexedDB/backups...');
                     const localState = await CanvasStorageEngine.getCanvasState(this.canvasIntId);
                     if (localState && localState.base64 && localState.base64.length > 20) {
                         effectiveBase64 = localState.base64;
-                        console.log('[TemplateDebug][DesignSetup] Found localState in storage:', {
-                            base64Length: effectiveBase64.length,
-                            base64Preview: effectiveBase64.substring(0, 40)
-                        });
                     } else {
                         const backup = await CanvasStorageEngine.getLatestValidBackup(this.canvasIntId);
                         if (backup && backup.base64) {
                             effectiveBase64 = backup.base64;
-                            console.log('[TemplateDebug][DesignSetup] Found backup in storage:', {
-                                base64Length: effectiveBase64.length
-                            });
                             if (!layersData && backup.layersData) {
                                 layersData = backup.layersData;
                             }
@@ -508,15 +470,6 @@ export const DesignSetup = {
                     CanvasStorageEngine.createSilentBackup(this.canvasIntId, effectiveBase64, layersData, 'session_start').catch(() => {});
                 }
             }
-
-            console.log('[TemplateDebug][DesignSetup] hydrateCanvasState passing to render:', {
-                hasRenderWorker: !!this.renderWorker,
-                effectiveBase64Length: effectiveBase64 ? effectiveBase64.length : 0,
-                effectiveBase64Preview: effectiveBase64 ? effectiveBase64.substring(0, 40) : null,
-                layersData,
-                boardWidth: this.boardWidth,
-                boardHeight: this.boardHeight
-            });
 
             if (this.renderWorker) {
                 this.renderWorker.postMessage({
@@ -533,7 +486,6 @@ export const DesignSetup = {
             }
             const bytes = await this.decompressIfNeeded(effectiveBase64);
             if (!bytes) {
-                console.warn('[TemplateDebug][DesignSetup] Fallback main-thread decompress failed (no bytes)');
                 this.isHydrated = true;
                 return;
             }
@@ -558,19 +510,12 @@ export const DesignSetup = {
             this.requestRender();
 
         } catch (e) {
-            console.error('[TemplateDebug][DesignSetup] hydrateCanvasState exception:', e);
+            // Silently handle hydration exception
         }
     },
 
     async initCanvasData(canvasData, forceReload = false) {
         if (!canvasData) return;
-        console.log('[TemplateDebug][DesignSetup] initCanvasData called with:', {
-            progressive_load: canvasData.progressive_load,
-            state_base64_length: canvasData.state_base64 ? canvasData.state_base64.length : 0,
-            state_base64_preview: canvasData.state_base64 ? canvasData.state_base64.substring(0, 40) : null,
-            layers_data: canvasData.layers_data,
-            forceReload
-        });
         this.isProgressive = !!canvasData.progressive_load;
         if (!this.loadedChunks || forceReload) {
             this.loadedChunks = new Set();
@@ -590,8 +535,6 @@ export const DesignSetup = {
             this.updateVisibleChunks();
         } else if (canvasData.state_base64) {
             this.hydrateCanvasState(canvasData.state_base64, null, canvasData.layers_data || null);
-        } else {
-            console.warn('[TemplateDebug][DesignSetup] initCanvasData has NO state_base64 and is not progressive!');
         }
 
         try {
@@ -823,7 +766,6 @@ export const DesignSetup = {
                         }
                         if (e.data?.type === 'STATE_HYDRATED') {
                             this.isHydrated = true;
-                            console.log('[TemplateDebug][DesignSetup] Worker notified STATE_HYDRATED, canvas is fully hydrated');
                         }
                         if (e.data?.type === 'LAYERS_STATE_CHANGED') {
                             if (typeof this.handleLayersStateChanged === 'function') {

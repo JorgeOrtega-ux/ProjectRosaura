@@ -1564,25 +1564,9 @@ export const DesignNetwork = {
             let response;
             if (window.__INITIAL_CANVAS_DATA__ && window.__INITIAL_CANVAS_DATA__.data && String(window.__INITIAL_CANVAS_DATA__.data.id) === String(this.canvasIntId)) {
                 response = window.__INITIAL_CANVAS_DATA__;
-                console.log('[TemplateDebug][DesignNetwork] Using __INITIAL_CANVAS_DATA__:', {
-                    canvasIntId: this.canvasIntId,
-                    hasStateBase64: !!response?.data?.state_base64,
-                    stateBase64Length: response?.data?.state_base64?.length,
-                    layersData: response?.data?.layers_data
-                });
                 window.__INITIAL_CANVAS_DATA__ = null; // Clean up memory
             } else {
-                console.log('[TemplateDebug][DesignNetwork] Fetching canvas via ApiRoutes.Canvases.Get for ID:', this.canvasIntId);
                 response = await this.api.post(ApiRoutes.Canvases.Get, { id: this.canvasIntId }, this.abortController.signal);
-                console.log('[TemplateDebug][DesignNetwork] ApiRoutes.Canvases.Get response:', {
-                    success: response?.success,
-                    hasData: !!response?.data,
-                    stateBase64Length: response?.data?.state_base64?.length,
-                    stateBase64Preview: response?.data?.state_base64?.substring(0, 40),
-                    layersData: response?.data?.layers_data,
-                    mode: response?.data?.mode,
-                    is_online_active: response?.data?.is_online_active
-                });
             }
             if (response.aborted) return;
             
@@ -1604,10 +1588,8 @@ export const DesignNetwork = {
                 this.applyCanvasRoleState(role, response.data);
 
                 if (typeof this.initCanvasData === 'function') {
-                    console.log('[TemplateDebug][DesignNetwork] Calling initCanvasData with response.data');
                     this.initCanvasData(response.data);
                 } else if (response.data.state_base64) {
-                    console.log('[TemplateDebug][DesignNetwork] Fallback calling hydrateCanvasState');
                     this.hydrateCanvasState(response.data.state_base64);
                 }
             } else {
@@ -1618,7 +1600,6 @@ export const DesignNetwork = {
                 }
             }
         } catch (error) {
-            console.error('[TemplateDebug][DesignNetwork] checkCanvasAccess error:', error);
             this.applyCanvasRoleState(this.canvasPrivacy === 'private' ? 'blocked' : 'spectator', null);
         }
     },

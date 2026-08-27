@@ -1,16 +1,16 @@
 <?php
-// api/controllers/CanvasChatRestrictionController.php
+// api/controllers/Canvas/CanvasChatRestrictionController.php
 namespace App\Api\Controllers\Canvas;
 
 use App\Api\Controllers\BaseController;
-
 use App\Config\Database\DatabaseManager;
 use App\Core\System\DatabaseConstants;
+use App\Core\System\CacheConstants;
 use App\Core\System\Logger;
 use App\Core\System\PermissionsConstants;
 use App\Core\System\CanvasPermissionsConstants;
 
-class CanvasChatRestrictionController {
+class CanvasChatRestrictionController extends BaseController {
     private $pdo;
     private $db;
     private $canvasRepository;
@@ -25,7 +25,7 @@ class CanvasChatRestrictionController {
 
     public function updateRestriction($data) {
         if (!isset($_SESSION['active_account'])) {
-            return ['status' => 'error', 'message' => __('err_unauthorized')];
+            return $this->respond(['success' => false, 'message' => __('err_unauthorized')]);
         }
 
         $userId = $_SESSION['active_account'];
@@ -46,7 +46,7 @@ class CanvasChatRestrictionController {
         $credential = $data['credential'] ?? $data['google_token'] ?? '';
         
         if (!$canvasId || !$targetUserId || (empty($password) && empty($credential))) {
-            return ['status' => 'error', 'message' => __('err_missing_parameters')];
+            return $this->respond(['success' => false, 'message' => __('err_missing_parameters')]);
         }
 
         $identityDb = $this->db->getConnection(DatabaseConstants::CONN_IDENTITY);
@@ -55,7 +55,7 @@ class CanvasChatRestrictionController {
         $user = $stmt->fetch(\PDO::FETCH_ASSOC);
         if (!$user || !\App\Core\Helpers\Utils::verifyUserIdentity($user, $data)) {
             $isGoogle = !empty($data['credential']) || !empty($data['google_token']);
-            return ['status' => 'error', 'message' => $isGoogle ? __('auth.google_verification_failed') : __('err_invalid_password')];
+            return $this->respond(['success' => false, 'message' => $isGoogle ? __('auth.google_verification_failed') : __('err_invalid_password')]);
         }
 
         // Resolve canvas by ID or UUID
@@ -64,7 +64,7 @@ class CanvasChatRestrictionController {
         $canvas = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         if (!$canvas) {
-            return ['status' => 'error', 'message' => __('err_canvas_not_found')];
+            return $this->respond(['success' => false, 'message' => __('err_canvas_not_found')]);
         }
         $canvasId = (int)$canvas['id'];
 
@@ -80,10 +80,8 @@ class CanvasChatRestrictionController {
             $targetUserId = (int)$targetUserId;
         }
 
-        // Only owner can ban (or implement role logic later)
+        // Only owner can ban (or implement role logic)
         if ($canvas['user_id'] != $userId) {
-            // Wait, also check canvas_roles? For now, just owner, as requested: "si el dueÃ±o quiero banear..."
-            // But let's check canvas_roles for moderation if needed
             $stmt = $this->pdo->prepare("SELECT cp.name FROM canvas_user_roles cur JOIN canvas_role_permissions crp ON cur.role_id = crp.role_id JOIN canvas_permissions cp ON crp.permission_id = cp.id WHERE cur.canvas_id = ? AND cur.user_id = ?");
             $stmt->execute([$canvasId, $userId]);
             $permissionsRows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -97,26 +95,26 @@ class CanvasChatRestrictionController {
                 $canModerate = true;
             }
             if (!$canModerate) {
-                return ['status' => 'error', 'message' => __('err_no_permissions')];
+                return $this->respond(['success' => false, 'message' => __('err_no_permissions')]);
             }
 
             $modWeight = $this->canvasRepository->getUserCanvasWeight($userId, $canvasId);
             $targetWeight = $this->canvasRepository->getUserCanvasWeight($targetUserId, $canvasId);
             if ($targetWeight >= $modWeight) {
-                return ['status' => 'error', 'message' => __('err_insufficient_hierarchy')];
+                return $this->respond(['success' => false, 'message' => __('err_insufficient_hierarchy')]);
             }
         }
 
         // Also prevent banning the owner
         if ($targetUserId === $canvas['user_id']) {
-            return ['status' => 'error', 'message' => __('err_cannot_ban_owner')];
+            return $this->respond(['success' => false, 'message' => __('err_cannot_ban_owner')]);
         }
 
         try {
             if ($isSuspended === '1') {
                 $validReasons = array_column(\App\Core\Helpers\Utils::getSanctionReasons()['suspensions'], 'key');
                 if (!in_array($suspensionReason, $validReasons)) {
-                    return ['status' => 'error', 'message' => __('validation.invalid_reason')];
+                    return $this->respond(['success' => false, 'message' => __('validation.invalid_reason')]);
                 }
 
                 if ($sanctionScope === 'canvas_ban') {
@@ -147,7 +145,7 @@ class CanvasChatRestrictionController {
                 
                 $this->syncUserRestrictionsToRedis($canvasId, $targetUserId);
 
-                return ['status' => 'success', 'message' => __('msg_sanction_applied')];
+                return $this->respond(['success' => true, 'message' => __('msg_sanction_applied')]);
             } else {
                 // Remove restriction
                 $stmt = $this->pdo->prepare("DELETE FROM canvas_sanctions WHERE canvas_id = ? AND user_id = ? AND sanction_scope = ?");
@@ -155,11 +153,10 @@ class CanvasChatRestrictionController {
                 
                 $this->syncUserRestrictionsToRedis($canvasId, $targetUserId);
                 
-                return ['status' => 'success', 'message' => __('msg_sanction_removed')];
+                return $this->respond(['success' => true, 'message' => __('msg_sanction_removed')]);
             }
-        } catch (\Exception $e) {
-            Logger::error("Error de base de datos en updateRestriction: " . $e->getMessage());
-            return ['status' => 'error', 'message' => __('err_internal_server_error')];
+        } catch (\Throwable $e) {
+            return $this->handleException($e, 'updateRestriction');
         }
     }
 

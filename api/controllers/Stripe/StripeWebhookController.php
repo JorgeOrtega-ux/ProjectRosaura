@@ -2,13 +2,14 @@
 
 namespace App\Api\Controllers\Stripe;
 
+use App\Api\Controllers\BaseController;
 use App\Config\Database\RedisCache;
 use App\Core\Interfaces\SubscriptionRepositoryInterface;
 use App\Core\System\Logger;
 use App\Core\System\SubscriptionPlanConstants;
 use App\Api\Services\Canvas\CanvasLockManager;
 
-class StripeWebhookController {
+class StripeWebhookController extends BaseController {
     private SubscriptionRepositoryInterface $subRepo;
     private RedisCache $redisCache;
     private CanvasLockManager $lockManager;
