@@ -5,6 +5,7 @@ import { ThemeManager } from './core/managers/ThemeManager.js';
 import { PreferenceManager } from './core/managers/PreferenceManager.js';
 import { ModuleManager } from './core/managers/ModuleManager.js';
 import { AccountManager } from './core/managers/AccountManager.js';
+import { NotificationManager } from './core/managers/NotificationManager.js';
 import { ToastSystem } from './core/components/ToastSystem.js';
 
 export class MainController {
@@ -25,6 +26,7 @@ export class MainController {
             allowMultipleModules: false
         });
         this.accountManager = new AccountManager((msg, type) => this.showToast(msg, type));
+        this.notificationManager = new NotificationManager();
 
         this.handleResizeBound = this.handleResize.bind(this);
         this.handleScrollBound = this.handleScroll.bind(this);
@@ -52,6 +54,7 @@ export class MainController {
         this.themeManager.init();
         this.moduleManager.init();
         this.preferenceManager.initGuestDefaults();
+        this.notificationManager.init();
         this.checkDevice();
         this.bindEvents();
         this.moduleManager.markBottomSheets();
@@ -73,6 +76,7 @@ export class MainController {
         this.moduleManager.destroy();
         this.preferenceManager.destroy();
         this.accountManager.destroy();
+        this.notificationManager.destroy();
     }
 
     bindEvents() {

@@ -4,32 +4,32 @@ namespace App\Api\Services\User;
 
 use App\Config\Database\DatabaseManager;
 use App\Core\Interfaces\UserRepositoryInterface;
+use App\Core\Interfaces\FollowRepositoryInterface;
 use App\Core\Helpers\Utils;
-use App\Core\System\Logger;
 use App\Core\System\DatabaseConstants as DB;
 use PDO;
 
 class UserProfileViewService {
     private DatabaseManager $db;
     private UserRepositoryInterface $userRepository;
+    private FollowRepositoryInterface $followRepository;
     private PDO $pdoIdentity;
     private PDO $pdoCanvases;
 
     public function __construct(
         DatabaseManager $db,
-        UserRepositoryInterface $userRepository
+        UserRepositoryInterface $userRepository,
+        FollowRepositoryInterface $followRepository
     ) {
         $this->db = $db;
         $this->userRepository = $userRepository;
+        $this->followRepository = $followRepository;
         $this->pdoIdentity = $this->db->getConnection(DB::CONN_IDENTITY);
         $this->pdoCanvases = $this->db->getConnection(DB::CONN_CANVASES);
     }
 
-    /**
-     * Obtener datos completos para la vista de perfil de usuario
-     */
     public function getProfileData(string $identifierOrUsername): ?array {
-        if (session_status() === PHP_SESSION_NONE) {
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
             session_start();
         }
 
@@ -40,7 +40,6 @@ class UserProfileViewService {
             return null;
         }
 
-        // Buscar primero por identifier, luego por username
         $user = $this->userRepository->findByIdentifier($cleanHandle);
         if (!$user) {
             $user = $this->userRepository->findByUsername($cleanHandle);
@@ -53,7 +52,6 @@ class UserProfileViewService {
         $userId = (int)$user['id'];
         $isOwner = $viewerUserId === $userId;
 
-        // Estadísticas de publicaciones
         $stmtPubStats = $this->pdoCanvases->prepare("
             SELECT 
                 COUNT(*) as total_publications,
@@ -69,7 +67,6 @@ class UserProfileViewService {
             'total_views_received' => 0
         ];
 
-        // Estadísticas de lienzos
         $stmtCanvasStats = $this->pdoCanvases->prepare("
             SELECT COUNT(*) as total_canvases
             FROM " . DB::TBL_CANVASES . "
@@ -78,7 +75,10 @@ class UserProfileViewService {
         $stmtCanvasStats->execute([$userId, $isOwner ? 1 : 0]);
         $canvasStats = $stmtCanvasStats->fetch(PDO::FETCH_ASSOC) ?: ['total_canvases' => 0];
 
-        // Buscar si tiene un lienzo en vivo / activo
+        $followersCount = $this->followRepository->getFollowersCount($userId);
+        $followingCount = $this->followRepository->getFollowingCount($userId);
+        $isFollowing = ($viewerUserId && !$isOwner) ? $this->followRepository->isFollowing($viewerUserId, $userId) : false;
+
         $stmtLive = $this->pdoCanvases->prepare("
             SELECT id, uuid, name, tags, size, is_online_active, members_count, favorites_count, created_at
             FROM " . DB::TBL_CANVASES . "
@@ -109,7 +109,6 @@ class UserProfileViewService {
             ];
         }
 
-        // Cargar primeras publicaciones del usuario
         $stmtPubs = $this->pdoCanvases->prepare("
             SELECT id, uuid, user_id, canvas_id, title, description, tags, image_path, width, height, likes_count, views_count, comments_count, privacy, created_at
             FROM " . DB::TBL_PUBLICATIONS . "
@@ -120,7 +119,6 @@ class UserProfileViewService {
         $stmtPubs->execute([$userId, $isOwner ? 1 : 0]);
         $pubRows = $stmtPubs->fetchAll(PDO::FETCH_ASSOC);
 
-        // Likes dados por el visor
         $likedPubIds = [];
         if ($viewerUserId && !empty($pubRows)) {
             $pubIds = array_column($pubRows, 'id');
@@ -175,7 +173,6 @@ class UserProfileViewService {
             ];
         }
 
-        // Cargar lienzos públicos del usuario (solo los que están activos/online para terceros, o todos los públicos si es dueño)
         $stmtUserCanvases = $this->pdoCanvases->prepare("
             SELECT id, uuid, name, tags, size, is_online_active, members_count, favorites_count, created_at
             FROM " . DB::TBL_CANVASES . "
@@ -209,6 +206,9 @@ class UserProfileViewService {
             ];
         }
 
+        $followersList = $this->followRepository->getFollowers($userId, $viewerUserId, 1, 12);
+        $followingList = $this->followRepository->getFollowing($userId, $viewerUserId, 1, 12);
+
         return [
             'user' => [
                 'id' => $userId,
@@ -226,15 +226,73 @@ class UserProfileViewService {
                 'created_at' => $user['created_at']
             ],
             'is_owner' => $isOwner,
+            'is_following' => $isFollowing,
             'stats' => [
                 'total_publications' => (int)$pubStats['total_publications'],
                 'total_likes_received' => (int)$pubStats['total_likes_received'],
                 'total_views_received' => (int)$pubStats['total_views_received'],
-                'total_canvases' => (int)$canvasStats['total_canvases']
+                'total_canvases' => (int)$canvasStats['total_canvases'],
+                'followers_count' => $followersCount,
+                'following_count' => $followingCount
             ],
             'live_canvas' => $liveCanvasFormatted,
             'publications' => $publications,
-            'public_canvases' => $publicCanvases
+            'public_canvases' => $publicCanvases,
+            'followers' => $followersList,
+            'following' => $followingList
+        ];
+    }
+
+    public function getFollowers(string $identifierOrUsername, int $page = 1, int $limit = 20): ?array {
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            session_start();
+        }
+        $viewerUserId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
+        $cleanHandle = ltrim(trim($identifierOrUsername), '@');
+
+        $user = $this->userRepository->findByIdentifier($cleanHandle);
+        if (!$user) {
+            $user = $this->userRepository->findByUsername($cleanHandle);
+        }
+        if (!$user) return null;
+
+        $userId = (int)$user['id'];
+        $followers = $this->followRepository->getFollowers($userId, $viewerUserId, $page, $limit);
+        $total = $this->followRepository->getFollowersCount($userId);
+
+        return [
+            'users' => $followers,
+            'total' => $total,
+            'page' => $page,
+            'per_page' => $limit,
+            'has_more' => ($page * $limit) < $total
+        ];
+    }
+
+    public function getFollowing(string $identifierOrUsername, int $page = 1, int $limit = 20): ?array {
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            session_start();
+        }
+        $viewerUserId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
+        $cleanHandle = ltrim(trim($identifierOrUsername), '@');
+
+        $user = $this->userRepository->findByIdentifier($cleanHandle);
+        if (!$user) {
+            $user = $this->userRepository->findByUsername($cleanHandle);
+        }
+        if (!$user) return null;
+
+        $userId = (int)$user['id'];
+        $following = $this->followRepository->getFollowing($userId, $viewerUserId, $page, $limit);
+        $total = $this->followRepository->getFollowingCount($userId);
+
+        return [
+            'users' => $following,
+            'total' => $total,
+            'page' => $page,
+            'per_page' => $limit,
+            'has_more' => ($page * $limit) < $total
         ];
     }
 }
+?>

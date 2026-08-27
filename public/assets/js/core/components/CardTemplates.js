@@ -314,6 +314,196 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         `;
     },
 
+    userCard: (user, config = {}) => {
+        const name = escapeHTML(user.username || 'Usuario');
+        const identifier = escapeHTML(user.identifier || '');
+        const basePath = config.basePath || '';
+        const profileUrl = `${basePath}/@${identifier}`;
+        const fallbackAvatar = `${basePath}/assets/img/fallbacks/avatar-default.png`;
+        const avatarUrl = user.avatar_url ? escapeHTML(user.avatar_url) : fallbackAvatar;
+        const bannerUrl = user.banner_url ? escapeHTML(user.banner_url) : '';
+        const bio = escapeHTML(user.bio || '');
+        const followersCount = parseInt(user.followers_count || 0, 10);
+        const hasSubscription = parseInt(user.subscription_tier || 0, 10) > 0;
+        const subBg = user.subscription_bg ? escapeHTML(user.subscription_bg) : '';
+        const isSelf = !!user.is_self;
+        const isFollowing = !!user.is_following;
+        const roleName = user.role_name && user.role_name.toLowerCase() !== 'user' && user.role_name.toLowerCase() !== 'usuario' ? escapeHTML(user.role_name) : '';
+
+        const bannerHtml = bannerUrl
+            ? `<img src="${bannerUrl}" alt="${name}" class="component-user-card__banner-img image-lazy-fade" loading="lazy" onload="this.classList.add('image-loaded')">`
+            : `<div class="component-user-card__banner-placeholder"></div>`;
+
+        let actionBtnHtml = '';
+        if (!isSelf) {
+            if (window.activeUserId) {
+                const btnClass = isFollowing ? 'component-button--secondary' : 'component-button--primary';
+                const iconName = isFollowing ? 'person_remove' : 'person_add';
+                const textVal = isFollowing ? (window.__('profile.unfollow') || 'Dejar de seguir') : (window.__('profile.follow') || 'Seguir');
+                actionBtnHtml = `
+                    <button type="button" class="component-button ${btnClass} component-button--h32 btn-follow" data-action="toggleUserFollow" data-user-id="${user.id}">
+                        <span class="material-symbols-rounded component-icon--18">${iconName}</span>
+                        <span class="btn-text">${textVal}</span>
+                    </button>
+                `;
+            } else {
+                actionBtnHtml = `
+                    <button type="button" class="component-button component-button--primary component-button--h32" data-nav="${basePath}/login">
+                        <span class="material-symbols-rounded component-icon--18">person_add</span>
+                        <span>${window.__('profile.follow') || 'Seguir'}</span>
+                    </button>
+                `;
+            }
+        }
+
+        return `
+            <div class="component-user-card" data-user-id="${user.id}" data-identifier="${identifier}">
+                <div data-nav="${profileUrl}" class="component-user-card__banner">
+                    ${bannerHtml}
+                </div>
+                <div class="component-user-card__body">
+                    <div class="component-user-card__avatar-row">
+                        <div data-nav="${profileUrl}" class="component-avatar component-avatar--56 ${hasSubscription && subBg ? 'subscription-dynamic' : ''}" ${hasSubscription && subBg ? `data-sub-bg="${subBg}" style="--active-subscription-bg: ${subBg};"` : ''}>
+                            <img src="${avatarUrl}" alt="${name}" class="image-lazy-fade" loading="lazy" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${fallbackAvatar}'; this.classList.add('image-loaded');">
+                        </div>
+                        <div class="component-user-card__actions">
+                            ${actionBtnHtml}
+                        </div>
+                    </div>
+                    <div data-nav="${profileUrl}" class="component-user-card__info">
+                        <div class="component-user-card__name-row">
+                            <h3 class="component-user-card__name">${name}</h3>
+                            <span class="component-user-card__handle">@${identifier}</span>
+                            ${roleName ? `<span class="component-badge component-badge--accent">${roleName}</span>` : ''}
+                        </div>
+                        ${bio ? `<p class="component-user-card__bio">${bio}</p>` : ''}
+                        <div class="component-user-card__stats">
+                            <span class="component-badge">
+                                <span class="material-symbols-rounded">group</span>
+                                <span class="user-followers-count">${formatNumber(followersCount)}</span>
+                                <span>${window.__('profile.followers') || 'Seguidores'}</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    userSearchItem: (user, config = {}) => {
+        const name = escapeHTML(user.username || 'Usuario');
+        const identifier = escapeHTML(user.identifier || '');
+        const basePath = config.basePath || '';
+        const profileUrl = `${basePath}/@${identifier}`;
+        const fallbackAvatar = `${basePath}/assets/img/fallbacks/avatar-default.png`;
+        const avatarUrl = user.avatar_url ? escapeHTML(user.avatar_url) : fallbackAvatar;
+        const followersCount = parseInt(user.followers_count || 0, 10);
+        const hasSubscription = parseInt(user.subscription_tier || 0, 10) > 0;
+        const subBg = user.subscription_bg ? escapeHTML(user.subscription_bg) : '';
+        const roleName = user.role_name && user.role_name.toLowerCase() !== 'user' && user.role_name.toLowerCase() !== 'usuario' ? escapeHTML(user.role_name) : '';
+
+        return `
+            <div class="component-search-dropdown-item component-search-dropdown-item--user" data-nav="${profileUrl}">
+                <div class="component-avatar component-avatar--36 ${hasSubscription && subBg ? 'subscription-dynamic' : ''}" ${hasSubscription && subBg ? `data-sub-bg="${subBg}" style="--active-subscription-bg: ${subBg};"` : ''}>
+                    <img src="${avatarUrl}" alt="${name}" class="image-lazy-fade" loading="lazy" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${fallbackAvatar}'; this.classList.add('image-loaded');">
+                </div>
+                <div class="component-search-dropdown-item__text">
+                    <div class="component-search-dropdown-item__title">
+                        <span>${name}</span>
+                        <span class="component-search-dropdown-item__handle">@${identifier}</span>
+                        ${roleName ? `<span class="component-badge component-badge--accent component-badge--xs">${roleName}</span>` : ''}
+                    </div>
+                    <div class="component-search-dropdown-item__meta">
+                        <span class="material-symbols-rounded component-icon--16">group</span>
+                        <span>${formatNumber(followersCount)} ${window.__('profile.followers') || 'seguidores'}</span>
+                    </div>
+                </div>
+                <span class="material-symbols-rounded component-search-dropdown-item__arrow">navigate_next</span>
+            </div>
+        `;
+    },
+
+    canvasSearchItem: (canvas, config = {}) => {
+        const name = escapeHTML(canvas.name || 'Lienzo');
+        const uuid = escapeHTML(canvas.uuid || '');
+        const basePath = config.basePath || '';
+        const canvasUrl = `${basePath}/design/${uuid}`;
+        const fallbackThumb = `${basePath}/assets/img/fallbacks/canvas-default.png`;
+        const thumbUrl = canvas.thumbnail_url ? escapeHTML(canvas.thumbnail_url) : fallbackThumb;
+        const isOnline = (canvas.mode === 'online' || !!canvas.is_online_active);
+        const onlinePlayers = parseInt(canvas.online_players || 0, 10);
+        const subText = isOnline
+            ? `${formatNumber(onlinePlayers)} ${window.__('online') || 'en línea'}`
+            : (window.__('badge_studio') || 'Estudio');
+
+        return `
+            <div class="component-search-dropdown-item component-search-dropdown-item--canvas" data-nav="${canvasUrl}">
+                <img src="${thumbUrl}" alt="${name}" class="component-search-dropdown-item__thumb image-lazy-fade" loading="lazy" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${fallbackThumb}'; this.classList.add('image-loaded');">
+                <div class="component-search-dropdown-item__text">
+                    <div class="component-search-dropdown-item__title">
+                        <span>${name}</span>
+                    </div>
+                    <span class="component-search-dropdown-item__sub">${subText}</span>
+                </div>
+                <span class="material-symbols-rounded component-search-dropdown-item__arrow">navigate_next</span>
+            </div>
+        `;
+    },
+
+    notificationItem: (notif, config = {}) => {
+        const basePath = config.basePath || '';
+        const actor = notif.actor || {};
+        const actorName = escapeHTML(actor.username || 'Usuario');
+        const actorIdentifier = escapeHTML(actor.identifier || '');
+        const fallbackAvatar = `${basePath}/assets/img/fallbacks/avatar-default.png`;
+        const actorAvatar = actor.avatar_url ? escapeHTML(actor.avatar_url) : fallbackAvatar;
+        const actorSubBg = actor.subscription_bg ? escapeHTML(actor.subscription_bg) : '';
+        const targetUrl = notif.target_url ? `${basePath}${notif.target_url}` : `${basePath}/`;
+        const isRead = !!notif.is_read;
+        const iconName = notif.action_icon || 'notifications';
+
+        let messageText = '';
+        if (notif.message_key && typeof window.__ === 'function') {
+            const rawTemplate = window.__(notif.message_key, notif.params || {});
+            messageText = rawTemplate
+                .replace(':actor', `<strong>${actorName}</strong>`)
+                .replace(':title', `<em>${escapeHTML(notif.params ? (notif.params.title || '') : '')}</em>`);
+        } else {
+            messageText = `<strong>${actorName}</strong> interactuó contigo.`;
+        }
+
+        const createdAt = notif.created_at ? new Date(notif.created_at.replace(/-/g, '/')) : new Date();
+        const diffMinutes = Math.floor((new Date() - createdAt) / 60000);
+        let timeStr = '';
+        if (diffMinutes < 1) {
+            timeStr = window.__('notifications.just_now') || 'Hace un momento';
+        } else if (diffMinutes < 60) {
+            timeStr = `${diffMinutes}m`;
+        } else if (diffMinutes < 1440) {
+            timeStr = `${Math.floor(diffMinutes / 60)}h`;
+        } else {
+            timeStr = `${Math.floor(diffMinutes / 1440)}d`;
+        }
+
+        return `
+            <div class="component-notification-item ${!isRead ? 'component-notification-item--unread' : ''}" data-notification-id="${notif.id}" data-action="openNotification" data-target-url="${targetUrl}">
+                <div class="component-notification-item__avatar-wrapper">
+                    <div class="component-avatar component-avatar--40 ${actorSubBg ? 'subscription-dynamic' : ''}" ${actorSubBg ? `data-sub-bg="${actorSubBg}" style="--active-subscription-bg: ${actorSubBg};"` : ''}>
+                        <img src="${actorAvatar}" alt="${actorName}" class="image-lazy-fade" loading="lazy" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${fallbackAvatar}'; this.classList.add('image-loaded');">
+                    </div>
+                    <span class="component-notification-item__icon-badge component-notification-item__icon-badge--${notif.type || 'default'}">
+                        <span class="material-symbols-rounded">${iconName}</span>
+                    </span>
+                </div>
+                <div class="component-notification-item__content">
+                    <div class="component-notification-item__text">${messageText}</div>
+                    <span class="component-notification-item__time">${timeStr}</span>
+                </div>
+                ${!isRead ? '<span class="component-notification-item__dot"></span>' : ''}
+            </div>
+        `;
+    },
+
     getEmptyGraphicSvg: (type) => {
         if (type === 'trash') {
             return `

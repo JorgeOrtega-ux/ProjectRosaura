@@ -1,5 +1,6 @@
 import { ApiRoutes } from './core/api/ApiRoutes.js';
 import { ApiService } from './core/api/ApiService.js';
+import { CardTemplates } from './core/components/CardTemplates.js';
 import { formatNumber } from './core/utils/uiUtils.js';
 import { MainController } from './MainController.js';
 import { ModalSystem } from './core/components/ModalSystem.js';
@@ -211,16 +212,131 @@ document.addEventListener('DOMContentLoaded', () => {
     window.applySubscriptionDynamicColors = applySubscriptionDynamicColors;
 
     let _searchCooldown = false;
+    let _searchDebounceTimer = null;
+    let _searchAbortController = null;
+    const _searchApiService = new ApiService();
+
+    const hideSearchDropdown = () => {
+        const dropdown = document.querySelector('[data-ref="global-search-dropdown"]');
+        if (dropdown) {
+            dropdown.classList.add('disabled');
+        }
+    };
+
+    document.body.addEventListener('input', (e) => {
+        if (e.target.matches('[data-ref="global-search-input"]')) {
+            const query = e.target.value.trim();
+            const dropdown = document.querySelector('[data-ref="global-search-dropdown"]');
+            const dropdownContent = document.querySelector('[data-ref="global-search-dropdown-content"]');
+
+            if (_searchDebounceTimer) {
+                clearTimeout(_searchDebounceTimer);
+                _searchDebounceTimer = null;
+            }
+
+            if (_searchAbortController) {
+                _searchAbortController.abort();
+                _searchAbortController = null;
+            }
+
+            if (query.length < 2) {
+                if (dropdown) dropdown.classList.add('disabled');
+                return;
+            }
+
+            _searchDebounceTimer = setTimeout(async () => {
+                _searchAbortController = new AbortController();
+                try {
+                    const res = await _searchApiService.post(ApiRoutes.Search.Query, {
+                        q: query,
+                        page: 1,
+                        limit: 5
+                    }, _searchAbortController.signal);
+
+                    if (!dropdown || !dropdownContent) return;
+
+                    if (res && res.success) {
+                        const users = res.users || [];
+                        const canvases = res.data || [];
+
+                        if (users.length === 0 && canvases.length === 0) {
+                            dropdownContent.innerHTML = `
+                                <div class="component-search-dropdown__empty">
+                                    <span>${window.__('search_empty_no_results_title') || 'Sin resultados'}</span>
+                                </div>
+                            `;
+                            dropdown.classList.remove('disabled');
+                            return;
+                        }
+
+                        let html = '';
+                        if (users.length > 0) {
+                            html += `
+                                <div class="component-search-dropdown__group">
+                                    <div class="component-search-dropdown__group-title">
+                                        <span class="material-symbols-rounded">group</span>
+                                        <span>${window.__('search_section_users') || 'Usuarios'}</span>
+                                    </div>
+                                    <div class="component-search-dropdown__group-list">
+                                        ${users.map(u => CardTemplates.userSearchItem(u, { basePath: window.AppBasePath || '' })).join('')}
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        if (canvases.length > 0) {
+                            html += `
+                                <div class="component-search-dropdown__group">
+                                    <div class="component-search-dropdown__group-title">
+                                        <span class="material-symbols-rounded">palette</span>
+                                        <span>${window.__('search_section_canvases') || 'Lienzos'}</span>
+                                    </div>
+                                    <div class="component-search-dropdown__group-list">
+                                        ${canvases.map(c => CardTemplates.canvasSearchItem(c, { basePath: window.AppBasePath || '' })).join('')}
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        const viewAllText = (window.__('search_view_all_results', { query: query }) || `Ver todos los resultados para "${query}"`).replace(':query', query);
+                        html += `
+                            <div class="component-search-dropdown__footer nav-item" data-nav="/search?q=${encodeURIComponent(query)}">
+                                <span class="material-symbols-rounded">search</span>
+                                <span>${viewAllText}</span>
+                            </div>
+                        `;
+
+                        dropdownContent.innerHTML = html;
+                        dropdown.classList.remove('disabled');
+                    }
+                } catch (err) {
+                    if (err.name !== 'AbortError') {
+                        hideSearchDropdown();
+                    }
+                }
+            }, 250);
+        }
+    });
+
     document.body.addEventListener('keydown', (e) => {
         if (e.target.matches('[data-ref="global-search-input"]')) {
             if (e.key === 'Enter') {
                 e.preventDefault();
+                hideSearchDropdown();
                 const query = e.target.value.trim();
                 if (query.length < 2 || _searchCooldown) return;
                 _searchCooldown = true;
                 setTimeout(() => { _searchCooldown = false; }, 1000);
                 window.spaRouter.navigate('/search?q=' + encodeURIComponent(query));
+            } else if (e.key === 'Escape') {
+                hideSearchDropdown();
             }
+        }
+    });
+
+    document.body.addEventListener('click', (e) => {
+        if (!e.target.closest('[data-ref="global-search-container"]')) {
+            hideSearchDropdown();
         }
     });
 

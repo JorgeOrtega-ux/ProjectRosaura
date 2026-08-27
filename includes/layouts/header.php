@@ -78,12 +78,15 @@ if ($isLoggedIn) {
     </div>
 
     <div class="header-center">
-        <div class="component-search">
+        <div class="component-search" data-ref="global-search-container">
             <div class="component-search-icon">
                 <span class="material-symbols-rounded">search</span>
             </div>
             <div class="component-search-input">
                 <input type="text" id="global-search-input" name="global-search-input" data-ref="global-search-input" placeholder="<?php echo __('search_placeholder'); ?>" autocomplete="off">
+            </div>
+            <div class="component-search-dropdown disabled" data-ref="global-search-dropdown">
+                <div class="component-search-dropdown__content" data-ref="global-search-dropdown-content"></div>
             </div>
         </div>
     </div>
@@ -114,6 +117,13 @@ if ($isLoggedIn) {
                 </button>
             <?php endif; ?>
 
+            <?php if ($isLoggedIn): ?>
+                <button type="button" class="component-button component-button--icon component-button--h40 btn-header-notifications" data-action="toggleModule" data-target="moduleNotifications" data-tooltip="<?php echo __('tooltip_notifications'); ?>" data-position="bottom">
+                    <span class="material-symbols-rounded">notifications</span>
+                    <span class="component-badge component-badge--notification-counter disabled" data-ref="notifications-unread-counter">0</span>
+                </button>
+            <?php endif; ?>
+
             <?php if (!$isLoggedIn): ?>
                 <button class="component-button component-button--primary component-button--h40" data-nav="<?php echo APP_URL; ?>/login">
                     <?php echo __('btn_login'); ?>
@@ -141,5 +151,6 @@ if ($isLoggedIn) {
     </div>
 
     <?php include __DIR__ . '/../modules/moduleMainOptions.php'; ?>
+    <?php if ($isLoggedIn) { include __DIR__ . '/../modules/moduleNotifications.php'; } ?>
     <?php if ($hasCanvasAccess) { include __DIR__ . '/../modules/moduleCanvases.php'; } ?>
 </div>

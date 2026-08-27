@@ -4,11 +4,13 @@ import { CanvasCardInteractions } from '../../../core/components/CanvasCardInter
 import { CardTemplates } from '../../../core/components/CardTemplates.js';
 import { PromoService } from '../../../core/services/PromoCardService.js';
 import { 
-    renderSkeleton, 
     appendInfiniteScrollSkeletons, 
+    formatNumber,
     removeInfiniteScrollSkeletons, 
+    renderSkeleton, 
     renderVirtualGridItems, 
-    setupGridInfiniteScroll 
+    setupGridInfiniteScroll,
+    showMessage
 } from '../../../core/utils/uiUtils.js';
 import { VirtualGridObserver } from '../../../core/utils/VirtualGridObserver.js';
 
@@ -90,8 +92,24 @@ export class SearchController {
             this.totalFound = 0;
 
             if (this.contentArea) {
-                this.contentArea.innerHTML = '<div class="component-grid" data-ref="search-results-grid"></div>';
-                renderSkeleton(this.contentArea.querySelector('.component-grid'), 'homeCanvasGrid');
+                this.contentArea.innerHTML = `
+                    <div class="component-search-sections" data-ref="search-sections-wrapper">
+                        <div class="component-search-section disabled" data-ref="search-users-section">
+                            <div class="component-search-section__header">
+                                <span class="material-symbols-rounded">group</span>
+                                <h2 class="component-search-section__title">${window.__('search_section_users') || 'Usuarios'}</h2>
+                            </div>
+                            <div class="component-grid component-grid--users" data-ref="search-users-grid"></div>
+                        </div>
+                        <div class="component-search-section" data-ref="search-canvases-section">
+                            <div class="component-grid" data-ref="search-results-grid"></div>
+                        </div>
+                    </div>
+                `;
+                const canvasesGrid = this.contentArea.querySelector('[data-ref="search-results-grid"]');
+                if (canvasesGrid) {
+                    renderSkeleton(canvasesGrid, 'homeCanvasGrid');
+                }
             }
         }
 
@@ -99,8 +117,10 @@ export class SearchController {
 
         this.isLoadingMore = true;
 
-        if (isLoadMore && this.contentArea) {
-            appendInfiniteScrollSkeletons(this.contentArea, 4);
+        const canvasesGrid = this.contentArea ? this.contentArea.querySelector('[data-ref="search-results-grid"]') : null;
+
+        if (isLoadMore && canvasesGrid) {
+            appendInfiniteScrollSkeletons(canvasesGrid, 4);
         }
 
         try {
@@ -116,38 +136,63 @@ export class SearchController {
                 return;
             }
 
-            removeInfiniteScrollSkeletons(this.contentArea);
+            if (canvasesGrid) {
+                removeInfiniteScrollSkeletons(canvasesGrid);
+            }
 
             if (resData && resData.success) {
                 let newCanvases = resData.data || [];
+                let users = resData.users || [];
                 this.totalFound = typeof resData.total === 'number' ? resData.total : (this.allCanvases.length + newCanvases.length);
+                const totalUsersCount = Array.isArray(users) ? users.length : 0;
 
-                if (this.title) {
-                    const template = window.__('search_results_for', { count: this.totalFound, query: this.query });
-                    this.title.textContent = template
-                        .replace(':count', this.totalFound)
-                        .replace(':query', this.query);
-                }
-
-                if (!isLoadMore && newCanvases.length === 0) {
-                    this.hasMore = false;
-                    if (this.contentArea) {
-                        this.contentArea.innerHTML = CardTemplates.emptyState({
-                            type: 'search',
-                            title: window.__('search_empty_no_results_title'),
-                            message: window.__('search_empty_no_results_desc')
-                        });
+                if (!isLoadMore) {
+                    const usersSection = this.contentArea.querySelector('[data-ref="search-users-section"]');
+                    const usersGrid = this.contentArea.querySelector('[data-ref="search-users-grid"]');
+                    if (users.length > 0 && usersSection && usersGrid) {
+                        usersSection.classList.remove('disabled');
+                        usersGrid.innerHTML = users.map(u => CardTemplates.userCard(u, { basePath: this.basePath })).join('');
                     }
-                    this.isLoadingMore = false;
-                    return;
+
+                    if (this.title) {
+                        const totalCombined = this.totalFound + totalUsersCount;
+                        const template = window.__('search_results_for', { count: totalCombined, query: this.query });
+                        this.title.textContent = template
+                            .replace(':count', totalCombined)
+                            .replace(':query', this.query);
+                    }
+
+                    if (newCanvases.length === 0 && users.length === 0) {
+                        this.hasMore = false;
+                        if (this.contentArea) {
+                            this.contentArea.innerHTML = CardTemplates.emptyState({
+                                type: 'search',
+                                title: window.__('search_empty_no_results_title'),
+                                message: window.__('search_empty_no_results_desc')
+                            });
+                        }
+                        this.isLoadingMore = false;
+                        return;
+                    }
+
+                    if (newCanvases.length === 0 && users.length > 0) {
+                        this.hasMore = false;
+                        const canvasesSection = this.contentArea.querySelector('[data-ref="search-canvases-section"]');
+                        if (canvasesSection) {
+                            canvasesSection.classList.add('disabled');
+                        }
+                        this.isLoadingMore = false;
+                        return;
+                    }
                 }
 
-                await PromoService.ensureLoaded();
-                const itemsWithPromos = PromoService.injectFeedCards(newCanvases, this.allCanvases.length);
+                if (newCanvases.length > 0 && canvasesGrid) {
+                    await PromoService.ensureLoaded();
+                    const itemsWithPromos = PromoService.injectFeedCards(newCanvases, this.allCanvases.length);
 
-                renderVirtualGridItems(this.contentArea, itemsWithPromos, this.virtualObserver, isLoadMore, 'home-all-canvases');
-
-                this.allCanvases = this.allCanvases.concat(itemsWithPromos);
+                    renderVirtualGridItems(canvasesGrid, itemsWithPromos, this.virtualObserver, isLoadMore, 'home-all-canvases');
+                    this.allCanvases = this.allCanvases.concat(itemsWithPromos);
+                }
 
                 if (typeof resData.has_more === 'boolean') {
                     this.hasMore = resData.has_more;
@@ -159,12 +204,14 @@ export class SearchController {
                 this.isLoadingMore = false;
 
                 this.reinitializeUI();
-                this.observer = setupGridInfiniteScroll({
-                    container: this.contentArea,
-                    hasMore: this.hasMore,
-                    currentObserver: this.observer,
-                    onIntersect: () => this.loadSearchResults(true)
-                });
+                if (canvasesGrid) {
+                    this.observer = setupGridInfiniteScroll({
+                        container: canvasesGrid,
+                        hasMore: this.hasMore,
+                        currentObserver: this.observer,
+                        onIntersect: () => this.loadSearchResults(true)
+                    });
+                }
             } else {
                 if (!isLoadMore) {
                     if (this.title) this.title.textContent = window.__('err_search_failed');
@@ -181,7 +228,9 @@ export class SearchController {
         } catch (e) {
             if (e.name === 'AbortError') return;
 
-            removeInfiniteScrollSkeletons(this.contentArea);
+            if (canvasesGrid) {
+                removeInfiniteScrollSkeletons(canvasesGrid);
+            }
 
             if (!isLoadMore) {
                 if (this.title) this.title.textContent = window.__('err_search_problem');
@@ -199,10 +248,10 @@ export class SearchController {
 
     reinitializeUI() {
         if (!this.contentArea) return;
-        const grid = this.contentArea.querySelector('.component-grid');
-        if (!grid) return;
-
-        if (window.app && typeof window.app.initModules === 'function') window.app.initModules(grid);
+        const grid = this.contentArea.querySelector('[data-ref="search-results-grid"]');
+        if (grid && window.app && typeof window.app.initModules === 'function') {
+            window.app.initModules(grid);
+        }
 
         PromoService.initCardInteractions(this.contentArea);
     }
@@ -217,6 +266,16 @@ export class SearchController {
 
         const action = actionBtn.getAttribute('data-action');
 
+        if (action === 'toggleUserFollow') {
+            e.preventDefault();
+            e.stopPropagation();
+            const userId = actionBtn.getAttribute('data-user-id');
+            if (userId) {
+                this._toggleUserFollow(userId, actionBtn);
+            }
+            return;
+        }
+
         if (action === 'openExternalPromo') {
             e.preventDefault();
             const targetUrl = actionBtn.getAttribute('data-target-url');
@@ -228,6 +287,44 @@ export class SearchController {
 
         if (this.cardInteractions && this.cardInteractions.handleAction(action, actionBtn)) {
             return;
+        }
+    }
+
+    async _toggleUserFollow(userId, btnEl) {
+        if (!userId || btnEl.disabled) return;
+        btnEl.disabled = true;
+
+        try {
+            const signal = this.abortController ? this.abortController.signal : null;
+            const res = await this.api.post(ApiRoutes.User.ToggleFollow, { user_id: userId }, signal);
+
+            if (res && res.success) {
+                const isFollowing = res.is_following;
+                btnEl.classList.toggle('component-button--secondary', isFollowing);
+                btnEl.classList.toggle('component-button--primary', !isFollowing);
+
+                const icon = btnEl.querySelector('.material-symbols-rounded');
+                if (icon) icon.textContent = isFollowing ? 'person_remove' : 'person_add';
+
+                const text = btnEl.querySelector('.btn-text');
+                if (text) text.textContent = isFollowing ? (window.__('profile.unfollow') || 'Dejar de seguir') : (window.__('profile.follow') || 'Seguir');
+
+                const card = btnEl.closest('.component-user-card');
+                if (card) {
+                    const countEl = card.querySelector('.user-followers-count');
+                    if (countEl && typeof res.followers_count === 'number') {
+                        countEl.textContent = formatNumber(res.followers_count);
+                    }
+                }
+
+                if (res.message) showMessage(res.message, 'success');
+            } else if (res && res.message) {
+                showMessage(res.message, 'error');
+            }
+        } catch (err) {
+            showMessage(window.__('err_follow_failed') || 'Error al actualizar seguimiento.', 'error');
+        } finally {
+            btnEl.disabled = false;
         }
     }
 

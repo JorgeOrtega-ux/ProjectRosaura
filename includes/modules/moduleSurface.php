@@ -23,6 +23,24 @@ $isMainArea = !$isAdminArea && !$isSettingsArea && !$isSitePolicyArea;
                     </div>
                 </div>
 
+                <?php if ($isLoggedIn): ?>
+                <?php
+                    $activeAccountId = $_SESSION['active_account'] ?? null;
+                    $linkedAccounts = $_SESSION['accounts'] ?? [];
+                    $activeAcc = ($activeAccountId !== null && isset($linkedAccounts[$activeAccountId])) ? $linkedAccounts[$activeAccountId] : null;
+                    $userIdentifier = $activeAcc['user_identifier'] ?? ($_SESSION['user_identifier'] ?? '');
+                    $myProfileNav = !empty($userIdentifier) ? '/@' . htmlspecialchars($userIdentifier) : '/settings/your-account';
+                ?>
+                <div class="component-menu-link nav-item" data-nav="<?php echo $myProfileNav; ?>">
+                    <div class="component-menu-link-icon">
+                        <span class="material-symbols-rounded">account_circle</span>
+                    </div>
+                    <div class="component-menu-link-text">
+                        <span><?php echo __('menu_my_profile'); ?></span>
+                    </div>
+                </div>
+                <?php endif; ?>
+
             </div>
         </div>
 

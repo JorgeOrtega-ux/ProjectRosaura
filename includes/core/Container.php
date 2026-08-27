@@ -37,6 +37,10 @@ use App\Core\Interfaces\SubscriptionRepositoryInterface;
 use App\Core\Repositories\SubscriptionRepository;
 use App\Core\Interfaces\PaletteRepositoryInterface;
 use App\Core\Repositories\PaletteRepository;
+use App\Core\Interfaces\FollowRepositoryInterface;
+use App\Core\Repositories\FollowRepository;
+use App\Core\Interfaces\NotificationRepositoryInterface;
+use App\Core\Repositories\NotificationRepository;
 
 class Container implements ContainerInterface {
     private $instances = [];
@@ -71,6 +75,8 @@ class Container implements ContainerInterface {
         $this->bindings[CanvasRepositoryInterface::class] = CanvasRepository::class;
         $this->bindings[SubscriptionRepositoryInterface::class] = SubscriptionRepository::class;
         $this->bindings[PaletteRepositoryInterface::class] = PaletteRepository::class;
+        $this->bindings[FollowRepositoryInterface::class] = FollowRepository::class;
+        $this->bindings[NotificationRepositoryInterface::class] = NotificationRepository::class;
     }
 
     public function get(string $id) {

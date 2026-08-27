@@ -5,6 +5,7 @@ namespace App\Api\Services\Publications;
 use App\Config\Database\DatabaseManager;
 use App\Core\Interfaces\SessionManagerInterface;
 use App\Core\Interfaces\UserRepositoryInterface;
+use App\Core\Interfaces\NotificationRepositoryInterface;
 use App\Core\Helpers\Utils;
 use App\Core\Helpers\EnvLoader;
 use App\Core\System\Logger;
@@ -16,17 +17,20 @@ class PublicationsService {
     private DatabaseManager $db;
     private SessionManagerInterface $sessionManager;
     private UserRepositoryInterface $userRepository;
+    private ?NotificationRepositoryInterface $notificationRepo;
     private PDO $pdoCanvases;
     private PDO $pdoIdentity;
 
     public function __construct(
         DatabaseManager $db,
         SessionManagerInterface $sessionManager,
-        UserRepositoryInterface $userRepository
+        UserRepositoryInterface $userRepository,
+        ?NotificationRepositoryInterface $notificationRepo = null
     ) {
         $this->db = $db;
         $this->sessionManager = $sessionManager;
         $this->userRepository = $userRepository;
+        $this->notificationRepo = $notificationRepo;
         $this->pdoCanvases = $this->db->getConnection(DB::CONN_CANVASES);
         $this->pdoIdentity = $this->db->getConnection(DB::CONN_IDENTITY);
     }
@@ -388,7 +392,7 @@ class PublicationsService {
         $userId = (int)$this->sessionManager->get('user_id');
 
         try {
-            $stmt = $this->pdoCanvases->prepare("SELECT id, likes_count FROM " . DB::TBL_PUBLICATIONS . " WHERE uuid = ? OR id = ? LIMIT 1");
+            $stmt = $this->pdoCanvases->prepare("SELECT id, user_id, uuid, title, likes_count FROM " . DB::TBL_PUBLICATIONS . " WHERE uuid = ? OR id = ? LIMIT 1");
             $stmt->execute([$pubUuid, $pubUuid]);
             $pub = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -398,23 +402,31 @@ class PublicationsService {
 
             $pubId = (int)$pub['id'];
 
-            // Verificar si ya dio like
             $stmtCheck = $this->pdoCanvases->prepare("SELECT id FROM " . DB::TBL_PUBLICATION_LIKES . " WHERE publication_id = ? AND user_id = ? LIMIT 1");
             $stmtCheck->execute([$pubId, $userId]);
             $like = $stmtCheck->fetch(PDO::FETCH_ASSOC);
 
             if ($like) {
-                // Quitar like
                 $this->pdoCanvases->prepare("DELETE FROM " . DB::TBL_PUBLICATION_LIKES . " WHERE id = ?")->execute([$like['id']]);
                 $this->pdoCanvases->prepare("UPDATE " . DB::TBL_PUBLICATIONS . " SET likes_count = GREATEST(0, likes_count - 1) WHERE id = ?")->execute([$pubId]);
                 $liked = false;
                 $newCount = max(0, (int)$pub['likes_count'] - 1);
             } else {
-                // Agregar like
                 $this->pdoCanvases->prepare("INSERT INTO " . DB::TBL_PUBLICATION_LIKES . " (publication_id, user_id, created_at) VALUES (?, ?, NOW())")->execute([$pubId, $userId]);
                 $this->pdoCanvases->prepare("UPDATE " . DB::TBL_PUBLICATIONS . " SET likes_count = likes_count + 1 WHERE id = ?")->execute([$pubId]);
                 $liked = true;
                 $newCount = (int)$pub['likes_count'] + 1;
+
+                if ($this->notificationRepo && (int)$pub['user_id'] !== $userId) {
+                    $this->notificationRepo->createNotification(
+                        (int)$pub['user_id'],
+                        $userId,
+                        'publication_like',
+                        $pubId,
+                        $pub['uuid'],
+                        ['title' => $pub['title'] ?? '']
+                    );
+                }
             }
 
             return [
@@ -532,7 +544,7 @@ class PublicationsService {
         $sanitizedContent = Utils::sanitizeText($content);
 
         try {
-            $stmtPub = $this->pdoCanvases->prepare("SELECT id, comments_count FROM " . DB::TBL_PUBLICATIONS . " WHERE uuid = ? OR id = ? LIMIT 1");
+            $stmtPub = $this->pdoCanvases->prepare("SELECT id, user_id, uuid, title, comments_count FROM " . DB::TBL_PUBLICATIONS . " WHERE uuid = ? OR id = ? LIMIT 1");
             $stmtPub->execute([$pubUuid, $pubUuid]);
             $pub = $stmtPub->fetch(PDO::FETCH_ASSOC);
 
@@ -551,8 +563,21 @@ class PublicationsService {
             $stmt->execute([$commentUuid, $pubId, $userId, $sanitizedContent]);
             $commentId = (int)$this->pdoCanvases->lastInsertId();
 
-            // Incrementar contador de comentarios
             $this->pdoCanvases->prepare("UPDATE " . DB::TBL_PUBLICATIONS . " SET comments_count = comments_count + 1 WHERE id = ?")->execute([$pubId]);
+
+            if ($this->notificationRepo && (int)$pub['user_id'] !== $userId) {
+                $this->notificationRepo->createNotification(
+                    (int)$pub['user_id'],
+                    $userId,
+                    'publication_comment',
+                    $pubId,
+                    $pub['uuid'],
+                    [
+                        'title' => $pub['title'] ?? '',
+                        'comment_snippet' => mb_substr($sanitizedContent, 0, 80)
+                    ]
+                );
+            }
 
             $author = $this->userRepository->findById($userId);
             $authorIdentifier = $author['identifier'] ?? strtolower(str_replace(' ', '_', $author['username']));

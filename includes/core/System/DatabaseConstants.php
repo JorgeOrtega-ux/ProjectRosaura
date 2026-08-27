@@ -27,6 +27,8 @@ class DatabaseConstants {
     public const TBL_TELEMETRY_CANVAS        = 'canvas_interactions';
     public const TBL_TELEMETRY_AUTH_EVENTS   = 'auth_events';
     public const TBL_USER_FLAGS             = 'user_flags';
+    public const TBL_USER_FOLLOWS           = 'user_follows';
+    public const TBL_NOTIFICATIONS          = 'notifications';
     public const TBL_CANVASES                   = 'canvases';
     public const TBL_CANVAS_MEMBERS             = 'canvas_members';
     public const TBL_CANVAS_SNAPSHOTS_HISTORY   = 'canvas_snapshots_history';

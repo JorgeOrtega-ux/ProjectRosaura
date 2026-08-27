@@ -33,10 +33,13 @@ endif;
 
 $user = $profileData['user'];
 $isOwner = $profileData['is_owner'];
+$isFollowing = !empty($profileData['is_following']);
 $stats = $profileData['stats'];
 $liveCanvas = $profileData['live_canvas'];
 $publications = $profileData['publications'];
 $publicCanvases = $profileData['public_canvases'];
+$followers = $profileData['followers'] ?? [];
+$following = $profileData['following'] ?? [];
 
 $memberSince = date('M Y', strtotime($user['created_at']));
 $subBg = $user['subscription_bg'] ?? '';
@@ -77,6 +80,18 @@ $hasSubscription = !empty($user['subscription_tier']) && $user['subscription_tie
                     <button type="button" class="component-button component-button--icon component-button--h40" data-nav="/settings/your-account" data-tooltip="<?php echo __('profile.edit_profile'); ?>" data-position="bottom">
                         <span class="material-symbols-rounded">tune</span>
                     </button>
+                <?php else: ?>
+                    <?php if (!empty($_SESSION['user_id'])): ?>
+                        <button type="button" class="component-button <?php echo $isFollowing ? 'component-button--secondary' : 'component-button--primary'; ?> component-button--h40 btn-follow" data-action="toggleProfileFollow" data-user-id="<?php echo $user['id']; ?>">
+                            <span class="material-symbols-rounded component-icon--20"><?php echo $isFollowing ? 'person_remove' : 'person_add'; ?></span>
+                            <span class="btn-text"><?php echo $isFollowing ? __('profile.unfollow') : __('profile.follow'); ?></span>
+                        </button>
+                    <?php else: ?>
+                        <button type="button" class="component-button component-button--primary component-button--h40" data-nav="/login">
+                            <span class="material-symbols-rounded component-icon--20">person_add</span>
+                            <span><?php echo __('profile.follow'); ?></span>
+                        </button>
+                    <?php endif; ?>
                 <?php endif; ?>
                 <button type="button" class="component-button component-button--icon component-button--h40" data-action="copyProfileLink" data-tooltip="<?php echo __('btn_share'); ?>" data-position="bottom">
                     <span class="material-symbols-rounded">share</span>
@@ -99,6 +114,14 @@ $hasSubscription = !empty($user['subscription_tier']) && $user['subscription_tie
             <?php endif; ?>
 
             <div class="component-badge-list">
+                <span class="component-badge cursor-pointer" data-action="switchProfileTab" data-tab="followers">
+                    <span class="material-symbols-rounded">group</span>
+                    <span><strong data-ref="profile-followers-count"><?php echo number_format($stats['followers_count'] ?? 0); ?></strong> <?php echo __('profile.followers'); ?></span>
+                </span>
+                <span class="component-badge cursor-pointer" data-action="switchProfileTab" data-tab="following">
+                    <span class="material-symbols-rounded">person_search</span>
+                    <span><strong data-ref="profile-following-count"><?php echo number_format($stats['following_count'] ?? 0); ?></strong> <?php echo __('profile.following'); ?></span>
+                </span>
                 <span class="component-badge">
                     <span class="material-symbols-rounded">calendar_today</span>
                     <span><?php echo __('profile.member_since'); ?> <?php echo htmlspecialchars($memberSince); ?></span>
@@ -126,13 +149,16 @@ $hasSubscription = !empty($user['subscription_tier']) && $user['subscription_tie
                 <span><?php echo __('profile.tab_live_canvas'); ?></span>
             </button>
         <?php endif; ?>
-        <?php if (!empty($publicCanvases)): ?>
-            <button type="button" class="component-tab-btn" data-action="switchProfileTab" data-tab="canvases">
-                <span class="material-symbols-rounded">brush</span>
-                <span><?php echo __('profile.tab_canvases'); ?></span>
-                <span class="component-tab-badge"><?php echo count($publicCanvases); ?></span>
-            </button>
-        <?php endif; ?>
+        <button type="button" class="component-tab-btn" data-action="switchProfileTab" data-tab="followers">
+            <span class="material-symbols-rounded">group</span>
+            <span><?php echo __('profile.tab_followers'); ?></span>
+            <span class="component-tab-badge" data-ref="tab-badge-followers"><?php echo number_format($stats['followers_count'] ?? 0); ?></span>
+        </button>
+        <button type="button" class="component-tab-btn" data-action="switchProfileTab" data-tab="following">
+            <span class="material-symbols-rounded">person_search</span>
+            <span><?php echo __('profile.tab_following'); ?></span>
+            <span class="component-tab-badge" data-ref="tab-badge-following"><?php echo number_format($stats['following_count'] ?? 0); ?></span>
+        </button>
         <button type="button" class="component-tab-btn" data-action="switchProfileTab" data-tab="stats">
             <span class="material-symbols-rounded">bar_chart</span>
             <span><?php echo __('profile.tab_stats'); ?></span>
@@ -218,46 +244,153 @@ $hasSubscription = !empty($user['subscription_tier']) && $user['subscription_tie
     </div>
     <?php endif; ?>
 
-    <!-- Tab Content: Public Canvases -->
-    <?php if (!empty($publicCanvases)): ?>
-    <div class="component-profile-tab-content" data-ref="tab-content-canvases">
-        <div class="component-grid" data-ref="profile-canvases-grid">
-            <?php foreach ($publicCanvases as $canv): 
-                $thumbnailUrl = !empty($canv['thumbnail_url']) ? $canv['thumbnail_url'] : (APP_URL . '/assets/img/fallbacks/canvas-default.png');
-            ?>
-                <div class="component-gallery-card" data-card-id="<?php echo $canv['id']; ?>">
-                    <img class="component-gallery-card__image image-lazy-fade" onload="this.classList.add('image-loaded')" src="<?php echo htmlspecialchars($thumbnailUrl); ?>" alt="<?php echo htmlspecialchars($canv['name']); ?>" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/canvas-default.png'; this.classList.add('image-loaded');">
-
-                    <div class="component-badge component-badge--glass component-badge--absolute-tr">
-                        <span class="material-symbols-rounded">group</span>
-                        <span><?php echo number_format($canv['members_count']); ?></span>
-                        <span class="component-badge-divider">|</span>
-                        <span class="material-symbols-rounded component-text-accent">favorite</span>
-                        <span><?php echo number_format($canv['favorites_count']); ?></span>
-                    </div>
-
-                    <div class="component-gallery-link" data-nav="<?php echo htmlspecialchars($canv['url']); ?>">
-                        <h3 class="component-gallery-title"><?php echo htmlspecialchars($canv['name']); ?></h3>
-                    </div>
-
-                    <div class="component-gallery-actions-wrapper component-dropdown-wrapper">
-                        <div class="component-gallery-actions">
-                            <?php if (!empty($_SESSION['user_id'])): ?>
-                                <button type="button" class="component-button component-button--icon component-button--h32 btn-favorite <?php echo !empty($canv['is_favorite']) ? 'is-favorite' : ''; ?>" data-action="toggleFavorite" data-id="<?php echo $canv['id']; ?>" data-tooltip="<?php echo __('favorite'); ?>" data-position="bottom">
-                                    <span class="material-symbols-rounded component-icon--20">favorite</span>
-                                </button>
+    <!-- Tab Content: Followers -->
+    <div class="component-profile-tab-content" data-ref="tab-content-followers">
+        <?php if (!empty($followers)): ?>
+            <div class="component-grid component-grid--users" data-ref="profile-followers-grid">
+                <?php foreach ($followers as $followerUser): ?>
+                    <div class="component-user-card" data-user-id="<?php echo $followerUser['id']; ?>" data-identifier="<?php echo htmlspecialchars($followerUser['identifier']); ?>">
+                        <div data-nav="/@<?php echo htmlspecialchars($followerUser['identifier']); ?>" class="component-user-card__banner">
+                            <?php if (!empty($followerUser['banner_url'])): ?>
+                                <img src="<?php echo htmlspecialchars($followerUser['banner_url']); ?>" alt="<?php echo htmlspecialchars($followerUser['username']); ?>" class="component-user-card__banner-img image-lazy-fade" loading="lazy" onload="this.classList.add('image-loaded')">
+                            <?php else: ?>
+                                <div class="component-user-card__banner-placeholder"></div>
                             <?php endif; ?>
                         </div>
+                        <div class="component-user-card__body">
+                            <div class="component-user-card__avatar-row">
+                                <div data-nav="/@<?php echo htmlspecialchars($followerUser['identifier']); ?>" class="component-avatar component-avatar--56">
+                                    <img src="<?php echo htmlspecialchars($followerUser['avatar_url']); ?>" alt="<?php echo htmlspecialchars($followerUser['username']); ?>" class="image-lazy-fade" loading="lazy" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/avatar-default.png'; this.classList.add('image-loaded');">
+                                </div>
+                                <div class="component-user-card__actions">
+                                    <?php if (!$followerUser['is_self']): ?>
+                                        <?php if (!empty($_SESSION['user_id'])): ?>
+                                            <button type="button" class="component-button <?php echo !empty($followerUser['is_following']) ? 'component-button--secondary' : 'component-button--primary'; ?> component-button--h32 btn-follow" data-action="toggleUserFollow" data-user-id="<?php echo $followerUser['id']; ?>">
+                                                <span class="material-symbols-rounded component-icon--18"><?php echo !empty($followerUser['is_following']) ? 'person_remove' : 'person_add'; ?></span>
+                                                <span class="btn-text"><?php echo !empty($followerUser['is_following']) ? __('profile.unfollow') : __('profile.follow'); ?></span>
+                                            </button>
+                                        <?php else: ?>
+                                            <button type="button" class="component-button component-button--primary component-button--h32" data-nav="/login">
+                                                <span class="material-symbols-rounded component-icon--18">person_add</span>
+                                                <span><?php echo __('profile.follow'); ?></span>
+                                            </button>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <div data-nav="/@<?php echo htmlspecialchars($followerUser['identifier']); ?>" class="component-user-card__info">
+                                <div class="component-user-card__name-row">
+                                    <h3 class="component-user-card__name"><?php echo htmlspecialchars($followerUser['username']); ?></h3>
+                                    <span class="component-user-card__handle">@<?php echo htmlspecialchars($followerUser['identifier']); ?></span>
+                                </div>
+                                <?php if (!empty($followerUser['bio'])): ?>
+                                    <p class="component-user-card__bio"><?php echo htmlspecialchars($followerUser['bio']); ?></p>
+                                <?php endif; ?>
+                                <div class="component-user-card__stats">
+                                    <span class="component-badge">
+                                        <span class="material-symbols-rounded">group</span>
+                                        <span class="user-followers-count"><?php echo number_format($followerUser['followers_count']); ?></span>
+                                        <span><?php echo __('profile.followers'); ?></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            <?php endforeach; ?>
-        </div>
+                <?php endforeach; ?>
+            </div>
+        <?php else: ?>
+            <?php echo Utils::renderEmptyState([
+                'type' => 'users',
+                'title' => __('profile.no_followers_title'),
+                'message' => __('profile.no_followers')
+            ]); ?>
+        <?php endif; ?>
     </div>
-    <?php endif; ?>
+
+    <!-- Tab Content: Following -->
+    <div class="component-profile-tab-content" data-ref="tab-content-following">
+        <?php if (!empty($following)): ?>
+            <div class="component-grid component-grid--users" data-ref="profile-following-grid">
+                <?php foreach ($following as $followingUser): ?>
+                    <div class="component-user-card" data-user-id="<?php echo $followingUser['id']; ?>" data-identifier="<?php echo htmlspecialchars($followingUser['identifier']); ?>">
+                        <div data-nav="/@<?php echo htmlspecialchars($followingUser['identifier']); ?>" class="component-user-card__banner">
+                            <?php if (!empty($followingUser['banner_url'])): ?>
+                                <img src="<?php echo htmlspecialchars($followingUser['banner_url']); ?>" alt="<?php echo htmlspecialchars($followingUser['username']); ?>" class="component-user-card__banner-img image-lazy-fade" loading="lazy" onload="this.classList.add('image-loaded')">
+                            <?php else: ?>
+                                <div class="component-user-card__banner-placeholder"></div>
+                            <?php endif; ?>
+                        </div>
+                        <div class="component-user-card__body">
+                            <div class="component-user-card__avatar-row">
+                                <div data-nav="/@<?php echo htmlspecialchars($followingUser['identifier']); ?>" class="component-avatar component-avatar--56">
+                                    <img src="<?php echo htmlspecialchars($followingUser['avatar_url']); ?>" alt="<?php echo htmlspecialchars($followingUser['username']); ?>" class="image-lazy-fade" loading="lazy" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/assets/img/fallbacks/avatar-default.png'; this.classList.add('image-loaded');">
+                                </div>
+                                <div class="component-user-card__actions">
+                                    <?php if (!$followingUser['is_self']): ?>
+                                        <?php if (!empty($_SESSION['user_id'])): ?>
+                                            <button type="button" class="component-button <?php echo !empty($followingUser['is_following']) ? 'component-button--secondary' : 'component-button--primary'; ?> component-button--h32 btn-follow" data-action="toggleUserFollow" data-user-id="<?php echo $followingUser['id']; ?>">
+                                                <span class="material-symbols-rounded component-icon--18"><?php echo !empty($followingUser['is_following']) ? 'person_remove' : 'person_add'; ?></span>
+                                                <span class="btn-text"><?php echo !empty($followingUser['is_following']) ? __('profile.unfollow') : __('profile.follow'); ?></span>
+                                            </button>
+                                        <?php else: ?>
+                                            <button type="button" class="component-button component-button--primary component-button--h32" data-nav="/login">
+                                                <span class="material-symbols-rounded component-icon--18">person_add</span>
+                                                <span><?php echo __('profile.follow'); ?></span>
+                                            </button>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <div data-nav="/@<?php echo htmlspecialchars($followingUser['identifier']); ?>" class="component-user-card__info">
+                                <div class="component-user-card__name-row">
+                                    <h3 class="component-user-card__name"><?php echo htmlspecialchars($followingUser['username']); ?></h3>
+                                    <span class="component-user-card__handle">@<?php echo htmlspecialchars($followingUser['identifier']); ?></span>
+                                </div>
+                                <?php if (!empty($followingUser['bio'])): ?>
+                                    <p class="component-user-card__bio"><?php echo htmlspecialchars($followingUser['bio']); ?></p>
+                                <?php endif; ?>
+                                <div class="component-user-card__stats">
+                                    <span class="component-badge">
+                                        <span class="material-symbols-rounded">group</span>
+                                        <span class="user-followers-count"><?php echo number_format($followingUser['followers_count']); ?></span>
+                                        <span><?php echo __('profile.followers'); ?></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php else: ?>
+            <?php echo Utils::renderEmptyState([
+                'type' => 'users',
+                'title' => __('profile.no_following_title'),
+                'message' => __('profile.no_following')
+            ]); ?>
+        <?php endif; ?>
+    </div>
 
     <!-- Tab Content: Stats -->
     <div class="component-profile-tab-content" data-ref="tab-content-stats">
         <div class="component-profile-stats">
+            <div class="component-stat-card">
+                <div class="component-stat-card__icon">
+                    <span class="material-symbols-rounded">group</span>
+                </div>
+                <div class="component-stat-card__content">
+                    <span class="component-stat-card__title"><?php echo __('profile.stats_followers'); ?></span>
+                    <span class="component-stat-card__value" data-ref="stat-followers"><?php echo number_format($stats['followers_count'] ?? 0); ?></span>
+                </div>
+            </div>
+            <div class="component-stat-card">
+                <div class="component-stat-card__icon">
+                    <span class="material-symbols-rounded">person_search</span>
+                </div>
+                <div class="component-stat-card__content">
+                    <span class="component-stat-card__title"><?php echo __('profile.stats_following'); ?></span>
+                    <span class="component-stat-card__value" data-ref="stat-following"><?php echo number_format($stats['following_count'] ?? 0); ?></span>
+                </div>
+            </div>
             <div class="component-stat-card">
                 <div class="component-stat-card__icon">
                     <span class="material-symbols-rounded">palette</span>
@@ -283,15 +416,6 @@ $hasSubscription = !empty($user['subscription_tier']) && $user['subscription_tie
                 <div class="component-stat-card__content">
                     <span class="component-stat-card__title"><?php echo __('profile.stats_views'); ?></span>
                     <span class="component-stat-card__value" data-ref="stat-views"><?php echo number_format($stats['total_views_received']); ?></span>
-                </div>
-            </div>
-            <div class="component-stat-card">
-                <div class="component-stat-card__icon">
-                    <span class="material-symbols-rounded">brush</span>
-                </div>
-                <div class="component-stat-card__content">
-                    <span class="component-stat-card__title"><?php echo __('profile.tab_canvases'); ?></span>
-                    <span class="component-stat-card__value" data-ref="stat-canvases"><?php echo number_format($stats['total_canvases']); ?></span>
                 </div>
             </div>
         </div>

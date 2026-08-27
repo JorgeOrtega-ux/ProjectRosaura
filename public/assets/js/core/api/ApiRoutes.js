@@ -256,6 +256,15 @@ export const ApiRoutes = {
         DeletePublication: 'publications.delete'
     },
     User: {
-        GetProfileData: 'user.get_profile_data'
+        GetProfileData: 'user.get_profile_data',
+        ToggleFollow: 'user.toggle_follow',
+        GetFollowers: 'user.get_followers',
+        GetFollowing: 'user.get_following'
+    },
+    Notifications: {
+        Get: 'notifications.get',
+        GetUnreadCount: 'notifications.get_unread_count',
+        MarkRead: 'notifications.mark_read',
+        MarkAllRead: 'notifications.mark_all_read'
     }
 };

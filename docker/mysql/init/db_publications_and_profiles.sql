@@ -110,6 +110,36 @@ UPDATE users SET identifier = LOWER(REPLACE(username, ' ', '_')) WHERE identifie
 -- Rellenar banner_picture por defecto para usuarios existentes que tengan banner_picture NULL
 UPDATE users SET banner_picture = CONCAT('assets/img/banners/banner_', ((id % 5) + 1), '.svg') WHERE banner_picture IS NULL OR banner_picture = '';
 
+-- Tabla user_follows (Sistema de seguimiento entre usuarios)
+CREATE TABLE IF NOT EXISTS `user_follows` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `follower_id` INT(11) NOT NULL,
+  `following_id` INT(11) NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY `idx_user_follow_unique` (`follower_id`, `following_id`),
+  INDEX `idx_user_following` (`following_id`, `created_at` DESC),
+  INDEX `idx_user_follower` (`follower_id`, `created_at` DESC),
+  CONSTRAINT `fk_user_follows_follower` FOREIGN KEY (`follower_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_user_follows_following` FOREIGN KEY (`following_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabla notifications (Sistema de notificaciones)
+CREATE TABLE IF NOT EXISTS `notifications` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT(11) NOT NULL,
+  `actor_id` INT(11) NULL,
+  `type` VARCHAR(50) NOT NULL,
+  `target_id` BIGINT NULL,
+  `target_uuid` VARCHAR(64) NULL,
+  `data` JSON NULL,
+  `is_read` TINYINT(1) NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX `idx_notif_user_read` (`user_id`, `is_read`, `created_at` DESC),
+  INDEX `idx_notif_user_created` (`user_id`, `created_at` DESC),
+  CONSTRAINT `fk_notif_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_notif_actor` FOREIGN KEY (`actor_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- 2. DB CANVASES
 USE db_canvases;
 

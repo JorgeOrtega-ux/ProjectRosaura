@@ -92,6 +92,21 @@ $parseSubscriptionColor = function($subColorRaw) {
             <div class="component-menu-divider"></div>
             <?php endif; ?>
 
+            <?php if ($isLoggedIn): ?>
+            <?php 
+                $activeIdentifier = $activeAcc['user_identifier'] ?? ($_SESSION['user_identifier'] ?? '');
+                $myProfileUrl = !empty($activeIdentifier) ? APP_URL . '/@' . htmlspecialchars($activeIdentifier) : APP_URL . '/settings/your-account';
+            ?>
+            <div class="component-menu-link nav-item" data-nav="<?php echo $myProfileUrl; ?>">
+                <div class="component-menu-link-icon">
+                    <span class="material-symbols-rounded">account_circle</span>
+                </div>
+                <div class="component-menu-link-text">
+                    <span><?php echo __('menu_my_profile'); ?></span>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <div class="component-menu-link nav-item" data-nav="<?php echo $settingsLink; ?>">
                 <div class="component-menu-link-icon">
                     <span class="material-symbols-rounded">settings</span>

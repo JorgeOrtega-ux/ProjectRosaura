@@ -665,6 +665,62 @@ return [
             ['type' => 'RateLimit', 'key' => 'user_get_profile', 'max' => 120, 'time' => 1, 'identifier' => 'ip'],
         ],
     ],
+    'user.toggle_follow' => [
+        'controller' => 'App\\Api\\Controllers\\User\\UserController',
+        'action' => 'toggle_follow',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'user_toggle_follow', 'max' => 60, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'user.get_followers' => [
+        'controller' => 'App\\Api\\Controllers\\User\\UserController',
+        'action' => 'get_followers',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'user_get_followers', 'max' => 120, 'time' => 1, 'identifier' => 'ip'],
+        ],
+    ],
+    'user.get_following' => [
+        'controller' => 'App\\Api\\Controllers\\User\\UserController',
+        'action' => 'get_following',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'user_get_following', 'max' => 120, 'time' => 1, 'identifier' => 'ip'],
+        ],
+    ],
+    'notifications.get' => [
+        'controller' => 'App\\Api\\Controllers\\Notification\\NotificationController',
+        'action' => 'get_notifications',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'notif_get', 'max' => 120, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'notifications.get_unread_count' => [
+        'controller' => 'App\\Api\\Controllers\\Notification\\NotificationController',
+        'action' => 'get_unread_count',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'notif_count', 'max' => 120, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'notifications.mark_read' => [
+        'controller' => 'App\\Api\\Controllers\\Notification\\NotificationController',
+        'action' => 'mark_as_read',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'notif_mark_read', 'max' => 120, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
+    'notifications.mark_all_read' => [
+        'controller' => 'App\\Api\\Controllers\\Notification\\NotificationController',
+        'action' => 'mark_all_as_read',
+        'middleware' => [
+            ['type' => 'Telemetry'],
+            ['type' => 'RateLimit', 'key' => 'notif_mark_all', 'max' => 60, 'time' => 1, 'identifier' => 'user_id'],
+        ],
+    ],
     'telemetry.collect' => [
         'controller' => 'App\\Api\\Controllers\\Telemetry\\TelemetryController',
         'action' => 'collect',

@@ -35,14 +35,17 @@ class SearchController extends BaseController {
             $currentUserId = $this->session->isLoggedIn() ? $this->session->getActiveAccountId() : null;
             
             $results = $this->searchServices->searchCanvases($query, $currentUserId, $page, $limit);
+            $users = ($page === 1) ? $this->searchServices->searchUsers($query, $currentUserId, 8) : [];
             
             return $this->respond([
-                'success'  => true,
-                'data'     => $results['canvases'],
-                'total'    => $results['total'],
-                'page'     => $results['page'],
-                'per_page' => $results['per_page'],
-                'has_more' => $results['has_more']
+                'success'     => true,
+                'data'        => $results['canvases'],
+                'users'       => $users,
+                'total'       => $results['total'],
+                'total_users' => count($users),
+                'page'        => $results['page'],
+                'per_page'    => $results['per_page'],
+                'has_more'    => $results['has_more']
             ]);
 
         } catch (\Throwable $e) {
