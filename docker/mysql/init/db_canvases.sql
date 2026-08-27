@@ -279,7 +279,10 @@ CREATE TABLE IF NOT EXISTS `canvas_chat_messages` (
     `visibility` ENUM('visible','under_review','deleted') NOT NULL DEFAULT 'visible',
     `deleted_by` VARCHAR(50) DEFAULT NULL,
     `delete_reason` TEXT DEFAULT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `reply_to` VARCHAR(36) DEFAULT NULL,
+    `reply_to_username` VARCHAR(50) DEFAULT NULL,
+    `reply_to_message` TEXT DEFAULT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX (`canvas_id`),
     INDEX (`created_at`),
     INDEX `idx_chat_canvas_vis_id` (`canvas_id`, `visibility`, `id` DESC),
@@ -317,6 +320,69 @@ CREATE TABLE IF NOT EXISTS `canvas_chat_reports` (
   INDEX (`created_at`),
   INDEX `idx_reports_status_date` (`status`, `created_at` DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `canvas_recent_colors` (
+  `user_id` int(11) NOT NULL,
+  `canvas_id` int(11) NOT NULL,
+  `colors` json NOT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`user_id`, `canvas_id`),
+  INDEX `idx_recent_colors_canvas` (`canvas_id`),
+  CONSTRAINT `fk_crc_canvas` FOREIGN KEY (`canvas_id`) REFERENCES `canvases` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `publications` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `uuid` VARCHAR(36) NOT NULL,
+  `user_id` INT(11) NOT NULL,
+  `canvas_id` INT(11) DEFAULT NULL,
+  `title` VARCHAR(100) NOT NULL,
+  `description` TEXT DEFAULT NULL,
+  `tags` JSON DEFAULT NULL,
+  `image_path` VARCHAR(255) NOT NULL,
+  `width` INT(11) NOT NULL DEFAULT 64,
+  `height` INT(11) NOT NULL DEFAULT 64,
+  `palette_id` VARCHAR(50) DEFAULT 'default',
+  `likes_count` INT(11) NOT NULL DEFAULT 0,
+  `views_count` INT(11) NOT NULL DEFAULT 0,
+  `comments_count` INT(11) NOT NULL DEFAULT 0,
+  `is_pinned` TINYINT(1) NOT NULL DEFAULT 0,
+  `privacy` ENUM('public', 'unlisted', 'private') NOT NULL DEFAULT 'public',
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_pub_uuid` (`uuid`),
+  INDEX `idx_pub_user` (`user_id`, `created_at` DESC),
+  INDEX `idx_pub_privacy_created` (`privacy`, `created_at` DESC),
+  INDEX `idx_pub_popular` (`likes_count` DESC, `created_at` DESC),
+  INDEX `idx_pub_canvas` (`canvas_id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `publication_likes` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `publication_id` INT(11) NOT NULL,
+  `user_id` INT(11) NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_pub_user_like` (`publication_id`, `user_id`),
+  INDEX `idx_pub_likes_user` (`user_id`),
+  CONSTRAINT `fk_pub_likes_pub` FOREIGN KEY (`publication_id`) REFERENCES `publications` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `publication_comments` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `uuid` VARCHAR(36) NOT NULL,
+  `publication_id` INT(11) NOT NULL,
+  `user_id` INT(11) NOT NULL,
+  `content` TEXT NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_pub_comment_uuid` (`uuid`),
+  INDEX `idx_pub_comments_pub` (`publication_id`, `created_at` ASC),
+  INDEX `idx_pub_comments_user` (`user_id`),
+  CONSTRAINT `fk_pub_comments_pub` FOREIGN KEY (`publication_id`) REFERENCES `publications` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 -- Segmentación de usuario para db_canvases (Mínimo Privilegio)
 CREATE USER IF NOT EXISTS 'executor_canvases'@'%' IDENTIFIED BY 'secret_canvases_pass';

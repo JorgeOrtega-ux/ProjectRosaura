@@ -298,7 +298,6 @@ export const InteractionOwnerTools = {
         if (this.wsManager && pixels.length > 0) {
             this.wsManager.send({
                 type: "place_mines",
-                perk: "mines_1",
                 pixels: pixels
             });
         }

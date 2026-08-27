@@ -3,7 +3,7 @@ use axum::{
     response::Response,
 };
 use std::collections::HashMap;
-use tracing::{info, warn};
+use tracing::{info, warn, error};
 use deadpool_redis::redis::AsyncCommands;
 use uuid::Uuid;
 use futures::{sink::SinkExt, stream::StreamExt};
@@ -15,7 +15,6 @@ use crate::state::{AppState, ClientMeta, OutboundMessage};
 use crate::models::WsMessage;
 use crate::actions;
 use crate::helpers;
-use crate::db;
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct Claims {

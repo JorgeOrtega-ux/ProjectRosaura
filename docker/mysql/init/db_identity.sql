@@ -128,15 +128,19 @@ CREATE TABLE IF NOT EXISTS `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `uuid` varchar(36) NOT NULL,
   `username` varchar(50) NOT NULL,
+  `identifier` varchar(50) DEFAULT NULL,
+  `identifier_updated_at` datetime DEFAULT NULL,
   `email` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `subscription_tier` tinyint(1) DEFAULT 0, -- NOTA DE IMPLEMENTACIÓN: Nuevo campo para el nivel de suscripción (0=Básico, 1=Pro, 2=Advanced)
+  `subscription_tier` tinyint(1) DEFAULT 0, -- NOTA DE IMPLEMENTACIÓN: Nuevo campo para el nivel de suscripción (0=Básico, 1=Pro, 2=Advanced, 3=Ultra)
   `stripe_customer_id` varchar(255) DEFAULT NULL,
   `two_factor_secret` varchar(255) DEFAULT NULL,
   `two_factor_enabled` tinyint(1) DEFAULT 0,
   `two_factor_recovery_codes` text DEFAULT NULL,
   `deletion_scheduled_at` datetime DEFAULT NULL,
   `profile_picture` varchar(255) NOT NULL,
+  `banner_picture` varchar(255) DEFAULT NULL,
+  `bio` varchar(255) DEFAULT NULL,
   `google_id` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `storage_used_bytes` bigint(20) NOT NULL DEFAULT 0,
@@ -146,6 +150,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   UNIQUE KEY `uuid` (`uuid`),
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `username` (`username`),
+  UNIQUE KEY `identifier` (`identifier`),
   UNIQUE KEY `google_id` (`google_id`),
   INDEX `idx_users_deletion_scheduled` (`deletion_scheduled_at`),
   INDEX `idx_users_tier` (`subscription_tier`),
@@ -246,7 +251,7 @@ CREATE TABLE IF NOT EXISTS moderation_logs (
 CREATE TABLE IF NOT EXISTS profile_changes_log (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   user_id INT(11) NOT NULL,
-  change_type ENUM('avatar', 'username', 'email', 'password', '2fa') NOT NULL,
+  change_type ENUM('avatar', 'username', 'identifier', 'banner', 'email', 'password', '2fa') NOT NULL,
   old_value VARCHAR(255) DEFAULT NULL,
   new_value VARCHAR(255) DEFAULT NULL,
   ip_address VARCHAR(45) NOT NULL,
@@ -280,6 +285,34 @@ CREATE TABLE IF NOT EXISTS `user_flags` (
   CONSTRAINT `fk_user_flags_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `user_follows` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `follower_id` INT(11) NOT NULL,
+  `following_id` INT(11) NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY `idx_user_follow_unique` (`follower_id`, `following_id`),
+  INDEX `idx_user_following` (`following_id`, `created_at` DESC),
+  INDEX `idx_user_follower` (`follower_id`, `created_at` DESC),
+  CONSTRAINT `fk_user_follows_follower` FOREIGN KEY (`follower_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_user_follows_following` FOREIGN KEY (`following_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `notifications` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT(11) NOT NULL,
+  `actor_id` INT(11) NULL,
+  `type` VARCHAR(50) NOT NULL,
+  `target_id` BIGINT NULL,
+  `target_uuid` VARCHAR(64) NULL,
+  `data` JSON NULL,
+  `is_read` TINYINT(1) NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX `idx_notif_user_read` (`user_id`, `is_read`, `created_at` DESC),
+  INDEX `idx_notif_user_created` (`user_id`, `created_at` DESC),
+  CONSTRAINT `fk_notif_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_notif_actor` FOREIGN KEY (`actor_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS auth_tokens (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   user_id INT(11) NOT NULL,
@@ -303,6 +336,7 @@ CREATE TABLE IF NOT EXISTS server_config (
   min_username_length INT NOT NULL DEFAULT 3,
   max_username_length INT NOT NULL DEFAULT 32,
   max_avatar_size_mb INT NOT NULL DEFAULT 2,
+  max_banner_size_mb INT NOT NULL DEFAULT 5,
   session_lifetime_minutes INT NOT NULL DEFAULT 120,
   max_active_sessions_per_user INT NOT NULL DEFAULT 3,
   allow_registrations TINYINT(1) NOT NULL DEFAULT 1,
@@ -323,6 +357,7 @@ CREATE TABLE IF NOT EXISTS server_config (
   password_update_rate_limit_minutes INT NOT NULL DEFAULT 15,
   username_change_cooldown_days INT NOT NULL DEFAULT 7,
   username_change_max_attempts INT NOT NULL DEFAULT 1,
+  identifier_change_cooldown_days INT NOT NULL DEFAULT 90,
   email_change_cooldown_days INT NOT NULL DEFAULT 7,
   email_change_max_attempts INT NOT NULL DEFAULT 1,
   avatar_change_cooldown_days INT NOT NULL DEFAULT 1,

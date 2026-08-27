@@ -1,7 +1,3 @@
-import uuid
-import pymysql
-import redis
-from datetime import timedelta
 import os
 import sys
 import re
@@ -13,8 +9,15 @@ import subprocess
 import urllib.request
 import urllib.parse
 import uuid
+import io
+import zlib
+import base64
+import math
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from PIL import Image, ImageDraw
+import pymysql
+import redis
 
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
@@ -167,6 +170,7 @@ PROGRAMMING_KEYWORDS = {
 class Colors:
     HEADER = '\033[95m'
     BLUE = '\033[94m'
+    CYAN = '\033[96m'
     GREEN = '\033[92m'
     WARNING = '\033[93m'
     FAIL = '\033[91m'
@@ -620,18 +624,413 @@ def run_scan_views_integrity(project_root):
 
 """
 Módulo de Población y Reinicialización de Bases de Datos para ProjectRosaura.
-Puebla ~10,000 registros por tabla en db_identity, db_canvases y db_telemetry.
+Puebla 25 usuarios con perfiles completos (incluyendo la cuenta de superadmin al20328051890088@gmail.com),
+~25 lienzos por usuario (625 lienzos con capas, frames de animación, snapshots PNG reales y dibujos procedurales),
+publicaciones, comentarios, likes, red de seguidores, notificaciones, publicidad y telemetría.
 """
 
 DEFAULT_PASSWORD_HASH = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi' # "password"
-BATCH_SIZE = 2000
+BATCH_SIZE = 500
 
-FIRST_NAMES = ['Alex', 'Carlos', 'Maria', 'Sofia', 'Juan', 'Lucia', 'Mateo', 'Elena', 'David', 'Laura', 
-               'Diego', 'Paula', 'Gabriel', 'Valentina', 'Andres', 'Camila', 'Javier', 'Isabella', 'Daniel', 'Emma']
-LAST_NAMES = ['Garcia', 'Rodriguez', 'Gonzalez', 'Fernandez', 'Lopez', 'Martinez', 'Sanchez', 'Perez', 
-              'Gomez', 'Martin', 'Jimenez', 'Ruiz', 'Hernandez', 'Diaz', 'Moreno', 'Muñoz', 'Alvarez', 'Romero']
-CANVAS_THEMES = ['PixelArt', 'Cyberpunk', 'Fantasy', 'Retro', 'Galaxy', 'Neon', 'Medieval', 'Futuristic', 
-                 'Isometric', 'Chibi', 'Anime', 'Landscape', 'Dungeon', 'Space', 'Synthwave', 'Vaporwave']
+SEED_USERS_DATA = [
+    {
+        "id": 1,
+        "uuid": "00000000-0000-0000-0000-000000000001",
+        "username": "admin",
+        "identifier": "admin",
+        "email": "admin@example.com",
+        "tier": 3,
+        "role_id": 4,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_1.svg",
+        "bio": "Administrador Oficial del Sistema Rosaura 🛡️⚡",
+        "flags": ["admin_verified", "early_supporter", "system_staff"]
+    },
+    {
+        "id": 2,
+        "uuid": "00000000-0000-0000-0000-000000000002",
+        "username": "jorge",
+        "identifier": "jorge_ortega",
+        "email": "al20328051890088@gmail.com",
+        "tier": 3,
+        "role_id": 4,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_2.svg",
+        "bio": "Creador y Desarrollador Principal de Project Rosaura 🎨✨🚀",
+        "flags": ["admin_verified", "verified_artist", "beta_access", "early_supporter"]
+    },
+    {
+        "id": 3,
+        "uuid": "00000000-0000-0000-0000-000000000003",
+        "username": "pixel_queen",
+        "identifier": "pixel_queen",
+        "email": "elena.art@example.com",
+        "tier": 3,
+        "role_id": 3,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_3.svg",
+        "bio": "Ilustradora 2D y pixel artist apasionada por los tonos pastel y fantasía 🌸✨",
+        "flags": ["verified_artist", "trusted_creator"]
+    },
+    {
+        "id": 4,
+        "uuid": "00000000-0000-0000-0000-000000000004",
+        "username": "retro_coder",
+        "identifier": "retro_coder",
+        "email": "david.dev@example.com",
+        "tier": 2,
+        "role_id": 2,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_4.svg",
+        "bio": "Game dev retro y creador de spritesheets 8-bit / 16-bit 🕹️👾",
+        "flags": ["verified_artist", "beta_access"]
+    },
+    {
+        "id": 5,
+        "uuid": "00000000-0000-0000-0000-000000000005",
+        "username": "cyber_samurai",
+        "identifier": "cyber_samurai",
+        "email": "mateo.cyber@example.com",
+        "tier": 2,
+        "role_id": 2,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_5.svg",
+        "bio": "Explorando mundos distópicos cyberpunk y luces de neón ⚔️🌆",
+        "flags": ["verified_artist"]
+    },
+    {
+        "id": 6,
+        "uuid": "00000000-0000-0000-0000-000000000006",
+        "username": "neon_fox",
+        "identifier": "neon_fox",
+        "email": "sofia.neon@example.com",
+        "tier": 3,
+        "role_id": 1,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_1.svg",
+        "bio": "Amante del synthwave, las auroras boreales y los zorros de neón 🦊✨",
+        "flags": ["early_supporter", "trusted_creator"]
+    },
+    {
+        "id": 7,
+        "uuid": "00000000-0000-0000-0000-000000000007",
+        "username": "synth_wave",
+        "identifier": "synth_wave",
+        "email": "carlos.wave@example.com",
+        "tier": 2,
+        "role_id": 1,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_2.svg",
+        "bio": "Música synthwave y paisajes ochenteros en cuadrícula 🌅📼",
+        "flags": ["verified_artist"]
+    },
+    {
+        "id": 8,
+        "uuid": "00000000-0000-0000-0000-000000000008",
+        "username": "isometric_pro",
+        "identifier": "isometric_pro",
+        "email": "lucia.iso@example.com",
+        "tier": 3,
+        "role_id": 1,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_3.svg",
+        "bio": "Construyendo ciudades e interiores isométricos píxel a píxel 🏙️📐",
+        "flags": ["trusted_creator", "verified_artist"]
+    },
+    {
+        "id": 9,
+        "uuid": "00000000-0000-0000-0000-000000000009",
+        "username": "chibi_master",
+        "identifier": "chibi_master",
+        "email": "gabriel.chibi@example.com",
+        "tier": 1,
+        "role_id": 1,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_4.svg",
+        "bio": "Creando personajes chibi, avatares y stickers kawaii 🐱🍙",
+        "flags": ["beta_access"]
+    },
+    {
+        "id": 10,
+        "uuid": "00000000-0000-0000-0000-000000000010",
+        "username": "galaxy_dreamer",
+        "identifier": "galaxy_dreamer",
+        "email": "valentina.space@example.com",
+        "tier": 2,
+        "role_id": 1,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_5.svg",
+        "bio": "Nebulosas, constelaciones y universos pixelados infinitos 🌌🪐",
+        "flags": ["early_supporter"]
+    },
+    {
+        "id": 11,
+        "uuid": "00000000-0000-0000-0000-000000000011",
+        "username": "pixel_knight",
+        "identifier": "pixel_knight",
+        "email": "andres.knight@example.com",
+        "tier": 2,
+        "role_id": 1,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_1.svg",
+        "bio": "Paladín del pixel art medieval, castillos y mazmorras RPG 🛡️🏰",
+        "flags": ["trusted_creator"]
+    },
+    {
+        "id": 12,
+        "uuid": "00000000-0000-0000-0000-000000000012",
+        "username": "voxel_wizard",
+        "identifier": "voxel_wizard",
+        "email": "camila.voxel@example.com",
+        "tier": 1,
+        "role_id": 1,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_2.svg",
+        "bio": "Magia de píxeles, efectos de partículas y animaciones fluidas ✨🧙‍♀️",
+        "flags": []
+    },
+    {
+        "id": 13,
+        "uuid": "00000000-0000-0000-0000-000000000013",
+        "username": "dungeon_crawler",
+        "identifier": "dungeon_crawler",
+        "email": "javier.dungeon@example.com",
+        "tier": 1,
+        "role_id": 1,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_3.svg",
+        "bio": "Tilesets de mazmorras oscuras, trampas y monstruos clásicos 🐉🗝️",
+        "flags": []
+    },
+    {
+        "id": 14,
+        "uuid": "00000000-0000-0000-0000-000000000014",
+        "username": "vapor_vibes",
+        "identifier": "vapor_vibes",
+        "email": "isabella.vapor@example.com",
+        "tier": 2,
+        "role_id": 1,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_4.svg",
+        "bio": "Estética vaporwave, estatuas clásicas y nostalgia 90s 🏛️🌴",
+        "flags": ["verified_artist"]
+    },
+    {
+        "id": 15,
+        "uuid": "00000000-0000-0000-0000-000000000015",
+        "username": "arcade_legend",
+        "identifier": "arcade_legend",
+        "email": "daniel.arcade@example.com",
+        "tier": 1,
+        "role_id": 1,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_5.svg",
+        "bio": "Reviviendo la era dorada de las máquinas recreativas arcade 👾🪙",
+        "flags": []
+    },
+    {
+        "id": 16,
+        "uuid": "00000000-0000-0000-0000-000000000016",
+        "username": "flora_fauna",
+        "identifier": "flora_fauna",
+        "email": "emma.flora@example.com",
+        "tier": 2,
+        "role_id": 1,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_1.svg",
+        "bio": "Flores, bosques encantados y animales mágicos en pixel art 🌿🦊",
+        "flags": ["trusted_creator"]
+    },
+    {
+        "id": 17,
+        "uuid": "00000000-0000-0000-0000-000000000017",
+        "username": "mecha_builder",
+        "identifier": "mecha_builder",
+        "email": "diego.mecha@example.com",
+        "tier": 1,
+        "role_id": 1,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_2.svg",
+        "bio": "Robots gigantes, naves espaciales y maquinaria futurista 🤖⚙️",
+        "flags": []
+    },
+    {
+        "id": 18,
+        "uuid": "00000000-0000-0000-0000-000000000018",
+        "username": "cosmic_voyager",
+        "identifier": "cosmic_voyager",
+        "email": "paula.cosmic@example.com",
+        "tier": 3,
+        "role_id": 1,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_3.svg",
+        "bio": "Viajando por agujeros de gusano y planetas alienígenas 🚀⭐",
+        "flags": ["early_supporter", "verified_artist"]
+    },
+    {
+        "id": 19,
+        "uuid": "00000000-0000-0000-0000-000000000019",
+        "username": "fantasy_artisan",
+        "identifier": "fantasy_artisan",
+        "email": "alberto.fantasy@example.com",
+        "tier": 0,
+        "role_id": 1,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_4.svg",
+        "bio": "Armas legendarias, pociones y reliquias arcanas 🗡️🧪",
+        "flags": []
+    },
+    {
+        "id": 20,
+        "uuid": "00000000-0000-0000-0000-000000000020",
+        "username": "glitch_master",
+        "identifier": "glitch_master",
+        "email": "mariana.glitch@example.com",
+        "tier": 1,
+        "role_id": 1,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_5.svg",
+        "bio": "Arte glitch analógico, aberración cromática y distorsiones CRT 📺⚡",
+        "flags": []
+    },
+    {
+        "id": 21,
+        "uuid": "00000000-0000-0000-0000-000000000021",
+        "username": "speed_painter",
+        "identifier": "speed_painter",
+        "email": "rodrigo.speed@example.com",
+        "tier": 0,
+        "role_id": 1,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_1.svg",
+        "bio": "Desafíos de dibujo rápido y paletas de 4 colores ⏱️🎨",
+        "flags": []
+    },
+    {
+        "id": 22,
+        "uuid": "00000000-0000-0000-0000-000000000022",
+        "username": "sprite_animator",
+        "identifier": "sprite_animator",
+        "email": "natalia.anim@example.com",
+        "tier": 2,
+        "role_id": 1,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_2.svg",
+        "bio": "Animadora de ciclos de caminata, ataques y efectos de combate 🏃‍♀️✨",
+        "flags": ["trusted_creator"]
+    },
+    {
+        "id": 23,
+        "uuid": "00000000-0000-0000-0000-000000000023",
+        "username": "zen_gardener",
+        "identifier": "zen_gardener",
+        "email": "fernando.zen@example.com",
+        "tier": 0,
+        "role_id": 1,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_3.svg",
+        "bio": "Jardines zen, bonsáis y templos tranquilos en miniatura ⛩️🎋",
+        "flags": []
+    },
+    {
+        "id": 24,
+        "uuid": "00000000-0000-0000-0000-000000000024",
+        "username": "street_artist",
+        "identifier": "street_artist",
+        "email": "valeria.street@example.com",
+        "tier": 1,
+        "role_id": 1,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_4.svg",
+        "bio": "Graffitis digitales, murales y cultura urbana en píxeles 🎨🏙️",
+        "flags": []
+    },
+    {
+        "id": 25,
+        "uuid": "00000000-0000-0000-0000-000000000025",
+        "username": "mythic_tales",
+        "identifier": "mythic_tales",
+        "email": "hector.myth@example.com",
+        "tier": 2,
+        "role_id": 1,
+        "avatar": "/public/assets/img/fallbacks/avatar-default.png",
+        "banner": "assets/img/banners/banner_5.svg",
+        "bio": "Criaturas mitológicas, dragones ancestrales y bestias épicas 🐲🔥",
+        "flags": ["verified_artist"]
+    }
+]
+
+CANVAS_THEMES = [
+    'PixelArt', 'Cyberpunk', 'Galaxy', 'Synthwave', 'Vaporwave',
+    'Fantasy', 'Medieval', 'Retro', 'Isometric', 'Landscape',
+    'Dungeon', 'Space', 'Chibi', 'Anime', 'Arcade', 'Forest', 'Mecha'
+]
+
+THEME_PALETTES = {
+    'PixelArt': [
+        (34, 32, 52), (69, 40, 60), (102, 57, 49), (143, 86, 59), (223, 113, 38),
+        (217, 160, 102), (238, 195, 154), (251, 242, 54), (153, 229, 80), (106, 190, 48),
+        (55, 148, 110), (75, 105, 47), (82, 75, 36), (50, 60, 57), (63, 63, 116),
+        (48, 96, 130), (91, 110, 225), (99, 155, 255), (95, 205, 228), (203, 219, 252), (255, 255, 255)
+    ],
+    'Cyberpunk': [
+        (13, 2, 33), (15, 8, 75), (38, 64, 139), (5, 217, 232), (0, 86, 112),
+        (255, 42, 109), (209, 247, 255), (1, 1, 43), (243, 230, 0), (255, 0, 128)
+    ],
+    'Galaxy': [
+        (5, 5, 16), (21, 0, 80), (63, 0, 113), (97, 0, 148), (0, 0, 0),
+        (255, 250, 101), (0, 245, 212), (123, 44, 191), (224, 170, 255), (255, 255, 255)
+    ],
+    'Synthwave': [
+        (18, 4, 88), (255, 0, 127), (0, 240, 255), (255, 230, 0), (121, 40, 202),
+        (43, 9, 56), (255, 128, 191), (255, 255, 255), (74, 0, 114), (255, 107, 107)
+    ],
+    'Vaporwave': [
+        (255, 113, 206), (1, 205, 254), (5, 255, 161), (185, 103, 255), (255, 251, 150),
+        (36, 27, 47), (47, 33, 68), (134, 93, 255), (255, 255, 255)
+    ],
+    'Fantasy': [
+        (27, 38, 44), (15, 76, 117), (50, 130, 184), (187, 225, 250), (199, 162, 82),
+        (139, 90, 43), (74, 124, 89), (54, 83, 20), (247, 215, 148), (120, 111, 166)
+    ],
+    'Medieval': [
+        (44, 62, 80), (189, 195, 199), (127, 140, 141), (241, 196, 15), (230, 126, 34),
+        (231, 76, 60), (52, 73, 94), (149, 165, 166), (121, 85, 72), (46, 204, 113)
+    ],
+    'Retro': [
+        (155, 188, 15), (139, 172, 15), (48, 98, 48), (15, 56, 15), (240, 246, 240),
+        (34, 34, 34), (230, 77, 60), (41, 128, 185), (241, 196, 15), (39, 174, 96)
+    ],
+    'Isometric': [
+        (45, 52, 54), (99, 110, 114), (178, 190, 195), (223, 230, 233), (9, 132, 227),
+        (116, 185, 255), (0, 206, 201), (129, 236, 236), (250, 177, 160), (255, 118, 117)
+    ],
+    'Landscape': [
+        (30, 60, 114), (42, 82, 152), (109, 213, 237), (33, 147, 176), (120, 255, 214),
+        (168, 255, 120), (248, 87, 166), (255, 88, 88), (255, 255, 255), (255, 195, 18)
+    ],
+    'Dungeon': [
+        (20, 20, 25), (45, 45, 55), (80, 80, 95), (140, 135, 130), (200, 70, 50),
+        (240, 160, 40), (255, 220, 100), (40, 120, 80), (160, 40, 160), (220, 220, 230)
+    ],
+    'Space': [
+        (2, 2, 10), (15, 12, 40), (40, 25, 80), (90, 45, 140), (200, 80, 190),
+        (255, 180, 220), (255, 255, 255), (50, 200, 255), (255, 220, 80), (20, 240, 160)
+    ]
+}
+
+CHAT_SAMPLES = [
+    "¡Increíble composición de color! Me encanta cómo manejas la iluminación.",
+    "¿Qué paleta de colores usaste para los reflejos?",
+    "Trabajando en la capa de fondo, voy a agregar sombras.",
+    "El contraste en esta sección quedó genial.",
+    "¿Alguien disponible para colaborar en el área central?",
+    "Me encanta este proyecto, guardado en mis favoritos ⭐",
+    "Agregué un nuevo frame de animación para probar el efecto de parpadeo.",
+    "Quedó excelente el degradado del cielo.",
+    "Subí un snapshot a publicaciones para que la comunidad vote.",
+    "¡Buen trabajo en equipo!"
+]
 
 def load_db_config(project_root):
     env_path = os.path.join(project_root, '.env')
@@ -669,7 +1068,6 @@ def execute_sql_file(cursor, file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
         sql_content = f.read()
 
-    # Dividir sentencias por punto y coma ignorando comentarios
     statements = []
     current_stmt = []
     for line in sql_content.splitlines():
@@ -686,24 +1084,183 @@ def execute_sql_file(cursor, file_path):
     for stmt in statements:
         try:
             cursor.execute(stmt)
-        except Exception as e:
-            # Ignorar errores de advertencias o tablas existentes
+        except Exception:
             pass
 
-def random_date(start_days_ago=365):
+def random_date(start_days_ago=180):
     seconds = random.randint(0, start_days_ago * 86400)
     dt = datetime.now() - timedelta(seconds=seconds)
     return dt.strftime('%Y-%m-%d %H:%M:%S')
 
-def seed_database(project_root, target_records=10000):
+def generate_procedural_pixel_art(w, h, theme, canvas_id):
+    """
+    Generates procedural multi-frame and multi-layer pixel art with binary PNG snapshot.
+    Returns: (png_bytes, layers_gz_bytes, palette_hex_list, preview_img)
+    """
+    palette = THEME_PALETTES.get(theme, THEME_PALETTES['PixelArt'])
+    palette_hex = ['#{:02x}{:02x}{:02x}'.format(*c) for c in palette[:8]]
+    
+    # Layer 1: Background
+    img_bg = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    draw_bg = ImageDraw.Draw(img_bg)
+    bg_color = palette[0] + (255,)
+    draw_bg.rectangle([0, 0, w, h], fill=bg_color)
+    
+    step = max(4, w // 8)
+    bg_accent = palette[1 % len(palette)] + (200,)
+    for gx in range(0, w, step):
+        draw_bg.line([(gx, 0), (gx, h)], fill=bg_accent, width=1)
+    for gy in range(0, h, step):
+        draw_bg.line([(0, gy), (w, gy)], fill=bg_accent, width=1)
+        
+    bg_b64 = base64.b64encode(img_bg.tobytes()).decode('ascii')
+    
+    # Layer 2: Main Subject (Frame 1)
+    img_art1 = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    draw_art1 = ImageDraw.Draw(img_art1)
+    
+    cx, cy = w // 2, h // 2
+    r_main = min(w, h) // 3
+    c_main = palette[2 % len(palette)] + (255,)
+    c_sub = palette[3 % len(palette)] + (255,)
+    c_hi = palette[4 % len(palette)] + (255,)
+    
+    pattern_type = canvas_id % 5
+    if pattern_type == 0:
+        for dr in range(r_main, 2, -max(2, r_main // 4)):
+            col = palette[(dr + canvas_id) % len(palette)] + (255,)
+            draw_art1.polygon([(cx, cy - dr), (cx + dr, cy), (cx, cy + dr), (cx - dr, cy)], fill=col)
+    elif pattern_type == 1:
+        sun_col = palette[7 % len(palette)] + (255,)
+        draw_art1.ellipse([cx - r_main//2, cy - r_main - 2, cx + r_main//2, cy - 2], fill=sun_col)
+        draw_art1.polygon([(0, h), (cx - 4, cy - 2), (cx + r_main, h)], fill=c_main)
+        draw_art1.polygon([(cx - r_main, h), (cx + 6, cy + 4), (w, h)], fill=c_sub)
+    elif pattern_type == 2:
+        for px in range(-r_main, r_main + 1, max(1, w // 16)):
+            py_max = int(math.sqrt(max(0, r_main**2 - px**2)))
+            for py in range(-py_max, py_max + 1, max(1, h // 16)):
+                if (px * py + canvas_id) % 3 == 0:
+                    draw_art1.rectangle([cx + px, cy + py, cx + px + max(1, w//32), cy + py + max(1, h//32)], fill=c_main)
+                elif (px + py) % 2 == 0:
+                    draw_art1.rectangle([cx + px, cy + py, cx + px + max(1, w//32), cy + py + max(1, h//32)], fill=c_sub)
+    elif pattern_type == 3:
+        cube_size = max(4, r_main // 2)
+        top_col = palette[5 % len(palette)] + (255,)
+        left_col = palette[2 % len(palette)] + (255,)
+        right_col = palette[3 % len(palette)] + (255,)
+        draw_art1.polygon([(cx, cy - cube_size), (cx + cube_size, cy - cube_size//2), (cx, cy), (cx - cube_size, cy - cube_size//2)], fill=top_col)
+        draw_art1.polygon([(cx - cube_size, cy - cube_size//2), (cx, cy), (cx, cy + cube_size), (cx - cube_size, cy + cube_size//2)], fill=left_col)
+        draw_art1.polygon([(cx, cy), (cx + cube_size, cy - cube_size//2), (cx + cube_size, cy + cube_size//2), (cx, cy + cube_size)], fill=right_col)
+    else:
+        bar_w = max(2, w // 8)
+        for bx in range(0, w, bar_w + 2):
+            bh = ((bx * 7 + canvas_id * 13) % (h // 2)) + h // 4
+            col = palette[(bx // bar_w + canvas_id) % len(palette)] + (255,)
+            draw_art1.rectangle([bx, h - bh, bx + bar_w, h], fill=col)
+            for wy in range(h - bh + 4, h - 2, 6):
+                draw_art1.rectangle([bx + 1, wy, bx + bar_w - 1, wy + 2], fill=c_hi)
+
+    art1_b64 = base64.b64encode(img_art1.tobytes()).decode('ascii')
+    
+    # Layer 2 for Frame 2
+    img_art2 = img_art1.copy()
+    draw_art2 = ImageDraw.Draw(img_art2)
+    sparkle_col = palette[6 % len(palette)] + (255,)
+    draw_art2.rectangle([cx - 3, cy - r_main - 4, cx + 3, cy - r_main + 2], fill=sparkle_col)
+    draw_art2.rectangle([cx + r_main - 2, cy + 4, cx + r_main + 4, cy + 10], fill=sparkle_col)
+    art2_b64 = base64.b64encode(img_art2.tobytes()).decode('ascii')
+    
+    # Compose Frame 1 as master snapshot
+    master_img = Image.alpha_composite(img_bg, img_art1)
+    png_bio = io.BytesIO()
+    master_img.save(png_bio, format='PNG', optimize=True)
+    png_bytes = png_bio.getvalue()
+    
+    layers_struct = {
+        "activeFrameId": "frame-1",
+        "activeLayerId": "layer-2",
+        "frames": [
+            {
+                "id": "frame-1",
+                "durationMs": 150,
+                "layers": [
+                    {
+                        "id": "layer-1",
+                        "name": "Fondo",
+                        "visible": True,
+                        "locked": True,
+                        "opacity": 1.0,
+                        "bufferBase64": bg_b64
+                    },
+                    {
+                        "id": "layer-2",
+                        "name": f"Arte {theme}",
+                        "visible": True,
+                        "locked": False,
+                        "opacity": 1.0,
+                        "bufferBase64": art1_b64
+                    }
+                ]
+            },
+            {
+                "id": "frame-2",
+                "durationMs": 150,
+                "layers": [
+                    {
+                        "id": "layer-1",
+                        "name": "Fondo",
+                        "visible": True,
+                        "locked": True,
+                        "opacity": 1.0,
+                        "bufferBase64": bg_b64
+                    },
+                    {
+                        "id": "layer-2",
+                        "name": f"Arte {theme}",
+                        "visible": True,
+                        "locked": False,
+                        "opacity": 1.0,
+                        "bufferBase64": art2_b64
+                    }
+                ]
+            }
+        ],
+        "layers": [
+            {
+                "id": "layer-1",
+                "name": "Fondo",
+                "visible": True,
+                "locked": True,
+                "opacity": 1.0,
+                "bufferBase64": bg_b64
+            },
+            {
+                "id": "layer-2",
+                "name": f"Arte {theme}",
+                "visible": True,
+                "locked": False,
+                "opacity": 1.0,
+                "bufferBase64": art1_b64
+            }
+        ],
+        "recent_colors": palette_hex
+    }
+    
+    layers_json = json.dumps(layers_struct, ensure_ascii=False)
+    layers_gz_bytes = zlib.compress(layers_json.encode('utf-8'))
+    
+    return png_bytes, layers_gz_bytes, palette_hex, master_img
+
+
+def seed_database(project_root, num_users=25, canvases_per_user=25):
     start_total_time = time.time()
     config = load_db_config(project_root)
     init_dir = os.path.join(project_root, 'docker', 'mysql', 'init')
 
     print(f"\n{Colors.HEADER}{Colors.BOLD}======================================================================{Colors.ENDC}")
-    print(f"{Colors.HEADER}{Colors.BOLD}   INICIANDO PROCESO DE POBLACIÓN MASIVA DE BASES DE DATOS           {Colors.ENDC}")
+    print(f"{Colors.HEADER}{Colors.BOLD}   INICIANDO POBLACIÓN INTEGRAL Y COMPLETA DE BASE DE DATOS         {Colors.ENDC}")
     print(f"{Colors.HEADER}{Colors.BOLD}======================================================================{Colors.ENDC}")
-    print(f"Conectando al servidor MySQL en {Colors.CYAN}{config['host']}:{config['port']}{Colors.ENDC} como {Colors.CYAN}{config['user']}{Colors.ENDC}...")
+    print(f"Conectando a MySQL en {Colors.BLUE}{config['host']}:{config['port']}{Colors.ENDC} como {Colors.BLUE}{config['user']}{Colors.ENDC}...")
 
     conn = pymysql.connect(
         host=config['host'],
@@ -716,30 +1273,35 @@ def seed_database(project_root, target_records=10000):
     cursor = conn.cursor()
 
     try:
-        # 1. Reiniciar esquemas
-        print(f"\n{Colors.WARNING}1/4 Recreando esquemas limpios desde docker/mysql/init/...{Colors.ENDC}")
+        # 1. Recrear esquemas limpios desde docker/mysql/init/
+        print(f"\n{Colors.WARNING}1/5 Recreando esquemas limpios desde docker/mysql/init/...{Colors.ENDC}")
         schema_files = [
             'db_identity.sql',
             'db_canvases.sql',
-            'db_telemetry.sql'
+            'db_telemetry.sql',
+            'db_advertisements.sql',
+            'db_publications_and_profiles.sql'
         ]
 
         cursor.execute("DROP DATABASE IF EXISTS db_identity;")
         cursor.execute("DROP DATABASE IF EXISTS db_canvases;")
         cursor.execute("DROP DATABASE IF EXISTS db_telemetry;")
+        cursor.execute("DROP DATABASE IF EXISTS db_advertisements;")
         conn.commit()
 
         for sf in schema_files:
             file_p = os.path.join(init_dir, sf)
-            print(f"  -> Ejecutando esquema: {Colors.BLUE}{sf}{Colors.ENDC}")
-            execute_sql_file(cursor, file_p)
-            conn.commit()
+            if os.path.exists(file_p):
+                print(f"  -> Ejecutando esquema: {Colors.BLUE}{sf}{Colors.ENDC}")
+                execute_sql_file(cursor, file_p)
+                conn.commit()
 
-        # Otorgar permisos a system_web_executor
+        # Otorgar permisos globales al ejecutor
         grant_sql = f"""
         GRANT ALL PRIVILEGES ON db_identity.* TO '{config['app_user']}'@'%';
         GRANT ALL PRIVILEGES ON db_canvases.* TO '{config['app_user']}'@'%';
         GRANT ALL PRIVILEGES ON db_telemetry.* TO '{config['app_user']}'@'%';
+        GRANT ALL PRIVILEGES ON db_advertisements.* TO '{config['app_user']}'@'%';
         FLUSH PRIVILEGES;
         """
         for g_stmt in grant_sql.strip().split(';'):
@@ -748,625 +1310,552 @@ def seed_database(project_root, target_records=10000):
         conn.commit()
         print(f"{Colors.GREEN}✓ Esquemas recreados y permisos asignados con éxito.{Colors.ENDC}")
 
-        # Desactivar restricciones temporales para inserción ultrarrápida
         cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
         cursor.execute("SET UNIQUE_CHECKS = 0;")
 
         # -------------------------------------------------------------
-        # 2. POBLAR DB_IDENTITY (~10k por tabla)
+        # 2. POBLAR DB_IDENTITY (25 Usuarios de Calidad)
         # -------------------------------------------------------------
-        print(f"\n{Colors.WARNING}2/5 Poblando 'db_identity' (~{target_records:,} por tabla)...{Colors.ENDC}")
+        print(f"\n{Colors.WARNING}2/5 Poblando 'db_identity' ({num_users} usuarios completos)...{Colors.ENDC}")
         cursor.execute("USE db_identity;")
 
-        # Tabla: users
+        # Inserción de usuarios
         print("  -> Generando tabla: `users`...")
         user_rows = []
-        # Usuario 1: Administrador del sistema
-        user_rows.append((
-            1,
-            '00000000-0000-0000-0000-000000000001',
-            'admin',
-            'admin@example.com',
-            DEFAULT_PASSWORD_HASH,
-            3, # Ultra
-            'cus_admin_stripe_001',
-            None,
-            0,
-            None,
-            None,
-            '/public/assets/img/fallbacks/avatar-default.png',
-            None,
-            '2025-01-01 00:00:00',
-            1048576,
-            0,
-            None
-        ))
-
-        for i in range(2, target_records + 1):
-            fn = random.choice(FIRST_NAMES)
-            ln = random.choice(LAST_NAMES)
-            u_name = f"{fn.lower()}_{ln.lower()}_{i}"
-            u_email = f"{fn.lower()}.{ln.lower()}.{i}@example.com"
-            tier = random.choices([0, 1, 2, 3], weights=[70, 15, 10, 5])[0]
-            u_uuid = str(uuid.uuid4())
-            created = random_date(365)
-            storage = random.randint(0, 15 * 1024 * 1024)
+        for u in SEED_USERS_DATA[:num_users]:
             user_rows.append((
-                i,
-                u_uuid,
-                u_name,
-                u_email,
+                u["id"],
+                u["uuid"],
+                u["username"],
+                u["identifier"],
+                random_date(120), # identifier_updated_at
+                u["email"],
                 DEFAULT_PASSWORD_HASH,
-                tier,
-                f'cus_stripe_{u_uuid[:8]}',
-                None,
-                0,
-                None,
-                None,
-                '/public/assets/img/fallbacks/avatar-default.png',
-                None,
-                created,
-                storage,
-                0,
+                u["tier"],
+                f'cus_stripe_{u["uuid"][:8]}',
+                None, # two_factor_secret
+                0,    # two_factor_enabled
+                None, # two_factor_recovery_codes
+                None, # deletion_scheduled_at
+                u["avatar"],
+                u["banner"],
+                u["bio"],
+                None, # google_id
+                random_date(300),
+                random.randint(1048576, 50 * 1024 * 1024),
+                random.randint(0, 50),
                 None
             ))
 
         sql_users = """
-        INSERT INTO `users` (id, uuid, username, email, password, subscription_tier, stripe_customer_id,
-                            two_factor_secret, two_factor_enabled, two_factor_recovery_codes,
-                            deletion_scheduled_at, profile_picture, google_id, created_at, storage_used_bytes,
-                            template_tokens_used, template_tokens_reset_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO `users` (id, uuid, username, identifier, identifier_updated_at, email, password, subscription_tier,
+                            stripe_customer_id, two_factor_secret, two_factor_enabled, two_factor_recovery_codes,
+                            deletion_scheduled_at, profile_picture, banner_picture, bio, google_id, created_at,
+                            storage_used_bytes, template_tokens_used, template_tokens_reset_at)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
-        for i in range(0, len(user_rows), BATCH_SIZE):
-            cursor.executemany(sql_users, user_rows[i:i+BATCH_SIZE])
+        cursor.executemany(sql_users, user_rows)
         conn.commit()
 
-        # Tabla: user_preferences
+        # Roles de usuario
+        print("  -> Generando tabla: `user_roles`...")
+        role_rows = [(u["id"], u["role_id"]) for u in SEED_USERS_DATA[:num_users]]
+        cursor.executemany("INSERT IGNORE INTO `user_roles` (user_id, role_id) VALUES (%s, %s)", role_rows)
+        conn.commit()
+
+        # Preferencias de usuario
         print("  -> Generando tabla: `user_preferences`...")
         pref_rows = []
-        for i in range(1, target_records + 1):
-            lang = random.choice(['es-419', 'en-US', 'es-ES', 'pt-BR', 'fr-FR', 'de-DE'])
-            theme = random.choice(['system', 'dark', 'light'])
-            pref_rows.append((i, lang, 1, theme, 0, 1, random_date(300)))
-
-        sql_prefs = """
-        INSERT INTO `user_preferences` (user_id, language, open_links_new_tab, theme, extended_alerts, allow_telemetry, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """
-        for i in range(0, len(pref_rows), BATCH_SIZE):
-            cursor.executemany(sql_prefs, pref_rows[i:i+BATCH_SIZE])
+        for u in SEED_USERS_DATA[:num_users]:
+            lang = random.choice(['es-419', 'en-US', 'es-ES'])
+            theme = random.choice(['dark', 'system', 'light'])
+            pref_rows.append((u["id"], lang, 1, theme, 0, 1, random_date(200)))
+        cursor.executemany("INSERT INTO `user_preferences` (user_id, language, open_links_new_tab, theme, extended_alerts, allow_telemetry, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s)", pref_rows)
         conn.commit()
 
-        # Tabla: user_roles
-        print("  -> Generando tabla: `user_roles`...")
-        role_rows = [(1, 4)] # SuperAdmin
-        for i in range(2, target_records + 1):
-            if i <= 10:
-                role_rows.append((i, 3)) # Admin
-            elif i <= 30:
-                role_rows.append((i, 2)) # Moderator
-            else:
-                role_rows.append((i, 1)) # User
+        # Flags de usuario
+        print("  -> Generando tabla: `user_flags`...")
+        flag_rows = []
+        for u in SEED_USERS_DATA[:num_users]:
+            for f in u.get("flags", []):
+                flag_rows.append((u["id"], f, random_date(180)))
+        if flag_rows:
+            cursor.executemany("INSERT IGNORE INTO `user_flags` (user_id, flag_key, created_at) VALUES (%s, %s, %s)", flag_rows)
+            conn.commit()
 
-        sql_roles = "INSERT IGNORE INTO `user_roles` (user_id, role_id) VALUES (%s, %s)"
-        for i in range(0, len(role_rows), BATCH_SIZE):
-            cursor.executemany(sql_roles, role_rows[i:i+BATCH_SIZE])
-        conn.commit()
-
-        # Tabla: subscriptions
-        print("  -> Generando tabla: `subscriptions`...")
+        # Suscripciones y Pagos
+        print("  -> Generando tablas: `subscriptions` y `payment_history`...")
         sub_rows = []
-        for i in range(1, target_records + 1):
-            u_id = i
-            tier = random.choice([1, 2, 3])
-            period = random.choice(['monthly', 'yearly'])
-            status = random.choices(['active', 'canceled', 'past_due'], weights=[80, 15, 5])[0]
-            st_date = random_date(180)
-            sub_rows.append((
-                u_id,
-                f'cus_stripe_{u_id}',
-                f'sub_stripe_{u_id}_{uuid.uuid4().hex[:6]}',
-                f'cs_stripe_{uuid.uuid4().hex[:8]}',
-                tier,
-                period,
-                status,
-                st_date,
-                datetime.now() + timedelta(days=30),
-                None,
-                st_date
-            ))
-        sql_subs = """
-        INSERT INTO `subscriptions` (user_id, stripe_customer_id, stripe_subscription_id, stripe_checkout_session_id,
-                                     tier, billing_period, status, current_period_start, current_period_end, canceled_at, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """
-        for i in range(0, len(sub_rows), BATCH_SIZE):
-            cursor.executemany(sql_subs, sub_rows[i:i+BATCH_SIZE])
-        conn.commit()
-
-        # Tabla: payment_history
-        print("  -> Generando tabla: `payment_history`...")
         pay_rows = []
-        for i in range(1, target_records + 1):
-            u_id = random.randint(1, target_records)
-            amount = random.choice([499, 999, 1999, 2499, 4999])
-            desc = f"Pago de suscripción mensual Nivel {random.choice(['Plus', 'Pro', 'Ultra'])}"
-            pay_rows.append((
-                u_id,
-                f'pi_{uuid.uuid4().hex[:16]}',
-                f'in_{uuid.uuid4().hex[:14]}',
-                amount,
-                'usd',
-                desc,
-                'succeeded',
-                random_date(180)
-            ))
-        sql_pay = """
-        INSERT INTO `payment_history` (user_id, stripe_payment_intent_id, stripe_invoice_id, amount_cents, currency, description, status, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        """
-        for i in range(0, len(pay_rows), BATCH_SIZE):
-            cursor.executemany(sql_pay, pay_rows[i:i+BATCH_SIZE])
+        for u in SEED_USERS_DATA[:num_users]:
+            if u["tier"] > 0:
+                s_date = random_date(90)
+                sub_rows.append((
+                    u["id"],
+                    f'cus_stripe_{u["id"]}',
+                    f'sub_stripe_{u["id"]}_{uuid.uuid4().hex[:6]}',
+                    f'cs_stripe_{uuid.uuid4().hex[:8]}',
+                    u["tier"],
+                    'monthly',
+                    'active',
+                    s_date,
+                    datetime.now() + timedelta(days=30),
+                    None,
+                    s_date
+                ))
+                pay_rows.append((
+                    u["id"],
+                    f'pi_{uuid.uuid4().hex[:16]}',
+                    f'in_{uuid.uuid4().hex[:14]}',
+                    999 if u["tier"] == 2 else 1999,
+                    'usd',
+                    f'Pago de suscripción mensual Nivel {u["tier"]}',
+                    'succeeded',
+                    s_date
+                ))
+        if sub_rows:
+            cursor.executemany("""
+                INSERT INTO `subscriptions` (user_id, stripe_customer_id, stripe_subscription_id, stripe_checkout_session_id,
+                                             tier, billing_period, status, current_period_start, current_period_end, canceled_at, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, sub_rows)
+        if pay_rows:
+            cursor.executemany("""
+                INSERT INTO `payment_history` (user_id, stripe_payment_intent_id, stripe_invoice_id, amount_cents, currency, description, status, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, pay_rows)
         conn.commit()
 
-        # Tabla: custom_palettes
+        # Paletas personalizadas
         print("  -> Generando tabla: `custom_palettes`...")
         pal_rows = []
-        palette_colors_json = '[{"hex":"#FF5733","name":"Coral"},{"hex":"#33FF57","name":"Mint"},{"hex":"#3357FF","name":"Blue"},{"hex":"#F3FF33","name":"Yellow"}]'
-        for i in range(1, target_records + 1):
-            pal_rows.append((
-                random.randint(1, target_records),
-                f'palette_usr_{i}',
-                f'Paleta Artística {i}',
-                palette_colors_json,
-                random_date(200)
-            ))
-        sql_pals = "INSERT INTO `custom_palettes` (user_id, palette_key, name, colors, created_at) VALUES (%s, %s, %s, %s, %s)"
-        for i in range(0, len(pal_rows), BATCH_SIZE):
-            cursor.executemany(sql_pals, pal_rows[i:i+BATCH_SIZE])
+        for u in SEED_USERS_DATA[:num_users]:
+            pal_colors_json = json.dumps([
+                {"hex": "#FF5733", "name": "Coral Sunset"},
+                {"hex": "#33FF57", "name": "Mint Glade"},
+                {"hex": "#3357FF", "name": "Neon Cyan"},
+                {"hex": "#F3FF33", "name": "Solar Flare"},
+                {"hex": "#8E44AD", "name": "Deep Arcane"}
+            ])
+            pal_rows.append((u["id"], f"custom_palette_{u['id']}", f"Paleta Artística @{u['identifier']}", pal_colors_json, random_date(100)))
+        cursor.executemany("INSERT INTO `custom_palettes` (user_id, palette_key, name, colors, created_at) VALUES (%s, %s, %s, %s, %s)", pal_rows)
         conn.commit()
 
-        # Tabla: moderation_logs
-        print("  -> Generando tabla: `moderation_logs`...")
-        mod_rows = []
-        for i in range(1, target_records + 1):
-            mod_rows.append((
-                random.randint(2, target_records),
-                1, # Admin ID
-                random.choice(['warn', 'mute', 'suspend_temp', 'edit_avatar', 'reset_username']),
-                'Infracción de normas comunitarias de pixel art',
-                datetime.now() + timedelta(days=7),
-                'Nota interna del moderador',
-                random_date(150)
-            ))
-        sql_mod = "INSERT INTO `moderation_logs` (user_id, admin_id, action_type, reason, end_date, admin_notes, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-        for i in range(0, len(mod_rows), BATCH_SIZE):
-            cursor.executemany(sql_mod, mod_rows[i:i+BATCH_SIZE])
+        # Red de Seguidores (user_follows)
+        print("  -> Generando tabla: `user_follows` (Grafo Social Activo)...")
+        follow_rows = []
+        for u in SEED_USERS_DATA[:num_users]:
+            u_id = u["id"]
+            # User 2 (Jorge) es seguido por todos
+            if u_id != 2:
+                follow_rows.append((u_id, 2, random_date(150)))
+            # Seguir aleatoriamente a 6-12 otros creadores
+            other_ids = [o["id"] for o in SEED_USERS_DATA[:num_users] if o["id"] != u_id and o["id"] != 2]
+            for target_id in random.sample(other_ids, min(len(other_ids), random.randint(6, 12))):
+                follow_rows.append((u_id, target_id, random_date(120)))
+        cursor.executemany("INSERT IGNORE INTO `user_follows` (follower_id, following_id, created_at) VALUES (%s, %s, %s)", follow_rows)
         conn.commit()
 
-        # Tabla: profile_changes_log
-        print("  -> Generando tabla: `profile_changes_log`...")
-        pfl_rows = []
-        for i in range(1, target_records + 1):
-            pfl_rows.append((
-                random.randint(1, target_records),
-                random.choice(['avatar', 'username', 'email', 'password', '2fa']),
-                'old_val_sample',
-                'new_val_sample',
-                f"192.168.{random.randint(1,254)}.{random.randint(1,254)}",
-                'AS15169 Google LLC',
-                random_date(200)
-            ))
-        sql_pfl = "INSERT INTO `profile_changes_log` (user_id, change_type, old_value, new_value, ip_address, asn, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-        for i in range(0, len(pfl_rows), BATCH_SIZE):
-            cursor.executemany(sql_pfl, pfl_rows[i:i+BATCH_SIZE])
+        # Notificaciones de usuario
+        print("  -> Generando tabla: `notifications`...")
+        notif_rows = []
+        notif_types = ['follow', 'publication_like', 'publication_comment', 'canvas_invite']
+        for u in SEED_USERS_DATA[:num_users]:
+            u_id = u["id"]
+            for _ in range(random.randint(8, 20)):
+                actor_id = random.choice([o["id"] for o in SEED_USERS_DATA[:num_users] if o["id"] != u_id])
+                n_type = random.choice(notif_types)
+                data_json = json.dumps({"action": n_type, "message": f"Nueva interacción de usuario en la plataforma"})
+                notif_rows.append((
+                    u_id,
+                    actor_id,
+                    n_type,
+                    random.randint(1, 50),
+                    str(uuid.uuid4()),
+                    data_json,
+                    random.choice([0, 1]),
+                    random_date(60)
+                ))
+        cursor.executemany("INSERT INTO `notifications` (user_id, actor_id, type, target_id, target_uuid, data, is_read, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", notif_rows)
         conn.commit()
 
-        # Tabla: user_flags
-        print("  -> Generando tabla: `user_flags`...")
-        flags_rows = []
-        for i in range(1, target_records + 1):
-            flags_rows.append((
-                i,
-                random.choice(['beta_access', 'trusted_creator', 'verified_artist', 'early_supporter', 'premium_badge']),
-                random_date(250)
-            ))
-        sql_flags = "INSERT IGNORE INTO `user_flags` (user_id, flag_key, created_at) VALUES (%s, %s, %s)"
-        for i in range(0, len(flags_rows), BATCH_SIZE):
-            cursor.executemany(sql_flags, flags_rows[i:i+BATCH_SIZE])
+        # Registros de moderación y restricciones
+        print("  -> Generando restricciones y logs de seguridad...")
+        rest_rows = [(u["id"], 0, None, None, None, None, None, None) for u in SEED_USERS_DATA[:num_users]]
+        cursor.executemany("INSERT INTO `user_restrictions` (user_id, is_suspended, suspension_type, suspension_reason, suspension_end_date, deleted_by, deleted_reason, admin_notes) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", rest_rows)
         conn.commit()
 
-        # Tabla: auth_tokens
-        print("  -> Generando tabla: `auth_tokens`...")
-        tokens_rows = []
-        for i in range(1, target_records + 1):
-            tokens_rows.append((
-                random.randint(1, target_records),
-                uuid.uuid4().hex,
-                uuid.uuid4().hex + uuid.uuid4().hex,
-                datetime.now() + timedelta(days=30),
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
-                f"10.0.{random.randint(1,254)}.{random.randint(1,254)}",
-                'CDMX, MX',
-                'AS8151 Totalplay'
-            ))
-        sql_tokens = "INSERT INTO `auth_tokens` (user_id, selector, hashed_validator, expires_at, user_agent, ip_address, location, asn) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-        for i in range(0, len(tokens_rows), BATCH_SIZE):
-            cursor.executemany(sql_tokens, tokens_rows[i:i+BATCH_SIZE])
-        conn.commit()
-
-        # Se removieron las tablas del sistema de monedas
-
-        # Tabla: user_restrictions
-        print("  -> Generando tabla: `user_restrictions`...")
-        ur_rows = []
-        for i in range(1, target_records + 1):
-            is_susp = 1 if i <= 100 else 0
-            ur_rows.append((
-                i,
-                is_susp,
-                'temporary' if is_susp else None,
-                'Suspensión preventiva por análisis de actividad' if is_susp else None,
-                datetime.now() + timedelta(days=7) if is_susp else None,
-                None,
-                None,
-                None
-            ))
-        sql_ur = """
-        INSERT INTO `user_restrictions` (user_id, is_suspended, suspension_type, suspension_reason, suspension_end_date, deleted_by, deleted_reason, admin_notes)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        """
-        for i in range(0, len(ur_rows), BATCH_SIZE):
-            cursor.executemany(sql_ur, ur_rows[i:i+BATCH_SIZE])
-        conn.commit()
-
-        print(f"{Colors.GREEN}✓ db_identity poblada exitosamente con ~150,000 registros.{Colors.ENDC}")
+        print(f"{Colors.GREEN}✓ db_identity poblada con éxito.{Colors.ENDC}")
 
         # -------------------------------------------------------------
-        # 3. POBLAR DB_CANVASES (~10k por tabla)
+        # 3. POBLAR DB_CANVASES (625 Canvases con Dibujos, Capas y Frames)
         # -------------------------------------------------------------
-        print(f"\n{Colors.WARNING}3/5 Poblando 'db_canvases' (~{target_records:,} por tabla)...{Colors.ENDC}")
+        total_canvases = num_users * canvases_per_user
+        print(f"\n{Colors.WARNING}3/5 Poblando 'db_canvases' ({total_canvases} lienzos con dibujos, capas y frames)...{Colors.ENDC}")
         cursor.execute("USE db_canvases;")
 
-        # Tabla: canvases
-        print("  -> Generando tabla: `canvases`...")
         canvas_rows = []
-        for i in range(1, target_records + 1):
-            c_uuid = str(uuid.uuid4())
-            theme = random.choice(CANVAS_THEMES)
-            c_name = f"{theme} Canvas #{i}"
-            tags_json = f'["{theme.lower()}", "art", "pixel_{i}"]'
-            privacy = random.choice(['public', 'private'])
-            size = random.choice(['64', '128', '256', '512'])
-            fav_cnt = random.randint(0, 500)
-            mem_cnt = random.randint(1, 100)
-            px_cnt = random.randint(100, 50000)
-            msg_cnt = random.randint(0, 1000)
-            owner_id = random.randint(1, target_records)
-            canvas_rows.append((
-                i,
-                c_uuid,
-                owner_id,
-                c_name,
-                tags_json,
-                privacy,
-                0, # requires_approval
-                1, # allow_chat
-                0, # is_subscription_locked
-                None,
-                size,
-                'default',
-                100, # max_participants
-                5,
-                10,
-                fav_cnt,
-                mem_cnt,
-                px_cnt,
-                msg_cnt,
-                0, # is_frozen
-                random_date(300)
-            ))
+        snapshot_rows = []
+        layers_rows = []
+        recent_colors_rows = []
+        members_rows = []
+        favorites_rows = []
+        snapshots_history_rows = []
+        snapshots_likes_rows = []
+        chat_rows = []
+        reset_rows = []
+        resize_rows = []
+        invite_rows = []
+        publications_rows = []
+        publication_likes_rows = []
+        publication_comments_rows = []
+        minio_canvas_items = []
+        minio_pub_items = []
 
+        pub_counter = 1
+        canvas_counter = 1
+
+        for u in SEED_USERS_DATA[:num_users]:
+            u_id = u["id"]
+            u_name = u["username"]
+
+            for c_idx in range(1, canvases_per_user + 1):
+                c_id = canvas_counter
+                canvas_counter += 1
+
+                c_uuid = str(uuid.uuid4())
+                theme = random.choice(CANVAS_THEMES)
+                size_str = random.choice(['32', '64', '128'])
+                size_int = int(size_str)
+                
+                # Distribución de modos: ~60% offline, ~40% online
+                mode = 'offline' if c_idx <= 15 else 'online'
+                is_online_active = 1 if (mode == 'online' and c_idx in (16, 20)) else 0
+                last_online = datetime.now().strftime('%Y-%m-%d %H:%M:%S') if mode == 'online' else None
+                privacy = 'public' if c_idx <= 20 else 'private'
+                
+                c_name = f"{theme} Studio #{c_idx} (@{u['identifier']})"
+                tags_json = json.dumps([theme.lower(), "pixelart", f"art_{c_idx}", "rosaura"])
+                
+                fav_cnt = random.randint(3, 45)
+                mem_cnt = random.randint(2, 10)
+                px_cnt = random.randint(150, 25000)
+                msg_cnt = random.randint(3, 20)
+
+                canvas_rows.append((
+                    c_id,
+                    c_uuid,
+                    u_id,
+                    c_name,
+                    tags_json,
+                    privacy,
+                    0, # requires_approval
+                    1, # allow_chat
+                    0, # is_subscription_locked
+                    None,
+                    size_str,
+                    'default',
+                    50, # max_participants
+                    5,
+                    10,
+                    fav_cnt,
+                    mem_cnt,
+                    px_cnt,
+                    msg_cnt,
+                    0, # is_frozen
+                    mode,
+                    is_online_active,
+                    random.randint(10240, 524288),
+                    last_online,
+                    random_date(180),
+                    None,
+                    None
+                ))
+
+                # Generar arte procedural, capas gzip y snapshot PNG
+                png_bytes, layers_gz, pal_hex, master_pil = generate_procedural_pixel_art(size_int, size_int, theme, c_id)
+
+                minio_canvas_items.append((c_id, c_uuid, png_bytes, layers_gz, master_pil))
+                snapshot_rows.append((c_id, f"snapshots/canvas_{c_id}_main.png", png_bytes))
+                layers_rows.append((c_id, f"layers/canvas_{c_id}.json.gz", layers_gz))
+                recent_colors_rows.append((u_id, c_id, json.dumps(pal_hex)))
+
+                # Historial de snapshots
+                hist_uuid = str(uuid.uuid4())
+                snapshots_history_rows.append((c_id, hist_uuid, f"snapshots/history_canvas_{c_id}_{hist_uuid[:8]}.png", None, 'public', random_date(60)))
+
+                # Miembros y favoritos
+                other_user_ids = [o["id"] for o in SEED_USERS_DATA[:num_users] if o["id"] != u_id]
+                for mem_id in random.sample(other_user_ids, min(len(other_user_ids), random.randint(2, 6))):
+                    members_rows.append((c_id, mem_id, random_date(90)))
+                for fav_id in random.sample(other_user_ids, min(len(other_user_ids), random.randint(3, 8))):
+                    favorites_rows.append((c_id, fav_id, random_date(90)))
+
+                # Mensajes de Chat en lienzo
+                for msg_i in range(random.randint(2, 6)):
+                    chat_sender = random.choice([u_id] + other_user_ids)
+                    chat_rows.append((
+                        str(uuid.uuid4()),
+                        c_id,
+                        chat_sender,
+                        random.choice(CHAT_SAMPLES),
+                        None,
+                        0,
+                        'visible',
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        random_date(30)
+                    ))
+
+                # Settings
+                reset_rows.append((c_id, 0, None, 1, random_date(100)))
+                resize_rows.append((c_id, 0, None, size_str, random_date(100)))
+                invite_rows.append((c_id, f"INV{c_id:04d}{random.choice('XYZW')}", 'Usuario', 50, random.randint(0, 10), datetime.now() + timedelta(days=30), u_id, random_date(50)))
+
+                # Publicaciones sociales (~150 publicaciones seleccionadas)
+                if c_idx <= 6:
+                    pub_id = pub_counter
+                    pub_counter += 1
+                    pub_uuid = str(uuid.uuid4())
+                    pub_title = f"{theme} Showcase #{c_idx}"
+                    pub_desc = f"Obra artística inspirada en {theme}. Lienzo de {size_str}x{size_str} con capas y animación."
+                    pub_likes = random.randint(5, 50)
+                    pub_views = random.randint(30, 400)
+                    pub_comments = random.randint(2, 8)
+                    publications_rows.append((
+                        pub_id,
+                        pub_uuid,
+                        u_id,
+                        c_id,
+                        pub_title,
+                        pub_desc,
+                        tags_json,
+                        f"storage/publications/pub_{pub_uuid}.png",
+                        size_int,
+                        size_int,
+                        'default',
+                        pub_likes,
+                        pub_views,
+                        pub_comments,
+                        1 if c_idx == 1 else 0,
+                        'public',
+                        random_date(90)
+                    ))
+                    minio_pub_items.append((pub_uuid, png_bytes))
+
+                    # Likes y comentarios de publicaciones
+                    for like_uid in random.sample(other_user_ids, min(len(other_user_ids), random.randint(3, 10))):
+                        publication_likes_rows.append((pub_id, like_uid, random_date(45)))
+                    for com_uid in random.sample(other_user_ids, min(len(other_user_ids), random.randint(2, 5))):
+                        publication_comments_rows.append((
+                            str(uuid.uuid4()),
+                            pub_id,
+                            com_uid,
+                            random.choice(CHAT_SAMPLES),
+                            random_date(30)
+                        ))
+
+        # Inserciones por lotes en MySQL
+        print("  -> Insertando tabla: `canvases`...")
         sql_canvases = """
         INSERT INTO `canvases` (id, uuid, owner_id, name, tags, privacy, requires_approval,
                                allow_chat, is_subscription_locked, locked_reasons, size, palette_id, max_participants,
                                cooldown_pixels_batch, cooldown_seconds, favorites_count, members_count, total_pixels,
-                               total_messages, is_frozen, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                               total_messages, is_frozen, mode, is_online_active, storage_bytes, last_online_at,
+                               created_at, deleted_at, deleted_by_user_id)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         for i in range(0, len(canvas_rows), BATCH_SIZE):
             cursor.executemany(sql_canvases, canvas_rows[i:i+BATCH_SIZE])
         conn.commit()
 
-        # Tabla: canvas_members
-        print("  -> Generando tabla: `canvas_members`...")
-        cm_rows = []
-        for i in range(1, target_records + 1):
-            cm_rows.append((i, random.randint(1, target_records), random_date(180)))
-        sql_cm = "INSERT IGNORE INTO `canvas_members` (canvas_id, user_id, joined_at) VALUES (%s, %s, %s)"
-        for i in range(0, len(cm_rows), BATCH_SIZE):
-            cursor.executemany(sql_cm, cm_rows[i:i+BATCH_SIZE])
+        print("  -> Insertando tabla: `canvas_snapshots` (PNG binarios)...")
+        sql_snapshots = "INSERT INTO `canvas_snapshots` (canvas_id, s3_key, snapshot_data) VALUES (%s, %s, %s)"
+        for i in range(0, len(snapshot_rows), BATCH_SIZE):
+            cursor.executemany(sql_snapshots, snapshot_rows[i:i+BATCH_SIZE])
         conn.commit()
 
-        # Tabla: canvas_favorites
-        print("  -> Generando tabla: `canvas_favorites`...")
-        cf_rows = []
-        for i in range(1, target_records + 1):
-            cf_rows.append((i, random.randint(1, target_records), random_date(150)))
-        sql_cf = "INSERT IGNORE INTO `canvas_favorites` (canvas_id, user_id, created_at) VALUES (%s, %s, %s)"
-        for i in range(0, len(cf_rows), BATCH_SIZE):
-            cursor.executemany(sql_cf, cf_rows[i:i+BATCH_SIZE])
+        print("  -> Insertando tabla: `canvas_layers` (Capas y Frames Gzip)...")
+        sql_layers = "INSERT INTO `canvas_layers` (canvas_id, s3_key, layers_data) VALUES (%s, %s, %s)"
+        for i in range(0, len(layers_rows), BATCH_SIZE):
+            cursor.executemany(sql_layers, layers_rows[i:i+BATCH_SIZE])
         conn.commit()
 
-        # Tabla: canvas_access_requests
-        print("  -> Generando tabla: `canvas_access_requests`...")
-        car_rows = []
-        for i in range(1, target_records + 1):
-            car_rows.append((
-                i,
-                random.randint(1, target_records),
-                random.choice(['pending', 'approved', 'rejected']),
-                random_date(100)
-            ))
-        sql_car = "INSERT IGNORE INTO `canvas_access_requests` (canvas_id, user_id, status, created_at) VALUES (%s, %s, %s, %s)"
-        for i in range(0, len(car_rows), BATCH_SIZE):
-            cursor.executemany(sql_car, car_rows[i:i+BATCH_SIZE])
+        print("  -> Insertando tabla: `canvas_recent_colors`...")
+        sql_recent = "INSERT INTO `canvas_recent_colors` (user_id, canvas_id, colors) VALUES (%s, %s, %s)"
+        for i in range(0, len(recent_colors_rows), BATCH_SIZE):
+            cursor.executemany(sql_recent, recent_colors_rows[i:i+BATCH_SIZE])
         conn.commit()
 
-        # Tabla: canvas_snapshots
-        print("  -> Generando tabla: `canvas_snapshots`...")
-        cs_rows = []
-        for i in range(1, target_records + 1):
-            cs_rows.append((i, f"snapshots/canvas_{i}_main.png", None))
-        sql_cs = "INSERT IGNORE INTO `canvas_snapshots` (canvas_id, s3_key, snapshot_data) VALUES (%s, %s, %s)"
-        for i in range(0, len(cs_rows), BATCH_SIZE):
-            cursor.executemany(sql_cs, cs_rows[i:i+BATCH_SIZE])
+        print("  -> Insertando miembros, favoritos y snapshots históricos...")
+        for i in range(0, len(members_rows), BATCH_SIZE):
+            cursor.executemany("INSERT IGNORE INTO `canvas_members` (canvas_id, user_id, joined_at) VALUES (%s, %s, %s)", members_rows[i:i+BATCH_SIZE])
+        for i in range(0, len(favorites_rows), BATCH_SIZE):
+            cursor.executemany("INSERT IGNORE INTO `canvas_favorites` (canvas_id, user_id, created_at) VALUES (%s, %s, %s)", favorites_rows[i:i+BATCH_SIZE])
+        for i in range(0, len(snapshots_history_rows), BATCH_SIZE):
+            cursor.executemany("INSERT INTO `canvas_snapshots_history` (canvas_id, snapshot_uuid, file_path, timelapse_path, privacy, created_at) VALUES (%s, %s, %s, %s, %s, %s)", snapshots_history_rows[i:i+BATCH_SIZE])
         conn.commit()
 
-        # Tabla: canvas_snapshots_history
-        print("  -> Generando tabla: `canvas_snapshots_history`...")
-        csh_rows = []
-        for i in range(1, target_records + 1):
-            csh_rows.append((
-                i,
-                random.randint(1, target_records),
-                str(uuid.uuid4()),
-                f"/storage/snapshots/snap_hist_{i}.png",
-                random.choice(['public', 'private']),
-                random_date(200)
-            ))
-        sql_csh = "INSERT INTO `canvas_snapshots_history` (id, canvas_id, snapshot_uuid, file_path, privacy, created_at) VALUES (%s, %s, %s, %s, %s, %s)"
-        for i in range(0, len(csh_rows), BATCH_SIZE):
-            cursor.executemany(sql_csh, csh_rows[i:i+BATCH_SIZE])
-        conn.commit()
-
-        # Tabla: canvas_snapshots_likes
-        print("  -> Generando tabla: `canvas_snapshots_likes`...")
-        csl_rows = []
-        for i in range(1, target_records + 1):
-            csl_rows.append((i, random.randint(1, target_records), random_date(120)))
-        sql_csl = "INSERT IGNORE INTO `canvas_snapshots_likes` (snapshot_id, user_id, created_at) VALUES (%s, %s, %s)"
-        for i in range(0, len(csl_rows), BATCH_SIZE):
-            cursor.executemany(sql_csl, csl_rows[i:i+BATCH_SIZE])
-        conn.commit()
-
-        # Tabla: canvas_invites
-        print("  -> Generando tabla: `canvas_invites`...")
-        ci_rows = []
-        for i in range(1, target_records + 1):
-            code = f"INV{i:05d}{random.choice('ABCDEF')}"
-            ci_rows.append((
-                random.randint(1, target_records),
-                code,
-                'Usuario',
-                100,
-                random.randint(0, 50),
-                datetime.now() + timedelta(days=30),
-                random.randint(1, target_records),
-                random_date(100)
-            ))
-        sql_ci = "INSERT IGNORE INTO `canvas_invites` (canvas_id, code, role, max_uses, uses_count, expires_at, created_by, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-        for i in range(0, len(ci_rows), BATCH_SIZE):
-            cursor.executemany(sql_ci, ci_rows[i:i+BATCH_SIZE])
-        conn.commit()
-
-        # Tabla: canvas_chat_messages
-        print("  -> Generando tabla: `canvas_chat_messages`...")
-        ccm_rows = []
-        for i in range(1, target_records + 1):
-            ccm_rows.append((
-                str(uuid.uuid4()),
-                random.randint(1, target_records),
-                random.randint(1, target_records),
-                f"Mensaje de chat en lienzo {random.choice(CHAT_MESSAGES_SAMPLES)}",
-                None,
-                0,
-                'visible',
-                None,
-                None,
-                random_date(90)
-            ))
-        sql_ccm = """
-        INSERT INTO `canvas_chat_messages` (uuid, canvas_id, user_id, message, attachments, file_size, visibility, deleted_by, delete_reason, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        print("  -> Insertando tabla: `canvas_chat_messages`...")
+        sql_chat = """
+        INSERT INTO `canvas_chat_messages` (uuid, canvas_id, user_id, message, attachments, file_size, visibility, deleted_by, delete_reason, reply_to, reply_to_username, reply_to_message, created_at)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
-        for i in range(0, len(ccm_rows), BATCH_SIZE):
-            cursor.executemany(sql_ccm, ccm_rows[i:i+BATCH_SIZE])
+        for i in range(0, len(chat_rows), BATCH_SIZE):
+            cursor.executemany(sql_chat, chat_rows[i:i+BATCH_SIZE])
         conn.commit()
 
-        # Tabla: canvas_chat_reports
-        print("  -> Generando tabla: `canvas_chat_reports`...")
-        ccr_rows = []
-        for i in range(1, target_records + 1):
-            ccr_rows.append((
-                str(uuid.uuid4()),
-                random.randint(1, target_records),
-                random.choice(['spam', 'offensive', 'harassment', 'inappropriate_art']),
-                'Detalles del reporte generado automáticamente',
-                random.choice(['pending', 'reviewed', 'dismissed']),
-                random_date(60)
-            ))
-        sql_ccr = "INSERT INTO `canvas_chat_reports` (message_id, reporter_user_id, reason_key, details, status, created_at) VALUES (%s, %s, %s, %s, %s, %s)"
-        for i in range(0, len(ccr_rows), BATCH_SIZE):
-            cursor.executemany(sql_ccr, ccr_rows[i:i+BATCH_SIZE])
+        print("  -> Insertando configuración de resets, resizes e invitaciones...")
+        cursor.executemany("INSERT IGNORE INTO `canvas_reset_settings` (canvas_id, is_active, next_reset_at, take_snapshot, created_at) VALUES (%s, %s, %s, %s, %s)", reset_rows)
+        cursor.executemany("INSERT IGNORE INTO `canvas_resize_settings` (canvas_id, is_active, next_resize_at, target_size, created_at) VALUES (%s, %s, %s, %s, %s)", resize_rows)
+        cursor.executemany("INSERT IGNORE INTO `canvas_invites` (canvas_id, code, role, max_uses, uses_count, expires_at, created_by, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", invite_rows)
         conn.commit()
 
-        # Tabla: canvas_sanctions
-        print("  -> Generando tabla: `canvas_sanctions`...")
-        csanc_rows = []
-        for i in range(1, target_records + 1):
-            csanc_rows.append((
-                str(uuid.uuid4()),
-                str(uuid.uuid4()),
-                '00000000-0000-0000-0000-000000000001',
-                'chat_mute',
-                'temporary',
-                'Conducta no permitida en chat',
-                'Sanción automática',
-                datetime.now() + timedelta(days=3),
-                random_date(40)
-            ))
-        sql_csanc = "INSERT INTO `canvas_sanctions` (canvas_id, user_id, restricted_by, sanction_scope, suspension_type, suspension_reason, custom_reason, end_date, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        for i in range(0, len(csanc_rows), BATCH_SIZE):
-            cursor.executemany(sql_csanc, csanc_rows[i:i+BATCH_SIZE])
+        # Inserción de Publicaciones
+        print(f"  -> Insertando tabla: `publications` ({len(publications_rows)} obras publicadas)...")
+        sql_pubs = """
+        INSERT INTO `publications` (id, uuid, user_id, canvas_id, title, description, tags, image_path, width, height, palette_id, likes_count, views_count, comments_count, is_pinned, privacy, created_at)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        cursor.executemany(sql_pubs, publications_rows)
+        cursor.executemany("INSERT IGNORE INTO `publication_likes` (publication_id, user_id, created_at) VALUES (%s, %s, %s)", publication_likes_rows)
+        cursor.executemany("INSERT INTO `publication_comments` (uuid, publication_id, user_id, content, created_at) VALUES (%s, %s, %s, %s, %s)", publication_comments_rows)
         conn.commit()
 
-        # Tabla: canvas_protections
-        print("  -> Generando tabla: `canvas_protections`...")
-        cp_rows = []
-        for i in range(1, target_records + 1):
-            cp_rows.append((
-                i,
-                random.randint(0, 32),
-                random.randint(0, 32),
-                random.randint(33, 64),
-                random.randint(33, 64),
-                1,
-                datetime.now() + timedelta(days=14),
-                random_date(50)
-            ))
-        sql_cp = "INSERT INTO `canvas_protections` (canvas_id, x1, y1, x2, y2, protected_by, expires_at, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-        for i in range(0, len(cp_rows), BATCH_SIZE):
-            cursor.executemany(sql_cp, cp_rows[i:i+BATCH_SIZE])
-        conn.commit()
-
-        # Tabla: canvas_reset_settings
-        print("  -> Generando tabla: `canvas_reset_settings`...")
-        crs_rows = []
-        for i in range(1, target_records + 1):
-            crs_rows.append((i, 0, None, 1, random_date(100)))
-        sql_crs = "INSERT IGNORE INTO `canvas_reset_settings` (canvas_id, is_active, next_reset_at, take_snapshot, created_at) VALUES (%s, %s, %s, %s, %s)"
-        for i in range(0, len(crs_rows), BATCH_SIZE):
-            cursor.executemany(sql_crs, crs_rows[i:i+BATCH_SIZE])
-        conn.commit()
-
-        # Tabla: canvas_resize_settings
-        print("  -> Generando tabla: `canvas_resize_settings`...")
-        cres_rows = []
-        for i in range(1, target_records + 1):
-            cres_rows.append((i, 0, None, '128', random_date(100)))
-        sql_cres = "INSERT IGNORE INTO `canvas_resize_settings` (canvas_id, is_active, next_resize_at, target_size, created_at) VALUES (%s, %s, %s, %s, %s)"
-        for i in range(0, len(cres_rows), BATCH_SIZE):
-            cursor.executemany(sql_cres, cres_rows[i:i+BATCH_SIZE])
-        conn.commit()
-
-        # Tabla: user_templates
-        print("  -> Generando tabla: `user_templates`...")
-        ut_rows = []
-        for i in range(1, target_records + 1):
-            ut_rows.append((
-                random.randint(1, target_records),
-                f"/storage/templates/template_{i}.json",
-                random.randint(1024, 65536),
-                random_date(120)
-            ))
-        sql_ut = "INSERT INTO `user_templates` (user_id, file_path, file_size, created_at) VALUES (%s, %s, %s, %s)"
-        for i in range(0, len(ut_rows), BATCH_SIZE):
-            cursor.executemany(sql_ut, ut_rows[i:i+BATCH_SIZE])
-        conn.commit()
-
-        # Tabla: canvas_user_roles
-        print("  -> Generando tabla: `canvas_user_roles`...")
-        cur_rows = []
-        for i in range(1, target_records + 1):
-            cur_rows.append((
-                i,
-                random.randint(1, target_records),
-                random.choice([1, 2, 3])
-            ))
-        sql_cur = "INSERT IGNORE INTO `canvas_user_roles` (canvas_id, user_id, role_id) VALUES (%s, %s, %s)"
-        for i in range(0, len(cur_rows), BATCH_SIZE):
-            cursor.executemany(sql_cur, cur_rows[i:i+BATCH_SIZE])
-        conn.commit()
-
-        print(f"{Colors.GREEN}✓ db_canvases poblada exitosamente con ~160,000 registros.{Colors.ENDC}")
+        print(f"{Colors.GREEN}✓ db_canvases poblada exitosamente.{Colors.ENDC}")
 
         # -------------------------------------------------------------
-        # 4. POBLAR DB_TELEMETRY (~10k por tabla)
+        # 4. POBLAR DB_TELEMETRY Y ADVERTISEMENTS
         # -------------------------------------------------------------
-        print(f"\n{Colors.WARNING}4/4 Poblando 'db_telemetry' (~{target_records:,} por tabla)...{Colors.ENDC}")
+        print(f"\n{Colors.WARNING}4/5 Poblando 'db_telemetry' y 'db_advertisements'...{Colors.ENDC}")
         cursor.execute("USE db_telemetry;")
 
-        # Tabla: api_latency
-        print("  -> Generando tabla: `api_latency`...")
-        endpoints = ['/api/v1/auth/login', '/api/v1/canvas/get',
-                     '/api/v1/profile/update', '/api/v1/canvas/pixels', '/api/v1/store/packages']
-        al_rows = []
-        for i in range(1, target_records + 1):
-            al_rows.append((
+        endpoints = ['/api/v1/auth/login', '/api/v1/canvas/get', '/api/v1/publications/feed', '/api/v1/profile/view', '/api/v1/canvas/pixels']
+        lat_rows = []
+        for _ in range(250):
+            lat_rows.append((
                 random.choice(endpoints),
-                random.choice(['GET', 'POST', 'PUT']),
-                random.choices([200, 201, 400, 404, 500], weights=[85, 5, 5, 4, 1])[0],
-                round(random.uniform(12.5, 380.0), 2),
+                random.choice(['GET', 'POST']),
+                200,
+                round(random.uniform(15.0, 180.0), 2),
                 str(uuid.uuid4()),
-                f"192.168.{random.randint(1,254)}.{random.randint(1,254)}",
+                f"192.168.1.{random.randint(10, 200)}",
                 'AS15169 Google LLC',
-                random_date(180)
+                random_date(60)
             ))
-        sql_al = "INSERT INTO `api_latency` (endpoint, method, status_code, latency_ms, user_uuid, ip_address, asn, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-        for i in range(0, len(al_rows), BATCH_SIZE):
-            cursor.executemany(sql_al, al_rows[i:i+BATCH_SIZE])
-        conn.commit()
+        cursor.executemany("INSERT INTO `api_latency` (endpoint, method, status_code, latency_ms, user_uuid, ip_address, asn, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", lat_rows)
 
-        # Tabla: pageviews
-        print("  -> Generando tabla: `pageviews`...")
-        paths = ['/', '/canvas', '/pricing', '/profile', '/admin/dashboard']
         pv_rows = []
-        for i in range(1, target_records + 1):
+        for _ in range(300):
             pv_rows.append((
-                random.choice(paths),
-                round(random.uniform(45.0, 950.0), 2),
+                random.choice(['/', '/canvas', '/publications', '/profile', '/pricing']),
+                round(random.uniform(40.0, 450.0), 2),
                 str(uuid.uuid4()),
                 uuid.uuid4().hex,
-                random.choice(['desktop', 'mobile', 'tablet']),
-                random.choice(['dark', 'light', 'system']),
-                random.choice(['es-419', 'en-US', 'es-ES']),
-                random_date(180)
+                random.choice(['desktop', 'mobile']),
+                'dark',
+                'es-419',
+                random_date(60)
             ))
-        sql_pv = "INSERT INTO `pageviews` (path, load_time_ms, user_uuid, session_id, device_type, theme_preference, locale, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-        for i in range(0, len(pv_rows), BATCH_SIZE):
-            cursor.executemany(sql_pv, pv_rows[i:i+BATCH_SIZE])
-        conn.commit()
+        cursor.executemany("INSERT INTO `pageviews` (path, load_time_ms, user_uuid, session_id, device_type, theme_preference, locale, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", pv_rows)
 
-        # Tabla: auth_events
-        print("  -> Generando tabla: `auth_events`...")
-        auth_types = ['login_success', 'login_failed', 'logout', 'session_switch', '2fa_prompt', 'password_change']
-        ae_rows = []
-        for i in range(1, target_records + 1):
-            ae_rows.append((
-                random.choice(auth_types),
+        auth_e_rows = []
+        for _ in range(100):
+            auth_e_rows.append((
+                random.choice(['login_success', 'logout', 'session_switch']),
                 str(uuid.uuid4()),
-                f"10.0.{random.randint(1,254)}.{random.randint(1,254)}",
-                'AS8151 Totalplay',
-                random_date(180)
+                '127.0.0.1',
+                'Localhost',
+                random_date(30)
             ))
-        sql_ae = "INSERT INTO `auth_events` (event_type, user_uuid, ip_address, asn, created_at) VALUES (%s, %s, %s, %s, %s)"
-        for i in range(0, len(ae_rows), BATCH_SIZE):
-            cursor.executemany(sql_ae, ae_rows[i:i+BATCH_SIZE])
+        cursor.executemany("INSERT INTO `auth_events` (event_type, user_uuid, ip_address, asn, created_at) VALUES (%s, %s, %s, %s, %s)", auth_e_rows)
         conn.commit()
 
-        print(f"{Colors.GREEN}✓ db_telemetry poblada exitosamente con ~30,000 registros.{Colors.ENDC}")
+        # Publicidad (db_advertisements)
+        cursor.execute("USE db_advertisements;")
+        ad_metrics_rows = []
+        for _ in range(200):
+            ad_metrics_rows.append((
+                random.randint(1, 6),
+                random.randint(1, 5),
+                random.choice(['impression', 'impression', 'impression', 'click']),
+                str(uuid.uuid4()),
+                '127.0.0.1',
+                'Mozilla/5.0 RosauraBrowser',
+                random_date(30)
+            ))
+        cursor.executemany("INSERT INTO `ad_metrics` (ad_id, provider_id, event_type, user_uuid, ip_address, user_agent, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s)", ad_metrics_rows)
+        conn.commit()
+
+        # -------------------------------------------------------------
+        # 5. SINCRONIZAR MINIO S3 (Miniaturas WebP, Snapshots PNG, Capas)
+        # -------------------------------------------------------------
+        print(f"\n{Colors.WARNING}5/5 Sincronizando miniaturas y snapshots en MinIO S3 y purgando Redis...{Colors.ENDC}")
+        try:
+            import boto3
+            import botocore
+            s3 = boto3.client(
+                's3',
+                endpoint_url='http://127.0.0.1:9000',
+                aws_access_key_id='admin',
+                aws_secret_access_key='password',
+                config=botocore.config.Config(signature_version='s3v4')
+            )
+            try:
+                s3.head_bucket(Bucket='rosaura-storage')
+            except Exception:
+                s3.create_bucket(Bucket='rosaura-storage')
+
+            policy = {
+                'Version': '2012-10-17',
+                'Statement': [
+                    {
+                        'Sid': 'PublicRead',
+                        'Effect': 'Allow',
+                        'Principal': '*',
+                        'Action': ['s3:GetObject'],
+                        'Resource': ['arn:aws:s3:::rosaura-storage/*']
+                    }
+                ]
+            }
+            s3.put_bucket_policy(Bucket='rosaura-storage', Policy=json.dumps(policy))
+
+            for c_id, c_uuid, png_bytes, layers_gz, master_pil in minio_canvas_items:
+                webp_io = io.BytesIO()
+                master_pil.save(webp_io, format='WEBP', quality=90)
+                webp_bytes = webp_io.getvalue()
+
+                # Miniaturas WebP (por UUID y por ID)
+                s3.put_object(Bucket='rosaura-storage', Key=f"thumbnails/canvas_{c_uuid}.webp", Body=webp_bytes, ContentType='image/webp')
+                s3.put_object(Bucket='rosaura-storage', Key=f"thumbnails/canvas_{c_id}.webp", Body=webp_bytes, ContentType='image/webp')
+
+                # Snapshots PNG (por ID y por UUID)
+                s3.put_object(Bucket='rosaura-storage', Key=f"snapshots/canvas_{c_id}_main.png", Body=png_bytes, ContentType='image/png')
+                s3.put_object(Bucket='rosaura-storage', Key=f"snapshots/canvas_{c_uuid}_main.png", Body=png_bytes, ContentType='image/png')
+
+                # Capas Gzip
+                s3.put_object(Bucket='rosaura-storage', Key=f"layers/canvas_{c_id}.json.gz", Body=layers_gz, ContentType='application/gzip')
+                s3.put_object(Bucket='rosaura-storage', Key=f"layers/canvas_{c_uuid}.json.gz", Body=layers_gz, ContentType='application/gzip')
+
+            for pub_uuid, png_bytes in minio_pub_items:
+                s3.put_object(Bucket='rosaura-storage', Key=f"storage/publications/pub_{pub_uuid}.png", Body=png_bytes, ContentType='image/png')
+                s3.put_object(Bucket='rosaura-storage', Key=f"publications/pub_{pub_uuid}.png", Body=png_bytes, ContentType='image/png')
+
+            print(f"{Colors.GREEN}✓ Miniaturas WebP y snapshots subidos a MinIO exitosamente.{Colors.ENDC}")
+        except Exception as e:
+            print(f"{Colors.WARNING}⚠ Advertencia en sincronización MinIO: {e}{Colors.ENDC}")
+
+        # Purgar claves de caché en Redis
+        try:
+            r = redis.Redis(host='127.0.0.1', port=6379, password='8f4e2d1c9b7a5f6e3d2c1b0a9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1f0e')
+            for key in r.scan_iter('canvases:*'):
+                r.delete(key)
+            print(f"{Colors.GREEN}✓ Cachés de Redis purgadas con éxito.{Colors.ENDC}")
+        except Exception as e:
+            print(f"{Colors.WARNING}⚠ Advertencia al limpiar Redis: {e}{Colors.ENDC}")
 
         # Restaurar restricciones
         cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
@@ -1374,13 +1863,15 @@ def seed_database(project_root, target_records=10000):
         conn.commit()
 
         elapsed = round(time.time() - start_total_time, 2)
-        total_inserted = target_records * 27 # ~27 tablas pobladas
 
         print(f"\n{Colors.GREEN}{Colors.BOLD}======================================================================{Colors.ENDC}")
-        print(f"{Colors.GREEN}{Colors.BOLD}   ¡REPOBLACIÓN COMPLETADA CON ÉXITO EN {elapsed} SEGUNDOS!           {Colors.ENDC}")
+        print(f"{Colors.GREEN}{Colors.BOLD}   ¡POBLACIÓN INTEGRAL COMPLETADA CON ÉXITO EN {elapsed}s!           {Colors.ENDC}")
         print(f"{Colors.GREEN}{Colors.BOLD}======================================================================{Colors.ENDC}")
-        print(f"📊 {Colors.BOLD}Total de registros generados:{Colors.ENDC} ~{total_inserted:,} filas")
-        print(f"👤 {Colors.BOLD}Usuario Administrador creado:{Colors.ENDC} admin / admin@example.com (Password: {Colors.CYAN}password{Colors.ENDC})")
+        print(f"👥 {Colors.BOLD}Usuarios Creados:{Colors.ENDC} {num_users} cuentas completas (con avatares, banners, bios y seguidores)")
+        print(f"👑 {Colors.BOLD}Tu Cuenta Personal:{Colors.ENDC} {Colors.CYAN}al20328051890088@gmail.com{Colors.ENDC} / usuario: {Colors.CYAN}jorge{Colors.ENDC} (SuperAdministrator)")
+        print(f"🔑 {Colors.BOLD}Contraseña de prueba para todas las cuentas:{Colors.ENDC} {Colors.CYAN}password{Colors.ENDC}")
+        print(f"🎨 {Colors.BOLD}Lienzos creados:{Colors.ENDC} {total_canvases} lienzos con dibujos procedurales, capas y frames")
+        print(f"🖼️  {Colors.BOLD}Publicaciones creadas:{Colors.ENDC} {len(publications_rows)} obras con comentarios y likes")
         print(f"{Colors.GREEN}======================================================================{Colors.ENDC}\n")
 
     except Exception as e:
@@ -1392,26 +1883,24 @@ def seed_database(project_root, target_records=10000):
         cursor.close()
         conn.close()
 
+
 def run_seeder(project_root, script_dir):
     print(f"\n{Colors.FAIL}{Colors.BOLD}======================================================================{Colors.ENDC}")
-    print(f"{Colors.FAIL}{Colors.BOLD}             ¡ADVERTENCIA CRÍTICA: BORRADO TOTAL DE BD!               {Colors.ENDC}")
+    print(f"{Colors.FAIL}{Colors.BOLD}             ¡ADVERTENCIA: REINICIALIZACIÓN DE BD!                    {Colors.ENDC}")
     print(f"{Colors.FAIL}{Colors.BOLD}======================================================================{Colors.ENDC}")
-    print(f"{Colors.WARNING}Esta acción ELIMINARÁ Y REINICIALIZARÁ COMPLETAMENTE toda la información{Colors.ENDC}")
-    print(f"{Colors.WARNING}existente en las 3 bases de datos del proyecto:{Colors.ENDC}")
-    print(f"  • {Colors.CYAN}db_identity{Colors.ENDC}  (Usuarios, Roles, Suscripciones, Pagos, etc.)")
-    print(f"  • {Colors.CYAN}db_canvases{Colors.ENDC}  (Lienzos, Miembros, Snapshots, Chats, etc.)")
-    print(f"  • {Colors.CYAN}db_telemetry{Colors.ENDC} (Latencias de API, Pageviews, Eventos Auth)")
-    print(f"\n{Colors.BOLD}Se poblarán aproximadamente 10,000 registros por tabla de prueba.{Colors.ENDC}")
-    print(f"{Colors.FAIL}TODOS LOS DATOS ACTUALES SE PERDERÁN DE FORMA IRREVERSIBLE.{Colors.ENDC}")
-    print(f"{Colors.FAIL}{Colors.BOLD}======================================================================{Colors.ENDC}")
+    print(f"{Colors.WARNING}Esta acción REINICIALIZARÁ Y POBLARÁ las bases de datos con:{Colors.ENDC}")
+    print(f"  • {Colors.CYAN}25 Usuarios de alta calidad{Colors.ENDC} (incluyendo al20328051890088@gmail.com como SuperAdmin)")
+    print(f"  • {Colors.CYAN}625 Lienzos (~25 por usuario){Colors.ENDC} con dibujos reales, capas, frames, snapshots y chats")
+    print(f"  • {Colors.CYAN}Red social completa{Colors.ENDC} (Publicaciones, Comentarios, Likes, Seguidores, Notificaciones)")
+    print(f"{Colors.FAIL}======================================================================{Colors.ENDC}")
     
-    confirm = input(f"\n{Colors.WARNING}Para confirmar y continuar, escribe {Colors.BOLD}'CONFIRMAR'{Colors.ENDC}{Colors.WARNING} o presiona Enter para cancelar: {Colors.ENDC}").strip()
-    
-    if confirm.upper() not in ('CONFIRMAR', 'SI', 'S'):
-        print(f"\n{Colors.GREEN}Operación cancelada de forma segura. No se modificó ninguna base de datos.{Colors.ENDC}\n")
-        return
+    if '--auto-confirm' not in sys.argv:
+        confirm = input(f"\n{Colors.WARNING}Para confirmar y continuar, escribe {Colors.BOLD}'CONFIRMAR'{Colors.ENDC}{Colors.WARNING} o presiona Enter para cancelar: {Colors.ENDC}").strip()
+        if confirm.upper() not in ('CONFIRMAR', 'SI', 'S'):
+            print(f"\n{Colors.GREEN}Operación cancelada de forma segura.{Colors.ENDC}\n")
+            return
 
-    seed_database(project_root, target_records=10000)
+    seed_database(project_root, num_users=25, canvases_per_user=25)
 
 
 def run_project_cleanup(project_root):
@@ -1535,6 +2024,13 @@ def run_project_cleanup(project_root):
 
 
 def main():
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    target_path = os.path.abspath(os.path.join(script_dir, TARGET_DIR))
+
+    if '--seed' in sys.argv:
+        run_seeder(target_path, script_dir)
+        return
+
     print(f"{Colors.HEADER}{Colors.BOLD}=============================================================={Colors.ENDC}")
     print(f"{Colors.HEADER}{Colors.BOLD}   Herramienta Integral de Gestión y Análisis: Project Rosaura{Colors.ENDC}")
     print(f"{Colors.HEADER}{Colors.BOLD}=============================================================={Colors.ENDC}")
@@ -1544,7 +2040,7 @@ def main():
     print("3 - Identificar código de depuración (console.log, var_dump, etc.)")
     print("4 - Generar Sprite de Iconos SVG y CSS")
     print("5 - Escanear claves de traducción (_t y __) y comprobar JSONs")
-    print("6 - Poblar bases de datos con datos de prueba (~10k registros por tabla)")
+    print("6 - Poblar bases de datos con datos completos (25 usuarios, 625 lienzos con capas/frames)")
     print("7 - Asignar rol SuperAdministrador a usuario ID 1 y purgar caché Redis")
     print("8 - Escanear integridad de vistas (atributos ID e inputs hidden)")
     print("9 - Limpieza completa del proyecto (logs, __pycache__, scratch, temporales)")
@@ -1560,8 +2056,6 @@ def main():
         return
 
     start_time = time.time()
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    target_path = os.path.abspath(os.path.join(script_dir, TARGET_DIR))
 
     if choice == '9':
         run_project_cleanup(target_path)

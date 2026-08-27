@@ -4,7 +4,6 @@ use tokio::sync::{Mutex, mpsc, broadcast};
 use deadpool_redis::Pool as RedisPool;
 use sqlx::MySqlPool;
 use tokio::task::JoinHandle;
-use crate::models::PerksConfig;
 
 #[derive(Clone, Debug)]
 pub enum OutboundMessage {
@@ -38,8 +37,6 @@ pub struct AppState {
     pub grace_sessions: Arc<DashMap<String, JoinHandle<()>>>, // code -> JoinHandle
     pub redis_pool: RedisPool,
     pub db_pool: MySqlPool,
-    pub perks_config: Arc<Mutex<Option<PerksConfig>>>,
-    pub user_perk_cooldowns: Arc<DashMap<String, std::time::Instant>>,
     pub canvas_configs: Arc<DashMap<String, ((i32, i32, bool, i32, i32, i32), std::time::Instant)>>,
     pub node_id: String,
 }
@@ -57,8 +54,6 @@ impl AppState {
             grace_sessions: Arc::new(DashMap::new()),
             redis_pool,
             db_pool,
-            perks_config: Arc::new(Mutex::new(None)),
-            user_perk_cooldowns: Arc::new(DashMap::new()),
             canvas_configs: Arc::new(DashMap::new()),
             node_id: uuid::Uuid::new_v4().to_string(),
         }

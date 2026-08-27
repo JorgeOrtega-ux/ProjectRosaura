@@ -3,9 +3,8 @@ use crate::models::WsMessage;
 use crate::state::AppState;
 use crate::helpers;
 use crate::db;
-use std::time::{SystemTime, UNIX_EPOCH, Duration};
+use std::time::{SystemTime, UNIX_EPOCH};
 use deadpool_redis::redis::AsyncCommands;
-use tokio::time::sleep;
 
 pub async fn get_user_cooldown(state: &AppState, canvas_id: &str, user_id: &str, config_batch: i32, config_sec: i32) -> (f64, f64) {
     let mut redis_conn = match state.redis_pool.get().await {
@@ -262,7 +261,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
         "leave_live_share" => {
             if let Some(code) = msg.code.clone() {
                 let mut removed = false;
-                if let Some(mut room) = state.live_rooms.get_mut(&code) {
+                if let Some(room) = state.live_rooms.get_mut(&code) {
                     removed = room.remove(&connection_id.to_string()).is_some();
                 }
                 
@@ -491,124 +490,10 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             set_owner_ratelimit(state, canvas_id, &uid_str, "protect", cooldown_ms).await;
         }
         "use_pixel_protection" => {
-            if helpers::is_guest(&uid_str) { return; }
-            let perk_id = msg.perk_id.clone().unwrap_or_default();
-            if perk_id.is_empty() { return; }
-
-            // Consumir el perk
-            let has_perk = db::consume_user_perk(&state.db_pool, &uid_str, &perk_id).await;
-            if !has_perk {
-                let err = serde_json::json!({
-                    "type": "pixel_protected_error",
-                    "message": "err_perk_not_owned"
-                }).to_string();
-                helpers::send_to_client(state, connection_id, &err).await;
-                return;
-            }
-
-            let x1 = msg.x1.unwrap_or(0);
-            let y1 = msg.y1.unwrap_or(0);
-            let x2 = msg.x2.unwrap_or(0);
-            let y2 = msg.y2.unwrap_or(0);
-
-            // Obtener dimensiones del lienzo
-            let (_, _, _, db_width, db_height, _) = db::get_canvas_config(state, canvas_id).await;
-
-            let min_x = std::cmp::min(x1, x2).max(0);
-            let max_x = std::cmp::max(x1, x2).min(db_width - 1);
-            let min_y = std::cmp::min(y1, y2).max(0);
-            let max_y = std::cmp::max(y1, y2).min(db_height - 1);
-
-            let selected_pixels_count = (max_x - min_x + 1) * (max_y - min_y + 1);
-
-            // Calcular presupuesto máximo según la tabla de presupuesto estricto
-            let max_allowed_budget = if db_width <= 32 {
-                16
-            } else if db_width <= 64 {
-                25
-            } else if db_width <= 128 {
-                36
-            } else if db_width <= 256 {
-                49
-            } else if db_width <= 512 {
-                64
-            } else if db_width <= 1024 {
-                100
-            } else if db_width <= 2048 {
-                144
-            } else {
-                256
-            };
-
-            if selected_pixels_count > max_allowed_budget {
-                let err = serde_json::json!({
-                    "type": "pixel_protected_error",
-                    "message": "err_protection_budget_exceeded"
-                }).to_string();
-                helpers::send_to_client(state, connection_id, &err).await;
-                return;
-            }
-            let mut affected_offsets = Vec::new();
-            for iy in min_y..=max_y {
-                for ix in min_x..=max_x {
-                    affected_offsets.push(iy * db_width + ix);
-                }
-            }
-
-            let areas_key = format!("canvas:{}:protected_areas", canvas_id);
-
-            // Guardar en MySQL con expiración
-            let _ = db::save_canvas_protection_db(&state.db_pool, canvas_id, min_x, min_y, max_x, max_y, Some(&uid_str), Some(86400)).await;
-
-            if let Ok(mut c) = state.redis_pool.get().await {
-                // Sync Redis JSON key with DB
-                let db_areas = db::get_canvas_protections_db(&state.db_pool, canvas_id).await;
-                let areas_json = serde_json::to_string(&db_areas).unwrap_or_else(|_| "[]".to_string());
-                let _: () = c.set(&areas_key, areas_json).await.unwrap_or(());
-            }
-
-            // Broadcast del área protegida para todos los clientes
-            let b_msg = serde_json::json!({
-                "type": "area_protection_changed",
-                "canvas_id": canvas_id,
-                "x1": min_x, "y1": min_y, "x2": max_x, "y2": max_y,
-                "protect": true, "width": db_width, "is_owner": false, "by_perk": true
-            }).to_string();
-            helpers::broadcast_to_room(state, canvas_id, &b_msg).await;
-
-            if let Ok(mut c) = state.redis_pool.get().await {
-                let sync_payload = serde_json::json!({
-                    "source_node": &state.node_id, "target_type": "canvas", "canvas_id": canvas_id, "payload": b_msg
-                });
-                let _: () = c.publish("canvas:sync_events", sync_payload.to_string()).await.unwrap_or(());
-            }
-
-            // Confirmar éxito al cliente que colocó la protección
-            let current_time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
-            let expiry_time = current_time + 86400;
-            let expiries_list = vec![expiry_time; affected_offsets.len()];
-            let success_confirm = serde_json::json!({
-                "type": "pixel_protection_success",
-                "x1": min_x, "y1": min_y, "x2": max_x, "y2": max_y,
-                "offsets": affected_offsets,
-                "expiries": expiries_list
-            }).to_string();
-            helpers::send_to_client(state, connection_id, &success_confirm).await;
+            // Deprecated perk action - no-op
         }
         "place_mines" => {
             if helpers::is_guest(&uid_str) { return; }
-            let perk_id = msg.perk_id.clone().unwrap_or_else(|| "mines_1".to_string());
-
-            // Consume perk
-            let has_perk = db::consume_user_perk(&state.db_pool, &uid_str, &perk_id).await;
-            if !has_perk {
-                let err = serde_json::json!({
-                    "type": "mines_placed_error",
-                    "message": "err_perk_not_owned"
-                }).to_string();
-                helpers::send_to_client(state, connection_id, &err).await;
-                return;
-            }
 
             let pixels = match &msg.pixels {
                 Some(p) => p.clone(),
@@ -902,19 +787,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 }
                 let _: () = pipe.query_async(&mut redis_conn).await.unwrap_or(());
 
-                let perks_cfg = helpers::get_perks_config(state).await;
-                let mut base_radius = 4;
-                if let Some(cfg) = perks_cfg {
-                    if let Some(perk_data) = cfg.perks.get("mines_1") {
-                        if let Some(radii) = &perk_data.radii {
-                            if let Some(r) = radii.get(&width.to_string()) {
-                                base_radius = *r;
-                            } else if let Some(r0) = radii.get("0") {
-                                base_radius = *r0;
-                            }
-                        }
-                    }
-                }
+                let base_radius = 4;
 
                 for (tx, ty, offset, owner_id) in triggered_mines {
                     // Mine detonation broadcast to clean user's frontend myMines
@@ -994,7 +867,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                     
                     let b_msg = serde_json::json!({
                         "type": "bomb_pixel",
-                        "x": tx, "y": ty, "r": radius, "perk": "mines_1"
+                        "x": tx, "y": ty, "r": radius
                     }).to_string();
                     helpers::broadcast_to_room(state, canvas_id, &b_msg).await;
                     
@@ -1003,7 +876,7 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                     
                     let _: () = redis_conn.xadd(format!("canvas:{}:stream", canvas_id), "*", &[
                         ("type", "bomb_pixel"), ("x", &tx.to_string()), ("y", &ty.to_string()),
-                        ("r", &radius.to_string()), ("perk", "mines_1")
+                        ("r", &radius.to_string())
                     ]).await.unwrap_or(());
                 }
             }
@@ -1117,7 +990,7 @@ pub async fn handle_binary_action(bin: Vec<u8>, canvas_id: &str, connection_id: 
                 offsets: None,
                 balance: None, max_batch: None, cooldown_sec: None, next_replenish_in: None,
                 code: None, count: None, empty: None, img_url: None, w: None, h: None, opacity: None, angle: None,
-                frozen: None, message: None, version: None, perk_id: None, r: None, radius: None, duration: None, targets: None,
+                frozen: None, message: None, version: None, r: None, radius: None, duration: None, targets: None,
             };
             handle_action(msg, canvas_id, connection_id, state).await;
         }
@@ -1160,7 +1033,7 @@ pub async fn handle_binary_action(bin: Vec<u8>, canvas_id: &str, connection_id: 
                 offsets: None,
                 balance: None, max_batch: None, cooldown_sec: None, next_replenish_in: None,
                 code: None, count: None, empty: None, img_url: None, w: None, h: None, opacity: None, angle: None,
-                frozen: None, message: None, version: None, perk_id: None, r: None, radius: None, duration: None, targets: None,
+                frozen: None, message: None, version: None, r: None, radius: None, duration: None, targets: None,
             };
             handle_action(msg, canvas_id, connection_id, state).await;
         }

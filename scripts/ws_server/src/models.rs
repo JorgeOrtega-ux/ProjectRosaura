@@ -50,9 +50,6 @@ pub struct WsMessage {
     pub message: Option<String>,
     pub version: Option<String>,
     
-    // Bombs
-    #[serde(alias = "perk", rename = "perk")]
-    pub perk_id: Option<String>,
     pub r: Option<i32>,
     pub radius: Option<i32>,
     pub duration: Option<i32>,
@@ -79,8 +76,6 @@ pub struct CanvasConfig {
     pub width: i32,
 }
 
-use std::collections::HashMap;
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PubSubSyncEvent {
     pub source_node: Option<String>,
@@ -88,41 +83,6 @@ pub struct PubSubSyncEvent {
     pub canvas_id: Option<String>,
     pub code: Option<String>,
     pub payload: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct PerksConfig {
-    pub perks: HashMap<String, PerkData>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PerkData {
-    pub id: Option<String>,
-    pub r#type: Option<String>,
-    pub category: Option<String>,
-    pub warning_seconds: Option<i32>,
-    pub radii: Option<HashMap<String, i32>>,
-    pub spawning: Option<SpawningData>,
-    pub explosion: Option<ExplosionData>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SpawningData {
-    pub mode: Option<String>,
-    pub count: Option<i32>,
-    pub spread_radius: Option<i32>,
-    pub jitter_delay: Option<f32>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ExplosionData {
-    pub style: Option<String>,
-    pub duration: Option<i32>,
-    pub shake_duration: Option<i32>,
-    pub flash_duration: Option<i32>,
-    pub screen_shake: Option<bool>,
-    pub screen_flash: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

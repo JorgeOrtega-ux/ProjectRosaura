@@ -431,7 +431,7 @@ export const DesignNetwork = {
                                 y1: minY,
                                 x2: maxX,
                                 y2: maxY,
-                                protected_by: data.by_perk ? (window.activeUserId || null) : null
+                                protected_by: data.protected_by || null
                             });
                         }
                     } else {

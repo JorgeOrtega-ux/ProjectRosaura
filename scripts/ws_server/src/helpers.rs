@@ -1,5 +1,4 @@
 use crate::state::{AppState, OutboundMessage};
-use crate::models::{PerksConfig, PubSubSyncEvent}; 
 use deadpool_redis::redis::AsyncCommands;
 use sqlx::Row;
 use tracing::{error, info, warn};
@@ -164,18 +163,6 @@ pub async fn broadcast_to_live_room(state: &AppState, code: &str, msg: &str, exc
     }
 }
 
-pub async fn get_perks_config(state: &AppState) -> Option<PerksConfig> {
-    let mut lock = state.perks_config.lock().await;
-    if lock.is_none() {
-        let content = include_str!("../../../public/assets/data/perks.json");
-        if let Ok(config) = serde_json::from_str::<PerksConfig>(content) {
-            *lock = Some(config);
-        } else {
-            error!("Failed to parse embedded perks.json");
-        }
-    }
-    lock.clone()
-}
 
 pub async fn admin_events_listener(state: AppState) {
     let redis_url = format!(
