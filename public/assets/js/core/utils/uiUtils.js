@@ -429,21 +429,31 @@ function isDarkMode() {
 function updateNavButtons(carousel, leftBtn, rightBtn, isVertical = false) {
     if (!carousel) return;
     if (isVertical) {
+        const hasOverflow = carousel.scrollHeight > (carousel.clientHeight + 2);
+        if (!hasOverflow) {
+            if (leftBtn) leftBtn.classList.add('disabled');
+            if (rightBtn) rightBtn.classList.add('disabled');
+            return;
+        }
         if (leftBtn) {
             leftBtn.classList.toggle('disabled', carousel.scrollTop <= 5);
         }
         if (rightBtn) {
-            const canScrollDown = carousel.scrollHeight > carousel.clientHeight && 
-                                   Math.ceil(carousel.scrollTop + carousel.clientHeight) < carousel.scrollHeight - 5;
+            const canScrollDown = Math.ceil(carousel.scrollTop + carousel.clientHeight) < carousel.scrollHeight - 5;
             rightBtn.classList.toggle('disabled', !canScrollDown);
         }
     } else {
+        const hasOverflow = carousel.scrollWidth > (carousel.clientWidth + 2);
+        if (!hasOverflow) {
+            if (leftBtn) leftBtn.classList.add('disabled');
+            if (rightBtn) rightBtn.classList.add('disabled');
+            return;
+        }
         if (leftBtn) {
             leftBtn.classList.toggle('disabled', carousel.scrollLeft <= 5);
         }
         if (rightBtn) {
-            const canScrollRight = carousel.scrollWidth > carousel.clientWidth && 
-                                   Math.ceil(carousel.scrollLeft + carousel.clientWidth) < carousel.scrollWidth - 5;
+            const canScrollRight = Math.ceil(carousel.scrollLeft + carousel.clientWidth) < carousel.scrollWidth - 5;
             rightBtn.classList.toggle('disabled', !canScrollRight);
         }
     }
@@ -451,12 +461,14 @@ function updateNavButtons(carousel, leftBtn, rightBtn, isVertical = false) {
 
 function bindDragToScroll(carousel, isVertical = false) {
     let isDown = false;
-    let startX, startY;
-    let scrollLeft, scrollTop;
+    let startX = 0;
+    let startY = 0;
+    let scrollLeft = 0;
+    let scrollTop = 0;
     let isDragging = false;
 
     carousel.addEventListener('mousedown', (e) => {
-        if (e.target.closest('button, a, input, select, .component-tab-close, .canvas-dual-color-box')) return;
+        if (e.target.closest('input, select, textarea, .component-range, [contenteditable="true"]')) return;
         isDown = true;
         isDragging = false;
         startX = e.pageX - carousel.offsetLeft;
@@ -465,30 +477,34 @@ function bindDragToScroll(carousel, isVertical = false) {
         scrollTop = carousel.scrollTop;
     });
 
-    carousel.addEventListener('mouseleave', () => {
+    const onMouseUp = () => {
+        if (!isDown) return;
         isDown = false;
         carousel.classList.remove('is-dragging');
-    });
+        setTimeout(() => {
+            isDragging = false;
+        }, 60);
+    };
 
-    carousel.addEventListener('mouseup', () => {
-        isDown = false;
-        carousel.classList.remove('is-dragging');
-        setTimeout(() => { isDragging = false; }, 50);
-    });
+    carousel.addEventListener('mouseleave', onMouseUp);
+    carousel.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('mouseup', onMouseUp);
 
     carousel.addEventListener('mousemove', (e) => {
         if (!isDown) return;
-        e.preventDefault();
         const x = e.pageX - carousel.offsetLeft;
         const y = e.pageY - carousel.offsetTop;
-        const walkX = (x - startX) * 2;
-        const walkY = (y - startY) * 2;
+        const walkX = (x - startX) * 1.5;
+        const walkY = (y - startY) * 1.5;
         
-        if (Math.abs(walkX) > 5 || Math.abs(walkY) > 5) {
-            isDragging = true;
-            carousel.classList.add('is-dragging');
+        if (Math.abs(walkX) > 4 || Math.abs(walkY) > 4) {
+            if (!isDragging) {
+                isDragging = true;
+                carousel.classList.add('is-dragging');
+            }
         }
         if (isDragging) {
+            e.preventDefault();
             if (isVertical) {
                 carousel.scrollTop = scrollTop - walkY;
             } else {
@@ -501,6 +517,7 @@ function bindDragToScroll(carousel, isVertical = false) {
         if (isDragging) {
             e.preventDefault();
             e.stopPropagation();
+            e.stopImmediatePropagation();
         }
     }, { capture: true });
 }

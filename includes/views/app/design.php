@@ -147,11 +147,11 @@ if (!isset($showDesignTools)) {
             ?>
             <!-- Unified Top Property Bar & Actions -->
             <div class="component-tools-wrapper component-tools-wrapper--top component-property-bar-wrapper" data-ref="canvas-top-property-bar-wrapper">
-                <div class="component-toolbar component-toolbar--horizontal component-toolbar--top component-property-bar <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="canvas-top-property-bar">
-                    <button type="button" class="component-button component-button--icon component-button--h32 component-toolbar__nav-btn component-toolbar__nav-btn--left disabled" data-action="scrollCanvasToolbarLeft" data-tooltip="<?php echo __('btn_scroll_left'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">chevron_left</span>
-                    </button>
+                <button type="button" class="component-button component-button--icon component-button--h32 component-toolbar__nav-btn component-toolbar__nav-btn--left disabled" data-action="scrollCanvasToolbarLeft" data-tooltip="<?php echo __('btn_scroll_left'); ?>" data-position="bottom">
+                    <span class="material-symbols-rounded">chevron_left</span>
+                </button>
 
+                <div class="component-toolbar component-toolbar--horizontal component-toolbar--top component-property-bar <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="canvas-top-property-bar">
                     <?php if (!$isOnlineModeActive): ?>
                     <div class="component-property-bar__context">
                         <!-- Tool settings icon shortcut -->
@@ -373,11 +373,11 @@ if (!isset($showDesignTools)) {
                             <span class="material-symbols-rounded msr-rocket_launch component-text-accent">rocket_launch</span>
                         </button>
                     </div>
-
-                    <button type="button" class="component-button component-button--icon component-button--h32 component-toolbar__nav-btn component-toolbar__nav-btn--right disabled" data-action="scrollCanvasToolbarRight" data-tooltip="<?php echo __('btn_scroll_right'); ?>" data-position="bottom">
-                        <span class="material-symbols-rounded">chevron_right</span>
-                    </button>
                 </div>
+
+                <button type="button" class="component-button component-button--icon component-button--h32 component-toolbar__nav-btn component-toolbar__nav-btn--right disabled" data-action="scrollCanvasToolbarRight" data-tooltip="<?php echo __('btn_scroll_right'); ?>" data-position="bottom">
+                    <span class="material-symbols-rounded">chevron_right</span>
+                </button>
             </div>
             <?php endif; ?>
 
@@ -806,11 +806,11 @@ if (!isset($showDesignTools)) {
                 $offlineTools = \App\Core\System\OfflineToolsConfig::getTools();
             ?>
             <div class="component-tools-wrapper component-tools-wrapper--horizontal" data-ref="canvas-horizontal-tools-wrapper">
-                <div class="component-toolbar component-toolbar--horizontal <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="offline-tools-horizontal">
-                    <button type="button" class="component-button component-button--icon component-button--h32 component-toolbar__nav-btn component-toolbar__nav-btn--left disabled" data-action="scrollToolsLeft" data-tooltip="<?php echo __('btn_scroll_left'); ?>" data-position="top">
-                        <span class="material-symbols-rounded">chevron_left</span>
-                    </button>
+                <button type="button" class="component-button component-button--icon component-button--h32 component-toolbar__nav-btn component-toolbar__nav-btn--left disabled" data-action="scrollToolsLeft" data-tooltip="<?php echo __('btn_scroll_left'); ?>" data-position="top">
+                    <span class="material-symbols-rounded">chevron_left</span>
+                </button>
 
+                <div class="component-toolbar component-toolbar--horizontal <?php echo $showDesignTools ? 'active' : 'disabled'; ?>" data-ref="offline-tools-horizontal">
                     <?php foreach ($offlineTools as $tool): 
                         $tooltipText = __($tool['name_key']) . (!empty($tool['shortcut']) ? " [{$tool['shortcut']}]" : '');
                         $actionAttr = 'data-action="' . htmlspecialchars($tool['action']) . '"';
@@ -857,11 +857,11 @@ if (!isset($showDesignTools)) {
                     <button type="button" class="component-button component-button--icon component-button--h32" data-action="toggleMenuInModule" data-module-target="moduleDesignTools" data-menu-target="menu-templates" data-tooltip="<?php echo __('tooltip_templates'); ?> [T]" data-position="top">
                         <span class="material-symbols-rounded msr-photo_library">photo_library</span>
                     </button>
-
-                    <button type="button" class="component-button component-button--icon component-button--h32 component-toolbar__nav-btn component-toolbar__nav-btn--right disabled" data-action="scrollToolsRight" data-tooltip="<?php echo __('btn_scroll_right'); ?>" data-position="top">
-                        <span class="material-symbols-rounded">chevron_right</span>
-                    </button>
                 </div>
+
+                <button type="button" class="component-button component-button--icon component-button--h32 component-toolbar__nav-btn component-toolbar__nav-btn--right disabled" data-action="scrollToolsRight" data-tooltip="<?php echo __('btn_scroll_right'); ?>" data-position="top">
+                    <span class="material-symbols-rounded">chevron_right</span>
+                </button>
             </div>
             <?php endif; ?>
 

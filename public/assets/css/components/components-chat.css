@@ -776,6 +776,14 @@ html.dark-theme .component-skeleton-design-bottom {
     right: 0;
 }
 
+.component-tag-nav-btn.disabled,
+.component-tag-nav-btn:disabled {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    display: none !important;
+}
+
 
 /* Additional Generic Modifiers */
 .component-flex-wrap {

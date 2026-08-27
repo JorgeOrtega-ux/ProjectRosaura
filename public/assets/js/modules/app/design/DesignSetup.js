@@ -1012,6 +1012,10 @@ export const DesignSetup = {
     },
 
     setupHorizontalToolsScroll() {
+        if (this.horizontalToolsCarouselController && typeof this.horizontalToolsCarouselController.updateButtons === 'function') {
+            this.horizontalToolsCarouselController.updateButtons();
+            return;
+        }
         const toolbar = document.querySelector('[data-ref="offline-tools-horizontal"]');
         const btnLeft = document.querySelector('[data-action="scrollToolsLeft"]');
         const btnRight = document.querySelector('[data-action="scrollToolsRight"]');
@@ -1024,8 +1028,8 @@ export const DesignSetup = {
                 if (btnRight) btnRight.classList.add('disabled');
                 return;
             }
-            const isStart = toolbar.scrollLeft <= 2;
-            const isEnd = toolbar.scrollLeft + toolbar.clientWidth >= toolbar.scrollWidth - 2;
+            const isStart = toolbar.scrollLeft <= 5;
+            const isEnd = Math.ceil(toolbar.scrollLeft + toolbar.clientWidth) >= toolbar.scrollWidth - 5;
             if (btnLeft) btnLeft.classList.toggle('disabled', isStart);
             if (btnRight) btnRight.classList.toggle('disabled', isEnd);
         };

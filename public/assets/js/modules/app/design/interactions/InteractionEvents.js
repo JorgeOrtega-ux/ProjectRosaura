@@ -18,13 +18,13 @@ export const InteractionEvents = {
         updateAllRangesFill(document);
 
         // Bind carousel scroll & navigation arrows for top property bar (horizontal)
-        const topToolbar = document.querySelector('.component-toolbar--top, [data-ref="canvas-top-property-bar-wrapper"], [data-ref="canvas-top-property-bar"]');
+        const topToolbar = document.querySelector('[data-ref="canvas-top-property-bar-wrapper"], .component-tools-wrapper--top, .component-toolbar--top');
         if (topToolbar) {
             this.topBarCarouselController = initCarouselScroll(topToolbar, false);
         }
 
         // Bind carousel scroll & navigation arrows for bottom horizontal tools toolbar (horizontal)
-        const horizontalToolsToolbar = document.querySelector('.component-toolbar--horizontal:not(.component-toolbar--top), [data-ref="canvas-horizontal-tools-wrapper"]');
+        const horizontalToolsToolbar = document.querySelector('[data-ref="canvas-horizontal-tools-wrapper"], .component-tools-wrapper--horizontal, .component-toolbar--horizontal:not(.component-toolbar--top)');
         if (horizontalToolsToolbar) {
             this.horizontalToolsCarouselController = initCarouselScroll(horizontalToolsToolbar, false);
         }
@@ -1633,11 +1633,36 @@ export const InteractionEvents = {
             return;
         }
 
+        const btnScrollCanvasToolbarLeft = e.target.closest('[data-action="scrollCanvasToolbarLeft"]');
+        if (btnScrollCanvasToolbarLeft) {
+            e.preventDefault();
+            const toolbar = document.querySelector('[data-ref="canvas-top-property-bar"]');
+            if (toolbar) {
+                toolbar.scrollBy({ left: -220, behavior: 'smooth' });
+                if (this.topBarCarouselController) setTimeout(() => this.topBarCarouselController.updateButtons(), 300);
+            }
+            return;
+        }
+
+        const btnScrollCanvasToolbarRight = e.target.closest('[data-action="scrollCanvasToolbarRight"]');
+        if (btnScrollCanvasToolbarRight) {
+            e.preventDefault();
+            const toolbar = document.querySelector('[data-ref="canvas-top-property-bar"]');
+            if (toolbar) {
+                toolbar.scrollBy({ left: 220, behavior: 'smooth' });
+                if (this.topBarCarouselController) setTimeout(() => this.topBarCarouselController.updateButtons(), 300);
+            }
+            return;
+        }
+
         const btnScrollToolsLeft = e.target.closest('[data-action="scrollToolsLeft"]');
         if (btnScrollToolsLeft) {
             e.preventDefault();
             const toolbar = document.querySelector('[data-ref="offline-tools-horizontal"]');
-            if (toolbar) toolbar.scrollBy({ left: -160, behavior: 'smooth' });
+            if (toolbar) {
+                toolbar.scrollBy({ left: -220, behavior: 'smooth' });
+                if (this.horizontalToolsCarouselController) setTimeout(() => this.horizontalToolsCarouselController.updateButtons(), 300);
+            }
             return;
         }
 
@@ -1645,7 +1670,10 @@ export const InteractionEvents = {
         if (btnScrollToolsRight) {
             e.preventDefault();
             const toolbar = document.querySelector('[data-ref="offline-tools-horizontal"]');
-            if (toolbar) toolbar.scrollBy({ left: 160, behavior: 'smooth' });
+            if (toolbar) {
+                toolbar.scrollBy({ left: 220, behavior: 'smooth' });
+                if (this.horizontalToolsCarouselController) setTimeout(() => this.horizontalToolsCarouselController.updateButtons(), 300);
+            }
             return;
         }
 
@@ -2095,24 +2123,34 @@ export const InteractionEvents = {
     },
 
     handleWheel(e) {
-        const horizToolsToolbar = e.target.closest('.canvas-design-toolbar-horizontal');
+        const horizToolsToolbar = e.target.closest('[data-ref="offline-tools-horizontal"], .canvas-design-toolbar-horizontal, [data-ref="canvas-horizontal-tools-wrapper"]');
         if (horizToolsToolbar) {
-            e.preventDefault();
-            horizToolsToolbar.scrollLeft += e.deltaY;
-            if (this.horizontalToolsCarouselController) {
-                this.horizontalToolsCarouselController.updateButtons();
+            const scrollEl = horizToolsToolbar.matches('[data-ref="offline-tools-horizontal"], .component-toolbar') 
+                ? horizToolsToolbar 
+                : horizToolsToolbar.querySelector('[data-ref="offline-tools-horizontal"], .component-toolbar');
+            if (scrollEl) {
+                e.preventDefault();
+                scrollEl.scrollLeft += e.deltaY;
+                if (this.horizontalToolsCarouselController) {
+                    this.horizontalToolsCarouselController.updateButtons();
+                }
+                return;
             }
-            return;
         }
 
-        const topBar = e.target.closest('.component-property-bar, .component-toolbar');
+        const topBar = e.target.closest('[data-ref="canvas-top-property-bar"], .component-property-bar, .component-toolbar--top, [data-ref="canvas-top-property-bar-wrapper"]');
         if (topBar) {
-            e.preventDefault();
-            topBar.scrollLeft += e.deltaY;
-            if (this.topBarCarouselController) {
-                this.topBarCarouselController.updateButtons();
+            const scrollEl = topBar.matches('[data-ref="canvas-top-property-bar"], .component-toolbar') 
+                ? topBar 
+                : topBar.querySelector('[data-ref="canvas-top-property-bar"], .component-toolbar');
+            if (scrollEl) {
+                e.preventDefault();
+                scrollEl.scrollLeft += e.deltaY;
+                if (this.topBarCarouselController) {
+                    this.topBarCarouselController.updateButtons();
+                }
+                return;
             }
-            return;
         }
 
         const target = e.target.closest('[data-ref="design-canvas"]');
