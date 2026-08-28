@@ -687,6 +687,8 @@ class CanvasViewService {
                 while ($row = $stmtUsers->fetch(\PDO::FETCH_ASSOC)) {
                     $row['subscription_color'] = SubscriptionPlanConstants::getTierColor((int)($row['subscription_tier'] ?? 0));
                     $row['sub_bg'] = self::parseSubscriptionColor($row['subscription_color']);
+                    $row['profile_picture'] = Utils::getAvatarUrl($row['profile_picture'] ?? '', $row['username'] ?? '', (string)($row['id'] ?? ''));
+                    $row['avatar_url'] = $row['profile_picture'];
                     $userDetails[$row['id']] = $row;
                 }
             } catch (\Throwable $e) {
@@ -1159,7 +1161,7 @@ class CanvasViewService {
 
         $targetUserId = null;
         $targetUsername = '';
-        $targetAvatar = defined('APP_URL') ? APP_URL . '/public/assets/img/fallbacks/avatar-default.png' : '';
+        $targetAvatar = Utils::getDefaultAvatarUrl('U');
         $targetSubscriptionColor = null;
 
         try {
@@ -1176,9 +1178,7 @@ class CanvasViewService {
             if ($userData) {
                 $targetUserId = (int)$userData['id'];
                 $targetUsername = !empty($userData['username']) ? $userData['username'] : (__('user') ?: 'User') . ' #' . $targetUserId;
-                if (!empty($userData['profile_picture'])) {
-                    $targetAvatar = $userData['profile_picture'];
-                }
+                $targetAvatar = Utils::getAvatarUrl($userData['profile_picture'] ?? '', $targetUsername, (string)$targetUserId);
                 $userData['subscription_color'] = SubscriptionPlanConstants::getTierColor((int)($userData['subscription_tier'] ?? 0));
                 $targetSubscriptionColor = self::parseSubscriptionColor($userData['subscription_color']);
             } else {
@@ -1739,6 +1739,8 @@ class CanvasViewService {
                 while ($row = $stmtUsers->fetch(\PDO::FETCH_ASSOC)) {
                     $row['subscription_color'] = SubscriptionPlanConstants::getTierColor((int)($row['subscription_tier'] ?? 0));
                     $row['sub_bg'] = self::parseSubscriptionColor($row['subscription_color']);
+                    $row['profile_picture'] = Utils::getAvatarUrl($row['profile_picture'] ?? '', $row['username'] ?? '', (string)($row['id'] ?? ''));
+                    $row['avatar_url'] = $row['profile_picture'];
                     $userDetails[$row['id']] = $row;
                 }
             }

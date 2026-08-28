@@ -310,6 +310,70 @@ pub async fn sync_online_counts(state: AppState) {
     }
 }
 
+pub async fn notifications_events_listener(state: AppState) {
+    let redis_url = format!(
+        "redis://:{}@{}:{}",
+        std::env::var("REDIS_PASS").unwrap_or_default(),
+        std::env::var("REDIS_HOST").unwrap_or_else(|_| "127.0.0.1".to_string()),
+        std::env::var("REDIS_PORT").unwrap_or_else(|_| "6379".to_string())
+    );
+    let client = match deadpool_redis::redis::Client::open(redis_url) {
+        Ok(c) => c,
+        Err(e) => {
+            error!("Failed to open Redis client for notifications_events_listener: {}", e);
+            return;
+        }
+    };
+    
+    loop {
+        let mut pubsub = match client.get_async_pubsub().await {
+            Ok(c) => c,
+            Err(e) => {
+                error!("Pubsub error in notifications_events_listener (retrying in 2s): {}", e);
+                sleep(Duration::from_secs(2)).await;
+                continue;
+            }
+        };
+
+        if let Err(e) = pubsub.subscribe("system_notifications").await {
+            error!("Failed to subscribe to system_notifications (retrying in 2s): {}", e);
+            sleep(Duration::from_secs(2)).await;
+            continue;
+        }
+        info!("WS Server listening for notification events on 'system_notifications'");
+
+        let mut stream = pubsub.on_message();
+        while let Some(msg) = stream.next().await {
+            if let Ok(payload) = msg.get_payload::<String>() {
+                if let Ok(event) = serde_json::from_str::<serde_json::Value>(&payload) {
+                    let target_user_id = if let Some(u_val) = event.get("user_id") {
+                        if u_val.is_number() {
+                            u_val.as_i64().unwrap().to_string()
+                        } else if u_val.is_string() {
+                            u_val.as_str().unwrap().to_string()
+                        } else {
+                            continue;
+                        }
+                    } else {
+                        continue;
+                    };
+
+                    // Forward to all connections belonging to this user
+                    for meta_entry in state.ws_meta.iter() {
+                        if let Some(conn_user_id) = &meta_entry.value().user_id {
+                            if conn_user_id == &target_user_id {
+                                send_to_client(&state, meta_entry.key(), &payload).await;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        warn!("Notification events stream closed, reconnecting in 2s...");
+        sleep(Duration::from_secs(2)).await;
+    }
+}
+
 pub fn is_guest(uid_str: &str) -> bool {
     uid_str.is_empty() || uid_str == "guest"
 }

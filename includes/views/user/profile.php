@@ -72,7 +72,7 @@ $hasSubscription = !empty($user['subscription_tier']) && $user['subscription_tie
     <div class="component-profile-header">
         <div class="component-profile-header__top">
             <div class="component-avatar component-avatar--120 <?php echo ($hasSubscription && !empty($subBg)) ? 'subscription-dynamic' : ''; ?>" <?php if ($hasSubscription && !empty($subBg)): ?>data-sub-bg="<?php echo htmlspecialchars($subBg); ?>" style="--active-subscription-bg: <?php echo htmlspecialchars($subBg); ?>;"<?php endif; ?> data-ref="profile-avatar">
-                <img class="image-lazy-fade" data-ref="profile-avatar-img" onload="this.classList.add('image-loaded')" src="<?php echo htmlspecialchars($user['avatar_url']); ?>" alt="<?php echo htmlspecialchars($user['username']); ?>" onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/avatar/Um9zYXVyYVVzZXI6VQ'; this.classList.add('image-loaded');">
+                <img class="image-lazy-fade" data-ref="profile-avatar-img" onload="this.classList.add('image-loaded')" src="<?php echo htmlspecialchars($user['avatar_url']); ?>" alt="<?php echo htmlspecialchars($user['username']); ?>" onerror="this.onerror=null; this.src='<?php echo htmlspecialchars(\App\Core\Helpers\Utils::getDefaultAvatarUrl($user['username'] ?? 'U', (string)($user['id'] ?? ''))); ?>'; this.classList.add('image-loaded');">
             </div>
 
             <div class="component-profile-header__actions">

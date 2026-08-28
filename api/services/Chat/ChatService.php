@@ -135,7 +135,7 @@ class ChatService
                 $uid = $msg['user_id'];
                 $msg['user_uuid'] = $usersMap[$uid]['uuid'] ?? null;
                 $msg['username'] = $usersMap[$uid]['username'] ?? __('default_user');
-                $msg['avatar'] = isset($usersMap[$uid]['profile_picture']) ? \App\Core\Helpers\Utils::getS3PublicUrl($usersMap[$uid]['profile_picture']) : null;
+                $msg['avatar'] = \App\Core\Helpers\Utils::getAvatarUrl($usersMap[$uid] ?? null, $msg['username'], (string)$uid);
                 $msg['subscription_color'] = $usersMap[$uid]['subscription_color'] ?? '{"type":"solid","colors":[{"hex":"#808080","percentage":100}]}';
                 
                 // Strip content for non-visible messages
@@ -424,7 +424,7 @@ class ChatService
             'user_id' => $userId,
             'user_uuid' => $userInfo['uuid'] ?? '',
             'username' => $userInfo['username'] ?? $defaultUsername,
-            'avatar' => isset($userInfo['profile_picture']) ? \App\Core\Helpers\Utils::getS3PublicUrl($userInfo['profile_picture']) : null,
+            'avatar' => \App\Core\Helpers\Utils::getAvatarUrl($userInfo, $userInfo['username'] ?? $defaultUsername, (string)$userId),
             'subscription_color' => $userInfo['subscription_color'] ?? '{"type":"solid","colors":[{"hex":"#808080","percentage":100}]}',
             'message' => htmlspecialchars($censoredMessageText, ENT_QUOTES, 'UTF-8'),
             'attachments' => $safeAttachments,
@@ -803,7 +803,7 @@ class ChatService
                 'sender_id' => (int)$userId,
                 'sender_uuid' => $senderInfo['uuid'] ?? '',
                 'sender_username' => $senderInfo['username'] ?? __('default_user'),
-                'sender_avatar' => isset($senderInfo['profile_picture']) ? \App\Core\Helpers\Utils::getS3PublicUrl($senderInfo['profile_picture']) : null,
+                'sender_avatar' => \App\Core\Helpers\Utils::getAvatarUrl($senderInfo ?? null, $senderInfo['username'] ?? __('default_user'), (string)$userId),
                 'sender_sub_color' => $senderInfo['subscription_color'] ?? null,
                 'target_id' => $targetUserId,
                 'target_uuid' => $targetUser['uuid'],

@@ -1,5 +1,6 @@
 import { ApiRoutes } from './core/api/ApiRoutes.js';
 import { ApiService } from './core/api/ApiService.js';
+import { AvatarUtils } from './core/utils/AvatarUtils.js';
 import { CardTemplates } from './core/components/CardTemplates.js';
 import { formatNumber } from './core/utils/uiUtils.js';
 import { MainController } from './MainController.js';

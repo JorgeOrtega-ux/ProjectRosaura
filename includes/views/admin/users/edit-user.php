@@ -68,7 +68,7 @@ $subscriptionPlanLabel = \App\Core\System\SubscriptionPlanConstants::getTierLimi
                                 <img src="<?php echo htmlspecialchars($formattedAvatar); ?>" alt="<?php echo __('alt_avatar'); ?>" 
                                      class="image-lazy-fade"
                                      onload="this.classList.add('image-loaded')"
-                                     onerror="this.onerror=null; this.src='<?php echo (defined('APP_URL') ? APP_URL : ''); ?>/public/avatar/Um9zYXVyYVVzZXI6VQ'; this.classList.add('image-loaded');"
+                                     onerror="this.onerror=null; this.src='<?php echo htmlspecialchars(\App\Core\Helpers\Utils::getDefaultAvatarUrl($user['username'] ?? 'U', (string)($user['id'] ?? ''))); ?>'; this.classList.add('image-loaded');"
                                      data-ref="admin-profile-avatar-img" 
                                      data-original-src="<?php echo htmlspecialchars($formattedAvatar); ?>" 
                                      data-is-default="<?php echo $isDefaultAvatar ? 'true' : 'false'; ?>">

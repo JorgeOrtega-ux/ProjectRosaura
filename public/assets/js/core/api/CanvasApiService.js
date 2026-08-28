@@ -60,12 +60,16 @@ export class CanvasApiService extends HttpClient {
         });
     }
 
-    async getRoles(canvasTarget) {
-        return await this.post(ApiRoutes.Canvases.GetRoles, { canvas_id: canvasTarget, canvas_uuid: canvasTarget });
-    }
-
-    async getPermissions(canvasTarget) {
-        return await this.post(ApiRoutes.Canvases.GetPermissions, { canvas_id: canvasTarget, canvas_uuid: canvasTarget });
+    async getPermissions(canvasTarget, forceRefresh = false) {
+        if (!forceRefresh && this._permissionsCache && this._permissionsCache[canvasTarget]) {
+            return this._permissionsCache[canvasTarget];
+        }
+        if (!this._permissionsCache) this._permissionsCache = {};
+        const res = await this.post(ApiRoutes.Canvases.GetPermissions, { canvas_id: canvasTarget, canvas_uuid: canvasTarget });
+        if (res && res.success) {
+            this._permissionsCache[canvasTarget] = res;
+        }
+        return res;
     }
 
     async createRole(canvasTarget, name, permissions = [], weight = 10) {

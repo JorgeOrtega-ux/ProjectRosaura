@@ -40,7 +40,28 @@ class NotificationRepository implements NotificationRepositoryInterface {
                 (user_id, actor_id, type, target_id, target_uuid, data, is_read, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, 0, NOW())
             ");
-            return $stmt->execute([$userId, $actorId, $type, $targetId, $targetUuid, $jsonData]);
+            $inserted = $stmt->execute([$userId, $actorId, $type, $targetId, $targetUuid, $jsonData]);
+            if ($inserted) {
+                try {
+                    if (class_exists(\App\Config\Database\RedisCache::class)) {
+                        $redis = (new \App\Config\Database\RedisCache())->getClient();
+                        if ($redis) {
+                            $unreadCount = $this->getUnreadCount($userId);
+                            $payload = json_encode([
+                                'type' => 'new_notification',
+                                'user_id' => (string)$userId,
+                                'actor_id' => $actorId ? (string)$actorId : null,
+                                'notification_type' => $type,
+                                'target_uuid' => $targetUuid,
+                                'unread_count' => $unreadCount,
+                                'created_at' => date('Y-m-d H:i:s')
+                            ]);
+                            $redis->publish("system_notifications", $payload);
+                        }
+                    }
+                } catch (\Throwable $t) {}
+            }
+            return $inserted;
         } catch (\Throwable $e) {
             Logger::error("Error creating notification: " . $e->getMessage());
             return false;
@@ -79,9 +100,9 @@ class NotificationRepository implements NotificationRepositoryInterface {
                 $data = !empty($r['data']) ? json_decode($r['data'], true) : [];
                 $actorName = $r['actor_username'] ?? 'Usuario';
                 $actorIdentifier = $r['actor_identifier'] ?? strtolower(str_replace(' ', '_', $actorName));
-                $actorAvatar = Utils::getS3PublicUrl($r['actor_avatar'] ?? '');
+                $actorAvatar = Utils::getAvatarUrl($r['actor_avatar'] ?? '', $actorName, (string)($r['actor_id'] ?? ''));
                 $actorColor = SubscriptionPlanConstants::getTierColor((int)($r['actor_tier'] ?? 0));
-                $actorSubBg = Utils::formatSubscriptionBg($actorColor);
+                $actorSubBg = Utils::getSubscriptionBg($actorColor);
                 $title = $data['title'] ?? '';
 
                 $targetUrl = '/';
@@ -158,7 +179,25 @@ class NotificationRepository implements NotificationRepositoryInterface {
         if ($notificationId <= 0 || $userId <= 0) return false;
         try {
             $stmt = $this->pdo->prepare("UPDATE " . DB::TBL_NOTIFICATIONS . " SET is_read = 1 WHERE id = ? AND user_id = ?");
-            return $stmt->execute([$notificationId, $userId]);
+            $res = $stmt->execute([$notificationId, $userId]);
+            if ($res) {
+                try {
+                    if (class_exists(\App\Config\Database\RedisCache::class)) {
+                        $redis = (new \App\Config\Database\RedisCache())->getClient();
+                        if ($redis) {
+                            $unreadCount = $this->getUnreadCount($userId);
+                            $payload = json_encode([
+                                'type' => 'new_notification',
+                                'user_id' => (string)$userId,
+                                'unread_count' => $unreadCount,
+                                'created_at' => date('Y-m-d H:i:s')
+                            ]);
+                            $redis->publish("system_notifications", $payload);
+                        }
+                    }
+                } catch (\Throwable $t) {}
+            }
+            return $res;
         } catch (\Throwable $e) {
             Logger::error("Error marking notification as read: " . $e->getMessage());
             return false;
@@ -169,7 +208,24 @@ class NotificationRepository implements NotificationRepositoryInterface {
         if ($userId <= 0) return false;
         try {
             $stmt = $this->pdo->prepare("UPDATE " . DB::TBL_NOTIFICATIONS . " SET is_read = 1 WHERE user_id = ? AND is_read = 0");
-            return $stmt->execute([$userId]);
+            $res = $stmt->execute([$userId]);
+            if ($res) {
+                try {
+                    if (class_exists(\App\Config\Database\RedisCache::class)) {
+                        $redis = (new \App\Config\Database\RedisCache())->getClient();
+                        if ($redis) {
+                            $payload = json_encode([
+                                'type' => 'new_notification',
+                                'user_id' => (string)$userId,
+                                'unread_count' => 0,
+                                'created_at' => date('Y-m-d H:i:s')
+                            ]);
+                            $redis->publish("system_notifications", $payload);
+                        }
+                    }
+                } catch (\Throwable $t) {}
+            }
+            return $res;
         } catch (\Throwable $e) {
             Logger::error("Error marking all notifications as read: " . $e->getMessage());
             return false;

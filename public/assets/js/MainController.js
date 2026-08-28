@@ -55,6 +55,8 @@ export class MainController {
         this.moduleManager.init();
         this.preferenceManager.initGuestDefaults();
         this.notificationManager.init();
+        window.appNotificationManager = this.notificationManager;
+        window.notificationManager = this.notificationManager;
         this.checkDevice();
         this.bindEvents();
         this.moduleManager.markBottomSheets();

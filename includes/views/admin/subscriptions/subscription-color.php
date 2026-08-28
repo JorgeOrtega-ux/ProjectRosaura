@@ -172,8 +172,9 @@ if (!function_exists('hexToHslArr')) {
                     </button>
 
                     <!-- Preview en Vivo del Avatar con Borde de Suscripción -->
+                    <?php $previewAvatar = !empty($_SESSION['user_id']) ? Utils::getAvatarUrl(null, $_SESSION['username'] ?? 'P', (string)$_SESSION['user_id']) : Utils::getDefaultAvatarUrl('P', 'preview'); ?>
                     <button class="component-button component-button--profile subscription-dynamic" data-ref="subscriptionLivePreviewAvatar" data-sub-bg="<?php echo htmlspecialchars($cssColorValue); ?>" style="--active-subscription-bg: <?php echo htmlspecialchars($cssColorValue); ?>;" data-tooltip="<?php echo __('admin_subscription_color_preview'); ?>" data-position="bottom">
-                        <img src="<?php echo $appUrl; ?>/avatar/Um9zYXVyYVVzZXI6VQ" alt="<?php echo __('alt_profile'); ?>" decoding="async" class="image-lazy-fade" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='<?php echo $appUrl; ?>/avatar/Um9zYXVyYVVzZXI6VQ'; this.classList.add('image-loaded');">
+                        <img src="<?php echo htmlspecialchars($previewAvatar); ?>" alt="<?php echo __('alt_profile'); ?>" decoding="async" class="image-lazy-fade" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='<?php echo htmlspecialchars($previewAvatar); ?>'; this.classList.add('image-loaded');">
                     </button>
                 </div>
                 

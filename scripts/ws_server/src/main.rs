@@ -54,6 +54,7 @@ async fn main() {
     tokio::spawn(helpers::admin_events_listener(app_state.clone()));
     tokio::spawn(helpers::sync_events_listener(app_state.clone()));
     tokio::spawn(helpers::sync_online_counts(app_state.clone()));
+    tokio::spawn(helpers::notifications_events_listener(app_state.clone()));
 
     let app = Router::new()
         .route("/canvas/:canvas_id", get(handlers::ws_handler))

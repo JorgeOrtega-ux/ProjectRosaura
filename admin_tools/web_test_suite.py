@@ -163,17 +163,17 @@ class RosauraWebTestSuite:
         self.script_dir = script_dir
         self.env = load_project_env(project_root)
         
-        self.app_url = self.env.get('APP_URL', 'http://localhost')
+        self.app_url = os.environ.get('APP_URL') or self.env.get('APP_URL', 'http://localhost')
         self.client = TestApiClient(self.app_url)
         
         # Conexiones a BD y Redis
-        self.db_host = '127.0.0.1'
-        self.db_port = int(self.env.get('DB_PORT', 3306))
+        self.db_host = os.environ.get('DB_HOST') or self.env.get('DB_HOST', '127.0.0.1')
+        self.db_port = int(os.environ.get('DB_PORT') or self.env.get('DB_PORT', 3306))
         self.db_user = self.env.get('DB_ROOT_USER', 'root')
         self.db_pass = self.env.get('DB_ROOT_PASSWORD', 'c7a91e4d5b2f8a0c3d6e9f1b4a7c0d2e5f8b1c4a9d6e3f0b7c2a5d8e1f4b9c6a')
         
-        self.redis_host = '127.0.0.1'
-        self.redis_port = int(self.env.get('REDIS_PORT', 6379))
+        self.redis_host = os.environ.get('REDIS_HOST') or self.env.get('REDIS_HOST', '127.0.0.1')
+        self.redis_port = int(os.environ.get('REDIS_PORT') or self.env.get('REDIS_PORT', 6379))
         self.redis_pass = self.env.get('REDIS_PASS', '')
         
         self.redis_client = None

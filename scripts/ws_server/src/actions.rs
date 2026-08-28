@@ -316,10 +316,14 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
             } else {
                 msg.role.clone().unwrap_or_else(|| "member".to_string())
             };
+            let u_avatar = msg.avatar.clone();
+            let u_sub_bg = msg.sub_bg.clone();
 
             let user_info = serde_json::json!({
                 "id": &effective_uid,
                 "username": &u_name,
+                "avatar": &u_avatar,
+                "sub_bg": &u_sub_bg,
                 "role": &u_role,
                 "color": &u_color,
                 "status": "online"
@@ -333,6 +337,8 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 "type": "user_joined",
                 "user_id": &effective_uid,
                 "username": &u_name,
+                "avatar": &u_avatar,
+                "sub_bg": &u_sub_bg,
                 "role": &u_role,
                 "color": &u_color
             }).to_string();
@@ -366,6 +372,8 @@ pub async fn handle_action(msg: WsMessage, canvas_id: &str, connection_id: &str,
                 "type": "user_cursor",
                 "user_id": &effective_uid,
                 "username": msg.username.clone().unwrap_or_default(),
+                "avatar": msg.avatar.clone(),
+                "sub_bg": msg.sub_bg.clone(),
                 "x": msg.x.unwrap_or(0),
                 "y": msg.y.unwrap_or(0),
                 "color": msg.color.clone().unwrap_or_else(|| "#3b82f6".to_string()),
@@ -1083,6 +1091,8 @@ pub async fn handle_binary_action(bin: Vec<u8>, canvas_id: &str, connection_id: 
                 canvas_id: None,
                 user_id: None,
                 username: None,
+                avatar: None,
+                sub_bg: None,
                 is_typing: None,
                 is_drawing: None,
                 role: None,
@@ -1131,6 +1141,8 @@ pub async fn handle_binary_action(bin: Vec<u8>, canvas_id: &str, connection_id: 
                 canvas_id: None,
                 user_id: None,
                 username: None,
+                avatar: None,
+                sub_bg: None,
                 is_typing: None,
                 is_drawing: None,
                 role: None,

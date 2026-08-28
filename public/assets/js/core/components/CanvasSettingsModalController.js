@@ -3,6 +3,7 @@ import { ApiService } from '../api/ApiService.js';
 import { ApiRoutes } from '../api/ApiRoutes.js';
 import { CardTemplates } from './CardTemplates.js';
 import { CalendarSystem } from './CalendarSystem.js';
+import { AvatarUtils } from '../utils/AvatarUtils.js';
 import {
     showMessage,
     setButtonLoading,
@@ -17,7 +18,7 @@ import {
     closeDropdown
 } from '../utils/uiUtils.js';
 
-export class ManageCanvasMembersModalController {
+export class CanvasSettingsModalController {
     constructor(modalBox, data = {}) {
         this.modalBox = modalBox;
         this.data = data;
@@ -1876,7 +1877,7 @@ export class ManageCanvasMembersModalController {
         let matchCount = 0;
 
         for (const [uid, member] of onlineMembers.entries()) {
-            const name = member.username || `Usuario_${uid.slice(-4)}`;
+            const name = AvatarUtils.getDisplayName(member, `Usuario_${uid.slice(-4)}`);
             if (query && !name.toLowerCase().includes(query)) continue;
 
             matchCount++;
@@ -1884,7 +1885,9 @@ export class ManageCanvasMembersModalController {
             const isWatching = trackedCursors.has(uid);
             const isDrawing = !!member.isDrawing;
             const userColor = member.color || '#3b82f6';
-            const avatar = member.avatar || `${appUrl}/avatar/Um9zYXVyYVVzZXI6VQ`;
+            const avatar = AvatarUtils.getAvatarUrl(member, name, uid);
+            const fallbackAvatar = AvatarUtils.generateDefaultAvatarUrl(name, uid);
+            const roleBorder = AvatarUtils.getRoleBorder(member.sub_bg || member.subBg || member.subscription_color ? member : userColor);
             const isOwner = member.role === 'owner' || (this.data.canvasOwnerId && String(this.data.canvasOwnerId) === String(uid));
 
             let statusBadge = '';
@@ -1938,8 +1941,8 @@ export class ManageCanvasMembersModalController {
                 <tr class="component-table-row ${isWatching ? 'selected' : ''}" data-user-id="${escapeHTML(uid)}">
                     <td>
                         <div class="td-user-info">
-                            <button type="button" class="component-button component-button--profile" style="box-shadow: 0 0 0 2px ${escapeHTML(userColor)};">
-                                <img src="${escapeHTML(avatar)}" alt="${escapeHTML(name)}" decoding="async" class="image-lazy-fade image-loaded" onerror="this.onerror=null; this.src='${appUrl}/avatar/Um9zYXVyYVVzZXI6VQ';">
+                            <button type="button" class="component-button component-button--profile ${roleBorder.className}" ${roleBorder.subBg ? `data-sub-bg="${escapeHTML(roleBorder.subBg)}"` : ''} style="${escapeHTML(roleBorder.style)}">
+                                <img src="${escapeHTML(avatar)}" alt="${escapeHTML(name)}" decoding="async" class="image-lazy-fade image-loaded" onerror="this.onerror=null; this.src='${escapeHTML(fallbackAvatar)}';">
                             </button>
                             <div class="component-user-info-text">
                                 <span class="search-target">${escapeHTML(name)} ${isSelf ? '<span class="component-text-muted">(Tú)</span>' : ''}</span>
@@ -2083,10 +2086,11 @@ export class ManageCanvasMembersModalController {
 
         members.forEach(member => {
             const uInfo = userDetails[member.user_id] || {};
-            const username = uInfo.username || `Usuario #${member.user_id}`;
-            const avatar = uInfo.profile_picture || `${appUrl}/public/avatar/Um9zYXVyYVVzZXI6VQ`;
+            const username = AvatarUtils.getDisplayName(uInfo, `Usuario #${member.user_id}`);
+            const avatar = AvatarUtils.getAvatarUrl(uInfo, username, member.user_id);
+            const fallbackAvatar = AvatarUtils.generateDefaultAvatarUrl(username, member.user_id);
+            const roleBorder = AvatarUtils.getRoleBorder(uInfo);
             const userUuidStr = uInfo.uuid || '';
-            const subColor = uInfo.sub_bg || '';
             const isCanvasOwner = member.user_id == canvasOwnerId;
 
             // Search filter
@@ -2132,8 +2136,8 @@ export class ManageCanvasMembersModalController {
                 <tr class="component-table-row ${isSelected ? 'selected' : ''}" data-action="selectModalMember" data-member-id="${escapeHTML(member.user_id)}" data-member-uuid="${escapeHTML(userUuidStr)}">
                     <td>
                         <div class="td-user-info">
-                            <button type="button" class="component-button component-button--profile ${subColor ? 'subscription-dynamic' : ''}" ${subColor ? `data-sub-bg="${subColor}"` : ''}>
-                                <img src="${escapeHTML(avatar)}" alt="${escapeHTML(username)}" decoding="async" class="image-lazy-fade image-loaded" onerror="this.onerror=null; this.src='${appUrl}/avatar/Um9zYXVyYVVzZXI6VQ';">
+                            <button type="button" class="component-button component-button--profile ${roleBorder.className}" ${roleBorder.subBg ? `data-sub-bg="${escapeHTML(roleBorder.subBg)}"` : ''} style="${escapeHTML(roleBorder.style)}">
+                                <img src="${escapeHTML(avatar)}" alt="${escapeHTML(username)}" decoding="async" class="image-lazy-fade image-loaded" onerror="this.onerror=null; this.src='${escapeHTML(fallbackAvatar)}';">
                             </button>
                             <div class="component-user-info-text">
                                 <span class="search-target">${escapeHTML(username)}</span>
@@ -3084,9 +3088,13 @@ export class ManageCanvasMembersModalController {
         this.updateBottomBar();
 
         try {
-            const canvasTarget = this.canvasId || this.canvasUuid;
-            const res = await this.api.getPermissions(canvasTarget);
-            const allPerms = (res && res.success && res.data) ? res.data : [];
+            let allPerms = this.allPermissions;
+            if (!allPerms || allPerms.length === 0) {
+                const canvasTarget = this.canvasId || this.canvasUuid;
+                const res = await this.api.getPermissions(canvasTarget);
+                allPerms = (res && res.success && res.data) ? res.data : [];
+                this.allPermissions = allPerms;
+            }
 
             // Get role current permissions
             const rolePerms = role.permissions || [];
@@ -3271,8 +3279,10 @@ export class ManageCanvasMembersModalController {
 
         userList.forEach(item => {
             const uInfo = userDetails[item.user_id] || {};
-            const username = uInfo.username || `Usuario #${item.user_id}`;
-            const avatar = uInfo.profile_picture || `${appUrl}/public/avatar/Um9zYXVyYVVzZXI6VQ`;
+            const username = AvatarUtils.getDisplayName(uInfo, `Usuario #${item.user_id}`);
+            const avatar = AvatarUtils.getAvatarUrl(uInfo, username, item.user_id);
+            const fallbackAvatar = AvatarUtils.generateDefaultAvatarUrl(username, item.user_id);
+            const roleBorder = AvatarUtils.getRoleBorder(uInfo);
             const restrictions = item.restrictions || [];
             const hasSanction = restrictions.length > 0;
 
@@ -3300,8 +3310,8 @@ export class ManageCanvasMembersModalController {
                 <tr class="component-table-row ${isSelected ? 'selected' : ''}" data-action="selectModalSanction" data-user-id="${escapeHTML(item.user_id)}" data-has-sanction="${hasSanction ? '1' : '0'}" data-username="${escapeHTML(username)}">
                     <td>
                         <div class="td-user-info">
-                            <button type="button" class="component-button component-button--profile">
-                                <img src="${escapeHTML(avatar)}" alt="${escapeHTML(username)}" decoding="async" class="image-lazy-fade image-loaded" onerror="this.onerror=null; this.src='${appUrl}/avatar/Um9zYXVyYVVzZXI6VQ';">
+                            <button type="button" class="component-button component-button--profile ${roleBorder.className}" ${roleBorder.subBg ? `data-sub-bg="${escapeHTML(roleBorder.subBg)}"` : ''} style="${escapeHTML(roleBorder.style)}">
+                                <img src="${escapeHTML(avatar)}" alt="${escapeHTML(username)}" decoding="async" class="image-lazy-fade image-loaded" onerror="this.onerror=null; this.src='${escapeHTML(fallbackAvatar)}';">
                             </button>
                             <div class="component-user-info-text">
                                 <span class="search-target">${escapeHTML(username)}</span>
@@ -3970,3 +3980,5 @@ export class ManageCanvasMembersModalController {
         `;
     }
 }
+
+export { CanvasSettingsModalController as ManageCanvasMembersModalController };

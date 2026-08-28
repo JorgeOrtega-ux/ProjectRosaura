@@ -139,9 +139,9 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/subscriptions?page=' . ($
                                      <div class="component-button--profile subscription-dynamic component-avatar--static-sm" 
                                           data-sub-bg="<?php echo htmlspecialchars($cssColorValue); ?>"
                                           style="--active-subscription-bg: <?php echo htmlspecialchars($cssColorValue); ?>;">
-                                        <img src="/public/assets/img/fallbacks/avatar-default.png" alt="<?php echo __('alt_avatar'); ?>"
-                                             class="image-lazy-fade"
-                                             onload="this.classList.add('image-loaded')">
+                                         <img src="<?php echo htmlspecialchars(\App\Core\Helpers\Utils::getDefaultAvatarUrl($rawName, (string)$tier['id'])); ?>" alt="<?php echo __('alt_avatar'); ?>"
+                                              class="image-lazy-fade"
+                                              onload="this.classList.add('image-loaded')">
                                     </div>
                                     <div class="component-badge component-badge--sm">
                                         <span class="material-symbols-rounded">workspace_premium</span>

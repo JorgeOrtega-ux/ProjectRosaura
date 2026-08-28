@@ -216,7 +216,7 @@ try {
             $accounts[$activeId]['user_role_weight'] = (int)($liveUser['role_weight'] ?? 1);
             $accounts[$activeId]['subscription_color'] = $liveUser['subscription_color'] ?? '#808080';
             $accounts[$activeId]['user_permissions'] = $permissions;
-            $accounts[$activeId]['user_pic'] = $liveUser['profile_picture'] ?? null;
+            $accounts[$activeId]['user_pic'] = \App\Core\Helpers\Utils::getAvatarUrl($liveUser['profile_picture'] ?? '', $liveUser['username'] ?? ($accounts[$activeId]['user_name'] ?? ''), (string)$activeId);
             $accounts[$activeId]['subscription_tier'] = (int)($liveUser['subscription_tier'] ?? 0);
             $accounts[$activeId]['real_subscription_tier'] = (int)($liveUser['real_subscription_tier'] ?? ($liveUser['subscription_tier'] ?? 0));
             $accounts[$activeId]['google_id'] = $liveUser['google_id'] ?? null;

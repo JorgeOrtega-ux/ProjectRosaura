@@ -1,7 +1,7 @@
 import { ModalTemplates } from './ModalTemplates.js';
 import { CalendarSystem } from './CalendarSystem.js';
 import { BannerCropperSystem } from './BannerCropperSystem.js';
-import { ManageCanvasMembersModalController } from './ManageCanvasMembersModalController.js';
+import { CanvasSettingsModalController } from './CanvasSettingsModalController.js';
 import { CreateCanvasModalController } from './CreateCanvasModalController.js';
 import { getEventCoords, hexToHsv, hsvToHex, restoreButton, setButtonLoading, showMessage, initCarouselScroll, closeDropdown, localInputFormatToUtcString, parseUtcToLocalDate, formatLocalDateTimeToInput, getScheduledTimeDetails, copyToClipboard } from '../utils/uiUtils.js';
 import { ApiService } from '../api/ApiService.js';
@@ -271,8 +271,9 @@ export class ModalSystem {
             }
 
             if (templateName === 'manageCanvasMembersModal' || templateName === 'canvasSettingsModal') {
-                this.activeMembersModalController = new ManageCanvasMembersModalController(this.activeBox, data);
-                this.activeMembersModalController.init();
+                this.activeCanvasSettingsModalController = new CanvasSettingsModalController(this.activeBox, data);
+                this.activeMembersModalController = this.activeCanvasSettingsModalController;
+                this.activeCanvasSettingsModalController.init();
             }
 
             if (templateName === 'createCanvasModal') {

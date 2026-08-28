@@ -1,4 +1,5 @@
 import { escapeHTML, getDynamicTierName, getLockDetails, hexToHsv, parseUtcToLocalDate, formatLocalDateTimeToInput, getUserTimezoneString, getScheduledTimeDetails } from '../utils/uiUtils.js';
+import { AvatarUtils } from '../utils/AvatarUtils.js';
 
 const __ = (typeof window.__ === 'function') ? window.__ : (k => k);
 
@@ -5199,8 +5200,10 @@ export const ModalTemplates = {
             const total = normalizedImages.length;
             const currentItem = normalizedImages[initialIndex] || { url: '', name: 'Foto adjunta', sender: 'Usuario', avatar: '', date: '', subBg: '' };
             const encodedImages = escapeHTML(JSON.stringify(normalizedImages));
-            const avatarUrl = currentItem.avatar || ((window.AppBasePath || '') + '/public/assets/img/fallbacks/avatar-default.png');
-            const subBg = currentItem.subBg || '';
+            const senderName = currentItem.sender || 'Usuario';
+            const avatarUrl = AvatarUtils.getAvatarUrl(currentItem.avatar || null, senderName);
+            const fallbackAvatarUrl = AvatarUtils.generateDefaultAvatarUrl(senderName);
+            const roleBorder = AvatarUtils.getRoleBorder(currentItem.subBg || '');
 
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
@@ -5208,7 +5211,7 @@ export const ModalTemplates = {
                     <!-- Left Column: Stage & Bottom Thumbnails -->
                     <div class="component-image-viewer-main-col">
                         <div class="component-image-viewer-stage">
-                            <img src="${currentItem.url}" alt="Preview" class="component-image-viewer-img image-lazy-fade" data-ref="iv-stage-img" decoding="async" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${window.AppBasePath || ''}/public/assets/img/fallbacks/canvas-default.png'; this.classList.add('image-loaded');">
+                            <img src="${currentItem.url}" alt="Preview" class="component-image-viewer-img image-lazy-fade" data-ref="iv-stage-img" decoding="async" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${window.AppBasePath || ''}/assets/img/fallbacks/canvas-default.png'; this.classList.add('image-loaded');">
                         </div>
 
                         ${total > 1 ? `
@@ -5246,8 +5249,8 @@ export const ModalTemplates = {
                             </div>
 
                             <div class="component-image-viewer-sender">
-                                <div class="component-avatar component-avatar--28 subscription-dynamic" data-ref="iv-sender-avatar-wrap" data-sub-bg="${subBg}" style="--active-subscription-bg: ${subBg};">
-                                    <img src="${avatarUrl}" alt="Avatar" data-ref="iv-sender-avatar" onerror="this.onerror=null; this.src='${window.AppBasePath || ''}/public/assets/img/fallbacks/avatar-default.png';">
+                                <div class="component-avatar component-avatar--28 ${roleBorder.className}" data-ref="iv-sender-avatar-wrap" ${roleBorder.subBg ? `data-sub-bg="${escapeHTML(roleBorder.subBg)}" style="--active-subscription-bg: ${escapeHTML(roleBorder.subBg)};"` : ''}>
+                                    <img src="${escapeHTML(avatarUrl)}" alt="Avatar" data-ref="iv-sender-avatar" onerror="this.onerror=null; this.src='${escapeHTML(fallbackAvatarUrl)}';">
                                 </div>
                                 <span class="component-image-viewer-sender-name" data-ref="iv-sender-name">Por ${escapeHTML(currentItem.sender)}</span>
                             </div>

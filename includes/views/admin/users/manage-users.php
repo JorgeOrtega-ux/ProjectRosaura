@@ -195,7 +195,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
                                     $dataStatus = $user['is_suspended'] ? 'suspended' : 'active';
                                     $displayStatus = $user['is_suspended'] ? __('status_suspended') : __('status_active');
                                     $statusIcon = $user['is_suspended'] ? 'block' : 'check_circle';
-                                    $validUserPic = \App\Core\Helpers\Utils::getValidImage($user['profile_picture'], 'avatar');
+                                    $validUserPic = \App\Core\Helpers\Utils::getAvatarUrl($user['profile_picture'] ?? '', $user['username'] ?? '', (string)$user['id']);
                                     
                                     $roleIds = $user['role_ids'] ?? '1';
                                     $roleNamesStr = $user['role_names'] ?? __('user');
@@ -231,10 +231,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/users?page=' . ($page + 1
                                             <div class="component-button--profile subscription-dynamic component-avatar--static-sm" 
                                                  data-sub-bg="<?php echo htmlspecialchars($subColorCSS); ?>"
                                                  style="--active-subscription-bg: <?php echo htmlspecialchars($subColorCSS); ?>;">
-                                                <img src="<?php echo $appUrl . '/' . htmlspecialchars($validUserPic); ?>" alt="<?php echo __('alt_avatar'); ?>" 
+                                                <img src="<?php echo htmlspecialchars($validUserPic); ?>" alt="<?php echo __('alt_avatar'); ?>" 
                                                      class="image-lazy-fade"
                                                      onload="this.classList.add('image-loaded')"
-                                                     onerror="this.onerror=null; this.src='<?php echo $appUrl; ?>/public/assets/img/fallbacks/avatar-default.png'; this.classList.add('image-loaded');">
+                                                     onerror="this.onerror=null; this.src='<?php echo htmlspecialchars(\App\Core\Helpers\Utils::getDefaultAvatarUrl($user['username'] ?? 'U', (string)$user['id'])); ?>'; this.classList.add('image-loaded');">
                                             </div>
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded">person</span>

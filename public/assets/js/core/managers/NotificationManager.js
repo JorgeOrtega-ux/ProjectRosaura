@@ -15,6 +15,7 @@ export class NotificationManager {
 
         this.handleDocumentClickBound = this.handleDocumentClick.bind(this);
         this.handleViewLoadedBound = this.handleViewLoaded.bind(this);
+        this.handleRealtimeNotificationBound = this.handleRealtimeNotification.bind(this);
     }
 
     init() {
@@ -37,11 +38,29 @@ export class NotificationManager {
         }
         document.removeEventListener('click', this.handleDocumentClickBound);
         window.removeEventListener('viewLoaded', this.handleViewLoadedBound);
+        window.removeEventListener('app:new_notification', this.handleRealtimeNotificationBound);
     }
 
     bindEvents() {
         document.addEventListener('click', this.handleDocumentClickBound);
         window.addEventListener('viewLoaded', this.handleViewLoadedBound);
+        window.addEventListener('app:new_notification', this.handleRealtimeNotificationBound);
+    }
+
+    handleRealtimeNotification(e) {
+        const data = e.detail;
+        if (!data) return;
+        if (typeof data.unread_count === 'number') {
+            this.updateUnreadCount(data.unread_count);
+        } else {
+            this.fetchUnreadCount();
+        }
+
+        // Si el módulo desplegable de notificaciones está abierto, refrescamos la lista en vivo
+        const module = document.querySelector('.component-module[data-module="moduleNotifications"]');
+        if (module && (module.classList.contains('active') || !module.classList.contains('disabled'))) {
+            this.loadNotifications();
+        }
     }
 
     startPolling() {

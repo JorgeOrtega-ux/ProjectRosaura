@@ -375,7 +375,7 @@ class Utils {
     }
 
     public static function generateProfilePicture($text, $seed = '') {
-        $cleanText = trim(preg_replace('/[^\p{L}\p{N}\s]/u', '', $text));
+        $cleanText = trim(preg_replace('/[^\p{L}\p{N}\s]/u', '', $text ?? ''));
         if (empty($cleanText)) {
             $cleanText = 'U';
         }
@@ -385,6 +385,121 @@ class Utils {
         }
         $token = rtrim(strtr(base64_encode("RosauraUser:" . $payload), '+/', '-_'), '=');
         return '/avatar/' . $token;
+    }
+
+    /**
+     * Obtiene la URL completa del avatar por defecto determinista SVG para un nombre y semilla.
+     */
+    public static function getDefaultAvatarUrl(string $name = 'U', string $seed = ''): string {
+        $appUrl = defined('APP_URL') ? APP_URL : '';
+        return $appUrl . self::generateProfilePicture($name, $seed);
+    }
+
+    /**
+     * Resuelve la URL absoluta y limpia de cualquier avatar o estructura de usuario (SSOT).
+     */
+    public static function getAvatarUrl($userOrPic, string $username = '', string $seed = ''): string {
+        $appUrl = defined('APP_URL') ? APP_URL : '';
+        $rawPath = '';
+        $resolvedName = $username;
+        $resolvedSeed = $seed;
+
+        if (is_array($userOrPic)) {
+            $rawPath = $userOrPic['profile_picture'] 
+                ?? $userOrPic['avatar_url'] 
+                ?? $userOrPic['avatar'] 
+                ?? $userOrPic['user_pic'] 
+                ?? $userOrPic['actor_avatar'] 
+                ?? $userOrPic['admin_profile_picture'] 
+                ?? '';
+            if (empty($resolvedName)) {
+                $resolvedName = $userOrPic['username'] 
+                    ?? $userOrPic['user_name'] 
+                    ?? $userOrPic['name'] 
+                    ?? $userOrPic['actor_username'] 
+                    ?? $userOrPic['admin_username'] 
+                    ?? '';
+            }
+            if (empty($resolvedSeed)) {
+                $resolvedSeed = (string)($userOrPic['email'] 
+                    ?? $userOrPic['id'] 
+                    ?? $userOrPic['uuid'] 
+                    ?? $userOrPic['user_id'] 
+                    ?? '');
+            }
+        } elseif (is_string($userOrPic)) {
+            $rawPath = trim($userOrPic);
+        }
+
+        if (empty($rawPath)) {
+            return self::getDefaultAvatarUrl($resolvedName ?: 'U', $resolvedSeed);
+        }
+
+        if (str_starts_with($rawPath, 'http://') || str_starts_with($rawPath, 'https://') || str_starts_with($rawPath, 'data:')) {
+            return $rawPath;
+        }
+
+        // Limpiar prefijo erróneo /public/avatar/
+        if (strpos($rawPath, '/public/avatar/') !== false) {
+            $rawPath = str_replace('/public/avatar/', '/avatar/', $rawPath);
+        }
+
+        if (str_starts_with($rawPath, '/avatar/') || str_starts_with($rawPath, 'avatar/')) {
+            $cleanAvatar = '/' . ltrim($rawPath, '/');
+            // Si tiene el token genérico antiguo pero conocemos el nombre real, generar uno dinámico exacto
+            if (str_contains($cleanAvatar, 'Um9zYXVyYVVzZXI6VQ') && !empty($resolvedName) && $resolvedName !== 'U' && $resolvedName !== 'Usuario') {
+                return self::getDefaultAvatarUrl($resolvedName, $resolvedSeed);
+            }
+            return $appUrl . $cleanAvatar;
+        }
+
+        if (str_contains($rawPath, 'fallbacks/avatar-default.png')) {
+            return self::getDefaultAvatarUrl($resolvedName ?: 'U', $resolvedSeed);
+        }
+
+        if (str_starts_with($rawPath, '/assets/') || str_starts_with($rawPath, 'assets/') || str_starts_with($rawPath, 'public/assets/') || str_starts_with($rawPath, '/public/assets/')) {
+            $clean = preg_replace('#^/?(public/)?#', '', $rawPath);
+            return $appUrl . '/' . ltrim($clean, '/');
+        }
+
+        if (str_contains($rawPath, 'profilePictures/') || str_contains($rawPath, 'uploaded/') || str_contains($rawPath, 'thumbnails/')) {
+            return self::getS3PublicUrl($rawPath);
+        }
+
+        return $appUrl . '/' . ltrim($rawPath, '/');
+    }
+
+    /**
+     * Parsea un string o JSON de color de suscripción a un valor CSS válido (gradiente o sólido).
+     */
+    public static function getSubscriptionBg(?string $subscriptionColorRaw): string {
+        if (empty($subscriptionColorRaw)) {
+            return '';
+        }
+        $colorData = json_decode($subscriptionColorRaw, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($colorData)) {
+            $type = $colorData['type'] ?? 'solid';
+            $colors = $colorData['colors'] ?? [];
+            if ($type === 'gradient' && count($colors) > 1) {
+                $angle = (int)($colorData['angle'] ?? 0);
+                $stopsArray = [];
+                $prevStop = 0;
+                $colorsCount = count($colors);
+                foreach ($colors as $i => $colorObj) {
+                    $hex = is_string($colorObj) ? $colorObj : ($colorObj['hex'] ?? '#000000');
+                    $percentage = is_array($colorObj) && isset($colorObj['percentage']) ? (int)$colorObj['percentage'] : floor(100 / $colorsCount);
+                    $endStop = $prevStop + $percentage;
+                    if ($i === $colorsCount - 1) $endStop = 100;
+                    $stopsArray[] = "{$hex} {$prevStop}% {$endStop}%";
+                    $prevStop = $endStop;
+                }
+                return "conic-gradient(from {$angle}deg, " . implode(', ', $stopsArray) . ")";
+            } elseif (!empty($colors[0])) {
+                $firstColorObj = $colors[0];
+                return is_string($firstColorObj) ? $firstColorObj : ($firstColorObj['hex'] ?? '');
+            }
+        }
+        return $subscriptionColorRaw;
     }
 
     public static function generateCSRFToken(SessionManagerInterface $sessionManager) {
@@ -568,13 +683,18 @@ class Utils {
     ];
 
     public static function getValidImage($path, $type = 'avatar') {
-        $fallback = self::$fallbacks[$type] ?? self::$fallbacks['avatar'];
-        
-        if (empty($path) || strpos($path, 'avatar-default.png') !== false) {
-            return $fallback;
+        if ($type === 'avatar') {
+            return self::getAvatarUrl($path);
         }
 
-        if (strpos($path, 'http') === 0) {
+        $fallback = self::$fallbacks[$type] ?? self::$fallbacks['avatar'];
+        $appUrl = defined('APP_URL') ? APP_URL : '';
+        
+        if (empty($path) || strpos($path, 'default.png') !== false) {
+            return $appUrl . '/' . ltrim($fallback, '/');
+        }
+
+        if (strpos($path, 'http') === 0 || strpos($path, 'data:') === 0) {
             return $path;
         }
 
@@ -582,7 +702,7 @@ class Utils {
             return self::getS3PublicUrl($path);
         }
 
-        return $path;
+        return $appUrl . '/' . ltrim($path, '/');
     }
 
     public static function isDefaultAvatar($path) {

@@ -53,7 +53,7 @@ $parseSubscriptionColor = function($subColorRaw) {
                         <img src="<?php echo htmlspecialchars($activeAccPic); ?>" alt="<?php echo __('alt_avatar'); ?>" 
                              class="image-lazy-fade"
                              onload="this.classList.add('image-loaded')"
-                             onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/avatar/Um9zYXVyYVVzZXI6VQ'; this.classList.add('image-loaded');">
+                             onerror="this.onerror=null; this.src='<?php echo htmlspecialchars(\App\Core\Helpers\Utils::getDefaultAvatarUrl($activeAcc['user_name'] ?? 'U', (string)($activeAcc['user_id'] ?? ''))); ?>'; this.classList.add('image-loaded');">
                     </div>
                     <div class="component-account-info">
                         <?php 
@@ -166,7 +166,7 @@ $parseSubscriptionColor = function($subColorRaw) {
                         <img src="<?php echo htmlspecialchars($accPic); ?>" alt="<?php echo __('alt_avatar'); ?>" 
                              class="image-lazy-fade"
                              onload="this.classList.add('image-loaded')"
-                             onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/avatar/Um9zYXVyYVVzZXI6VQ'; this.classList.add('image-loaded');">
+                             onerror="this.onerror=null; this.src='<?php echo htmlspecialchars(\App\Core\Helpers\Utils::getDefaultAvatarUrl($acc['user_name'] ?? 'U', (string)($id ?? ''))); ?>'; this.classList.add('image-loaded');">
                     </div>
                     <div class="component-account-info">
                         <?php 

@@ -121,12 +121,10 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity/' . $user['
                             </tr>
                             <?php else: ?>
                                 <?php foreach ($paginatedLogs as $log): 
-                                    $adminPic = !empty($log['admin_profile_picture']) 
-                                        ? $appUrl . '/' . ltrim($log['admin_profile_picture'], '/') 
-                                        : $appUrl . '/public/avatar/Um9zYXVyYVVzZXI6VQ';
                                     $adminName = !empty($log['admin_username']) 
                                         ? ($log['admin_username'] === 'user_action' ? __('lbl_user_action') : $log['admin_username']) 
                                         : __('lbl_system');
+                                    $adminPic = \App\Core\Helpers\Utils::getAvatarUrl($log['admin_profile_picture'] ?? '', $adminName, (string)($log['admin_id'] ?? ''));
                                     
                                     $dStr = strtotime($log['created_at']);
                                     $dateStr = $dStr ? date('d/m/Y H:i', $dStr) : $log['created_at'];
@@ -259,7 +257,7 @@ $nextPageUrl = $page < $totalPages ? $appUrl . '/admin/user-activity/' . $user['
                                                 <img src="<?php echo htmlspecialchars($adminPic); ?>" alt="<?php echo __('alt_avatar'); ?>"
                                                      class="image-lazy-fade"
                                                      onload="this.classList.add('image-loaded')"
-                                                     onerror="this.onerror=null; this.src='<?php echo APP_URL; ?>/public/avatar/Um9zYXVyYVVzZXI6VQ'; this.classList.add('image-loaded');">
+                                                     onerror="this.onerror=null; this.src='<?php echo htmlspecialchars(\App\Core\Helpers\Utils::getDefaultAvatarUrl($adminName, (string)($log['admin_id'] ?? ''))); ?>'; this.classList.add('image-loaded');">
                                             </div>
                                             <div class="component-badge component-badge--sm">
                                                 <span class="material-symbols-rounded"><?php echo $adminBadgeIcon; ?></span>

@@ -503,7 +503,7 @@ class PublicationsService {
                         'username' => $author['username'] ?? __('user'),
                         'identifier' => $authorIdentifier,
                         'handle' => '@' . $authorIdentifier,
-                        'avatar_url' => $author ? Utils::getS3PublicUrl($author['profile_picture']) : Utils::getDefaultAvatarUrl('U'),
+                        'avatar_url' => Utils::getAvatarUrl($author, $author['username'] ?? __('user'), (string)($row['user_id'] ?? '')),
                         'subscription_tier' => (int)($author['subscription_tier'] ?? 0),
                         'subscription_color' => $author['subscription_color'] ?? '#000000'
                     ]
@@ -809,7 +809,7 @@ class PublicationsService {
                     'username' => $author['username'] ?? __('user'),
                     'identifier' => $authorIdentifier,
                     'handle' => '@' . $authorIdentifier,
-                    'avatar_url' => $author ? Utils::getS3PublicUrl($author['profile_picture']) : Utils::getDefaultAvatarUrl('U'),
+                    'avatar_url' => Utils::getAvatarUrl($author, $author['username'] ?? __('user'), (string)$post['user_id']),
                     'subscription_tier' => (int)($author['subscription_tier'] ?? 0),
                     'subscription_color' => $author['subscription_color'] ?? '#000000'
                 ]

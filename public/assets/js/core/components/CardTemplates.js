@@ -1,4 +1,7 @@
-import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const CardTemplates = {
+import { escapeHTML, formatNumber } from '../utils/uiUtils.js';
+import { AvatarUtils } from '../utils/AvatarUtils.js';
+
+export const CardTemplates = {
     
     canvasCard: (canvas, config = {}) => {
         const name = escapeHTML(canvas.name);
@@ -282,10 +285,11 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         const commentsCount = parseInt(pub.comments_count || 0, 10);
         const isLikedClass = pub.is_liked ? 'is-favorite' : '';
         const author = pub.author || {};
-        const authorName = escapeHTML(author.username || 'Usuario');
+        const authorName = AvatarUtils.getDisplayName(author, 'Usuario');
         const authorHandle = escapeHTML(author.identifier ? `@${author.identifier}` : (author.handle || '@usuario'));
         const authorUrl = `${basePath}/@${escapeHTML(author.identifier || '')}`;
-        const authorAvatar = author.avatar_url ? escapeHTML(author.avatar_url) : `${basePath}/assets/img/fallbacks/avatar-default.png`;
+        const authorAvatar = AvatarUtils.getAvatarUrl(author, authorName, author.id || '');
+        const fallbackAuthorAvatar = AvatarUtils.generateDefaultAvatarUrl(authorName, author.id || '');
 
         return `
             <div class="component-gallery-card component-publication-card" data-publication-uuid="${uuid}">
@@ -311,7 +315,7 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
 
                 <div class="component-gallery-actions-wrapper">
                     <div class="component-publication-author" data-nav="${authorUrl}">
-                        <img src="${authorAvatar}" alt="${authorName}" class="component-publication-author__avatar" onerror="this.src='${basePath}/assets/img/fallbacks/avatar-default.png'">
+                        <img src="${escapeHTML(authorAvatar)}" alt="${escapeHTML(authorName)}" class="component-publication-author__avatar" onerror="this.onerror=null; this.src='${escapeHTML(fallbackAuthorAvatar)}'">
                         <span class="component-publication-author__handle">${authorHandle}</span>
                     </div>
                     <div class="component-gallery-actions">
@@ -327,23 +331,22 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
     },
 
     userCard: (user, config = {}) => {
-        const name = escapeHTML(user.username || 'Usuario');
+        const name = AvatarUtils.getDisplayName(user, 'Usuario');
         const identifier = escapeHTML(user.identifier || '');
         const basePath = config.basePath || '';
         const profileUrl = `${basePath}/@${identifier}`;
-        const fallbackAvatar = `${basePath}/assets/img/fallbacks/avatar-default.png`;
-        const avatarUrl = user.avatar_url ? escapeHTML(user.avatar_url) : fallbackAvatar;
+        const avatarUrl = AvatarUtils.getAvatarUrl(user, name, user.id || '');
+        const fallbackAvatar = AvatarUtils.generateDefaultAvatarUrl(name, user.id || '');
+        const roleBorder = AvatarUtils.getRoleBorder(user);
         const bannerUrl = user.banner_url ? escapeHTML(user.banner_url) : '';
         const fallbackBanner = `${basePath}/assets/img/fallbacks/canvas-default.png`;
         const bio = escapeHTML(user.bio || '');
         const followersCount = parseInt(user.followers_count || 0, 10);
-        const hasSubscription = parseInt(user.subscription_tier || 0, 10) > 0;
-        const subBg = user.subscription_bg ? escapeHTML(user.subscription_bg) : '';
         const isSelf = !!user.is_self;
         const isFollowing = !!user.is_following;
 
         const bannerImgHtml = bannerUrl
-            ? `<img src="${bannerUrl}" alt="Banner de ${name}" class="component-gallery-card__image image-lazy-fade" loading="lazy" decoding="async" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${fallbackBanner}'; this.classList.add('image-loaded');">`
+            ? `<img src="${bannerUrl}" alt="Banner de ${escapeHTML(name)}" class="component-gallery-card__image image-lazy-fade" loading="lazy" decoding="async" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${fallbackBanner}'; this.classList.add('image-loaded');">`
             : `<div class="component-gallery-card__image component-user-card__banner-placeholder"></div>`;
 
         let actionBtnHtml = '';
@@ -379,8 +382,8 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
                 <div data-nav="${profileUrl}" class="component-gallery-link component-user-card__link">
                     <div class="component-user-card__content">
                         <div class="component-user-card__header">
-                            <div class="component-avatar component-avatar--40 ${hasSubscription && subBg ? 'subscription-dynamic' : ''}" ${hasSubscription && subBg ? `data-sub-bg="${subBg}" style="--active-subscription-bg: ${subBg};"` : ''}>
-                                <img src="${avatarUrl}" alt="${name}" class="image-lazy-fade" loading="lazy" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${fallbackAvatar}'; this.classList.add('image-loaded');">
+                            <div class="component-avatar component-avatar--40 ${roleBorder.className}" ${roleBorder.subBg ? `data-sub-bg="${escapeHTML(roleBorder.subBg)}" style="--active-subscription-bg: ${escapeHTML(roleBorder.subBg)};"` : ''}>
+                                <img src="${escapeHTML(avatarUrl)}" alt="${escapeHTML(name)}" class="image-lazy-fade" loading="lazy" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${escapeHTML(fallbackAvatar)}'; this.classList.add('image-loaded');">
                             </div>
                             <div class="component-user-card__meta">
                                 <div class="component-user-card__name-row">
@@ -405,21 +408,20 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
     },
 
     userSearchItem: (user, config = {}) => {
-        const name = escapeHTML(user.username || 'Usuario');
+        const name = AvatarUtils.getDisplayName(user, 'Usuario');
         const identifier = escapeHTML(user.identifier || '');
         const basePath = config.basePath || '';
         const profileUrl = `${basePath}/@${identifier}`;
-        const fallbackAvatar = `${basePath}/assets/img/fallbacks/avatar-default.png`;
-        const avatarUrl = user.avatar_url ? escapeHTML(user.avatar_url) : fallbackAvatar;
+        const avatarUrl = AvatarUtils.getAvatarUrl(user, name, user.id || '');
+        const fallbackAvatar = AvatarUtils.generateDefaultAvatarUrl(name, user.id || '');
+        const roleBorder = AvatarUtils.getRoleBorder(user);
         const followersCount = parseInt(user.followers_count || 0, 10);
-        const hasSubscription = parseInt(user.subscription_tier || 0, 10) > 0;
-        const subBg = user.subscription_bg ? escapeHTML(user.subscription_bg) : '';
         const roleName = user.role_name && user.role_name.toLowerCase() !== 'user' && user.role_name.toLowerCase() !== 'usuario' ? escapeHTML(user.role_name) : '';
 
         return `
             <div class="component-search-dropdown-item component-search-dropdown-item--user" data-nav="${profileUrl}">
-                <div class="component-avatar component-avatar--36 ${hasSubscription && subBg ? 'subscription-dynamic' : ''}" ${hasSubscription && subBg ? `data-sub-bg="${subBg}" style="--active-subscription-bg: ${subBg};"` : ''}>
-                    <img src="${avatarUrl}" alt="${name}" class="image-lazy-fade" loading="lazy" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${fallbackAvatar}'; this.classList.add('image-loaded');">
+                <div class="component-avatar component-avatar--36 ${roleBorder.className}" ${roleBorder.subBg ? `data-sub-bg="${escapeHTML(roleBorder.subBg)}" style="--active-subscription-bg: ${escapeHTML(roleBorder.subBg)};"` : ''}>
+                    <img src="${escapeHTML(avatarUrl)}" alt="${escapeHTML(name)}" class="image-lazy-fade" loading="lazy" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${escapeHTML(fallbackAvatar)}'; this.classList.add('image-loaded');">
                 </div>
                 <div class="component-search-dropdown-item__text">
                     <div class="component-search-dropdown-item__title">
@@ -496,11 +498,11 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
     notificationItem: (notif, config = {}) => {
         const basePath = config.basePath || '';
         const actor = notif.actor || {};
-        const actorName = escapeHTML(actor.username || 'Usuario');
+        const actorName = AvatarUtils.getDisplayName(actor, 'Usuario');
         const actorIdentifier = escapeHTML(actor.identifier || '');
-        const fallbackAvatar = `${basePath}/avatar/Um9zYXVyYVVzZXI6VQ`;
-        const actorAvatar = actor.avatar_url ? escapeHTML(actor.avatar_url) : fallbackAvatar;
-        const actorSubBg = actor.subscription_bg ? escapeHTML(actor.subscription_bg) : '';
+        const actorAvatar = AvatarUtils.getAvatarUrl(actor, actorName, actor.id || '');
+        const fallbackAvatar = AvatarUtils.generateDefaultAvatarUrl(actorName, actor.id || '');
+        const roleBorder = AvatarUtils.getRoleBorder(actor);
         const targetUrl = notif.target_url ? `${basePath}${notif.target_url}` : `${basePath}/`;
         const isRead = !!notif.is_read;
         const iconName = notif.action_icon || 'notifications';
@@ -509,10 +511,10 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         if (notif.message_key && typeof window.__ === 'function') {
             const rawTemplate = window.__(notif.message_key, notif.params || {});
             messageText = rawTemplate
-                .replace(':actor', `<strong>${actorName}</strong>`)
+                .replace(':actor', `<strong>${escapeHTML(actorName)}</strong>`)
                 .replace(':title', `<em>${escapeHTML(notif.params ? (notif.params.title || '') : '')}</em>`);
         } else {
-            messageText = `<strong>${actorName}</strong> interactuó contigo.`;
+            messageText = `<strong>${escapeHTML(actorName)}</strong> interactuó contigo.`;
         }
 
         const createdAt = notif.created_at ? new Date(notif.created_at.replace(/-/g, '/')) : new Date();
@@ -531,8 +533,8 @@ import { escapeHTML, formatNumber } from '../utils/uiUtils.js';export const Card
         return `
             <div class="component-notification-item ${!isRead ? 'component-notification-item--unread' : ''}" data-notification-id="${notif.id}" data-action="openNotification" data-target-url="${targetUrl}">
                 <div class="component-notification-item__avatar-wrapper">
-                    <button type="button" class="component-button component-button--profile ${actorSubBg ? 'subscription-dynamic' : ''}" ${actorSubBg ? `data-sub-bg="${actorSubBg}" style="--active-subscription-bg: ${actorSubBg};"` : ''} data-tooltip="${actorName}" data-position="bottom">
-                        <img src="${actorAvatar}" alt="${actorName}" decoding="async" class="image-lazy-fade" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${fallbackAvatar}'; this.classList.add('image-loaded');">
+                    <button type="button" class="component-button component-button--profile ${roleBorder.className}" ${roleBorder.subBg ? `data-sub-bg="${escapeHTML(roleBorder.subBg)}" style="--active-subscription-bg: ${escapeHTML(roleBorder.subBg)};"` : ''} data-tooltip="${escapeHTML(actorName)}" data-position="bottom">
+                        <img src="${escapeHTML(actorAvatar)}" alt="${escapeHTML(actorName)}" decoding="async" class="image-lazy-fade" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${escapeHTML(fallbackAvatar)}'; this.classList.add('image-loaded');">
                     </button>
                     <span class="component-notification-item__icon-badge component-notification-item__icon-badge--${notif.type || 'default'}">
                         <span class="material-symbols-rounded">${iconName}</span>

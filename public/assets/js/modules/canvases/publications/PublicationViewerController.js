@@ -1,6 +1,7 @@
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { ApiService } from '../../../core/api/ApiService.js';
 import { showMessage, setButtonLoading, restoreButton, formatNumber, escapeHTML, updateRangeFill } from '../../../core/utils/uiUtils.js';
+import { AvatarUtils } from '../../../core/utils/AvatarUtils.js';
 
 export class PublicationViewerController {
     constructor() {
@@ -505,27 +506,25 @@ export class PublicationViewerController {
 
         if (emptyState) emptyState.classList.add('disabled');
 
-        const fallbackUrl = `${window.AppBasePath || ''}/public/assets/img/fallbacks/avatar-default.png`;
-
         let html = '';
         this.comments.forEach(c => {
             const author = c.author || {};
+            const authorName = AvatarUtils.getDisplayName(author, 'Usuario');
             const authorHandle = escapeHTML(author.handle || `@${author.identifier || 'usuario'}`);
-            const authorName = escapeHTML(author.username || author.handle || 'Usuario');
             const authorUrl = `/@${escapeHTML(author.identifier || '')}`;
+            const authorAvatar = AvatarUtils.getAvatarUrl(author, authorName, author.id || '');
+            const fallbackAvatar = AvatarUtils.generateDefaultAvatarUrl(authorName, author.id || '');
+            const roleBorder = AvatarUtils.getRoleBorder(author);
             const isOwn = !!c.is_own;
 
             const msgDate = new Date(c.created_at);
             const timeFormatted = msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const dateFormatted = msgDate.toLocaleDateString([], { day: '2-digit', month: 'short' });
 
-            const avatarUrl = author.avatar_url || fallbackUrl;
-            const subColor = author.subscription_color || '';
-
             html += `
                 <div class="chat-message ${isOwn ? 'chat-message--mine' : ''}" data-comment-uuid="${escapeHTML(c.uuid)}">
-                    <a href="${authorUrl}" data-nav="${authorUrl}" class="component-button--profile subscription-dynamic component-avatar--static-sm" style="--active-subscription-bg: ${escapeHTML(subColor)}; text-decoration: none;">
-                        <img src="${escapeHTML(avatarUrl)}" class="chat-message-avatar-img image-lazy-fade" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${fallbackUrl}'; this.classList.add('image-loaded');">
+                    <a href="${authorUrl}" data-nav="${authorUrl}" class="component-button--profile ${roleBorder.className} component-avatar--static-sm" ${roleBorder.subBg ? `data-sub-bg="${escapeHTML(roleBorder.subBg)}" style="--active-subscription-bg: ${escapeHTML(roleBorder.subBg)};"` : ''} style="text-decoration: none;">
+                        <img src="${escapeHTML(authorAvatar)}" class="chat-message-avatar-img image-lazy-fade" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${escapeHTML(fallbackAvatar)}'; this.classList.add('image-loaded');">
                     </a>
                     <div class="chat-message-bubble">
                         <div class="chat-message-header">

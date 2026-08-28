@@ -4,6 +4,7 @@ import { WebSocketManager } from '../../../core/api/WebSocketManager.js';
 import { getPaletteById } from './utils/DesignPaletteUtils.js';
 import { CanvasSyncChannel } from '../../../core/services/CanvasSyncChannel.js';
 import { CanvasStorageEngine } from './utils/CanvasStorageEngine.js';
+import { AvatarUtils } from '../../../core/utils/AvatarUtils.js';
 
 export const DesignNetwork = {
     initSyncChannel() {
@@ -444,6 +445,12 @@ export const DesignNetwork = {
                 else if (data.type === 'canvas_freeze_changed') {
                     this.isFrozen = data.frozen;
                     this.updateFreezeUI();
+                }
+                else if (data.type === 'new_notification') {
+                    window.dispatchEvent(new CustomEvent('app:new_notification', { detail: data }));
+                    if (window.appNotificationManager && typeof window.appNotificationManager.updateUnreadCount === 'function') {
+                        window.appNotificationManager.updateUnreadCount(data.unread_count);
+                    }
                 }
                 else if (data.type === 'area_protection_changed') {
                     if (!this.protectedPixels) this.protectedPixels = new Set();
@@ -2196,13 +2203,16 @@ export const DesignNetwork = {
         const uid = this.getEffectiveUserId();
         const username = this.getEffectiveUsername();
         const role = this.isOwner ? 'owner' : (this.isSpectator ? 'spectator' : 'member');
+        const userAvatar = AvatarUtils.getAvatarUrl(window.APP_USER?.avatar || window.activeUserAvatar || null, username, uid);
+        const subBg = window.APP_USER?.sub_bg || document.querySelector('.header .component-button--profile.subscription-dynamic')?.dataset.subBg || '';
         
         if (!this.onlineMembers) this.onlineMembers = new Map();
         
         this.onlineMembers.set(String(uid), {
             id: String(uid),
             username: username,
-            avatar: null,
+            avatar: userAvatar,
+            sub_bg: subBg,
             role: role,
             isSelf: true,
             color: this.currentColor || '#3b82f6',
@@ -2220,6 +2230,8 @@ export const DesignNetwork = {
                 canvas_id: String(this.canvasIntId || this.canvasId),
                 user_id: uid,
                 username: username,
+                avatar: userAvatar,
+                sub_bg: subBg,
                 role: role,
                 color: this.currentColor || '#3b82f6'
             });
@@ -2231,6 +2243,8 @@ export const DesignNetwork = {
             canvasId: this.canvasIntId || this.canvasId,
             user_id: uid,
             username: username,
+            avatar: userAvatar,
+            sub_bg: subBg,
             role: role,
             color: this.currentColor || '#3b82f6'
         });
@@ -2249,6 +2263,8 @@ export const DesignNetwork = {
 
         const uid = this.getEffectiveUserId();
         const username = this.getEffectiveUsername();
+        const userAvatar = AvatarUtils.getAvatarUrl(window.APP_USER?.avatar || window.activeUserAvatar || null, username, uid);
+        const subBg = window.APP_USER?.sub_bg || document.querySelector('.header .component-button--profile.subscription-dynamic')?.dataset.subBg || '';
 
         const payload = {
             type: 'cursor_move',
@@ -2256,6 +2272,8 @@ export const DesignNetwork = {
             canvasId: this.canvasIntId || this.canvasId,
             user_id: uid,
             username: username,
+            avatar: userAvatar,
+            sub_bg: subBg,
             x: Math.round(exactX),
             y: Math.round(exactY),
             color: this.currentColor || '#3b82f6',
@@ -2287,10 +2305,12 @@ export const DesignNetwork = {
         if (!this.onlineMembers) this.onlineMembers = new Map();
         let member = this.onlineMembers.get(uid);
         if (!member) {
+            const memberAvatar = AvatarUtils.getAvatarUrl(data.avatar || null, username, uid);
             member = {
                 id: uid,
                 username: username,
-                avatar: data.avatar || null,
+                avatar: memberAvatar,
+                sub_bg: data.sub_bg || '',
                 role: data.role || 'member',
                 color: color,
                 status: isDrawing ? 'drawing' : 'online',
@@ -2305,6 +2325,8 @@ export const DesignNetwork = {
         } else {
             // Ignore older out-of-order packets
             if (member.lastSeen && timestamp < member.lastSeen) return;
+            if (data.avatar && !member.avatar) member.avatar = AvatarUtils.getAvatarUrl(data.avatar, username, uid);
+            if (data.sub_bg && !member.sub_bg) member.sub_bg = data.sub_bg;
             member.x = x;
             member.y = y;
             member.color = color;
@@ -2372,15 +2394,19 @@ export const DesignNetwork = {
         if (!this.onlineMembers) this.onlineMembers = new Map();
 
         const myUid = String(this.getEffectiveUserId());
+        const userAvatar = AvatarUtils.getAvatarUrl(window.APP_USER?.avatar || window.activeUserAvatar || null, this.getEffectiveUsername(), myUid);
         
         data.members.forEach(m => {
             if (!m || !m.id) return;
             const uid = String(m.id);
             const isSelf = uid === myUid;
+            const uName = m.username || `Usuario_${uid.slice(-4)}`;
+            const mAvatar = isSelf ? userAvatar : AvatarUtils.getAvatarUrl(m.avatar || null, uName, uid);
             this.onlineMembers.set(uid, {
                 id: uid,
-                username: m.username || `Usuario_${uid.slice(-4)}`,
-                avatar: m.avatar || null,
+                username: uName,
+                avatar: mAvatar,
+                sub_bg: m.sub_bg || '',
                 role: m.role || 'member',
                 color: m.color || '#3b82f6',
                 status: m.status || 'online',
@@ -2404,10 +2430,13 @@ export const DesignNetwork = {
 
         if (!this.onlineMembers) this.onlineMembers = new Map();
         const existing = this.onlineMembers.get(uid);
+        const uName = data.username || existing?.username || `Usuario_${uid.slice(-4)}`;
+        const uAvatar = AvatarUtils.getAvatarUrl(data.avatar || existing?.avatar || null, uName, uid);
         this.onlineMembers.set(uid, {
             id: uid,
-            username: data.username || existing?.username || `Usuario_${uid.slice(-4)}`,
-            avatar: data.avatar || existing?.avatar || null,
+            username: uName,
+            avatar: uAvatar,
+            sub_bg: data.sub_bg || existing?.sub_bg || '',
             role: data.role || existing?.role || 'member',
             color: data.color || existing?.color || '#3b82f6',
             status: data.status || 'online',
@@ -2664,11 +2693,13 @@ export const DesignNetwork = {
         let html = '';
 
         for (const [uid, member] of this.onlineMembers.entries()) {
-            const name = member.username || `Usuario_${uid.slice(-4)}`;
+            const name = AvatarUtils.getDisplayName(member, `Usuario_${uid.slice(-4)}`);
             const isSelf = member.isSelf || uid === myUid;
             const isWatching = this.trackedCursorUserIds && this.trackedCursorUserIds.has(uid);
             const isDrawing = !!member.isDrawing;
             const userColor = member.color || '#3b82f6';
+            const avatarUrl = AvatarUtils.getAvatarUrl(member, name, uid);
+            const fallbackAvatar = AvatarUtils.generateDefaultAvatarUrl(name, uid);
             const initial = (name.charAt(0) || 'U').toUpperCase();
 
             // Filter check
@@ -2679,27 +2710,27 @@ export const DesignNetwork = {
             const isOwner = member.role === 'owner';
             const statusClass = isDrawing ? 'drawing' : (member.status === 'idle' ? 'idle' : 'online');
             const statusLabel = isDrawing ? '✏️ Dibujando...' : (isOwner ? '👑 Dueño del lienzo' : 'En línea');
+            const roleBorder = AvatarUtils.getRoleBorder(member);
 
             html += `
-            <div class="component-member-item ${isWatching ? 'is-watching' : ''} ${isOwner ? 'is-owner' : ''}" data-user-id="${uid}" style="--user-color: ${userColor};">
-                <div class="component-member-item__avatar">
-                    ${member.avatar ? `<img src="${member.avatar}" alt="${name}" onerror="this.remove()">` : ''}
-                    <span class="component-member-item__initial">${initial}</span>
+            <div class="component-member-item ${isWatching ? 'is-watching' : ''} ${isOwner ? 'is-owner' : ''}" data-user-id="${escapeHTML(uid)}" style="--user-color: ${escapeHTML(userColor)};">
+                <div class="component-member-item__avatar ${roleBorder.className}" ${roleBorder.subBg ? `data-sub-bg="${escapeHTML(roleBorder.subBg)}" style="--active-subscription-bg: ${escapeHTML(roleBorder.subBg)};"` : ''}>
+                    <img src="${escapeHTML(avatarUrl)}" alt="${escapeHTML(name)}" class="image-lazy-fade image-loaded" onerror="this.onerror=null; this.src='${escapeHTML(fallbackAvatar)}';">
                     <span class="component-live-status-dot ${statusClass}" title="${statusLabel}"></span>
                 </div>
                 <div class="component-member-item__info">
                     <div class="component-member-item__name-row">
-                        <span class="component-member-item__name">${name} ${isSelf ? '(Tú)' : ''}</span>
+                        <span class="component-member-item__name">${escapeHTML(name)} ${isSelf ? '(Tú)' : ''}</span>
                         ${isOwner ? '<span class="component-role-badge owner">👑 Dueño</span>' : ''}
                     </div>
                     <span class="component-member-item__status-text ${isDrawing ? 'drawing' : ''}">${statusLabel}</span>
                 </div>
                 <div class="component-member-item__actions">
                     ${!isSelf ? `
-                    <button type="button" class="component-button component-button--icon component-button--h28" data-action="teleportToUser" data-user-id="${uid}" data-tooltip="Ir a su posición" data-position="top">
+                    <button type="button" class="component-button component-button--icon component-button--h28" data-action="teleportToUser" data-user-id="${escapeHTML(uid)}" data-tooltip="Ir a su posición" data-position="top">
                         <span class="material-symbols-rounded msr-my_location">my_location</span>
                     </button>
-                    <button type="button" class="component-button component-button--icon component-button--h28 ${isWatching ? 'active' : ''}" data-action="toggleUserCursor" data-user-id="${uid}" data-tooltip="${isWatching ? 'Dejar de ver cursor' : 'Ver cursor en vivo'}" data-position="top">
+                    <button type="button" class="component-button component-button--icon component-button--h28 ${isWatching ? 'active' : ''}" data-action="toggleUserCursor" data-user-id="${escapeHTML(uid)}" data-tooltip="${isWatching ? 'Dejar de ver cursor' : 'Ver cursor en vivo'}" data-position="top">
                         <span class="material-symbols-rounded msr-${isWatching ? 'near_me' : 'near_me_disabled'}">${isWatching ? 'near_me' : 'near_me_disabled'}</span>
                     </button>
                     ` : ''}

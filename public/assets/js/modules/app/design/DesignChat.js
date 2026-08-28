@@ -1,6 +1,7 @@
 import { ApiService } from '../../../core/api/ApiService.js';
 import { ApiRoutes } from '../../../core/api/ApiRoutes.js';
 import { showMessage, renderSkeleton } from '../../../core/utils/uiUtils.js';
+import { AvatarUtils } from '../../../core/utils/AvatarUtils.js';
 
 export class DesignChat {
     constructor(controller) {
@@ -1168,15 +1169,19 @@ export class DesignChat {
             ? `Susurraste a <strong>@${msg.target_username}</strong>` 
             : `<strong>@${msg.sender_username}</strong> te susurró`;
 
+        const senderName = isSender 
+            ? (window.APP_USER?.username || 'Tú') 
+            : (msg.sender_username || 'Usuario');
         const avatarUrl = isSender 
-            ? (this.currentUserAvatar || `${window.AppBasePath || ''}/public/assets/img/fallbacks/avatar-default.png`)
-            : (msg.sender_avatar || `${window.AppBasePath || ''}/public/assets/img/fallbacks/avatar-default.png`);
+            ? AvatarUtils.getAvatarUrl(window.APP_USER?.avatar || this.currentUserAvatar || null, senderName, window.APP_USER?.id || '')
+            : AvatarUtils.getAvatarUrl(msg.sender_avatar || null, senderName, msg.sender_id || '');
+        const fallbackUrl = AvatarUtils.generateDefaultAvatarUrl(senderName, isSender ? (window.APP_USER?.id || '') : (msg.sender_id || ''));
 
         const subColorCSS = this.parseSubscriptionColorCSS(msg.sender_sub_color);
 
         const avatarStr = `
             <div class="component-button--profile subscription-dynamic component-avatar--static-sm" data-sub-bg="${subColorCSS}" style="--active-subscription-bg: ${subColorCSS};">
-                <img src="${avatarUrl}" class="chat-message-avatar-img image-lazy-fade" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${window.AppBasePath || ''}/public/assets/img/fallbacks/avatar-default.png'; this.classList.add('image-loaded');">
+                <img src="${avatarUrl}" class="chat-message-avatar-img image-lazy-fade" onload="this.classList.add('image-loaded')" onerror="this.onerror=null; this.src='${fallbackUrl}'; this.classList.add('image-loaded');">
             </div>
         `;
 
@@ -1460,24 +1465,15 @@ export class DesignChat {
             el.classList.add('chat-message--shout');
         }
         
-        let avatarUrl = `${window.AppBasePath || ''}/public/assets/img/fallbacks/avatar-default.png`;
-        if (msg.avatar) {
-            if (msg.avatar.startsWith('http') || msg.avatar.startsWith('data:')) {
-                avatarUrl = msg.avatar;
-            } else {
-                const prefix = msg.avatar.startsWith('/') ? '' : '/';
-                avatarUrl = `${window.AppBasePath || ''}${prefix}${msg.avatar}`;
-            }
-        }
-
+        const senderName = AvatarUtils.getDisplayName(msg, 'Usuario');
+        const avatarUrl = AvatarUtils.getAvatarUrl(msg, senderName, msg.user_id || msg.sender_id || '');
+        const fallbackUrl = AvatarUtils.generateDefaultAvatarUrl(senderName, msg.user_id || msg.sender_id || '');
         const subColorCSS = this.parseSubscriptionColorCSS(msg.subscription_color);
 
-        el.dataset.username = msg.username || '';
+        el.dataset.username = senderName;
         el.dataset.avatar = avatarUrl;
         el.dataset.date = `${dateDividerStr}, ${time}`;
         el.dataset.subBg = subColorCSS || '';
-        
-        const fallbackUrl = `${window.AppBasePath || ''}/public/assets/img/fallbacks/avatar-default.png`;
 
         const avatarStr = `
             <div class="component-button--profile subscription-dynamic component-avatar--static-sm" data-sub-bg="${subColorCSS}" style="--active-subscription-bg: ${subColorCSS};">
