@@ -690,7 +690,7 @@ export const InteractionOfflineWorkspace = {
             if (this.isOfflineMode) {
                 if (this.canvasIntId) {
                     try {
-                        localStorage.removeItem(`rosaura_layers_${this.canvasIntId}`);
+                        localStorage.removeItem(`spriteboard_layers_${this.canvasIntId}`);
                     } catch (e) {}
                     CanvasStorageEngine.saveLayersData(this.canvasIntId, { layers: [] }).catch(() => {});
                 }
@@ -734,7 +734,7 @@ export const InteractionOfflineWorkspace = {
             if (this.isOfflineMode) {
                 if (this.canvasIntId) {
                     try {
-                        localStorage.removeItem(`rosaura_layers_${this.canvasIntId}`);
+                        localStorage.removeItem(`spriteboard_layers_${this.canvasIntId}`);
                     } catch (e) {}
                     CanvasStorageEngine.saveLayersData(this.canvasIntId, { layers: [] }).catch(() => {});
                 }

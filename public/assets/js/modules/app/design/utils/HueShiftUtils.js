@@ -1,7 +1,7 @@
 /**
  * HueShiftUtils.js
  * Generador de rampas de sombreado e iluminación con desplazamiento de matiz (Hue-Shifting)
- * para Project Rosaura Pixel Art Studio.
+ * para Spriteboard Pixel Art Studio.
  */
 
 import { hexToHsv, hsvToHex } from '../../../../core/utils/uiUtils.js';

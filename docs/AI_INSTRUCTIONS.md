@@ -1,4 +1,4 @@
-# AI Development Instructions - Project Rosaura
+# AI Development Instructions - Spriteboard
 
 This guide outlines the mandatory coding rules and architectural constraints that must be followed by any AI developer or coding assistant working on this codebase.
 
@@ -27,7 +27,7 @@ This guide outlines the mandatory coding rules and architectural constraints tha
   - **No Credential / Env Fallbacks**: Do not write `$_ENV['KEY'] ?? 'fallback_val'`. Always read environment variables directly. If a configuration is missing, allow the system to fail fast instead of silently masking setup errors with defaults.
 
 ## 4. Centralized Route Catalog (`ApiRoutes`)
-* **Rule**: Every backend route called by the frontend must be cataloged in [ApiRoutes.js](file:///f:/htdocs/ProjectRosaura/public/assets/js/core/api/ApiRoutes.js).
+* **Rule**: Every backend route called by the frontend must be cataloged in [ApiRoutes.js](../public/assets/js/core/api/ApiRoutes.js).
 * **Action**: Do not pass string literals directly into API client calls. Always import `ApiRoutes` and use its constants (e.g., `ApiRoutes.Auth.Login`).
 
 ## 5. HTTP requests via `ApiService`

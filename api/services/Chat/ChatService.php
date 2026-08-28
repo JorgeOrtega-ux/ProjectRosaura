@@ -663,7 +663,7 @@ class ChatService
 }
 
         $s3Key = 'canvases/' . $canvasUuid . '/chat/' . $file;
-        $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+        $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'spriteboard-storage');
         $s3Client = \App\Core\Helpers\Utils::getS3Client();
 
         try {

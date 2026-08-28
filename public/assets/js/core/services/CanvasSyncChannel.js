@@ -4,7 +4,7 @@
  * del navegador sin requerir WebSocket ni recargas de página (F5).
  */
 export class CanvasSyncChannel {
-    static CHANNEL_NAME = 'rosaura_canvas_events';
+    static CHANNEL_NAME = 'spriteboard_canvas_events';
     static _channel = null;
     static _listeners = new Set();
 

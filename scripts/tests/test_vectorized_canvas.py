@@ -185,7 +185,7 @@ def test_resilient_stream_consumer_and_dlq():
 
 if __name__ == "__main__":
     print("==================================================")
-    print("RUNNING UNIT & INTEGRATION TESTS FOR ROSAURA ENGINE")
+    print("RUNNING UNIT & INTEGRATION TESTS FOR SPRITEBOARD ENGINE")
     print("==================================================")
     try:
         test_resize_vectorization()

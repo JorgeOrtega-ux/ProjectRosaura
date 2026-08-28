@@ -68,7 +68,7 @@ class TestApiClient:
         self.base_url = base_url.rstrip('/')
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'RosauraE2ETestRunner/2.0 (Automated Suite)',
+            'User-Agent': 'SpriteboardE2ETestRunner/2.0 (Automated Suite)',
             'Accept': 'application/json'
         })
         self.csrf_token = None
@@ -148,7 +148,7 @@ class TestApiClient:
     def reset_session(self):
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'RosauraE2ETestRunner/2.0 (Automated Suite)',
+            'User-Agent': 'SpriteboardE2ETestRunner/2.0 (Automated Suite)',
             'Accept': 'application/json'
         })
         self.csrf_token = None
@@ -157,7 +157,7 @@ class TestApiClient:
 # ==============================================================================
 # SUITE PRINCIPAL DE PRUEBAS
 # ==============================================================================
-class RosauraWebTestSuite:
+class SpriteboardWebTestSuite:
     def __init__(self, project_root: str, script_dir: str):
         self.project_root = project_root
         self.script_dir = script_dir
@@ -1302,7 +1302,7 @@ class RosauraWebTestSuite:
                 f.write(f"| {r['module']} | {r['test_name']} | {st} | `{r['response_code']}` | `{r['duration_ms']}ms` | {details} |\n")
 
             f.write("\n---\n")
-            f.write(f"\n*Reporte generado automáticamente por la Suite de Pruebas de ProjectRosaura.*\n")
+            f.write(f"\n*Reporte generado automáticamente por la Suite de Pruebas de Spriteboard.*\n")
 
         print(f"\n{Colors.BOLD}{'='*75}{Colors.ENDC}", flush=True)
         if failed_tests == 0:
@@ -1318,7 +1318,7 @@ class RosauraWebTestSuite:
 # PUNTO DE ENTRADA PRINCIPAL PARA MANAGE_PROJECT.PY
 # ==============================================================================
 def run_e2e_tests(project_root: str, script_dir: str):
-    suite = RosauraWebTestSuite(project_root, script_dir)
+    suite = SpriteboardWebTestSuite(project_root, script_dir)
     suite.run_all()
 
 if __name__ == '__main__':

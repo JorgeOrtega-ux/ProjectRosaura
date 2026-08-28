@@ -623,7 +623,7 @@ def run_scan_views_integrity(project_root):
 # ==============================================================================
 
 """
-Módulo de Población y Reinicialización de Bases de Datos para ProjectRosaura.
+Módulo de Población y Reinicialización de Bases de Datos para Spriteboard.
 Puebla 25 usuarios con perfiles completos (incluyendo la cuenta de superadmin al20328051890088@gmail.com),
 ~25 lienzos por usuario (625 lienzos con capas, frames de animación, snapshots PNG reales y dibujos procedurales),
 publicaciones, comentarios, likes, red de seguidores, notificaciones, publicidad y telemetría.
@@ -643,7 +643,7 @@ SEED_USERS_DATA = [
         "role_id": 4,
         "avatar": "/public/assets/img/fallbacks/avatar-default.png",
         "banner": "assets/img/banners/banner_1.svg",
-        "bio": "Administrador Oficial del Sistema Rosaura 🛡️⚡",
+        "bio": "Administrador Oficial del Sistema Spriteboard 🛡️⚡",
         "flags": ["admin_verified", "early_supporter", "system_staff"]
     },
     {
@@ -656,7 +656,7 @@ SEED_USERS_DATA = [
         "role_id": 4,
         "avatar": "/public/assets/img/fallbacks/avatar-default.png",
         "banner": "assets/img/banners/banner_2.svg",
-        "bio": "Creador y Desarrollador Principal de Project Rosaura 🎨✨🚀",
+        "bio": "Creador y Desarrollador Principal de Spriteboard 🎨✨🚀",
         "flags": ["admin_verified", "verified_artist", "beta_access", "early_supporter"]
     },
     {
@@ -1536,7 +1536,7 @@ def seed_database(project_root, num_users=25, canvases_per_user=25):
                 privacy = 'public' if c_idx <= 20 else 'private'
                 
                 c_name = f"{theme} Studio #{c_idx} (@{u['identifier']})"
-                tags_json = json.dumps([theme.lower(), "pixelart", f"art_{c_idx}", "rosaura"])
+                tags_json = json.dumps([theme.lower(), "pixelart", f"art_{c_idx}", "spriteboard"])
                 
                 fav_cnt = random.randint(3, 45)
                 mem_cnt = random.randint(2, 10)
@@ -1792,7 +1792,7 @@ def seed_database(project_root, num_users=25, canvases_per_user=25):
                 random.choice(['impression', 'impression', 'impression', 'click']),
                 str(uuid.uuid4()),
                 '127.0.0.1',
-                'Mozilla/5.0 RosauraBrowser',
+                'Mozilla/5.0 SpriteboardBrowser',
                 random_date(30)
             ))
         cursor.executemany("INSERT INTO `ad_metrics` (ad_id, provider_id, event_type, user_uuid, ip_address, user_agent, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s)", ad_metrics_rows)
@@ -1813,9 +1813,9 @@ def seed_database(project_root, num_users=25, canvases_per_user=25):
                 config=botocore.config.Config(signature_version='s3v4')
             )
             try:
-                s3.head_bucket(Bucket='rosaura-storage')
+                s3.head_bucket(Bucket='spriteboard-storage')
             except Exception:
-                s3.create_bucket(Bucket='rosaura-storage')
+                s3.create_bucket(Bucket='spriteboard-storage')
 
             policy = {
                 'Version': '2012-10-17',
@@ -1825,11 +1825,11 @@ def seed_database(project_root, num_users=25, canvases_per_user=25):
                         'Effect': 'Allow',
                         'Principal': '*',
                         'Action': ['s3:GetObject'],
-                        'Resource': ['arn:aws:s3:::rosaura-storage/*']
+                        'Resource': ['arn:aws:s3:::spriteboard-storage/*']
                     }
                 ]
             }
-            s3.put_bucket_policy(Bucket='rosaura-storage', Policy=json.dumps(policy))
+            s3.put_bucket_policy(Bucket='spriteboard-storage', Policy=json.dumps(policy))
 
             for c_id, c_uuid, png_bytes, layers_gz, master_pil in minio_canvas_items:
                 webp_io = io.BytesIO()
@@ -1837,20 +1837,20 @@ def seed_database(project_root, num_users=25, canvases_per_user=25):
                 webp_bytes = webp_io.getvalue()
 
                 # Miniaturas WebP (por UUID y por ID)
-                s3.put_object(Bucket='rosaura-storage', Key=f"thumbnails/canvas_{c_uuid}.webp", Body=webp_bytes, ContentType='image/webp')
-                s3.put_object(Bucket='rosaura-storage', Key=f"thumbnails/canvas_{c_id}.webp", Body=webp_bytes, ContentType='image/webp')
+                s3.put_object(Bucket='spriteboard-storage', Key=f"thumbnails/canvas_{c_uuid}.webp", Body=webp_bytes, ContentType='image/webp')
+                s3.put_object(Bucket='spriteboard-storage', Key=f"thumbnails/canvas_{c_id}.webp", Body=webp_bytes, ContentType='image/webp')
 
                 # Snapshots PNG (por ID y por UUID)
-                s3.put_object(Bucket='rosaura-storage', Key=f"snapshots/canvas_{c_id}_main.png", Body=png_bytes, ContentType='image/png')
-                s3.put_object(Bucket='rosaura-storage', Key=f"snapshots/canvas_{c_uuid}_main.png", Body=png_bytes, ContentType='image/png')
+                s3.put_object(Bucket='spriteboard-storage', Key=f"snapshots/canvas_{c_id}_main.png", Body=png_bytes, ContentType='image/png')
+                s3.put_object(Bucket='spriteboard-storage', Key=f"snapshots/canvas_{c_uuid}_main.png", Body=png_bytes, ContentType='image/png')
 
                 # Capas Gzip
-                s3.put_object(Bucket='rosaura-storage', Key=f"layers/canvas_{c_id}.json.gz", Body=layers_gz, ContentType='application/gzip')
-                s3.put_object(Bucket='rosaura-storage', Key=f"layers/canvas_{c_uuid}.json.gz", Body=layers_gz, ContentType='application/gzip')
+                s3.put_object(Bucket='spriteboard-storage', Key=f"layers/canvas_{c_id}.json.gz", Body=layers_gz, ContentType='application/gzip')
+                s3.put_object(Bucket='spriteboard-storage', Key=f"layers/canvas_{c_uuid}.json.gz", Body=layers_gz, ContentType='application/gzip')
 
             for pub_uuid, png_bytes in minio_pub_items:
-                s3.put_object(Bucket='rosaura-storage', Key=f"storage/publications/pub_{pub_uuid}.png", Body=png_bytes, ContentType='image/png')
-                s3.put_object(Bucket='rosaura-storage', Key=f"publications/pub_{pub_uuid}.png", Body=png_bytes, ContentType='image/png')
+                s3.put_object(Bucket='spriteboard-storage', Key=f"storage/publications/pub_{pub_uuid}.png", Body=png_bytes, ContentType='image/png')
+                s3.put_object(Bucket='spriteboard-storage', Key=f"publications/pub_{pub_uuid}.png", Body=png_bytes, ContentType='image/png')
 
             print(f"{Colors.GREEN}✓ Miniaturas WebP y snapshots subidos a MinIO exitosamente.{Colors.ENDC}")
         except Exception as e:
@@ -1913,7 +1913,7 @@ def run_seeder(project_root, script_dir):
 
 def run_project_cleanup(project_root):
     print(f"\n{Colors.HEADER}{Colors.BOLD}=============================================================={Colors.ENDC}")
-    print(f"{Colors.HEADER}{Colors.BOLD}   Limpieza Completa y Segura del Proyecto - Project Rosaura   {Colors.ENDC}")
+    print(f"{Colors.HEADER}{Colors.BOLD}   Limpieza Completa y Segura del Proyecto - Spriteboard   {Colors.ENDC}")
     print(f"{Colors.HEADER}{Colors.BOLD}=============================================================={Colors.ENDC}")
     print(f"{Colors.WARNING}Esta opción eliminará de forma segura:{Colors.ENDC}")
     print("  • Todos los directorios __pycache__ y archivos compilados (*.pyc, *.pyo)")
@@ -2045,7 +2045,7 @@ def main():
         return
 
     print(f"{Colors.HEADER}{Colors.BOLD}=============================================================={Colors.ENDC}")
-    print(f"{Colors.HEADER}{Colors.BOLD}   Herramienta Integral de Gestión y Análisis: Project Rosaura{Colors.ENDC}")
+    print(f"{Colors.HEADER}{Colors.BOLD}   Herramienta Integral de Gestión y Análisis: Spriteboard{Colors.ENDC}")
     print(f"{Colors.HEADER}{Colors.BOLD}=============================================================={Colors.ENDC}")
     print("Selecciona una opción:")
     print("1 - Identificar textos hardcodeados (Internacionalización con word.txt)")

@@ -2056,7 +2056,7 @@ export const DesignNetwork = {
 
                     if (layersData && this.canvasIntId) {
                         try {
-                            localStorage.setItem(`rosaura_layers_${this.canvasIntId}`, JSON.stringify(layersData));
+                            localStorage.setItem(`spriteboard_layers_${this.canvasIntId}`, JSON.stringify(layersData));
                         } catch (e) {}
                     }
                 } else if (this.offscreenCtx) {
@@ -2179,10 +2179,10 @@ export const DesignNetwork = {
         } else if (metaUid && metaUid.trim() !== '' && metaUid !== 'usr_local') {
             this._effectiveUserId = String(metaUid);
         } else {
-            let guestId = sessionStorage.getItem('rosaura_session_uid');
+            let guestId = sessionStorage.getItem('spriteboard_session_uid');
             if (!guestId) {
                 guestId = 'usr_' + (this.isOwner ? 'owner_' : 'guest_') + Math.random().toString(36).substring(2, 9);
-                sessionStorage.setItem('rosaura_session_uid', guestId);
+                sessionStorage.setItem('spriteboard_session_uid', guestId);
             }
             this._effectiveUserId = guestId;
         }

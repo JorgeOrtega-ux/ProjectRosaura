@@ -622,7 +622,7 @@ export const DesignSetup = {
                     });
 
                     if (!response.ok) {
-                        console.error(`[Rosaura App] fetchChunks -> Failed to fetch chunks batch:`, batch, `Status:`, response.status);
+                        console.error(`[Spriteboard App] fetchChunks -> Failed to fetch chunks batch:`, batch, `Status:`, response.status);
                         batch.forEach(k => this.loadingChunks.delete(k));
                         return;
                     }

@@ -2,18 +2,18 @@
   "layout": "<!DOCTYPE html>\n<html lang=\"{{lang}}\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>{{notificationTitle}}</title>\n</head>\n<body style=\"margin: 0; padding: 0; background-color: #f5f5fa; font-family: Arial, sans-serif;\">\n    <div style=\"padding: 20px; background-color: #f5f5fa; color: #111;\">\n        <div style=\"max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; border: 1px solid #00000020;\">\n            {{content}}\n        </div>\n    </div>\n</body>\n</html>",
   "verification_code": {
     "subject": {
-      "es-419": "Código de Verificación - Project Rosaura",
-      "en": "Verification Code - Project Rosaura"
+      "es-419": "Código de Verificación - Spriteboard",
+      "en": "Verification Code - Spriteboard"
     },
     "html": {
-      "es-419": "<h2 style='color: #111111; margin-top: 0;'>¡Hola, {{username}}!</h2><p style='color: #666666; font-size: 15px; line-height: 1.5;'>Gracias por registrarte en Project Rosaura. Para completar tu registro y verificar tu cuenta, por favor ingresa el siguiente código:</p><div style='text-align: center; margin: 35px 0;'><span style='font-size: 26px; font-weight: bold; background-color: #f5f5fa; color: #111111; padding: 15px 25px; border-radius: 8px; letter-spacing: 4px; border: 1px solid #00000020; display: inline-block;'>{{code}}</span></div><p style='color: #666666; font-size: 14px;'>Este código expirará en {{expiresIn}} minutos.</p><hr style='border: none; border-top: 1px solid #00000020; margin: 25px 0;'><p style='font-size: 12px; color: #999999;'>Si no solicitaste este código, puedes ignorar este mensaje.</p>",
-      "en": "<h2 style='color: #111111; margin-top: 0;'>Hi, {{username}}!</h2><p style='color: #666666; font-size: 15px; line-height: 1.5;'>Thank you for registering at Project Rosaura. To complete your registration and verify your account, please enter the following code:</p><div style='text-align: center; margin: 35px 0;'><span style='font-size: 26px; font-weight: bold; background-color: #f5f5fa; color: #111111; padding: 15px 25px; border-radius: 8px; letter-spacing: 4px; border: 1px solid #00000020; display: inline-block;'>{{code}}</span></div><p style='color: #666666; font-size: 14px;'>This code will expire in {{expiresIn}} minutes.</p><hr style='border: none; border-top: 1px solid #00000020; margin: 25px 0;'><p style='font-size: 12px; color: #999999;'>If you did not request this code, you can ignore this message.</p>"
+      "es-419": "<h2 style='color: #111111; margin-top: 0;'>¡Hola, {{username}}!</h2><p style='color: #666666; font-size: 15px; line-height: 1.5;'>Gracias por registrarte en Spriteboard. Para completar tu registro y verificar tu cuenta, por favor ingresa el siguiente código:</p><div style='text-align: center; margin: 35px 0;'><span style='font-size: 26px; font-weight: bold; background-color: #f5f5fa; color: #111111; padding: 15px 25px; border-radius: 8px; letter-spacing: 4px; border: 1px solid #00000020; display: inline-block;'>{{code}}</span></div><p style='color: #666666; font-size: 14px;'>Este código expirará en {{expiresIn}} minutos.</p><hr style='border: none; border-top: 1px solid #00000020; margin: 25px 0;'><p style='font-size: 12px; color: #999999;'>Si no solicitaste este código, puedes ignorar este mensaje.</p>",
+      "en": "<h2 style='color: #111111; margin-top: 0;'>Hi, {{username}}!</h2><p style='color: #666666; font-size: 15px; line-height: 1.5;'>Thank you for registering at Spriteboard. To complete your registration and verify your account, please enter the following code:</p><div style='text-align: center; margin: 35px 0;'><span style='font-size: 26px; font-weight: bold; background-color: #f5f5fa; color: #111111; padding: 15px 25px; border-radius: 8px; letter-spacing: 4px; border: 1px solid #00000020; display: inline-block;'>{{code}}</span></div><p style='color: #666666; font-size: 14px;'>This code will expire in {{expiresIn}} minutes.</p><hr style='border: none; border-top: 1px solid #00000020; margin: 25px 0;'><p style='font-size: 12px; color: #999999;'>If you did not request this code, you can ignore this message.</p>"
     }
   },
   "password_reset": {
     "subject": {
-      "es-419": "Restablecer contraseña - Project Rosaura",
-      "en": "Reset Password - Project Rosaura"
+      "es-419": "Restablecer contraseña - Spriteboard",
+      "en": "Reset Password - Spriteboard"
     },
     "html": {
       "es-419": "<h2 style='color: #111111; margin-top: 0;'>¡Hola, {{username}}!</h2><p style='color: #666666; font-size: 15px; line-height: 1.5;'>Hemos recibido una solicitud para restablecer tu contraseña. Haz clic en el siguiente botón para crear una nueva:</p><div style='text-align: center; margin: 35px 0;'><a href='{{resetLink}}' style='background-color: #111111; color: #ffffff; padding: 14px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;'>Restablecer contraseña</a></div><p style='color: #666666; font-size: 14px;'>Este enlace expirará en {{expiresIn}} minutos.</p><hr style='border: none; border-top: 1px solid #00000020; margin: 25px 0;'><p style='font-size: 12px; color: #999999;'>Si no realizaste esta solicitud, ignora este correo. Tu cuenta sigue segura.</p>",
@@ -22,8 +22,8 @@
   },
   "email_update_code": {
     "subject": {
-      "es-419": "Actualización de correo - Project Rosaura",
-      "en": "Email Update - Project Rosaura"
+      "es-419": "Actualización de correo - Spriteboard",
+      "en": "Email Update - Spriteboard"
     },
     "html": {
       "es-419": "<h2 style='color: #111111; margin-top: 0;'>¡Hola, {{username}}!</h2><p style='color: #666666; font-size: 15px; line-height: 1.5;'>Has solicitado actualizar el correo electrónico de tu cuenta. Para continuar y verificar tu identidad, por favor ingresa el siguiente código de confirmación:</p><div style='text-align: center; margin: 35px 0;'><span style='font-size: 26px; font-weight: bold; background-color: #f5f5fa; color: #111111; padding: 15px 25px; border-radius: 8px; letter-spacing: 4px; border: 1px solid #00000020; display: inline-block;'>{{code}}</span></div><p style='color: #666666; font-size: 14px;'>Este código expirará en {{expiresIn}} minutos.</p><hr style='border: none; border-top: 1px solid #00000020; margin: 25px 0;'><p style='font-size: 12px; color: #999999;'>Si no realizaste esta solicitud, puedes ignorar este correo de forma segura y tu cuenta se mantendrá protegida.</p>",
@@ -32,8 +32,8 @@
   },
   "security_alert_email_changed": {
     "subject": {
-      "es-419": "Aviso de seguridad: Cambio de correo - Project Rosaura",
-      "en": "Security Notice: Email Changed - Project Rosaura"
+      "es-419": "Aviso de seguridad: Cambio de correo - Spriteboard",
+      "en": "Security Notice: Email Changed - Spriteboard"
     },
     "html": {
       "es-419": "<h2 style='color: #111111; margin-top: 0;'>Alerta de Seguridad</h2><p style='color: #666666; font-size: 15px; line-height: 1.5;'>Te informamos que un administrador ha modificado la dirección de correo electrónico asociada a tu cuenta.</p><p style='color: #666666; font-size: 15px; line-height: 1.5;'>Tu nuevo correo registrado es: <br><b style='color: #111111; font-size: 16px;'>{{newEmail}}</b></p><hr style='border: none; border-top: 1px solid #00000020; margin: 25px 0;'><p style='font-size: 13px; color: #d32f2f; font-weight: bold;'>¿No fuiste tú?</p><p style='font-size: 13px; color: #666666;'>Si tú no solicitaste este cambio o crees que fue un error, por favor ponte en contacto con nuestro equipo de soporte inmediatamente para asegurar tu cuenta.</p>",
@@ -42,8 +42,8 @@
   },
   "account_status_update": {
     "subject": {
-      "es-419": "Aviso de moderación de cuenta - Project Rosaura",
-      "en": "Account Moderation Notice - Project Rosaura"
+      "es-419": "Aviso de moderación de cuenta - Spriteboard",
+      "en": "Account Moderation Notice - Spriteboard"
     },
     "html": {
       "es-419": "<h2 style='color: #111111; margin-top: 0;'>Actualización de Cuenta</h2><p style='color: #666666; font-size: 15px; line-height: 1.5;'>Te informamos que tu cuenta ha sido <b style='color: #111111;'>{{actionText}}</b> por nuestro equipo de moderación.</p><div style='background-color: #fffaf9; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #d32f2f30;'><p style='margin: 0; color: #d32f2f; font-size: 14px;'><b>Motivo:</b> {{reason}}</p></div>{{timeText}}<hr style='border: none; border-top: 1px solid #00000020; margin: 25px 0;'><p style='font-size: 12px; color: #999999;'>Si consideras que esto es un error, por favor contacta a nuestro equipo de soporte.</p>",
@@ -52,8 +52,8 @@
   },
   "2fa_status_changed": {
     "subject": {
-      "es-419": "Aviso de seguridad: Estado de 2FA actualizado - Project Rosaura",
-      "en": "Security Notice: 2FA Status Updated - Project Rosaura"
+      "es-419": "Aviso de seguridad: Estado de 2FA actualizado - Spriteboard",
+      "en": "Security Notice: 2FA Status Updated - Spriteboard"
     },
     "html": {
       "es-419": "<h2 style='color: #111111; margin-top: 0;'>Alerta de Seguridad</h2><p style='color: #666666; font-size: 15px; line-height: 1.5;'>Te informamos que la Autenticación de Dos Factores (2FA) en tu cuenta ha sido <b style='color: {{color}};'>{{statusText}}</b>.</p><hr style='border: none; border-top: 1px solid #00000020; margin: 25px 0;'><p style='font-size: 13px; color: #d32f2f; font-weight: bold;'>¿No fuiste tú?</p><p style='font-size: 13px; color: #666666;'>Si no realizaste este cambio, es posible que alguien tenga acceso a tu cuenta. Por favor, inicia sesión inmediatamente para asegurar tu cuenta o ponte en contacto con soporte.</p>",
@@ -62,12 +62,12 @@
   },
   "password_changed": {
     "subject": {
-      "es-419": "Aviso de seguridad: Contraseña actualizada - Project Rosaura",
-      "en": "Security Notice: Password Updated - Project Rosaura"
+      "es-419": "Aviso de seguridad: Contraseña actualizada - Spriteboard",
+      "en": "Security Notice: Password Updated - Spriteboard"
     },
     "html": {
-      "es-419": "<h2 style='color: #111111; margin-top: 0;'>Alerta de Seguridad</h2><p style='color: #666666; font-size: 15px; line-height: 1.5;'>Te informamos que la contraseña de tu cuenta en Project Rosaura ha sido modificada exitosamente.</p><p style='color: #666666; font-size: 15px; line-height: 1.5;'>Ya puedes usar tu nueva contraseña para iniciar sesión.</p><hr style='border: none; border-top: 1px solid #00000020; margin: 25px 0;'><p style='font-size: 13px; color: #d32f2f; font-weight: bold;'>¿No fuiste tú?</p><p style='font-size: 13px; color: #666666;'>Si no solicitaste ni realizaste este cambio, tu cuenta podría estar comprometida. Usa la opción 'Olvidé mi contraseña' en la pantalla de inicio de sesión para recuperar el acceso de inmediato.</p>",
-      "en": "<h2 style='color: #111111; margin-top: 0;'>Security Alert</h2><p style='color: #666666; font-size: 15px; line-height: 1.5;'>We inform you that the password for your account on Project Rosaura has been successfully updated.</p><p style='color: #666666; font-size: 15px; line-height: 1.5;'>You can now use your new password to log in.</p><hr style='border: none; border-top: 1px solid #00000020; margin: 25px 0;'><p style='font-size: 13px; color: #d32f2f; font-weight: bold;'>Was not you?</p><p style='font-size: 13px; color: #666666;'>If you did not request or make this change, your account might be compromised. Use the 'Forgot Password' option on the login screen to recover access immediately.</p>"
+      "es-419": "<h2 style='color: #111111; margin-top: 0;'>Alerta de Seguridad</h2><p style='color: #666666; font-size: 15px; line-height: 1.5;'>Te informamos que la contraseña de tu cuenta en Spriteboard ha sido modificada exitosamente.</p><p style='color: #666666; font-size: 15px; line-height: 1.5;'>Ya puedes usar tu nueva contraseña para iniciar sesión.</p><hr style='border: none; border-top: 1px solid #00000020; margin: 25px 0;'><p style='font-size: 13px; color: #d32f2f; font-weight: bold;'>¿No fuiste tú?</p><p style='font-size: 13px; color: #666666;'>Si no solicitaste ni realizaste este cambio, tu cuenta podría estar comprometida. Usa la opción 'Olvidé mi contraseña' en la pantalla de inicio de sesión para recuperar el acceso de inmediato.</p>",
+      "en": "<h2 style='color: #111111; margin-top: 0;'>Security Alert</h2><p style='color: #666666; font-size: 15px; line-height: 1.5;'>We inform you that the password for your account on Spriteboard has been successfully updated.</p><p style='color: #666666; font-size: 15px; line-height: 1.5;'>You can now use your new password to log in.</p><hr style='border: none; border-top: 1px solid #00000020; margin: 25px 0;'><p style='font-size: 13px; color: #d32f2f; font-weight: bold;'>Was not you?</p><p style='font-size: 13px; color: #666666;'>If you did not request or make this change, your account might be compromised. Use the 'Forgot Password' option on the login screen to recover access immediately.</p>"
     }
   },
   "subscription_confirmation": {
@@ -92,8 +92,8 @@
   },
   "welcome": {
     "subject": {
-      "es-419": "¡Bienvenido a Project Rosaura!",
-      "en": "Welcome to Project Rosaura!"
+      "es-419": "¡Bienvenido a Spriteboard!",
+      "en": "Welcome to Spriteboard!"
     },
     "html": {
       "es-419": "<h2 style='color: #111111; margin-top: 0;'>¡Bienvenido a nuestra plataforma!</h2><p style='color: #666666; font-size: 15px; line-height: 1.5;'>Hola {{username}}, estamos encantados de tenerte aquí.</p><p style='color: #666666; font-size: 15px; line-height: 1.5;'>Tu registro se completó con éxito y ya puedes empezar a explorar todas nuestras funciones.</p><p style='color: #666666; font-size: 15px; line-height: 1.5;'>Si tienes alguna pregunta, no dudes en ponerte en contacto con nuestro equipo de soporte.</p>",
@@ -102,8 +102,8 @@
   },
   "security_alert_suspicious_login": {
     "subject": {
-      "es-419": "Aviso de seguridad: Inicio de sesión inusual detectado - Project Rosaura",
-      "en": "Security Alert: Unusual Login Detected - Project Rosaura"
+      "es-419": "Aviso de seguridad: Inicio de sesión inusual detectado - Spriteboard",
+      "en": "Security Alert: Unusual Login Detected - Spriteboard"
     },
     "html": {
       "es-419": "<h2 style='color: #d32f2f; margin-top: 0;'>Alerta de Seguridad: Inicio de Sesión Inusual</h2><p style='color: #666666; font-size: 15px; line-height: 1.5;'>Hola {{username}}, hemos detectado un inicio de sesión inusual en tu cuenta que coincide con un patrón geográfico anómalo (posible viaje imposible o cambio abrupto de ubicación).</p><div style='background-color: #fffaf9; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #d32f2f30;'><p style='margin: 0 0 8px 0; color: #111111; font-size: 14px;'><b>Ubicación:</b> {{location}}</p><p style='margin: 0 0 8px 0; color: #111111; font-size: 14px;'><b>Dirección IP:</b> {{ip}}</p><p style='margin: 0; color: #111111; font-size: 14px;'><b>Fecha y Hora:</b> {{time}}</p></div><hr style='border: none; border-top: 1px solid #00000020; margin: 25px 0;'><p style='font-size: 13px; color: #d32f2f; font-weight: bold;'>¿No fuiste tú?</p><p style='font-size: 13px; color: #666666;'>Si no fuiste tú quien inició sesión, te recomendamos cambiar tu contraseña inmediatamente desde los ajustes de seguridad y activar la verificación en dos pasos (2FA).</p>",

@@ -24,7 +24,7 @@ class DataCipher {
 
         $rawKey = EnvLoader::get('PII_ENCRYPTION_KEY', '') 
             ?: EnvLoader::get('APP_KEY', '') 
-            ?: EnvLoader::get('INTERNAL_API_SECRET', 'rosaura_pii_default_master_key_secure');
+            ?: EnvLoader::get('INTERNAL_API_SECRET', 'spriteboard_pii_default_master_key_secure');
 
         self::$masterKey = hash('sha256', $rawKey, true);
         return self::$masterKey;

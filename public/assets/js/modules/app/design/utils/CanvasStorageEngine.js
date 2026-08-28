@@ -1,6 +1,6 @@
 /**
  * CanvasStorageEngine.js
- * Motor de Persistencia IndexedDB y Sistema de Backups Silencioso para Project Rosaura.
+ * Motor de Persistencia IndexedDB y Sistema de Backups Silencioso para Spriteboard.
  * 
  * Garantiza:
  * 1. Persistencia local indestructible de estados de lienzo, capas y frames de animación.
@@ -9,7 +9,7 @@
  * 4. Cola de sincronización offline resiliente con retroceso adaptativo ante errores o HTTP 429.
  */
 
-const DB_NAME = 'RosauraCanvasDB_v2';
+const DB_NAME = 'SpriteboardCanvasDB_v2';
 const DB_VERSION = 3;
 const STORE_STATE = 'canvas_state';
 const STORE_LAYERS = 'canvas_layers';
@@ -173,7 +173,7 @@ class CanvasStorageEngineClass {
 
         // Fallback redundante a localStorage
         try {
-            localStorage.setItem(`rosaura_layers_${normId}`, JSON.stringify(layersData));
+            localStorage.setItem(`spriteboard_layers_${normId}`, JSON.stringify(layersData));
         } catch (lsErr) {
             // Ignorar QuotaExceededError en localStorage ya que IndexedDB es la fuente principal
         }
@@ -228,7 +228,7 @@ class CanvasStorageEngineClass {
 
         // Fallback a localStorage
         try {
-            const stored = localStorage.getItem(`rosaura_layers_${normId}`);
+            const stored = localStorage.getItem(`spriteboard_layers_${normId}`);
             if (stored) {
                 const parsed = JSON.parse(stored);
                 return parsed;
@@ -373,8 +373,8 @@ class CanvasStorageEngineClass {
 
             // 5. Limpiar claves redundantes de localStorage
             try {
-                localStorage.removeItem(`rosaura_layers_${normId}`);
-                localStorage.removeItem(`rosaura_custom_colors_${normId}`);
+                localStorage.removeItem(`spriteboard_layers_${normId}`);
+                localStorage.removeItem(`spriteboard_custom_colors_${normId}`);
             } catch (e) {}
 
             return true;

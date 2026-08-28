@@ -75,7 +75,7 @@ class CanvasAssetService {
 
             $fileName = sprintf('%s_%s.%s', $userId, Utils::generateUUID(), $extension);
             
-            $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+            $bucket = EnvLoader::get('AWS_BUCKET', 'spriteboard-storage');
             $s3Client = Utils::getS3Client();
             try {
                 $s3Client->putObject([
@@ -201,7 +201,7 @@ class CanvasAssetService {
             if ($template) {
                 if (!empty($template['file_path'])) {
                     $s3Key = Utils::normalizeStoragePath($template['file_path']);
-                    $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+                    $bucket = EnvLoader::get('AWS_BUCKET', 'spriteboard-storage');
                     $s3Client = Utils::getS3Client();
                     try {
                         $s3Client->deleteObject([
@@ -235,7 +235,7 @@ class CanvasAssetService {
 
             $templates = $this->canvasRepository->permanentDeleteTemplates($templateIds, $userId);
             if (!empty($templates)) {
-                $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+                $bucket = EnvLoader::get('AWS_BUCKET', 'spriteboard-storage');
                 $s3Client = Utils::getS3Client();
                 foreach ($templates as $t) {
                     if (!empty($t['file_path'])) {

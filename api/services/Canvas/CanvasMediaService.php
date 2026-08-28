@@ -207,7 +207,7 @@ class CanvasMediaService {
 
             if (!$jsonlContent && !empty($timelapsePath)) {
                 try {
-                    $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+                    $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'spriteboard-storage');
                     $s3Client = Utils::getS3Client();
                     $s3Obj = $s3Client->getObject([
                         'Bucket' => $bucket,
@@ -411,7 +411,7 @@ class CanvasMediaService {
                 (new \App\Core\System\CacheInvalidator($redis))->canvasSnapshots($data['canvas_uuid'] ?? '', (int)$data['canvas_id']);
             } catch (\Throwable $e) {}
 
-            $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+            $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'spriteboard-storage');
             $s3Client = Utils::getS3Client();
 
             if (!empty($data['file_path'])) {
@@ -528,7 +528,7 @@ class CanvasMediaService {
             $localVideoPath = "{$localVideoDir}/{$data['snapshot_uuid']}_{$duration}s_{$quality}.mp4";
             $publicUrl = \App\Core\Helpers\Utils::getS3PublicUrl($s3VideoKey) . '?v=' . time();
 
-            $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+            $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'spriteboard-storage');
             $s3Client = Utils::getS3Client();
 
             // 1. Check S3 if already exists

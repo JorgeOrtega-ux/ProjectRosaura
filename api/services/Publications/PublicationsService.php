@@ -116,7 +116,7 @@ class PublicationsService {
         }
 
         // Subir a MinIO / Amazon S3
-        $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+        $bucket = EnvLoader::get('AWS_BUCKET', 'spriteboard-storage');
         $s3Key = $pubRelDir . '/' . $fileName;
         try {
             $s3Client = Utils::getS3Client();
@@ -709,7 +709,7 @@ class PublicationsService {
             if (!empty($pub['image_path'])) {
                 try {
                     $s3Key = Utils::normalizeStoragePath($pub['image_path']);
-                    $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+                    $bucket = EnvLoader::get('AWS_BUCKET', 'spriteboard-storage');
                     $s3Client = Utils::getS3Client();
                     $s3Client->deleteObject([
                         'Bucket' => $bucket,

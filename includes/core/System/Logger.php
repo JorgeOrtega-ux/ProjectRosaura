@@ -35,7 +35,7 @@ class Logger {
 
         $key = EnvLoader::get('LOG_HMAC_KEY', '')
             ?: EnvLoader::get('APP_KEY', '')
-            ?: EnvLoader::get('INTERNAL_API_SECRET', 'rosaura_log_integrity_default_hmac_secret');
+            ?: EnvLoader::get('INTERNAL_API_SECRET', 'spriteboard_log_integrity_default_hmac_secret');
 
         self::$hmacKey = hash('sha256', $key, true);
         return self::$hmacKey;

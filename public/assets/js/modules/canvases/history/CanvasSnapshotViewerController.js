@@ -1040,7 +1040,7 @@ class CanvasSnapshotViewerController {
 
     async downloadSnapshotImage(format = 'png', btn = null) {
         const fmt = (format || 'png').toLowerCase();
-        const filename = `snapshot_${this.snapshotId || 'rosaura'}.${fmt}`;
+        const filename = `snapshot_${this.snapshotId || 'spriteboard'}.${fmt}`;
 
         if (!this.offscreenCanvas || this.boardWidth <= 0 || this.boardHeight <= 0) {
             await this.fallbackDownloadImage(fmt, filename, btn);
@@ -1156,7 +1156,7 @@ class CanvasSnapshotViewerController {
 
     async fallbackDownloadImage(format = 'png', filename = '', btnDownload = null) {
         const fmt = (format || 'png').toLowerCase();
-        const fname = filename || `snapshot_${this.snapshotId || 'rosaura'}.${fmt}`;
+        const fname = filename || `snapshot_${this.snapshotId || 'spriteboard'}.${fmt}`;
         if (!this.originalImageUrl) {
             if (btnDownload) restoreButton(btnDownload);
             return;
@@ -1240,7 +1240,7 @@ class CanvasSnapshotViewerController {
     }
 
     async fallbackDownload(btnDownload = null) {
-        await this.fallbackDownloadImage('png', `snapshot_${this.snapshotId || 'rosaura'}.png`, btnDownload);
+        await this.fallbackDownloadImage('png', `snapshot_${this.snapshotId || 'spriteboard'}.png`, btnDownload);
     }
 
     async loadSnapshotData() {

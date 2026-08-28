@@ -11,7 +11,7 @@ Generador automático de:
 import os
 import json
 
-BASE_DIR = r"f:\htdocs\ProjectRosaura"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STICKERS_DIR = os.path.join(BASE_DIR, "public", "assets", "img", "stickers")
 SHAPES_DIR = os.path.join(BASE_DIR, "public", "assets", "img", "shapes")
 JS_DATA_DIR = os.path.join(BASE_DIR, "public", "assets", "js", "modules", "app", "design", "data")

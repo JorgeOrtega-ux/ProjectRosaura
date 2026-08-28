@@ -55,7 +55,7 @@ pub async fn ensure_canvas_state_loaded(state: &AppState, canvas_id: &str) {
                 if !s3_endpoint.starts_with("http://") && !s3_endpoint.starts_with("https://") {
                     s3_endpoint = format!("http://{}", s3_endpoint);
                 }
-                let s3_bucket = std::env::var("AWS_BUCKET").unwrap_or_else(|_| "rosaura-storage".to_string());
+                let s3_bucket = std::env::var("AWS_BUCKET").unwrap_or_else(|_| "spriteboard-storage".to_string());
                 let url = format!("{}/{}/{}", s3_endpoint.trim_end_matches('/'), s3_bucket, s3_key.trim_start_matches('/'));
                 
                 if let Ok(resp) = reqwest::get(&url).await {

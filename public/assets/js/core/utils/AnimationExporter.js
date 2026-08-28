@@ -379,7 +379,7 @@ export const AnimationExporter = {
         const jsonMetadata = {
             frames: framesMeta,
             meta: {
-                app: "Project Rosaura Pixel Studio",
+                app: "Spriteboard Pixel Studio",
                 version: "2.0",
                 image: "spritesheet.png",
                 format: "RGBA8888",

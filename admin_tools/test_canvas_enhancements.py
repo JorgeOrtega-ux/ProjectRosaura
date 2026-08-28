@@ -15,7 +15,7 @@ import json
 import re
 import xml.etree.ElementTree as ET
 
-BASE_DIR = r"f:\htdocs\ProjectRosaura"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 passed_tests = 0
 failed_tests = 0
 
@@ -131,7 +131,7 @@ storage_engine_file = os.path.join(BASE_DIR, "public", "assets", "js", "modules"
 check(os.path.exists(storage_engine_file), "CanvasStorageEngine.js existe en utils")
 with open(storage_engine_file, "r", encoding="utf-8") as f:
     cse_content = f.read()
-check("RosauraCanvasDB_v2" in cse_content, "CanvasStorageEngine inicializa RosauraCanvasDB_v2")
+check("SpriteboardCanvasDB_v2" in cse_content, "CanvasStorageEngine inicializa SpriteboardCanvasDB_v2")
 check("createSilentBackup" in cse_content, "CanvasStorageEngine implementa createSilentBackup")
 check("getLatestValidBackup" in cse_content, "CanvasStorageEngine implementa getLatestValidBackup para autorrecuperación")
 check("enqueueOfflineSync" in cse_content and "flushOfflineSyncQueue" in cse_content,

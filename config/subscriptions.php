@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /**
  * ==============================================================================
- * ProjectRosaura - Centralized Subscription Plans Configuration
+ * Spriteboard - Centralized Subscription Plans Configuration
  * ==============================================================================
  * 
  * Este archivo centraliza la definición completa de los planes y suscripciones.

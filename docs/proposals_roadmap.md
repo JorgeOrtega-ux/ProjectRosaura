@@ -1,6 +1,6 @@
-# 🚀 Project Rosaura: Master Strategic Roadmap & Feature Proposals
+# 🚀 Spriteboard: Master Strategic Roadmap & Feature Proposals
 
-Documento de análisis estratégico y propuestas arquitectónicas para la evolución de **Project Rosaura**, diseñado para consolidar la plataforma como el ecosistema de creación de pixel art y lienzos colaborativos más potente, moderno y fluido de la web.
+Documento de análisis estratégico y propuestas arquitectónicas para la evolución de **Spriteboard**, diseñado para consolidar la plataforma como el ecosistema de creación de pixel art y lienzos colaborativos más potente, moderno y fluido de la web.
 
 ---
 
@@ -27,7 +27,7 @@ Documento de análisis estratégico y propuestas arquitectónicas para la evoluc
 
 ### 1. Timeline & Motor de Animación (Modo Frames en el Carrusel Inferior)
 > [!IMPORTANT]
-> **El siguiente salto cuantitativo natural para Project Rosaura.**
+> **El siguiente salto cuantitativo natural para Spriteboard.**
 > Ya contamos con el carrusel inferior de tarjetas. Permitir alternar este carrusel entre **Modo Capas** y **Modo Frames / Animación** posicionará la web a la altura de **Aseprite** y **Piskel**.
 
 #### 💡 Concepto
@@ -122,7 +122,7 @@ Documento de análisis estratégico y propuestas arquitectónicas para la evoluc
 
 ### 9. Perfiles de Creador Personalizados & Portafolio Integrado
 #### 💡 Concepto
-* Cada usuario cuenta con su enlace único: `rosaura.app/@usuario`.
+* Cada usuario cuenta con su enlace único: `spriteboard.app/@usuario`.
 * Banner personalizado, biografía, redes sociales, colección de medallas de retos diarios y visor interactivo de sus creaciones donde los visitantes pueden hacer zoom y explorar los píxeles.
 
 ---
@@ -141,7 +141,7 @@ Documento de análisis estratégico y propuestas arquitectónicas para la evoluc
 
 ```mermaid
 gantt
-    title Plan Estratégico de Evolución Project Rosaura
+    title Plan Estratégico de Evolución Spriteboard
     dateFormat  YYYY-MM-DD
     section Sprint 4: Productividad & Animación
     Motor de Animación (Modo Frames)     :a1, 2026-09-01, 10d

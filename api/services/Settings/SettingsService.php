@@ -735,7 +735,7 @@ class SettingsService
             $this->sessionManager->set('2fa_setup_secret', $secret);
         }
 
-        $totpUrl = $ga->getQRCodeUrl('ProjectRosaura', $this->sessionManager->get('user_email'), $secret);
+        $totpUrl = $ga->getQRCodeUrl(defined('APP_NAME') ? APP_NAME : 'Spriteboard', $this->sessionManager->get('user_email'), $secret);
 
         $qrSvg = null;
         try {

@@ -8,11 +8,13 @@ idéntico al módulo de figuras geométricas (12 categorías x 10 stickers = 120
 import os
 import re
 
-PHP_FILE = r"f:\htdocs\ProjectRosaura\includes\modules\moduleDesignTools.php"
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+_base_dir = os.path.dirname(_script_dir)
+PHP_FILE = os.path.join(_base_dir, "includes", "modules", "moduleDesignTools.php")
 
 # Importar categorías de generate_assets
 import sys
-sys.path.insert(0, r"f:\htdocs\ProjectRosaura\admin_tools")
+sys.path.insert(0, _script_dir)
 from generate_assets import STICKERS_CATEGORIES
 
 # Construir array PHP para $stickerCategories

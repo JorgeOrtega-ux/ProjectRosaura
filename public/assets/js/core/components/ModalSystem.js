@@ -2811,7 +2811,7 @@ export class ModalSystem {
                 a.remove();
             }, 1000);
 
-            // 2. Save template into Rosaura canvas templates library
+            // 2. Save template into Spriteboard canvas templates library
             try {
                 const api = new ApiService();
                 const file = new File([blob], fileName, { type: blob.type || 'image/png' });

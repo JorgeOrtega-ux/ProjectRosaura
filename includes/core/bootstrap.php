@@ -14,7 +14,7 @@ if (!isset($_ENV['APP_URL'])) {
     die("Critical Failure: APP_URL is not defined in the environment.");
 }
 define('APP_URL', rtrim($_ENV['APP_URL'], '/'));
-define('APP_NAME', $_ENV['APP_NAME'] ?? 'ProjectRosaura');
+define('APP_NAME', $_ENV['APP_NAME'] ?? 'Spriteboard');
 
 header("X-Frame-Options: SAMEORIGIN");
 header("X-Content-Type-Options: nosniff");

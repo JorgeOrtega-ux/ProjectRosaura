@@ -4,7 +4,7 @@ services:
   # ==========================================
   db:
     image: mysql:8.0
-    container_name: rosaura_db
+    container_name: spriteboard_db
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
@@ -18,7 +18,7 @@ services:
       - db_data:/var/lib/mysql
       - ../docker/mysql/init:/docker-entrypoint-initdb.d 
     networks:
-      - rosaura_data_network
+      - spriteboard_data_network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
       interval: 10s
@@ -27,7 +27,7 @@ services:
 
   redis:
     image: redis:alpine
-    container_name: rosaura_redis
+    container_name: spriteboard_redis
     restart: always
     environment:
       - TZ=${APP_TIMEZONE:-UTC}
@@ -39,7 +39,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - rosaura_data_network
+      - spriteboard_data_network
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASS\" ping | grep PONG || exit 1"]
       interval: 10s
@@ -48,7 +48,7 @@ services:
 
   typesense:
     image: typesense/typesense:26.0
-    container_name: rosaura_typesense
+    container_name: spriteboard_typesense
     restart: always
     environment:
       - TYPESENSE_DATA_DIR=/data
@@ -58,14 +58,14 @@ services:
     volumes:
       - typesense_data:/data
     networks:
-      - rosaura_data_network
+      - spriteboard_data_network
 
   # ==========================================
   # SERVICIO DE STORAGE (Amazon S3 Mock)
   # ==========================================
   minio:
     image: minio/minio
-    container_name: rosaura_minio
+    container_name: spriteboard_minio
     restart: always
     ports:
       - "${DATA_BIND_IP:-127.0.0.1}:9000:9000" 
@@ -78,29 +78,29 @@ services:
       (/bin/sh -c '
         sleep 5;
         /usr/bin/mc alias set myminio http://localhost:9000 $${AWS_ACCESS_KEY_ID:-admin} $${AWS_SECRET_ACCESS_KEY:-password};
-        /usr/bin/mc mb myminio/$${AWS_BUCKET:-rosaura-storage} || true;
-        /usr/bin/mc anonymous set download myminio/$${AWS_BUCKET:-rosaura-storage} || true;
+        /usr/bin/mc mb myminio/$${AWS_BUCKET:-spriteboard-storage} || true;
+        /usr/bin/mc anonymous set download myminio/$${AWS_BUCKET:-spriteboard-storage} || true;
       ') &
       exec /usr/bin/docker-entrypoint.sh minio server /data --console-address ':9001'
       "
     volumes:
       - minio_data:/data
     networks:
-      - rosaura_data_network
+      - spriteboard_data_network
 
   # ==========================================
   # SERVIDOR CASSANDRA (NoSQL)
   # ==========================================
   db_cassandra:
     image: cassandra:4.1
-    container_name: rosaura_db_cassandra
+    container_name: spriteboard_db_cassandra
     restart: always
     ports:
       - "${DATA_BIND_IP:-127.0.0.1}:9042:9042"
     volumes:
       - cassandra_data:/var/lib/cassandra
     networks:
-      - rosaura_data_network
+      - spriteboard_data_network
     healthcheck:
       test: ["CMD-SHELL", "cqlsh -e 'describe cluster'"]
       interval: 10s
@@ -109,7 +109,7 @@ services:
       start_period: 45s
 
 networks:
-  rosaura_data_network:
+  spriteboard_data_network:
     driver: bridge
 
 volumes:

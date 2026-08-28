@@ -3,7 +3,7 @@ services:
     build:
       context: ../
       dockerfile: docker/php/Dockerfile
-    container_name: rosaura_app
+    container_name: spriteboard_app
     restart: always
     ports:
       - "${APP_BIND_IP:-127.0.0.1}:80:80"
@@ -19,13 +19,13 @@ services:
       - AWS_ENDPOINT=${AWS_ENDPOINT}
       - SESSION_DRIVER=redis
     networks:
-      - rosaura_app_network
+      - spriteboard_app_network
 
   go_service:
     build:
       context: ../docker/go
       dockerfile: Dockerfile
-    container_name: rosaura_go_service
+    container_name: spriteboard_go_service
     restart: always
     ports:
       - "${APP_BIND_IP:-127.0.0.1}:8080:8080"
@@ -35,8 +35,8 @@ services:
       - TZ=${APP_TIMEZONE:-UTC}
       - REDIS_HOST=${REDIS_HOST}
     networks:
-      - rosaura_app_network
+      - spriteboard_app_network
 
 networks:
-  rosaura_app_network:
+  spriteboard_app_network:
     driver: bridge

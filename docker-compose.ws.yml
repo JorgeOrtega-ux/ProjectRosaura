@@ -1,17 +1,20 @@
 
+name: spriteboard
+
 services:
   websocket_node:
+    image: spriteboard-websocket_node:latest
     build:
       context: .
       dockerfile: docker/rust/Dockerfile.worker
-    container_name: rosaura_websocket_node_rust
+    container_name: spriteboard_websocket_node_rust
     restart: always
     networks:
-      - rosaura_network
+      - spriteboard_network
     env_file:
       - .env.ws
 
 networks:
-  rosaura_network:
+  spriteboard_network:
     external: true
-    name: projectrosaura_rosaura_network
+    name: spriteboard_network

@@ -1,11 +1,13 @@
 
+name: spriteboard
+
 services:
   # ==========================================
   # SERVICIOS BASE (APP, MYSQL, REDIS, TYPESENSE)
   # ==========================================
   nginx:
     image: nginx:alpine
-    container_name: rosaura_nginx
+    container_name: spriteboard_nginx
     restart: always
     ports:
       - "80:80"
@@ -18,13 +20,14 @@ services:
       app2:
         condition: service_started
     networks:
-      - rosaura_network
+      - spriteboard_network
 
   app1:
+    image: spriteboard-app1:latest
     build:
       context: .
       dockerfile: docker/php/Dockerfile
-    container_name: rosaura_app1
+    container_name: spriteboard_app1
     volumes:
       - .:/var/www/html
     depends_on:
@@ -41,13 +44,14 @@ services:
     environment:
       - TZ=${APP_TIMEZONE:-UTC}
     networks:
-      - rosaura_network
+      - spriteboard_network
 
   app2:
+    image: spriteboard-app2:latest
     build:
       context: .
       dockerfile: docker/php/Dockerfile
-    container_name: rosaura_app2
+    container_name: spriteboard_app2
     volumes:
       - .:/var/www/html
     depends_on:
@@ -64,13 +68,14 @@ services:
     environment:
       - TZ=${APP_TIMEZONE:-UTC}
     networks:
-      - rosaura_network
+      - spriteboard_network
 
   go_service:
+    image: spriteboard-go_service:latest
     build:
       context: ./docker/go
       dockerfile: Dockerfile
-    container_name: rosaura_go_service
+    container_name: spriteboard_go_service
     restart: always
     depends_on:
       redis:
@@ -80,11 +85,11 @@ services:
     environment:
       - TZ=${APP_TIMEZONE:-UTC}
     networks:
-      - rosaura_network
+      - spriteboard_network
 
   db_mysql:
     image: mysql:8.0
-    container_name: rosaura_db_mysql
+    container_name: spriteboard_db_mysql
     restart: always
     command: --max_allowed_packet=512M
     environment:
@@ -99,7 +104,7 @@ services:
       - db_data:/var/lib/mysql
       - ./docker/mysql/init:/docker-entrypoint-initdb.d 
     networks:
-      - rosaura_network
+      - spriteboard_network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
       interval: 10s
@@ -109,7 +114,7 @@ services:
 
   redis:
     image: redis:alpine
-    container_name: rosaura_redis
+    container_name: spriteboard_redis
     restart: always
     environment:
       - TZ=${APP_TIMEZONE:-UTC}
@@ -121,7 +126,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - rosaura_network
+      - spriteboard_network
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASS\" ping | grep PONG || exit 1"]
       interval: 10s
@@ -130,7 +135,7 @@ services:
 
   typesense:
     image: typesense/typesense:26.0
-    container_name: rosaura_typesense
+    container_name: spriteboard_typesense
     restart: always
     environment:
       - TYPESENSE_DATA_DIR=/data
@@ -140,17 +145,18 @@ services:
     volumes:
       - typesense_data:/data
     networks:
-      - rosaura_network
+      - spriteboard_network
 
   # ==========================================
   # WORKERS DE PYTHON 
   # ==========================================
   
   worker_backups:
+    image: spriteboard-worker_backups:latest
     build:
       context: .
       dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_backups
+    container_name: spriteboard_worker_backups
     restart: always
     command: python -u scripts/workers/worker_backups.py
     volumes:
@@ -167,13 +173,14 @@ services:
     environment:
       - TZ=${APP_TIMEZONE:-UTC}
     networks:
-      - rosaura_network
+      - spriteboard_network
 
   worker_system_tasks:
+    image: spriteboard-worker_system_tasks:latest
     build:
       context: .
       dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_system_tasks
+    container_name: spriteboard_worker_system_tasks
     restart: always
     command: python -u scripts/workers/worker_system_tasks.py
     volumes:
@@ -190,13 +197,14 @@ services:
     environment:
       - TZ=${APP_TIMEZONE:-UTC}
     networks:
-      - rosaura_network
+      - spriteboard_network
 
   worker_persistence:
+    image: spriteboard-worker_persistence:latest
     build:
       context: .
       dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_persistence
+    container_name: spriteboard_worker_persistence
     restart: always
     command: python -u scripts/workers/worker_persistence.py
     volumes:
@@ -213,13 +221,14 @@ services:
     environment:
       - TZ=${APP_TIMEZONE:-UTC}
     networks:
-      - rosaura_network
+      - spriteboard_network
 
   worker_canvas_jobs:
+    image: spriteboard-worker_canvas_jobs:latest
     build:
       context: .
       dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_canvas_jobs
+    container_name: spriteboard_worker_canvas_jobs
     restart: always
     command: python -u scripts/workers/worker_canvas_jobs.py
     volumes:
@@ -235,17 +244,18 @@ services:
       - TZ=${APP_TIMEZONE:-UTC}
       - PALETTES_FILE_PATH=/app/public/assets/data/palettes.json
     networks:
-      - rosaura_network
+      - spriteboard_network
 
 
   # ==========================================
   # SERVIDOR WEBSOCKET (Rust)
   # ==========================================
   websocket_node:
+    image: spriteboard-websocket_node:latest
     build:
       context: .
       dockerfile: docker/rust/Dockerfile.worker
-    container_name: rosaura_websocket_node_rust
+    container_name: spriteboard_websocket_node_rust
     restart: always
     depends_on:
       redis:
@@ -257,14 +267,14 @@ services:
     environment:
       - TZ=${APP_TIMEZONE:-UTC}
     networks:
-      - rosaura_network
+      - spriteboard_network
 
   # ==========================================
   # SERVIDOR MINIO (Object Storage Amazon S3 Mock)
   # ==========================================
   minio:
     image: minio/minio
-    container_name: rosaura_minio
+    container_name: spriteboard_minio
     restart: always
     environment:
       MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:-admin}
@@ -276,8 +286,8 @@ services:
           echo Waiting for MinIO to be ready;
           sleep 1;
         done;
-        /usr/bin/mc mb myminio/$${AWS_BUCKET:-rosaura-storage} || true;
-        /usr/bin/mc anonymous set download myminio/$${AWS_BUCKET:-rosaura-storage} || true;
+        /usr/bin/mc mb myminio/$${AWS_BUCKET:-spriteboard-storage} || true;
+        /usr/bin/mc anonymous set download myminio/$${AWS_BUCKET:-spriteboard-storage} || true;
       ') &
       exec /usr/bin/docker-entrypoint.sh minio server /data --console-address ':9001'
       "
@@ -287,18 +297,18 @@ services:
     volumes:
       - minio_data:/data
     networks:
-      - rosaura_network
+      - spriteboard_network
 
   db_cassandra:
     image: cassandra:4.1
-    container_name: rosaura_db_cassandra
+    container_name: spriteboard_db_cassandra
     restart: always
     ports:
       - "127.0.0.1:9042:9042"
     volumes:
       - cassandra_data:/var/lib/cassandra
     networks:
-      - rosaura_network
+      - spriteboard_network
     healthcheck:
       test: ["CMD-SHELL", "cqlsh -e 'describe cluster'"]
       interval: 10s
@@ -307,7 +317,7 @@ services:
       start_period: 45s
 
 networks:
-  rosaura_network:
+  spriteboard_network:
     driver: bridge
 
 volumes:

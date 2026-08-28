@@ -4,7 +4,7 @@ services:
   # ==========================================
   lb:
     image: nginx:alpine
-    container_name: rosaura_local_lb
+    container_name: spriteboard_local_lb
     ports:
       - "80:80"
     volumes:
@@ -13,7 +13,7 @@ services:
       - app1
       - app2
     networks:
-      - rosaura_local_network
+      - spriteboard_local_network
 
   # ==========================================
   # WEB NODES (VPS Simulados)
@@ -22,7 +22,7 @@ services:
     build:
       context: ../
       dockerfile: docker/php/Dockerfile
-    container_name: rosaura_app1
+    container_name: spriteboard_app1
     restart: always
     volumes:
       - ../:/var/www/html
@@ -41,13 +41,13 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - rosaura_local_network
+      - spriteboard_local_network
 
   app2:
     build:
       context: ../
       dockerfile: docker/php/Dockerfile
-    container_name: rosaura_app2
+    container_name: spriteboard_app2
     restart: always
     volumes:
       - ../:/var/www/html
@@ -66,14 +66,14 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - rosaura_local_network
+      - spriteboard_local_network
 
   # ==========================================
   # DATA NODE (VPS Simulado)
   # ==========================================
   db:
     image: mysql:8.0
-    container_name: rosaura_db
+    container_name: spriteboard_db
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
@@ -87,7 +87,7 @@ services:
       - db_data:/var/lib/mysql
       - ../docker/mysql/init:/docker-entrypoint-initdb.d 
     networks:
-      - rosaura_local_network
+      - spriteboard_local_network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
       interval: 10s
@@ -96,7 +96,7 @@ services:
 
   redis:
     image: redis:alpine
-    container_name: rosaura_redis
+    container_name: spriteboard_redis
     restart: always
     environment:
       - TZ=${APP_TIMEZONE:-UTC}
@@ -108,7 +108,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - rosaura_local_network
+      - spriteboard_local_network
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASS\" ping | grep PONG || exit 1"]
       interval: 10s
@@ -117,7 +117,7 @@ services:
 
   typesense:
     image: typesense/typesense:26.0
-    container_name: rosaura_typesense
+    container_name: spriteboard_typesense
     restart: always
     environment:
       - TYPESENSE_DATA_DIR=/data
@@ -127,11 +127,11 @@ services:
     volumes:
       - typesense_data:/data
     networks:
-      - rosaura_local_network
+      - spriteboard_local_network
 
   minio:
     image: minio/minio
-    container_name: rosaura_minio
+    container_name: spriteboard_minio
     restart: always
     ports:
       - "127.0.0.1:9000:9000" 
@@ -144,21 +144,21 @@ services:
       (/bin/sh -c '
         sleep 5;
         /usr/bin/mc alias set myminio http://localhost:9000 $${AWS_ACCESS_KEY_ID:-admin} $${AWS_SECRET_ACCESS_KEY:-password};
-        /usr/bin/mc mb myminio/$${AWS_BUCKET:-rosaura-storage} || true;
-        /usr/bin/mc anonymous set download myminio/$${AWS_BUCKET:-rosaura-storage} || true;
+        /usr/bin/mc mb myminio/$${AWS_BUCKET:-spriteboard-storage} || true;
+        /usr/bin/mc anonymous set download myminio/$${AWS_BUCKET:-spriteboard-storage} || true;
       ') &
       exec /usr/bin/docker-entrypoint.sh minio server /data --console-address ':9001'
       "
     volumes:
       - minio_data:/data
     networks:
-      - rosaura_local_network
+      - spriteboard_local_network
 
   websocket_node:
     build:
       context: ../
       dockerfile: docker/rust/Dockerfile.worker
-    container_name: rosaura_websocket_node_rust
+    container_name: spriteboard_websocket_node_rust
     restart: always
     ports:
       - "${WS_PORT:-8765}:${WS_PORT:-8765}"
@@ -172,13 +172,13 @@ services:
     environment:
       - TZ=${APP_TIMEZONE:-UTC}
     networks:
-      - rosaura_local_network
+      - spriteboard_local_network
 
   worker_backups:
     build:
       context: ../
       dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_backups
+    container_name: spriteboard_worker_backups
     restart: always
     command: python -u scripts/workers/worker_backups.py
     volumes:
@@ -191,13 +191,13 @@ services:
     env_file:
       - ../.env
     networks:
-      - rosaura_local_network
+      - spriteboard_local_network
 
   worker_system_tasks:
     build:
       context: ../
       dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_system_tasks
+    container_name: spriteboard_worker_system_tasks
     restart: always
     command: python -u scripts/workers/worker_system_tasks.py
     volumes:
@@ -208,13 +208,13 @@ services:
     env_file:
       - ../.env
     networks:
-      - rosaura_local_network
+      - spriteboard_local_network
 
   worker_persistence:
     build:
       context: ../
       dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_persistence
+    container_name: spriteboard_worker_persistence
     restart: always
     command: python -u scripts/workers/worker_persistence.py
     volumes:
@@ -227,13 +227,13 @@ services:
     env_file:
       - ../.env
     networks:
-      - rosaura_local_network
+      - spriteboard_local_network
 
   worker_canvas_jobs:
     build:
       context: ../
       dockerfile: docker/python/Dockerfile.worker
-    container_name: rosaura_worker_canvas_jobs
+    container_name: spriteboard_worker_canvas_jobs
     restart: always
     command: python -u scripts/workers/worker_canvas_jobs.py
     volumes:
@@ -244,18 +244,18 @@ services:
     env_file:
       - ../.env
     networks:
-      - rosaura_local_network
+      - spriteboard_local_network
 
   db_cassandra:
     image: cassandra:4.1
-    container_name: rosaura_db_cassandra
+    container_name: spriteboard_db_cassandra
     restart: always
     ports:
       - "127.0.0.1:9042:9042"
     volumes:
       - cassandra_data:/var/lib/cassandra
     networks:
-      - rosaura_local_network
+      - spriteboard_local_network
     healthcheck:
       test: ["CMD-SHELL", "cqlsh -e 'describe cluster'"]
       interval: 10s
@@ -264,7 +264,7 @@ services:
       start_period: 45s
 
 networks:
-  rosaura_local_network:
+  spriteboard_local_network:
     driver: bridge
 
 volumes:

@@ -1,6 +1,6 @@
-# Guía de Despliegue en Producción Multi-VPS - Project Rosaura
+# Guía de Despliegue en Producción Multi-VPS - Spriteboard
 
-Esta guía describe cómo distribuir la infraestructura de **Project Rosaura** entre múltiples servidores virtuales privados (VPS) para lograr máxima seguridad, aislamiento y alta concurrencia.
+Esta guía describe cómo distribuir la infraestructura de **Spriteboard** entre múltiples servidores virtuales privados (VPS) para lograr máxima seguridad, aislamiento y alta concurrencia.
 
 ---
 
@@ -118,14 +118,14 @@ sudo ufw enable
 ### 1. Variables para VPS 2 y VPS 3 (Web App)
 En el archivo .env de cada nodo de aplicación:
 `env
-APP_NAME=ProjectRosaura
+APP_NAME=Spriteboard
 APP_URL=https://tudominio.com
 APP_TIMEZONE=America/Mexico_City
 
 # Conexión a VPS 5 (Datos)
 DB_HOST=10.0.0.5
 DB_PORT=3306
-DB_USER=rosaura_user
+DB_USER=spriteboard_user
 DB_PASS=PasswordUltraSeguroSQL
 DB_IDENTITY_NAME=db_identity
 DB_CANVASES_NAME=db_canvases
@@ -146,7 +146,7 @@ TYPESENSE_API_KEY=TypesenseSecretKey123
 AWS_ENDPOINT=http://10.0.0.5:9000
 AWS_ACCESS_KEY_ID=ClaveS3Privada
 AWS_SECRET_ACCESS_KEY=SecretoS3Privado
-AWS_BUCKET=rosaura-storage
+AWS_BUCKET=spriteboard-storage
 AWS_PUBLIC_URL=https://tudominio.com/storage
 
 # Cassandra en VPS 5
@@ -170,7 +170,7 @@ REDIS_PASS=PasswordUltraSeguroRedis
 
 DB_HOST=10.0.0.5
 DB_PORT=3306
-DB_USER=rosaura_user
+DB_USER=spriteboard_user
 DB_PASS=PasswordUltraSeguroSQL
 DB_CANVASES_NAME=db_canvases
 

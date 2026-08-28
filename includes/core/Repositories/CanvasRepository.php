@@ -1226,7 +1226,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         if (!empty($row['s3_key'])) {
             try {
                 $s3 = \App\Core\Helpers\Utils::getS3Client();
-                $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+                $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'spriteboard-storage');
                 $result = $s3->getObject([
                     'Bucket' => $bucket,
                     'Key'    => $row['s3_key']
@@ -1260,7 +1260,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         
         try {
             $s3 = \App\Core\Helpers\Utils::getS3Client();
-            $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+            $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'spriteboard-storage');
             $s3->putObject([
                 'Bucket' => $bucket,
                 'Key'    => $s3_key,
@@ -1322,7 +1322,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
         if (!empty($row['s3_key'])) {
             try {
                 $s3 = \App\Core\Helpers\Utils::getS3Client();
-                $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+                $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'spriteboard-storage');
                 $result = $s3->getObject([
                     'Bucket' => $bucket,
                     'Key'    => $row['s3_key']
@@ -1390,7 +1390,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
         try {
             $s3 = \App\Core\Helpers\Utils::getS3Client();
-            $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+            $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'spriteboard-storage');
             $s3->putObject([
                 'Bucket' => $bucket,
                 'Key'    => $s3_key,
@@ -1431,7 +1431,7 @@ class CanvasRepository implements CanvasRepositoryInterface {
 
         try {
             $s3 = \App\Core\Helpers\Utils::getS3Client();
-            $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+            $bucket = \App\Core\Helpers\EnvLoader::get('AWS_BUCKET', 'spriteboard-storage');
             $s3_key = "layers/canvas_{$canvasId}.json.gz";
             $s3->deleteObject([
                 'Bucket' => $bucket,

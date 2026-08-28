@@ -194,7 +194,7 @@ class Mailer {
             $this->mail->addAddress($toEmail, $username);
 
             $this->mail->isHTML(true);
-            $this->mail->Subject = Translator::getForLang($lang, 'email_security_suspicious_login_subject', [], 'Aviso de seguridad: Inicio de sesión inusual detectado - Project Rosaura');
+            $this->mail->Subject = Translator::getForLang($lang, 'email_security_suspicious_login_subject', [], 'Aviso de seguridad: Inicio de sesión inusual detectado - Spriteboard');
             
             $formattedTime = $time ? date('d/m/Y H:i:s T', is_numeric($time) ? (int)$time : strtotime($time)) : date('d/m/Y H:i:s T');
 

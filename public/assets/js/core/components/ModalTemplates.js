@@ -1941,7 +1941,7 @@ export const ModalTemplates = {
         build: (data = {}) => {
             const googleName = data.googleName || '';
             const userEmail = data.userEmail || '';
-            const appName = window.APP_NAME || 'Rosaura';
+            const appName = window.APP_NAME || 'Spriteboard';
             return `
                 <div class="pill-container"><div class="drag-handle"></div></div>
                 <div class="component-modal-header">

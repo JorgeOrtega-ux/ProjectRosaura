@@ -20,8 +20,9 @@ if (!empty($token)) {
     // Restaurar base64 original
     $b64 = strtr($token, '-_', '+/');
     $decoded = base64_decode($b64);
-    if ($decoded && strpos($decoded, 'RosauraUser:') === 0) {
-        $payload = substr($decoded, 12); // Quitar "RosauraUser:"
+    if ($decoded && (strpos($decoded, 'SpriteboardUser:') === 0 || strpos($decoded, 'RosauraUser:') === 0)) {
+        $prefixLen = strpos($decoded, 'SpriteboardUser:') === 0 ? 16 : 12;
+        $payload = substr($decoded, $prefixLen);
         $parts = explode(':', $payload, 2);
         $name = $parts[0];
         if (isset($parts[1])) {

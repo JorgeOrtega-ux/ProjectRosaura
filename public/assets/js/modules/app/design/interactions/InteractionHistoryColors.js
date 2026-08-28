@@ -63,7 +63,7 @@ export const InteractionHistoryColors = {
 
     getCustomColorsStorageKey() {
         const id = this.canvasId || this.canvasIntId || (typeof this.getCanvasId === 'function' ? this.getCanvasId() : null);
-        return id ? `rosaura_custom_colors_${id}` : 'rosaura_offline_custom_colors';
+        return id ? `spriteboard_custom_colors_${id}` : 'spriteboard_offline_custom_colors';
     },
 
     loadCustomColors() {

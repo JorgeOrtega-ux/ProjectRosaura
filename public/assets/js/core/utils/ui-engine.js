@@ -1,13 +1,13 @@
 /**
  * ============================================================================
- * ProjectRosaura UI Engine (UiEngine) v3.0.0
+ * Spriteboard UI Engine (UiEngine) v3.0.0
  * Proprietary Dynamic Positioning & Collision Detection Engine
  * ============================================================================
  * High-performance, multi-axis spatial layout coordinator, smart auto-flipping,
  * boundary collision detection, and viewport containment system for floating UI
  * components (dropdowns, tooltips, flyout menus, and contextual overlays).
  *
- * Copyright (c) ProjectRosaura. All rights reserved.
+ * Copyright (c) Spriteboard. All rights reserved.
  * ============================================================================
  */
 

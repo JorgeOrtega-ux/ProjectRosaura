@@ -86,7 +86,7 @@ Limpia el canvas y notifica al usuario.
 
 ### Componente 1: Vista PHP del Lienzo
 
-#### [MODIFY] [design.php](file:///f:/htdocs/ProjectRosaura/includes/views/app/design.php)
+#### [MODIFY] [design.php](./includes/views/app/design.php)
 - Agregar la estructura HTML de la toolbar vertical derecha `.canvas-design-toolbar-vertical-right`:
   - Solo se renderiza si `!$isOnlineModeActive` y `$isOwner`.
   - Botón 1: `data-action="openOfflineResizeModal"` con icono `photo_size_select_large` o `aspect_ratio`.
@@ -97,7 +97,7 @@ Limpia el canvas y notifica al usuario.
 
 ### Componente 2: Estilos CSS
 
-#### [MODIFY] [components-canvas.css](file:///f:/htdocs/ProjectRosaura/public/assets/css/components/components-canvas.css)
+#### [MODIFY] [components-canvas.css](./public/assets/css/components/components-canvas.css)
 - Agregar clase `.canvas-design-toolbar-vertical-right`:
   - Posicionamiento `position: absolute; top: 50%; right: 16px; transform: translateY(-50%);`.
   - Estilo de píldora flotante oscura idéntica a `.canvas-design-toolbar-vertical`.
@@ -108,7 +108,7 @@ Limpia el canvas y notifica al usuario.
 
 ### Componente 3: Plantillas de Modal (`ModalTemplates.js`)
 
-#### [MODIFY] [ModalTemplates.js](file:///f:/htdocs/ProjectRosaura/public/assets/js/core/components/ModalTemplates.js)
+#### [MODIFY] [ModalTemplates.js](./public/assets/js/core/components/ModalTemplates.js)
 - Registrar `offlineResizeModal`:
   - **Paso 1:** Selector de tipo (Rápida vs Programada bloqueada con badge informativo).
   - **Paso 2:** Dropdown de tamaños filtrados por tier con iconos de `canvas_sizes.json` y alerta de reducción (`shrink warning`).
@@ -120,16 +120,16 @@ Limpia el canvas y notifica al usuario.
 
 ### Componente 4: Interacción y Controladores JS
 
-#### [NEW] [InteractionOfflineWorkspace.js](file:///f:/htdocs/ProjectRosaura/public/assets/js/modules/app/design/interactions/InteractionOfflineWorkspace.js)
+#### [NEW] [InteractionOfflineWorkspace.js](./public/assets/js/modules/app/design/interactions/InteractionOfflineWorkspace.js)
 - Módulo mixin para `DesignController` que gestiona:
   - `openOfflineResizeModal()`: Abre el modal multietapa de resize, maneja la navegación de pasos (1 ↔ 2), valida el tamaño seleccionado y despacha la petición `ApiRoutes.Canvases.Resize`.
   - `openOfflineResetModal()`: Abre el modal de reset, maneja pasos (1 ↔ 2) y despacha `ApiRoutes.Canvases.ResetNow`.
   - Métodos de actualización del canvas tras éxito (actualización de dimensiones en memoria y worker, o limpieza del buffer de píxeles).
 
-#### [MODIFY] [DesignInteractions.js](file:///f:/htdocs/ProjectRosaura/public/assets/js/modules/app/design/DesignInteractions.js)
+#### [MODIFY] [DesignInteractions.js](./public/assets/js/modules/app/design/DesignInteractions.js)
 - Importar y combinar `InteractionOfflineWorkspace` con las demás herramientas de interacción del diseño.
 
-#### [MODIFY] [InteractionEvents.js](file:///f:/htdocs/ProjectRosaura/public/assets/js/modules/app/design/interactions/InteractionEvents.js)
+#### [MODIFY] [InteractionEvents.js](./public/assets/js/modules/app/design/interactions/InteractionEvents.js)
 - Delegar las acciones `openOfflineResizeModal` y `openOfflineResetModal` en el dispatcher de clics.
 
 ---

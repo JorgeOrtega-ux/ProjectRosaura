@@ -4,7 +4,7 @@ require_once __DIR__ . '/../includes/core/bootstrap.php';
 use App\Core\Helpers\Utils;
 use App\Core\Helpers\EnvLoader;
 
-$bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+$bucket = EnvLoader::get('AWS_BUCKET', 'spriteboard-storage');
 $s3Client = Utils::getS3Client();
 
 $pubDir = ROOT_PATH . '/storage/public/publications';

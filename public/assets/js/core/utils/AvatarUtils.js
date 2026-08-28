@@ -1,7 +1,7 @@
 /**
  * AvatarUtils.js
  * Fuente Única de Verdad (SSOT) para la resolución, renderizado y fallbacks
- * de fotos de perfil, avatares dinámicos SVG, bordes de roles y suscripción en ProjectRosaura.
+ * de fotos de perfil, avatares dinámicos SVG, bordes de roles y suscripción en Spriteboard.
  */
 
 function escapeHTML(str) {
@@ -49,7 +49,7 @@ export const AvatarUtils = {
         if (seed !== null && seed !== undefined && String(seed).trim() !== '') {
             payload += ':' + String(seed).trim();
         }
-        const token = base64UrlEncode(`RosauraUser:${payload}`);
+        const token = base64UrlEncode(`SpriteboardUser:${payload}`);
         return `${basePath}/avatar/${token}`;
     },
 
@@ -123,8 +123,8 @@ export const AvatarUtils = {
         // Si es un token de avatar
         if (rawUrl.startsWith('/avatar/') || rawUrl.startsWith('avatar/')) {
             const cleanAvatar = '/' + rawUrl.replace(/^\/+/, '');
-            // Si es el token genérico antiguo "RosauraUser:U", regenerar con el nombre real
-            if (cleanAvatar.includes('Um9zYXVyYVVzZXI6VQ') && resolvedName && resolvedName !== 'U' && resolvedName !== 'Usuario') {
+            // Si es el token genérico antiguo "SpriteboardUser:U" o "RosauraUser:U", regenerar con el nombre real
+            if ((cleanAvatar.includes('Um9zYXVyYVVzZXI6VQ') || cleanAvatar.includes('U3ByaXRlYm9hcmRVc2VyOlU')) && resolvedName && resolvedName !== 'U' && resolvedName !== 'Usuario') {
                 return this.generateDefaultAvatarUrl(resolvedName, resolvedSeed);
             }
             return `${basePath}${cleanAvatar}`;

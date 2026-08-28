@@ -45,12 +45,12 @@ class DevModalsController {
             changePasswordModal: {},
             welcomePremiumModal: {
                 tier_name: 'Tier Élite',
-                subscription_name: 'Rosaura Pro Max'
+                subscription_name: 'Spriteboard Pro Max'
             },
             purchaseSuccessModal: {
                 title: '¡Compra Realizada con Éxito!',
                 desc: 'Tu suscripción Pro ha sido activada y tienes acceso inmediato a todas las funciones avanzadas.',
-                item_name: 'Suscripción Rosaura Pro (1 mes)',
+                item_name: 'Suscripción Spriteboard Pro (1 mes)',
                 amount: '$9.99 USD',
                 date: '24/08/2026'
             },
@@ -58,7 +58,7 @@ class DevModalsController {
                 canvasName: 'Lienzo Creativo #42'
             },
             welcomeUserModal: {
-                username: 'RosauraFan_99'
+                username: 'SpriteboardFan_99'
             },
             onboardingTourModal: {
                 modalId: 'onboarding-tour-demo',

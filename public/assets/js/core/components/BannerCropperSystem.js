@@ -1,6 +1,6 @@
 /**
  * BannerCropperSystem.js
- * YouTube-inspired Interactive Banner Customization & Cropper System for ProjectRosaura
+ * YouTube-inspired Interactive Banner Customization & Cropper System for Spriteboard
  */
 export class BannerCropperSystem {
     constructor(containerEl, options = {}) {

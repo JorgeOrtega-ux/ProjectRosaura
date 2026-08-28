@@ -697,7 +697,7 @@ class StripeService {
         $stream .= "0.1 0.12 0.15 rg\n";
         $stream .= "40 770 515 45 re\nf\n";
         $stream .= "1 1 1 rg\n";
-        $stream .= "BT /F2 16 Tf 55 785 Td (PROJECT ROSAURA) Tj ET\n";
+        $stream .= "BT /F2 16 Tf 55 785 Td (SPRITEBOARD) Tj ET\n";
         $stream .= "BT /F1 10 Tf 420 785 Td (COMPROBANTE DE PAGO) Tj ET\n";
         $stream .= "0.15 0.15 0.15 rg\n";
         $stream .= "BT /F2 10 Tf 50 735 Td (ID de Transaccion:) Tj ET\n";
@@ -722,7 +722,7 @@ class StripeService {
         $stream .= "BT /F2 11 Tf 350 575 Td (TOTAL PAGADO:) Tj ET\n";
         $stream .= "BT /F2 12 Tf 450 575 Td (" . $amount . ") Tj ET\n";
         $stream .= "0.5 0.5 0.5 rg\n";
-        $stream .= "BT /F1 9 Tf 50 500 Td (Este documento es un comprobante digital generado por Project Rosaura.) Tj ET\n";
+        $stream .= "BT /F1 9 Tf 50 500 Td (Este documento es un comprobante digital generado por Spriteboard.) Tj ET\n";
         $stream .= "BT /F1 9 Tf 50 485 Td (Si tienes alguna duda sobre tu compra, puedes contactar con nuestro soporte oficial.) Tj ET\n";
 
         $len = strlen($stream);

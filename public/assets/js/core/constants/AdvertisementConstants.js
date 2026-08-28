@@ -1,5 +1,5 @@
 /**
- * Constantes y Catálogo Centralizado de Publicidad de ProjectRosaura
+ * Constantes y Catálogo Centralizado de Publicidad de Spriteboard
  */
 
 export const AdvertisementFormats = Object.freeze({

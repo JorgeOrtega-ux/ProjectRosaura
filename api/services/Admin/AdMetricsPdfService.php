@@ -102,7 +102,7 @@ class AdMetricsPdfService {
         $this->drawRect(40, 770, 515, 50, [15, 23, 42]);
         $this->drawRect(40, 767, 515, 3, [2, 132, 199]); // Accent line
 
-        $this->drawText('PROJECT ROSAURA', 55, 797, 'F2', 14, [255, 255, 255]);
+        $this->drawText('SPRITEBOARD', 55, 797, 'F2', 14, [255, 255, 255]);
         $this->drawText(strtoupper($superTitle), 55, 780, 'F1', 8, [148, 163, 184]);
 
         $this->drawText(strtoupper($mainTitle), 360, 797, 'F2', 9, [255, 255, 255]);
@@ -110,7 +110,7 @@ class AdMetricsPdfService {
 
         $now = date('d/m/Y H:i:s');
         $periodInfo = !empty($periodLabel) ? " | Periodo: {$periodLabel}" : '';
-        $this->drawText("Emitido el: {$now}{$periodInfo} | Servidor Oficial Project Rosaura", 42, 750, 'F1', 8, [100, 116, 139]);
+        $this->drawText("Emitido el: {$now}{$periodInfo} | Servidor Oficial Spriteboard", 42, 750, 'F1', 8, [100, 116, 139]);
         $this->drawLine(40, 742, 555, 742, [226, 232, 240], 1);
     }
 
@@ -118,7 +118,7 @@ class AdMetricsPdfService {
         $this->drawRect(40, 785, 515, 35, [15, 23, 42]);
         $this->drawRect(40, 782, 515, 3, [2, 132, 199]);
 
-        $this->drawText('PROJECT ROSAURA', 50, 802, 'F2', 10.5, [255, 255, 255]);
+        $this->drawText('SPRITEBOARD', 50, 802, 'F2', 10.5, [255, 255, 255]);
         $this->drawText(strtoupper($superTitle) . ' (CONTINUACION)', 50, 790, 'F1', 7.5, [148, 163, 184]);
 
         $this->drawText(strtoupper($mainTitle), 360, 802, 'F2', 8.5, [255, 255, 255]);
@@ -132,7 +132,7 @@ class AdMetricsPdfService {
 
     private function drawFooter(): void {
         $this->drawLine(40, 50, 555, 50, [226, 232, 240], 1);
-        $this->drawText("Project Rosaura Analytics Engine © " . date('Y') . " - Documento Confidencial de Auditoria", 40, 38, 'F1', 7.5, [148, 163, 184]);
+        $this->drawText("Spriteboard Analytics Engine © " . date('Y') . " - Documento Confidencial de Auditoria", 40, 38, 'F1', 7.5, [148, 163, 184]);
         $this->drawText("Pagina {{PAGE_NUM}} de {{TOTAL_PAGES}}", 480, 38, 'F1', 7.5, [148, 163, 184]);
     }
 
@@ -492,7 +492,7 @@ class AdMetricsPdfService {
         $sealY = 58;
         $this->drawRect(40, $sealY, 515, 24, [241, 245, 249], [226, 232, 240], 1);
         $this->drawText("INFORME EJECUTIVO CONSOLIDADO - Datos globales calculados a partir de telemetria en tiempo real.", 50, $sealY + 12, 'F2', 7, [71, 85, 105]);
-        $this->drawText("Project Rosaura Ad Server v2.0 - Todos los derechos reservados.", 50, $sealY + 4, 'F1', 6.5, [148, 163, 184]);
+        $this->drawText("Spriteboard Ad Server v2.0 - Todos los derechos reservados.", 50, $sealY + 4, 'F1', 6.5, [148, 163, 184]);
 
         $this->drawFooter();
         $this->endPage();

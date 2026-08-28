@@ -1,4 +1,4 @@
-# 📌 Guía de Zonas de Anuncios y Patrocinios en ProjectRosaura
+# 📌 Guía de Zonas de Anuncios y Patrocinios en Spriteboard
 
 Este documento detalla la arquitectura centralizada, los formatos soportados, el sistema de caché con Redis y la invalidación reactiva mediante `CacheInvalidator`.
 

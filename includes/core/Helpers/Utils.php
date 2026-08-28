@@ -310,7 +310,7 @@ class Utils {
         
         $cleanPath = self::normalizeStoragePath($path);
         
-        $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+        $bucket = EnvLoader::get('AWS_BUCKET', 'spriteboard-storage');
         $publicUrl = rtrim(EnvLoader::get('AWS_PUBLIC_URL', 'http://localhost:9000'), '/');
         
         return $publicUrl . '/' . $bucket . '/' . $cleanPath;
@@ -383,7 +383,7 @@ class Utils {
         if ($seed !== '') {
             $payload .= ':' . $seed;
         }
-        $token = rtrim(strtr(base64_encode("RosauraUser:" . $payload), '+/', '-_'), '=');
+        $token = rtrim(strtr(base64_encode("SpriteboardUser:" . $payload), '+/', '-_'), '=');
         return '/avatar/' . $token;
     }
 
@@ -768,7 +768,7 @@ class Utils {
         $imageContent = self::renderSanitizedImageContent($file['tmp_name'], $mime);
 
         if ($imageContent !== null) {
-            $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+            $bucket = EnvLoader::get('AWS_BUCKET', 'spriteboard-storage');
             $s3Client = self::getS3Client();
             $s3Key = self::normalizeStoragePath($uploadDir . '/' . $fileName);
             try {
@@ -837,7 +837,7 @@ class Utils {
             if (strpos($oldPicPath, 'uploaded/') !== false || strpos($oldPicPath, 'default/') !== false) {
                 $s3Key = self::normalizeStoragePath($oldPicPath);
                 
-                $bucket = EnvLoader::get('AWS_BUCKET', 'rosaura-storage');
+                $bucket = EnvLoader::get('AWS_BUCKET', 'spriteboard-storage');
                 $s3Client = self::getS3Client();
                 try {
                     $s3Client->deleteObject([
