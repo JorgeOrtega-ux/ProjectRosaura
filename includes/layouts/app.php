@@ -228,6 +228,7 @@ if ($activeAccountId && SubscriptionPlanConstants::hasFeature($subscriptionTier,
     ?>
     <base href="<?php echo $appPath; ?>/">
     <meta name="csrf-token" content="<?php echo htmlspecialchars($csrfToken ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="icon" type="image/svg+xml" href="<?php echo $appPath; ?>/assets/img/favicon.svg?v=1.0">
      <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="stylesheet" type="text/css" href="<?php echo $appPath; ?>/assets/css/base/icons.css?v=<?php echo file_exists(ROOT_PATH . '/public/assets/css/base/icons.css') ? filemtime(ROOT_PATH . '/public/assets/css/base/icons.css') : '1.0'; ?>">
     <script>
